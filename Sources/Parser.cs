@@ -25,16 +25,16 @@ public partial class Span {
 
     public FileId FileId { get; init; }
 
-    public UInt64 Start { get; init; }
+    public int Start { get; init; }
     
-    public UInt64 End { get; init; }
+    public int End { get; init; }
 
     ///
 
     public Span(
         FileId fileId,
-        UInt64 start,
-        UInt64 end) {
+        int start,
+        int end) {
 
         this.FileId = fileId;
         this.Start = start;
@@ -51,8 +51,8 @@ public partial class QuotedStringToken: Token {
     ///
 
     public QuotedStringToken(
-        Span span,
-        String value)
+        String value,
+        Span span)
         : base(span) {
 
         this.Value = value;
@@ -66,8 +66,8 @@ public partial class NumberToken: Token {
     ///
 
     public NumberToken(
-        Span span,
-        Int64 value)
+        Int64 value,
+        Span span)
         : base(span) {
 
         this.Value = value;
@@ -81,8 +81,8 @@ public partial class NameToken: Token {
     ///
 
     public NameToken(
-        Span span,
-        String value)
+        String value,
+        Span span)
         : base(span) {
 
         this.Value = value;

@@ -22,14 +22,15 @@ public partial class Compiler {
 
 public partial class Compiler {
 
-    public void Compile(
+    public ErrorOrVoid Compile(
         String filename) {
 
         var contents = ReadAllBytes(filename);
         
         this.RawFiles.Add((filename, contents));
 
-        
+        var lexed = LexerFunctions.Lex(ToUInt64(this.RawFiles.Count - 1), this.RawFiles[this.RawFiles.Count - 1].Item2);
 
+        return new ErrorOrVoid();
     }
 }

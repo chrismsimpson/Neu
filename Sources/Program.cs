@@ -6,8 +6,16 @@ public static partial class Program {
     public static void Main(
         String[] args) {
 
-        // var parser = 
+        var parser = new Compiler();
 
-        WriteLine($"Hello foo");
+        ///
+
+        foreach (var arg in args) {
+
+            var n = parser.Compile(arg);
+
+            
+            
+        }
     }
 }
