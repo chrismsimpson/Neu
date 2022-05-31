@@ -63,8 +63,8 @@ public static partial class Program {
                 c = ToChar(fileContents[index]);
             }
 
-            if ((index >= span.Start && index < span.End) || 
-                (span.Start == span.End && index == span.Start)) {
+            if ((index >= span.Start && index < span.End)
+                || (span.Start == span.End && index == span.Start)) {
 
                 // In the error span
 
