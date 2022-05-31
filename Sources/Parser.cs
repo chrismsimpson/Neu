@@ -266,7 +266,9 @@ public static partial class ParserFunctions {
 
         int index = 0;
 
-        while (index < tokens.Count) {
+        var cont = true;
+
+        while (index < tokens.Count && cont) {
 
             var token = tokens.ElementAt(index);
 
@@ -304,6 +306,8 @@ public static partial class ParserFunctions {
                 ///
 
                 case EofToken _:
+
+                    cont = false;
 
                     break;
 
@@ -451,11 +455,11 @@ public static partial class ParserFunctions {
 
             case NameToken name: {
 
-                if (name.Value == "print") {
+                if (name.Value == "printLine") {
 
                     // Good, we know this one
 
-                    call.Name = "print";
+                    call.Name = "printLine";
                 }
                 else {
 
