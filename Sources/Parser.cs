@@ -204,17 +204,24 @@ public partial class Parameter {
 
 ///
 
+public partial class Statement {
+
+    public Statement() { }
+}
+
+///
+
 public partial class Block {
 
-    public List<Expression> Statements { get; init; }
+    public List<Statement> Statements { get; init; }
 
     ///
 
     public Block()
-        : this(new List<Expression>()) {}
+        : this(new List<Statement>()) {}
 
     public Block(
-        List<Expression> statements) {
+        List<Statement> statements) {
 
         this.Statements = statements;
     }
@@ -222,9 +229,9 @@ public partial class Block {
 
 ///
 
-public partial class Expression {
+public partial class Expression: Statement {
 
-    public Expression() { }
+    public Expression() : base() { }
 }
 
 public partial class CallExpression: Expression {
@@ -398,16 +405,16 @@ public static partial class ParserFunctions {
 
                 default:  
 
-                    var exprOrError = ParseExpression(tokens, ref index);
+                    var statementOrError = ParseStatement(tokens, ref index);
 
-                    if (exprOrError.Error != null) {
+                    if (statementOrError.Error != null) {
 
                         throw new Exception();
                     }
 
-                    var expr = exprOrError.Value ?? throw new Exception();
+                    var stmt = statementOrError.Value ?? throw new Exception();
 
-                    block.Statements.Add(expr);
+                    block.Statements.Add(stmt);
 
                     index += 1;
 
@@ -416,6 +423,20 @@ public static partial class ParserFunctions {
         }
 
         return new ErrorOr<Block>("expected complete block", tokens.ElementAt(index - 1).Span);
+    }
+
+    public static ErrorOr<Statement> ParseStatement(List<Token> tokens, ref int index) {
+
+        var exprOrError = ParseExpression(tokens, ref index);
+
+        if (exprOrError.Error != null) {
+
+            throw new Exception();
+        }
+
+        var expr = exprOrError.Value ?? throw new Exception();
+
+        return new ErrorOr<Statement>(expr);
     }
 
     public static ErrorOr<Expression> ParseExpression(List<Token> tokens, ref int index) {

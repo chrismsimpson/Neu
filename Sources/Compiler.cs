@@ -98,16 +98,40 @@ public partial class Compiler {
 
         output.Append("{\n");
 
-        foreach (var expr in block.Statements) {
+        foreach (var stmt in block.Statements) {
 
-            var e = TranslateExpr(expr);
+            var stmtStr = TranslateStmt(stmt);
 
-            output.Append(e);
-
-            output.Append(";\n");
+            output.Append(stmtStr);
         }
 
         output.Append("}\n");
+
+        return output.ToString();
+    }
+
+    public String TranslateStmt(Statement stmt) {
+
+        var output = new StringBuilder();
+
+        switch (stmt) {
+
+            case Expression expr:
+
+                var exprStr = TranslateExpr(expr);
+
+                output.Append(exprStr);
+
+                break;
+
+            ///
+
+            default:
+
+                throw new Exception();
+        }
+
+        output.Append(";\n");
 
         return output.ToString();
     }
