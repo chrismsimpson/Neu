@@ -153,13 +153,21 @@ public partial class Compiler {
 
             case CallExpression ce: {
 
-                if (ce.Call.Name == "printLine") {
+                switch (ce.Call.Name) {
 
-                    output.Append("printf");
-                }
-                else {
+                    case "print":
 
-                    output.Append(ce.Call.Name);
+                        output.Append("printf");
+
+                        break;
+
+                    ///
+
+                    default:
+
+                        output.Append(ce.Call.Name);
+
+                        break;
                 }
 
                 output.Append("(");

@@ -476,11 +476,11 @@ public static partial class ParserFunctions {
 
             case NameToken name: {
 
-                if (name.Value == "printLine") {
+                if (name.Value == "print") {
 
                     // Good, we know this one
 
-                    call.Name = "printLine";
+                    call.Name = name.Value;
                 }
                 else {
 
