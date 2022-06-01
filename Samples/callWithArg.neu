@@ -1,0 +1,7 @@
+func greet(msg: String) {
+    print(msg)
+}
+
+func main() {
+    greet("hello foo")
+}

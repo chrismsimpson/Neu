@@ -32,6 +32,19 @@ public static partial class LexerFunctions {
 
                 ///
 
+                case ':': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new ColonToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
                 case ',': {
 
                     var start = index;
@@ -224,7 +237,8 @@ public static partial class LexerFunctions {
 
             var escaped = false;
 
-            while (index < bytes.Length && bytes[index].IsAsciiAlphanumeric()) {
+            while (index < bytes.Length 
+                && (bytes[index].IsAsciiAlphanumeric() || ToChar(bytes[index]) == '_')) {
 
                 if (!escaped && ToChar(bytes[index]) == '\\') {
 

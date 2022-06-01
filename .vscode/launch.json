@@ -8,8 +8,10 @@
             "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
             "args": [
                 // "./Samples/hello.neu",
-                "./Samples/defer.neu",
+                // "./Samples/defer.neu",
                 // "./Samples/call.neu",
+                // "./Samples/callWithArg.neu",
+                "./Samples/error.neu"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",

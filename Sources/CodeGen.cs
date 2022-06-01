@@ -14,6 +14,15 @@ public static partial class CodeGenFunctions {
 
         foreach (var fun in file.Functions) {
 
+            var funOutput = TranslateFunctionPredeclaration(fun);
+
+            output.Append(funOutput);
+
+            output.Append("\n");
+        }
+
+        foreach (var fun in file.Functions) {
+
             var funOutput = compiler.TranslateFunction(fun);
 
             output.Append(funOutput);
@@ -34,13 +43,100 @@ public static partial class CodeGenFunctions {
 
         output.Append(fun.Name);
 
-        output.Append("()");
+        output.Append("(");
+
+        var first = true;
+
+        foreach (var p in fun.Parameters) {
+
+            if (!first) {
+
+                output.Append(", ");
+            }
+            else {
+
+                first = false;
+            }
+                
+            var ty = TranslateType(p.Item2);
+
+            output.Append(ty);
+
+            output.Append(" ");
+
+            output.Append(p.Item1);
+        }
+
+        output.Append(")");
 
         var block = compiler.TranslateBlock(fun.Block);
 
         output.Append(block);
 
         return output.ToString();
+    }
+
+    public static String TranslateFunctionPredeclaration(
+        Function fun) {
+
+        var output = new StringBuilder();
+
+        output.Append("void ");
+
+        output.Append(fun.Name);
+
+        output.Append("(");
+
+        var first = true;
+
+        foreach (var p in fun.Parameters) {
+
+            if (!first) {
+
+                output.Append(", ");
+            }
+            else {
+
+                first = false;
+            }
+
+            var ty = TranslateType(p.Item2);
+
+            output.Append(ty);
+
+            output.Append(" ");
+
+            output.Append(p.Item1);
+        }
+
+        output.Append(");");
+
+        return output.ToString();
+    }
+
+    public static String TranslateType(NeuType ty) {
+
+        switch (ty) {
+
+            case StringType _: {
+
+                return "char*";
+            }
+
+            ///
+
+            case Int64Type _: {
+
+                return "int"; // <- FIXME to Int64
+            }
+
+            ///
+
+            default: {
+
+                throw new Exception();
+            }
+        }
     }
 
     public static String TranslateBlock(
@@ -131,6 +227,15 @@ public static partial class CodeGenFunctions {
             case Int64Expression i: {
 
                 output.Append($"{i.Value}");
+
+                break;
+            }
+
+            ///
+
+            case VarExpression v: {
+
+                output.Append(v.Value);
 
                 break;
             }
