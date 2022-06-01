@@ -56,7 +56,7 @@ public static partial class Program {
 
         while (index <= fileContents.Length) {
 
-            var c = ' ';
+            var c = '_';
 
             if (index < fileContents.Length) {
 
@@ -68,14 +68,7 @@ public static partial class Program {
 
                 // In the error span
 
-                if (c == ' ') {
-
-                    Write(c);
-                } 
-                else {
-
-                    Write(c);
-                }
+                Write(c);
             }
             else {
 

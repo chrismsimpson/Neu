@@ -119,6 +119,12 @@ public partial class RCurlyToken: Token {
         : base(span) { }
 }
 
+public partial class CommaToken: Token {
+
+    public CommaToken(Span span)
+        : base(span) { }
+}
+
 public partial class EolToken: Token {
 
     public EolToken(Span span)
@@ -512,9 +518,15 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-
-
                 return new ErrorOr<Expression>(new Int64Expression(number.Value));
+
+            ///
+
+            case QuotedStringToken qs:
+
+                index += 1;
+
+                return new ErrorOr<Expression>(new QuotedStringExpression(qs.Value));
 
             ///
 
@@ -536,16 +548,7 @@ public static partial class ParserFunctions {
 
             case NameToken name: {
 
-                if (name.Value == "print") {
-
-                    // Good, we know this one
-
-                    call.Name = name.Value;
-                }
-                else {
-
-                    return new ErrorOr<Call>("unknown function", name.Span);
-                }
+                call.Name = name.Value;
 
                 ///
 
@@ -577,50 +580,55 @@ public static partial class ParserFunctions {
 
                 ///
 
-                if (index < tokens.Count) {
+                var cont = true;
+
+                while (index < tokens.Count && cont) {
 
                     switch (tokens.ElementAt(index)) {
 
-                        case QuotedStringToken contents:
+                        case RParenToken _: {
 
-                            call.Args.Add(("msg", new QuotedStringExpression(contents.Value)));
+                            index += 1;
+
+                            cont = false;
+
+                            break;
+                        }
+
+                        ///
+
+                        case CommaToken _: {
 
                             index += 1;
 
                             break;
+                        }
 
                         ///
 
-                        default: 
+                        default: {
 
-                            return new ErrorOr<Call>("expected '(", name.Span);
+                            var exprOrError = ParseExpression(tokens, ref index);
+
+                            if (exprOrError.Error != null) {
+
+                                throw new Exception();
+                            }
+
+                            var expr = exprOrError.Value ?? throw new Exception();
+
+                            ///
+
+                            call.Args.Add((String.Empty, expr));
+
+                            break;
+                        }
                     }
-                }
-                else {
-
-                    return new ErrorOr<Call>("incomplete function", tokens[index - 1].Span);
                 }
 
                 ///
 
-                if (index < tokens.Count) {
-
-                    switch (tokens.ElementAt(index)) {
-
-                        case RParenToken _:
-
-                            index += 1;
-
-                            break;
-
-                        ///
-
-                        default:
-
-                            return new ErrorOr<Call>("expected ')'", name.Span);
-                    }
-                }
-                else {
+                if (index >= tokens.Count) {
 
                     return new ErrorOr<Call>("incomplete function", tokens.ElementAt(index - 1).Span);
                 }
