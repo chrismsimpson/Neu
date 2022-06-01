@@ -7,7 +7,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
             "args": [
-                "./Samples/hello.neu"
+                // "./Samples/hello.neu",
+                "./Samples/defer.neu"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -23,6 +24,31 @@
                 "threadExit": false
             },
             "requireExactSource": true
+        },
+        {
+            "name": "output",
+            "type": "cppdbg",
+            "request": "launch",
+            // "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Build/Output/output",
+            "args": [
+
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "internalConsoleOptions": "openOnSessionStart",
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            }
         }
     ]
 }

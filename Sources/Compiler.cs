@@ -48,7 +48,7 @@ public partial class Compiler {
 
         var cppFile = Translate(file);
 
-        WriteAllText("output.cpp", cppFile);
+        WriteAllText("./Generated/Output/output.cpp", cppFile);
 
         // TODO: do something with this
 
@@ -62,6 +62,7 @@ public partial class Compiler {
         var output = new StringBuilder();
 
         output.Append("#include <stdio.h>\n");
+        output.Append("#include \"../../Runtime/lib.h\"\n");
 
         foreach (var fun in file.Functions) {
 
@@ -114,6 +115,8 @@ public partial class Compiler {
 
         var output = new StringBuilder();
 
+        ///
+
         switch (stmt) {
 
             case Expression expr:
@@ -126,12 +129,28 @@ public partial class Compiler {
 
             ///
 
+            case DeferStatement defer:
+
+                output.Append("#define __DEFER_NAME __scope_guard_ ## __COUNTER__\n");
+                output.Append("Defer __DEFER_NAME  ([&] \n");
+                output.Append("#undef __DEFER_NAME\n");
+                output.Append(TranslateBlock(defer.Block));
+                output.Append(")");
+
+                break;
+
+            ///
+
             default:
 
                 throw new Exception();
         }
 
+        ///
+
         output.Append(";\n");
+
+        ///
 
         return output.ToString();
     }
@@ -172,7 +191,7 @@ public partial class Compiler {
 
                 output.Append("(");
 
-                foreach (var parameter in ce.Call.Parameters) {
+                foreach (var parameter in ce.Call.Args) {
 
                     output.Append(TranslateExpr(parameter.Item2));
                 }

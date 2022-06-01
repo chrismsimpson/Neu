@@ -5,7 +5,7 @@ public partial class Call {
 
     public String Name { get; set; }
 
-    public List<(String, Expression)> Parameters { get; init; }
+    public List<(String, Expression)> Args { get; init; }
 
     ///
 
@@ -14,10 +14,10 @@ public partial class Call {
 
     public Call(
         String name,
-        List<(String, Expression)> parameters) {
+        List<(String, Expression)> args) {
 
         this.Name = name;
-        this.Parameters = parameters;
+        this.Args = args;
     }
 }
 
@@ -262,6 +262,20 @@ public partial class QuotedStringExpression: Expression {
     }
 }
 
+public partial class DeferStatement: Statement {
+
+    public Block Block { get; init; }
+
+    ///
+
+    public DeferStatement(
+        Block block)
+        : base() { 
+
+        this.Block = block;
+    }
+}
+
 ///
 
 public static partial class ParserFunctions {
@@ -427,16 +441,38 @@ public static partial class ParserFunctions {
 
     public static ErrorOr<Statement> ParseStatement(List<Token> tokens, ref int index) {
 
-        var exprOrError = ParseExpression(tokens, ref index);
+        switch (tokens[index]) {
 
-        if (exprOrError.Error != null) {
+            case NameToken nt when nt.Value == "defer": {
 
-            throw new Exception();
+                index += 1;
+
+                var blockOrError = ParseBlock(tokens, ref index);
+
+                if (blockOrError.Error != null) {
+
+                    throw new Exception();
+                }
+
+                var block = blockOrError.Value ?? throw new Exception();
+
+                return new ErrorOr<Statement>(new DeferStatement(block));
+            }
+
+            default: {
+
+                var exprOrError = ParseExpression(tokens, ref index);
+
+                if (exprOrError.Error != null) {
+
+                    throw new Exception();
+                }
+
+                var expr = exprOrError.Value ?? throw new Exception();
+
+                return new ErrorOr<Statement>(expr);
+            }
         }
-
-        var expr = exprOrError.Value ?? throw new Exception();
-
-        return new ErrorOr<Statement>(expr);
     }
 
     public static ErrorOr<Expression> ParseExpression(List<Token> tokens, ref int index) {
@@ -523,7 +559,7 @@ public static partial class ParserFunctions {
 
                         case QuotedStringToken contents:
 
-                            call.Parameters.Add(("msg", new QuotedStringExpression(contents.Value)));
+                            call.Args.Add(("msg", new QuotedStringExpression(contents.Value)));
 
                             index += 1;
 

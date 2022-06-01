@@ -3,12 +3,17 @@
 template<typename Block>
 class Defer {
 
-public: 
+public:
 
-    Defer(Block block)
+    Defer(
+        Block block)
         : m_block(block) { }
 
+    ~Defer() { m_block(); }
+
 private:
-    
+
     Block m_block;
 };
+
+void foo();

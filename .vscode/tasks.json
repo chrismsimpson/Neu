@@ -15,6 +15,34 @@
                 "reveal": "always"
             },
             "problemMatcher": "$msCompile"
-        }
+        },
+        {
+            "label": "cmake: generate build",
+            "command": "cmake Generated -B Build -G Ninja",
+            "type": "shell",
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake: build",
+            "command": "cmake --build Build",
+            "type": "shell",
+            "args": [],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
+        },
     ]
 }

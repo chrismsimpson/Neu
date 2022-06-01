@@ -1,0 +1,6 @@
+func main() {
+    defer {
+        print(" foo\n")
+    }
+    print("hello")
+}

@@ -1,0 +1,11 @@
+{
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cmake.sourceDirectory": "${workspaceFolder}/Generated",
+    "cmake.buildDirectory": "${workspaceFolder}/Build",
+    "files.associations": {
+        "*.c": "cpp",
+        "*.C": "c",
+        "*.cpp": "cpp",
+        "*.h": "cpp"
+    }
+}
