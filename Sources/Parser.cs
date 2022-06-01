@@ -248,6 +248,20 @@ public partial class CallExpression: Expression {
     }
 }
 
+public partial class Int64Expression: Expression {
+
+    public Int64 Value { get; init; }
+
+    ///
+
+    public Int64Expression(
+        Int64 value)
+        : base() {
+
+        this.Value = value;
+    }
+}
+
 public partial class QuotedStringExpression: Expression {
 
     public String Value { get; init; }
@@ -491,6 +505,16 @@ public static partial class ParserFunctions {
                 var call = callOrError.Value ?? throw new Exception();
                 
                 return new ErrorOr<Expression>(new CallExpression(call));
+
+            ///
+
+            case NumberToken number:
+
+                index += 1;
+
+
+
+                return new ErrorOr<Expression>(new Int64Expression(number.Value));
 
             ///
 
