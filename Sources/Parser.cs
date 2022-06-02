@@ -108,7 +108,7 @@ public partial class VarDecl {
 
     public NeuType Type { get; init; }
 
-    public bool Mutable { get; init; }
+    public bool Mutable { get; set; }
 
     ///
 
@@ -835,6 +835,8 @@ public static partial class ParserFunctions {
                 }
 
                 var varDecl = varDeclOrError.Value ?? throw new Exception();
+
+                varDecl.Mutable = mutable;
 
                 if (index < tokens.Count) {
 
