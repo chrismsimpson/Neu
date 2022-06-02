@@ -33,18 +33,41 @@ public partial class Compiler {
         
         this.RawFiles.Add((filename, contents));
 
-        var lexed = LexerFunctions.Lex(
+        var (lexed, lexErr) = LexerFunctions.Lex(
             this.RawFiles.Count - 1, 
             this.RawFiles[this.RawFiles.Count - 1].Item2);
 
-        var fileOrError = ParserFunctions.ParseFile(lexed);
+        switch (lexErr) {
 
-        if (fileOrError.Error != null) {
+            case Error e: {
 
-            throw new Exception();
+                return new ErrorOrVoid(e);
+            }
+
+            ///
+
+            default: {
+
+                break;
+            }
         }
 
-        var file = fileOrError.Value ?? throw new Exception();
+        var (file, parseErr) = ParserFunctions.ParseFile(lexed);
+
+        switch (parseErr) {
+
+            case Error e: {
+
+                return new ErrorOrVoid(e);
+            }
+
+            ///
+
+            default: {
+
+                break;
+            }
+        }
 
         var cppFile = this.Translate(file);
 

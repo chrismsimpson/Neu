@@ -39,7 +39,14 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append(compiler.TranslateType(fun.ReturnType));
+        if (fun.Name == "main") {
+
+            output.Append("int");
+        }
+        else {
+
+            output.Append(compiler.TranslateType(fun.ReturnType));
+        }
 
         output.Append(" ");
 
@@ -71,7 +78,7 @@ public static partial class CodeGenFunctions {
 
         output.Append(")");
 
-        var block = compiler.TranslateBlock(fun.Block);
+        var block = compiler.TranslateBlock(fun.Block, returnZero: fun.Name == "main");
 
         output.Append(block);
 
@@ -81,6 +88,11 @@ public static partial class CodeGenFunctions {
     public static String TranslateFunctionPredeclaration(
         this Compiler compiler,
         Function fun) {
+
+        if (fun.Name == "main") {
+
+            return String.Empty;
+        }
 
         var output = new StringBuilder();
 
@@ -198,7 +210,8 @@ public static partial class CodeGenFunctions {
 
     public static String TranslateBlock(
         this Compiler compiler,
-        Block block) {
+        Block block,
+        bool returnZero = false) {
 
         var output = new StringBuilder();
 
@@ -209,6 +222,11 @@ public static partial class CodeGenFunctions {
             var stmtStr = compiler.TranslateStmt(stmt);
 
             output.Append(stmtStr);
+        }
+
+        if (returnZero) {
+
+            output.Append("\nreturn 0;\n");
         }
 
         output.Append("}\n");
@@ -278,6 +296,14 @@ public static partial class CodeGenFunctions {
                 output.Append(" = ");
                 output.Append(compiler.TranslateExpr(vd.Expr));
                 output.Append(";\n");
+
+                break;
+            }
+
+            case GarbageStatement _: {
+
+                // Incorrect parse/typecheck
+                // Probably shouldn't be able to get to this point?
 
                 break;
             }
@@ -366,6 +392,18 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
+
+            ///
+
+            case GarbageExpression _: {
+
+                // Incorrect parse/typecheck
+                // Probably shouldn't be able to get to this point?
+
+                break;
+            }
+
+            ///
 
             default: {
 

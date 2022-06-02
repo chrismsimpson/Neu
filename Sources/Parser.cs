@@ -112,6 +112,9 @@ public partial class VarDecl {
 
     ///
 
+    public VarDecl()
+        : this(String.Empty, new VoidType(), false) { }
+
     public VarDecl(
         String name,
         NeuType type,
@@ -265,6 +268,12 @@ public partial class EofToken: Token {
         : base(span) { }
 }
 
+public partial class UnknownToken: Token {
+
+    public UnknownToken(Span span) 
+        : base(span) { }
+}
+
 ///
 
 public partial class Token {
@@ -311,6 +320,13 @@ public partial class Function {
     public NeuType ReturnType { get; init; }
 
     ///
+
+    public Function()
+        : this(
+            String.Empty, 
+            new List<(string, NeuType)>(), 
+            new Block(), 
+            new VoidType()) { }
 
     public Function(
         String name,
@@ -412,6 +428,14 @@ public partial class VarExpression: Expression {
     }
 }
 
+public partial class GarbageExpression: Expression {
+
+    ///
+
+    public GarbageExpression() 
+        : base() { }
+}
+
 ///
 
 public partial class DeferStatement: Statement {
@@ -464,14 +488,86 @@ public partial class ReturnStatement: Statement {
 
 ///
 
+public partial class GarbageStatement: Statement {
+
+    public GarbageStatement() { }
+}
+
+///
+
 public static partial class ParserFunctions {
 
-    public static ErrorOr<ParsedFile> ParseFile(
+    // public static ErrorOr<ParsedFile> ParseFile(
+    //     List<Token> tokens) {
+
+    //     var parsedFile = new ParsedFile();
+
+    //     int index = 0;
+
+    //     var cont = true;
+
+    //     while (index < tokens.Count && cont) {
+
+    //         var token = tokens.ElementAt(index);
+
+    //         switch (token) {
+
+    //             case NameToken name when name.Value == "func":
+
+    //                 var funcOrError = ParseFunction(tokens, ref index);
+
+    //                 if (funcOrError.Error != null) {
+
+    //                     throw new Exception();
+    //                 }
+
+    //                 var func = funcOrError.Value ?? throw new Exception();
+
+    //                 parsedFile.Functions.Add(func);
+                    
+    //                 break;
+
+    //             ///
+
+    //             case NameToken _:
+
+    //                 return new ErrorOr<ParsedFile>("unexpected keyword", token.Span);
+
+    //             ///
+
+    //             case EolToken _:
+
+    //                 index += 1;
+
+    //                 break;
+
+    //             ///
+
+    //             case EofToken _:
+
+    //                 cont = false;
+
+    //                 break;
+
+    //             ///
+
+    //             case Token _:
+
+    //                 return new ErrorOr<ParsedFile>("unexpected token (expected keyword)", token.Span);
+    //         }
+    //     }
+
+    //     return new ErrorOr<ParsedFile>(parsedFile);        
+    // }
+
+    public static (ParsedFile, Error?) ParseFile(
         List<Token> tokens) {
+
+        Error? error = null;
 
         var parsedFile = new ParsedFile();
 
-        int index = 0;
+        var index = 0;
 
         var cont = true;
 
@@ -481,57 +577,274 @@ public static partial class ParserFunctions {
 
             switch (token) {
 
-                case NameToken name when name.Value == "func":
+                case NameToken nt: {
 
-                    var funcOrError = ParseFunction(tokens, ref index);
+                    switch (nt.Value) {
 
-                    if (funcOrError.Error != null) {
+                        case "func": {
 
-                        throw new Exception();
+                            var (fun, err) = ParseFunction(tokens, ref index);
+
+                            error = error ?? err;
+
+                            parsedFile.Functions.Add(fun);
+
+                            break;
+                        }
+
+                        ///
+
+                        default: {
+
+                            error = error ?? new ParserError(
+                                "unexpected keyword", 
+                                nt.Span);
+
+                            break;
+                        }
                     }
 
-                    var func = funcOrError.Value ?? throw new Exception();
-
-                    parsedFile.Functions.Add(func);
-                    
                     break;
+                }
 
                 ///
 
-                case NameToken _:
+                case EolToken _: {
 
-                    return new ErrorOr<ParsedFile>("unexpected keyword", token.Span);
-
-                ///
-
-                case EolToken _:
+                    // ignore
 
                     index += 1;
 
                     break;
+                }
 
                 ///
 
-                case EofToken _:
+                case EofToken _: {
 
                     cont = false;
 
                     break;
+                }
 
                 ///
 
-                case Token _:
+                case var t: {
 
-                    return new ErrorOr<ParsedFile>("unexpected token (expected keyword)", token.Span);
+                    error = error ?? new ParserError(
+                        "unexpected token (expected keyword)", 
+                        t.Span);
+
+                    break;
+                }
             }
         }
 
-        return new ErrorOr<ParsedFile>(parsedFile);        
+        return (parsedFile, error);
     }
 
-    public static ErrorOr<Function> ParseFunction(
+
+    // public static ErrorOr<Function> ParseFunction(
+    //     List<Token> tokens,
+    //     ref int index) {
+
+    //     index += 1;
+
+    //     if (index < tokens.Count) {
+
+    //         // we're expecting the name of the function
+
+    //         switch (tokens.ElementAt(index)) {
+
+    //             case NameToken name:
+
+    //                 index += 1;
+
+    //                 if (index < tokens.Count) {
+
+    //                     switch (tokens.ElementAt(index)) {
+
+    //                         case LParenToken _: {
+
+    //                             index += 1;
+
+    //                             break;
+    //                         }
+
+    //                         ///
+
+    //                         default: {
+
+    //                             return new ErrorOr<Function>(
+    //                                 "expected '('", 
+    //                                 tokens.ElementAt(index).Span);
+    //                         }
+    //                     }
+    //                 }
+    //                 else {
+
+    //                     return new ErrorOr<Function>(
+    //                         "incomplete function", 
+    //                         tokens.ElementAt(index - 1).Span);
+    //                 }
+                    
+    //                 var parameters = new List<(String, NeuType)>();
+
+    //                 var cont = true;
+
+    //                 while (index < tokens.Count && cont) {
+
+    //                     switch (tokens.ElementAt(index)) {
+
+    //                         case RParenToken _: {
+
+    //                             index += 1;
+
+    //                             cont = false;
+
+    //                             break;
+    //                         }
+
+    //                         ///
+
+    //                         case CommaToken _: {
+
+    //                             index += 1;
+
+    //                             break;
+    //                         }
+
+    //                         ///
+
+    //                         case NameToken nt: {
+
+    //                             var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
+
+    //                             if (varDeclOrError.Error != null) {
+
+    //                                 throw new Exception();
+    //                             }
+
+    //                             var varDecl = varDeclOrError.Value ?? throw new Exception();
+                            
+    //                             parameters.Add((varDecl.Name, varDecl.Type));
+
+    //                             break;
+    //                         }
+
+    //                         ///
+
+    //                         case var t: {
+
+    //                             return new ErrorOr<Function>("expected parameter", t.Span);
+    //                         }
+    //                     }
+    //                 }
+
+    //                 if (index >= tokens.Count) {
+
+    //                     return new ErrorOr<Function>("incomplete function", tokens.ElementAt(index - 1).Span);
+    //                 }
+
+    //                 ///
+
+    //                 NeuType returnType = new VoidType();
+
+    //                 if ((index + 2) < tokens.Count) {
+
+    //                     switch (tokens.ElementAt(index)) {
+
+    //                         case MinusToken _: {
+
+    //                             index += 1;
+
+    //                             switch (tokens.ElementAt(index)) {
+
+    //                                 case GreaterThanToken _: {
+
+    //                                     index += 1;
+
+    //                                     var returnTypeOrError = ParseTypeName(tokens, ref index);
+
+    //                                     if (returnTypeOrError.Error != null) {
+
+    //                                         throw new Exception();
+    //                                     }
+
+    //                                     returnType = returnTypeOrError.Value ?? throw new Exception();
+
+    //                                     index += 1;
+
+    //                                     break;
+    //                                 }
+
+    //                                 ///
+
+    //                                 default: {
+
+    //                                     return new ErrorOr<Function>(
+    //                                         "expected ->", 
+    //                                         tokens.ElementAt(index - 1).Span);
+    //                                 }
+    //                             }
+
+    //                             break;
+    //                         }
+
+    //                         ///
+
+    //                         default: {
+
+    //                             break;
+    //                         }
+    //                     }
+    //                 }
+
+    //                 ///
+
+    //                 if (index >= tokens.Count) {
+
+    //                     return new ErrorOr<Function>(
+    //                         "incomplete function", 
+    //                         tokens.ElementAt(index - 1).Span);
+    //                 }
+
+    //                 ///
+
+    //                 var blockOrError = ParseBlock(tokens, ref index);
+
+    //                 if (blockOrError.Error != null) {
+
+    //                     throw new Exception();
+    //                 }
+
+    //                 var block = blockOrError.Value ?? throw new Exception();
+
+    //                 return new ErrorOr<Function>(
+    //                     new Function(
+    //                         name: name.Value, 
+    //                         parameters, 
+    //                         block,
+    //                         returnType));
+
+    //             ///
+
+    //             default:    
+
+    //                 return new ErrorOr<Function>("expected function name", tokens.ElementAt(index).Span);
+    //         }
+    //     }
+    //     else {
+
+    //         return new ErrorOr<Function>("incomplete function definition", tokens.ElementAt(index).Span);
+    //     }
+    // }
+
+    public static (Function, Error?) ParseFunction(
         List<Token> tokens,
         ref int index) {
+
+        Error? error = null;
 
         index += 1;
 
@@ -541,7 +854,7 @@ public static partial class ParserFunctions {
 
             switch (tokens.ElementAt(index)) {
 
-                case NameToken name:
+                case NameToken funNameToken: {
 
                     index += 1;
 
@@ -560,19 +873,21 @@ public static partial class ParserFunctions {
 
                             default: {
 
-                                return new ErrorOr<Function>(
+                                error = error ?? new ParserError(
                                     "expected '('", 
                                     tokens.ElementAt(index).Span);
+
+                                break;
                             }
                         }
                     }
                     else {
 
-                        return new ErrorOr<Function>(
+                        error = error ?? new ParserError(
                             "incomplete function", 
-                            tokens.ElementAt(index - 1).Span);
+                            tokens.ElementAt(index).Span);
                     }
-                    
+
                     var parameters = new List<(String, NeuType)>();
 
                     var cont = true;
@@ -594,6 +909,8 @@ public static partial class ParserFunctions {
 
                             case CommaToken _: {
 
+                                // Treat comma as whitespace? Might require them in the future
+
                                 index += 1;
 
                                 break;
@@ -601,17 +918,14 @@ public static partial class ParserFunctions {
 
                             ///
 
-                            case NameToken nt: {
+                            case NameToken _: {
 
-                                var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
+                                // Now lets parse a parameter
 
-                                if (varDeclOrError.Error != null) {
+                                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index);
 
-                                    throw new Exception();
-                                }
+                                error = error ?? varDeclErr;
 
-                                var varDecl = varDeclOrError.Value ?? throw new Exception();
-                            
                                 parameters.Add((varDecl.Name, varDecl.Type));
 
                                 break;
@@ -619,19 +933,23 @@ public static partial class ParserFunctions {
 
                             ///
 
-                            case var t: {
+                            default: {
 
-                                return new ErrorOr<Function>("expected parameter", t.Span);
+                                error = error ?? new ParserError(
+                                    "expected parameter",
+                                    tokens.ElementAt(index).Span);
+
+                                break;
                             }
                         }
                     }
 
                     if (index >= tokens.Count) {
 
-                        return new ErrorOr<Function>("incomplete function", tokens.ElementAt(index - 1).Span);
+                        error = error ?? new ParserError(
+                            "incomplete function",
+                            tokens.ElementAt(index).Span);
                     }
-
-                    ///
 
                     NeuType returnType = new VoidType();
 
@@ -645,18 +963,15 @@ public static partial class ParserFunctions {
 
                                 switch (tokens.ElementAt(index)) {
 
-                                    case GreaterThanToken _: {
+                                    case GreaterThanToken: {
 
                                         index += 1;
 
-                                        var returnTypeOrError = ParseTypeName(tokens, ref index);
+                                        var (retType, retTypeErr) = ParseTypeName(tokens, ref index);
 
-                                        if (returnTypeOrError.Error != null) {
+                                        returnType = retType;
 
-                                            throw new Exception();
-                                        }
-
-                                        returnType = returnTypeOrError.Value ?? throw new Exception();
+                                        error = error ?? retTypeErr;
 
                                         index += 1;
 
@@ -667,9 +982,11 @@ public static partial class ParserFunctions {
 
                                     default: {
 
-                                        return new ErrorOr<Function>(
-                                            "expected ->", 
+                                        error = error ?? new ParserError(
+                                            "expecrted ->",
                                             tokens.ElementAt(index - 1).Span);
+
+                                        break;
                                     }
                                 }
 
@@ -685,49 +1002,109 @@ public static partial class ParserFunctions {
                         }
                     }
 
-                    ///
-
                     if (index >= tokens.Count) {
 
-                        return new ErrorOr<Function>(
+                        error = error ?? new ParserError(
                             "incomplete function", 
                             tokens.ElementAt(index - 1).Span);
                     }
 
-                    ///
+                    var (block, blockErr) = ParseBlock(tokens, ref index);
 
-                    var blockOrError = ParseBlock(tokens, ref index);
+                    error = error ?? blockErr;
 
-                    if (blockOrError.Error != null) {
-
-                        throw new Exception();
-                    }
-
-                    var block = blockOrError.Value ?? throw new Exception();
-
-                    return new ErrorOr<Function>(
+                    return (
                         new Function(
-                            name: name.Value, 
-                            parameters, 
+                            name: funNameToken.Value,
+                            parameters,
                             block,
-                            returnType));
+                            returnType),
+                        error);
+                }
 
                 ///
 
-                default:    
+                default: {
 
-                    return new ErrorOr<Function>("expected function name", tokens.ElementAt(index).Span);
+                    return (
+                        new Function(),
+                        new ParserError(
+                            "expected function name", 
+                            tokens.ElementAt(index).Span));
+                }
             }
         }
         else {
 
-            return new ErrorOr<Function>("incomplete function definition", tokens.ElementAt(index).Span);
+            return (
+                new Function(),
+                new ParserError(
+                    "incomplete function definition", 
+                    tokens.ElementAt(index).Span));
         }
     }
 
-    public static ErrorOr<Block> ParseBlock(List<Token> tokens, ref int index) {
+    // public static ErrorOr<Block> ParseBlock(List<Token> tokens, ref int index) {
+
+    //     var block = new Block();
+
+    //     index += 1;
+
+    //     while (index < tokens.Count) {
+
+    //         switch (tokens.ElementAt(index)) {
+
+    //             case RCurlyToken _:
+
+    //                 index += 1;
+
+    //                 return new ErrorOr<Block>(block);
+
+    //             ///
+
+    //             case SemicolonToken _:  
+
+    //                 index += 1;
+
+    //                 break;
+
+    //             ///
+
+    //             case EolToken _:  
+
+    //                 index += 1;
+
+    //                 break;
+
+    //             ///
+
+    //             default:  
+
+    //                 var statementOrError = ParseStatement(tokens, ref index);
+
+    //                 if (statementOrError.Error != null) {
+
+    //                     throw new Exception();
+    //                 }
+
+    //                 var stmt = statementOrError.Value ?? throw new Exception();
+
+    //                 block.Statements.Add(stmt);
+
+    //                 index += 1;
+
+    //                 break;
+    //         }
+    //     }
+
+    //     return new ErrorOr<Block>("expected complete block", tokens.ElementAt(index - 1).Span);
+    // }
+
+    public static (Block, Error?) ParseBlock(List<Token> tokens, ref int index) {
 
         var block = new Block();
+
+        Error? error = null;
 
         index += 1;
 
@@ -735,70 +1112,195 @@ public static partial class ParserFunctions {
 
             switch (tokens.ElementAt(index)) {
 
-                case RCurlyToken _:
+                case RCurlyToken _: {
 
                     index += 1;
 
-                    return new ErrorOr<Block>(block);
+                    return (block, error);
+                }
 
                 ///
 
-                case SemicolonToken _:  
-
-                    index += 1;
-
-                    break;
-
-                ///
-
-                case EolToken _:  
+                case SemicolonToken _: {
 
                     index += 1;
 
                     break;
+                }
 
                 ///
 
-                default:  
+                case EolToken _: {
 
-                    var statementOrError = ParseStatement(tokens, ref index);
+                    index += 1;
 
-                    if (statementOrError.Error != null) {
+                    break;
+                }
 
-                        throw new Exception();
-                    }
+                ///
 
-                    var stmt = statementOrError.Value ?? throw new Exception();
+                default: {
+
+                    var (stmt, stmtErr) = ParseStatement(tokens, ref index);
+
+                    error = error ?? stmtErr;
 
                     block.Statements.Add(stmt);
 
                     index += 1;
 
                     break;
+                }
             }
         }
 
-        return new ErrorOr<Block>("expected complete block", tokens.ElementAt(index - 1).Span);
+        return (
+            new Block(),
+            new ParserError(
+                "expected complete block", 
+                tokens.ElementAt(index - 1).Span));
     }
 
-    public static ErrorOr<Statement> ParseStatement(List<Token> tokens, ref int index) {
+    // public static ErrorOr<Statement> ParseStatement(List<Token> tokens, ref int index) {
 
-        switch (tokens[index]) {
+    //     switch (tokens[index]) {
+
+    //         case NameToken nt when nt.Value == "defer": {
+
+    //             index += 1;
+
+    //             var blockOrError = ParseBlock(tokens, ref index);
+
+    //             if (blockOrError.Error != null) {
+
+    //                 throw new Exception();
+    //             }
+
+    //             var block = blockOrError.Value ?? throw new Exception();
+
+    //             return new ErrorOr<Statement>(new DeferStatement(block));
+    //         }
+
+    //         ///
+
+    //         case NameToken nt when nt.Value == "return": {
+
+    //             index += 1;
+
+    //             var exprOrError = ParseExpression(tokens, ref index);
+
+    //             if (exprOrError.Error != null) {
+
+    //                 throw new Exception();
+    //             }
+
+    //             var expr = exprOrError.Value ?? throw new Exception();
+
+    //             return new ErrorOr<Statement>(new ReturnStatement(expr));
+    //         }
+
+    //         ///
+
+    //         case NameToken nt when nt.Value == "let" || nt.Value == "var": {
+
+    //             var mutable = nt.Value == "var";
+
+    //             index += 1;
+
+    //             var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
+
+    //             if (varDeclOrError.Error != null) {
+
+    //                 throw new Exception();
+    //             }
+
+    //             var varDecl = varDeclOrError.Value ?? throw new Exception();
+
+    //             varDecl.Mutable = mutable;
+
+    //             if (index < tokens.Count) {
+
+    //                 switch (tokens.ElementAt(index)) {
+
+    //                     case EqualsToken _: {
+
+    //                         index += 1;
+
+    //                         if (index < tokens.Count) {
+
+    //                             var exprOrError = ParseExpression(tokens, ref index);
+
+    //                             if (exprOrError.Error != null) {
+
+    //                                 throw new Exception();
+    //                             }
+
+    //                             var expr = exprOrError.Value ?? throw new Exception();
+
+    //                             return new ErrorOr<Statement>(new VarDeclStatement(varDecl, expr));
+    //                         }
+    //                         else {
+
+    //                             return new ErrorOr<Statement>(
+    //                                 "expected initializer",
+    //                                 tokens.ElementAt(index - 1).Span);
+
+    //                         }
+    //                     }
+
+    //                     ///
+
+    //                     default: {
+
+    //                         return new ErrorOr<Statement>(
+    //                             "expected initializer", 
+    //                             tokens.ElementAt(index - 1).Span);
+    //                     }
+    //                 }
+    //             }
+    //             else {
+
+    //                 return new ErrorOr<Statement>(
+    //                     "expected initializer", 
+    //                     tokens.ElementAt(index).Span);
+    //             }
+    //         }
+
+    //         ///
+
+    //         default: {
+
+    //             var exprOrError = ParseExpression(tokens, ref index);
+
+    //             if (exprOrError.Error != null) {
+
+    //                 throw new Exception();
+    //             }
+
+    //             var expr = exprOrError.Value ?? throw new Exception();
+
+    //             return new ErrorOr<Statement>(expr);
+    //         }
+    //     }
+    // }
+
+    public static (Statement, Error?) ParseStatement(List<Token> tokens, ref int index) {
+
+        Error? error = null;
+
+        switch (tokens.ElementAt(index)) {
 
             case NameToken nt when nt.Value == "defer": {
 
                 index += 1;
 
-                var blockOrError = ParseBlock(tokens, ref index);
+                var (block, blockErr) = ParseBlock(tokens, ref index);
 
-                if (blockOrError.Error != null) {
+                error = error ?? blockErr;
 
-                    throw new Exception();
-                }
-
-                var block = blockOrError.Value ?? throw new Exception();
-
-                return new ErrorOr<Statement>(new DeferStatement(block));
+                return (
+                    new DeferStatement(block), 
+                    error);
             }
 
             ///
@@ -807,16 +1309,14 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var exprOrError = ParseExpression(tokens, ref index);
+                var (expr, exprErr) = ParseExpression(tokens, ref index);
 
-                if (exprOrError.Error != null) {
+                error = error ?? exprErr;
 
-                    throw new Exception();
-                }
-
-                var expr = exprOrError.Value ?? throw new Exception();
-
-                return new ErrorOr<Statement>(new ReturnStatement(expr));
+                return (
+                    new ReturnStatement(expr),
+                    error
+                );
             }
 
             ///
@@ -827,16 +1327,13 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
+                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index);
 
-                if (varDeclOrError.Error != null) {
-
-                    throw new Exception();
-                }
-
-                var varDecl = varDeclOrError.Value ?? throw new Exception();
+                error = error ?? varDeclErr;
 
                 varDecl.Mutable = mutable;
+
+                // Hardwire an initialiser for now, but we may not want this long-term
 
                 if (index < tokens.Count) {
 
@@ -848,23 +1345,23 @@ public static partial class ParserFunctions {
 
                             if (index < tokens.Count) {
 
-                                var exprOrError = ParseExpression(tokens, ref index);
+                                var (expr, exprErr) = ParseExpression(tokens, ref index);
 
-                                if (exprOrError.Error != null) {
+                                error = error ?? exprErr;
 
-                                    throw new Exception();
-                                }
-
-                                var expr = exprOrError.Value ?? throw new Exception();
-
-                                return new ErrorOr<Statement>(new VarDeclStatement(varDecl, expr));
+                                return (
+                                    new VarDeclStatement(varDecl, expr),
+                                    error
+                                );
                             }
                             else {
 
-                                return new ErrorOr<Statement>(
-                                    "expected initializer",
-                                    tokens.ElementAt(index - 1).Span);
-
+                                return (
+                                    new GarbageStatement(),
+                                    new ParserError(
+                                        "expected initializer", 
+                                        tokens.ElementAt(index - 1).Span)
+                                );
                             }
                         }
 
@@ -872,54 +1369,107 @@ public static partial class ParserFunctions {
 
                         default: {
 
-                            return new ErrorOr<Statement>(
-                                "expected initializer", 
-                                tokens.ElementAt(index - 1).Span);
+                            return (
+                                new GarbageStatement(),
+                                new ParserError(
+                                    "expected initializer", 
+                                    tokens.ElementAt(index - 1).Span));
                         }
                     }
                 }
                 else {
 
-                    return new ErrorOr<Statement>(
-                        "expected initializer", 
-                        tokens.ElementAt(index).Span);
+                    return (
+                        new GarbageStatement(),
+                        new ParserError(
+                            "expected initializer", 
+                            tokens.ElementAt(index - 1).Span));
                 }
             }
 
             ///
 
-            default: {
+            case var t: {
 
-                var exprOrError = ParseExpression(tokens, ref index);
+                var (expr, exprErr) = ParseExpression(tokens, ref index);
 
-                if (exprOrError.Error != null) {
+                error = error ?? exprErr;
 
-                    throw new Exception();
-                }
-
-                var expr = exprOrError.Value ?? throw new Exception();
-
-                return new ErrorOr<Statement>(expr);
+                return (
+                    expr,
+                    error);
             }
         }
     }
 
-    public static ErrorOr<Expression> ParseExpression(List<Token> tokens, ref int index) {
+    // public static ErrorOr<Expression> ParseExpression(List<Token> tokens, ref int index) {
+
+    //     switch (tokens.ElementAt(index)) {
+
+    //         case NameToken nt: {
+
+    //             if ((index + 1) < tokens.Count) {
+
+    //                 switch (tokens.ElementAt(index + 1)) {
+
+    //                     case LParenToken _: {
+
+    //                         var callOrError = ParseCall(tokens, ref index);
+
+    //                         if (callOrError.Error != null) {
+
+    //                             throw new Exception();
+    //                         }
+
+    //                         var call = callOrError.Value ?? throw new Exception();
+
+    //                         ///
+
+    //                         return new ErrorOr<Expression>(new CallExpression(call));
+    //                     }
+    //                     default: {
+
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+
+    //             index += 1;
+
+    //             return new ErrorOr<Expression>(new VarExpression(nt.Value));
+    //         }
+
+    //         ///
+
+    //         case NumberToken number:
+
+    //             index += 1;
+
+    //             return new ErrorOr<Expression>(new Int64Expression(number.Value));
+
+    //         ///
+
+    //         case QuotedStringToken qs:
+
+    //             index += 1;
+
+    //             return new ErrorOr<Expression>(new QuotedStringExpression(qs.Value));
+
+    //         ///
+
+    //         case var t:
+
+    //             WriteLine($"{t}");
+
+    //             return new ErrorOr<Expression>("unsupported expression", t.Span);
+    //     }
+    // }
+
+    public static (Expression, Error?) ParseExpression(List<Token> tokens, ref int index) {
+
+        Error? error = null;
 
         switch (tokens.ElementAt(index)) {
-
-            // case NameToken name:
-
-            //     var callOrError = ParseCall(tokens, ref index);
-
-            //     if (callOrError.Error != null) {
-
-            //         throw new Exception();
-            //     }
-
-            //     var call = callOrError.Value ?? throw new Exception();
-                
-            //     return new ErrorOr<Expression>(new CallExpression(call));
 
             case NameToken nt: {
 
@@ -929,19 +1479,17 @@ public static partial class ParserFunctions {
 
                         case LParenToken _: {
 
-                            var callOrError = ParseCall(tokens, ref index);
+                            var (call, callErr) = ParseCall(tokens, ref index);
 
-                            if (callOrError.Error != null) {
+                            error = error ?? callErr;
 
-                                throw new Exception();
-                            }
-
-                            var call = callOrError.Value ?? throw new Exception();
-
-                            ///
-
-                            return new ErrorOr<Expression>(new CallExpression(call));
+                            return (
+                                new CallExpression(call), 
+                                error);
                         }
+
+                        ///
+
                         default: {
 
                             break;
@@ -951,36 +1499,120 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return new ErrorOr<Expression>(new VarExpression(nt.Value));
+                return (
+                    new VarExpression(nt.Value),
+                    error);
             }
 
             ///
 
-            case NumberToken number:
+            case NumberToken numTok: {
 
                 index += 1;
 
-                return new ErrorOr<Expression>(new Int64Expression(number.Value));
+                return (
+                    new Int64Expression(numTok.Value),
+                    error);
+            }
 
             ///
 
-            case QuotedStringToken qs:
+            case QuotedStringToken qs: {
 
                 index += 1;
 
-                return new ErrorOr<Expression>(new QuotedStringExpression(qs.Value));
+                return (
+                    new QuotedStringExpression(qs.Value),
+                    error);
+            }
 
             ///
 
-            case var t:
+            default: {
 
-                WriteLine($"{t}");
-
-                return new ErrorOr<Expression>("unsupported expression", t.Span);
+                return (
+                    new GarbageExpression(),
+                    new ParserError(
+                        "unsupported expression",
+                        tokens.ElementAt(index).Span)
+                );
+            }
         }
     }
 
-    public static ErrorOr<VarDecl> ParseVariableDeclaration(List<Token> tokens, ref int index) {
+    // public static ErrorOr<VarDecl> ParseVariableDeclaration(List<Token> tokens, ref int index) {
+
+    //     switch (tokens.ElementAt(index)) {
+
+    //         case NameToken nt: {
+
+    //             var varName = nt.Value;
+
+    //             index += 1;
+
+    //             if (index < tokens.Count) {
+
+    //                 switch (tokens.ElementAt(index)) {
+
+    //                     case ColonToken _ : {
+
+    //                         index += 1;
+
+    //                         break;
+    //                     }
+
+    //                     ///
+
+    //                     default: {
+
+    //                         return new ErrorOr<VarDecl>(
+    //                             "expected ':'", 
+    //                             tokens.ElementAt(index).Span);
+    //                     }
+    //                 }
+    //             }
+
+    //             if (index < tokens.Count) {
+
+    //                 var varTypeOrError = ParseTypeName(tokens, ref index);
+
+    //                 if (varTypeOrError.Error != null) {
+
+    //                     throw new Exception();
+    //                 }
+
+    //                 var varType = varTypeOrError.Value ?? throw new Exception();
+
+    //                 var result = new VarDecl(varName, varType, mutable: false);
+
+    //                 index += 1;
+
+    //                 return new ErrorOr<VarDecl>(result);
+    //             }
+    //             else {
+
+    //                 return new ErrorOr<VarDecl>(
+    //                     "expected type", 
+    //                     tokens.ElementAt(index).Span);
+    //             }
+    //         }
+
+    //         ///
+
+    //         default: {
+
+    //             return new ErrorOr<VarDecl>(
+    //                 "expected type", 
+    //                 tokens.ElementAt(index).Span);
+    //         }
+    //     }
+    // }
+
+    public static (VarDecl, Error?) ParseVariableDeclaration(
+        List<Token> tokens,
+        ref int index) {
+
+        Error? error = null;
 
         switch (tokens.ElementAt(index)) {
 
@@ -994,7 +1626,7 @@ public static partial class ParserFunctions {
 
                     switch (tokens.ElementAt(index)) {
 
-                        case ColonToken _ : {
+                        case ColonToken _: {
 
                             index += 1;
 
@@ -1002,38 +1634,43 @@ public static partial class ParserFunctions {
                         }
 
                         ///
-
+                        
                         default: {
 
-                            return new ErrorOr<VarDecl>(
-                                "expected ':'", 
-                                tokens.ElementAt(index).Span);
+                            return (
+                                new VarDecl(), 
+                                new ParserError(
+                                    "expected ':'", 
+                                    tokens.ElementAt(index).Span));
                         }
                     }
                 }
-
+            
                 if (index < tokens.Count) {
 
-                    var varTypeOrError = ParseTypeName(tokens, ref index);
+                    var (varType, typeErr) = ParseTypeName(tokens, ref index);
 
-                    if (varTypeOrError.Error != null) {
+                    error = error ?? typeErr;
 
-                        throw new Exception();
-                    }
-
-                    var varType = varTypeOrError.Value ?? throw new Exception();
-
-                    var result = new VarDecl(varName, varType, mutable: false);
+                    var result = new VarDecl(
+                        name: varName, 
+                        type: varType, 
+                        mutable: false);
 
                     index += 1;
 
-                    return new ErrorOr<VarDecl>(result);
+                    return (result, error);
                 }
                 else {
 
-                    return new ErrorOr<VarDecl>(
-                        "expected type", 
-                        tokens.ElementAt(index).Span);
+                    return (
+                        new VarDecl(
+                            nt.Value, 
+                            new VoidType(), 
+                            mutable: false), 
+                        new ParserError(
+                            "expected type", 
+                            tokens.ElementAt(index).Span));
                 }
             }
 
@@ -1041,14 +1678,85 @@ public static partial class ParserFunctions {
 
             default: {
 
-                return new ErrorOr<VarDecl>(
-                    "expected type", 
-                    tokens.ElementAt(index).Span);
+                return (
+                    new VarDecl(),
+                    new ParserError(
+                        "expected name", 
+                        tokens.ElementAt(index).Span));
             }
         }
     }
 
-    public static ErrorOr<NeuType> ParseTypeName(List<Token> tokens, ref int index) {
+    // public static ErrorOr<NeuType> ParseTypeName(List<Token> tokens, ref int index) {
+
+    //     switch (tokens.ElementAt(index)) {
+
+    //         case NameToken nt: {
+
+    //             switch (nt.Value) {
+
+    //                 case "Int8":
+
+    //                     return new ErrorOr<NeuType>(new Int8Type());
+
+    //                 case "Int16":
+
+    //                     return new ErrorOr<NeuType>(new Int16Type());
+
+    //                 case "Int32":
+
+    //                     return new ErrorOr<NeuType>(new Int32Type());
+
+    //                 case "Int64":
+
+    //                     return new ErrorOr<NeuType>(new Int64Type());
+
+    //                 case "UInt8":
+
+    //                     return new ErrorOr<NeuType>(new UInt8Type());
+
+    //                 case "UInt16":
+
+    //                     return new ErrorOr<NeuType>(new UInt16Type());
+
+    //                 case "UInt32":
+
+    //                     return new ErrorOr<NeuType>(new UInt32Type());
+
+    //                 case "UInt64":
+
+    //                     return new ErrorOr<NeuType>(new UInt64Type());
+
+    //                 case "Float":
+
+    //                     return new ErrorOr<NeuType>(new FloatType());
+
+    //                 case "Double":
+
+    //                     return new ErrorOr<NeuType>(new DoubleType());
+
+    //                 case "String":
+
+    //                     return new ErrorOr<NeuType>(new StringType());
+
+    //                 default:
+
+    //                     return new ErrorOr<NeuType>("unknown type", nt.Span);
+    //             }
+    //         }
+
+    //         ///
+
+    //         case var t: {
+
+    //             return new ErrorOr<NeuType>("expected function all", t.Span);
+    //         }
+    //     }
+    // }
+
+    public static (NeuType, Error?) ParseTypeName(
+        List<Token> tokens, 
+        ref int index) {
 
         switch (tokens.ElementAt(index)) {
 
@@ -1058,104 +1766,219 @@ public static partial class ParserFunctions {
 
                     case "Int8":
 
-                        return new ErrorOr<NeuType>(new Int8Type());
+                        return (new Int8Type(), null);
 
                     case "Int16":
 
-                        return new ErrorOr<NeuType>(new Int16Type());
+                        return (new Int16Type(), null);
 
                     case "Int32":
 
-                        return new ErrorOr<NeuType>(new Int32Type());
+                        return (new Int32Type(), null);
 
                     case "Int64":
 
-                        return new ErrorOr<NeuType>(new Int64Type());
+                        return (new Int64Type(), null);
 
                     case "UInt8":
 
-                        return new ErrorOr<NeuType>(new UInt8Type());
+                        return (new UInt8Type(), null);
 
                     case "UInt16":
 
-                        return new ErrorOr<NeuType>(new UInt16Type());
+                        return (new UInt16Type(), null);
 
                     case "UInt32":
 
-                        return new ErrorOr<NeuType>(new UInt32Type());
+                        return (new UInt32Type(), null);
 
                     case "UInt64":
 
-                        return new ErrorOr<NeuType>(new UInt64Type());
+                        return (new UInt64Type(), null);
 
                     case "Float":
 
-                        return new ErrorOr<NeuType>(new FloatType());
+                        return (new FloatType(), null);
 
                     case "Double":
 
-                        return new ErrorOr<NeuType>(new DoubleType());
+                        return (new DoubleType(), null);
 
                     case "String":
 
-                        return new ErrorOr<NeuType>(new StringType());
+                        return (new StringType(), null);
 
                     default:
 
-                        return new ErrorOr<NeuType>("unknown type", nt.Span);
+                        return (
+                            new VoidType(), 
+                            new ParserError("unknown type", nt.Span));
                 }
             }
 
             ///
 
-            case var t: {
+            default: {
 
-                return new ErrorOr<NeuType>("expected function all", t.Span);
+                return (
+                    new VoidType(), 
+                    new ParserError(
+                        "expected function all", 
+                        tokens.ElementAt(index).Span));
             }
         }
     }
 
-    public static ErrorOr<Call> ParseCall(List<Token> tokens, ref int index) {
+    // public static ErrorOr<Call> ParseCall(List<Token> tokens, ref int index) {
         
+    //     var call = new Call();
+
+    //     ///
+
+    //     switch (tokens.ElementAt(index)) {
+
+    //         case NameToken name: {
+
+    //             call.Name = name.Value;
+
+    //             ///
+
+    //             index += 1;
+
+    //             ///
+
+    //             if (index < tokens.Count) {
+
+    //                 switch (tokens.ElementAt(index)) {
+
+    //                     case LParenToken _:
+
+    //                         index += 1;
+
+    //                         break;
+
+    //                     ///
+
+    //                     case var t:
+
+    //                         return new ErrorOr<Call>("expected '('", t.Span);
+    //                 }
+    //             }
+    //             else {
+
+    //                 return new ErrorOr<Call>("incomplete function", tokens[index - 1].Span);
+    //             }
+
+    //             ///
+
+    //             var cont = true;
+
+    //             while (index < tokens.Count && cont) {
+
+    //                 switch (tokens.ElementAt(index)) {
+
+    //                     case RParenToken _: {
+
+    //                         index += 1;
+
+    //                         cont = false;
+
+    //                         break;
+    //                     }
+
+    //                     ///
+
+    //                     case CommaToken _: {
+
+    //                         index += 1;
+
+    //                         break;
+    //                     }
+
+    //                     ///
+
+    //                     default: {
+
+    //                         var exprOrError = ParseExpression(tokens, ref index);
+
+    //                         if (exprOrError.Error != null) {
+
+    //                             throw new Exception();
+    //                         }
+
+    //                         var expr = exprOrError.Value ?? throw new Exception();
+
+    //                         ///
+
+    //                         call.Args.Add((String.Empty, expr));
+
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+
+    //             ///
+
+    //             if (index >= tokens.Count) {
+
+    //                 return new ErrorOr<Call>("incomplete function", tokens.ElementAt(index - 1).Span);
+    //             }
+
+    //             ///
+
+    //             return new ErrorOr<Call>(call);
+    //         }
+
+    //         ///
+
+    //         default: {
+
+    //             return new ErrorOr<Call>("expected function call", tokens.ElementAt(index).Span);
+    //         }
+    //     }
+    // }
+
+    public static (Call, Error?) ParseCall(List<Token> tokens, ref int index) {
+
         var call = new Call();
 
-        ///
+        Error? error = null;
 
         switch (tokens.ElementAt(index)) {
 
-            case NameToken name: {
+            case NameToken nt: {
 
-                call.Name = name.Value;
-
-                ///
+                call.Name = nt.Value;
 
                 index += 1;
-
-                ///
 
                 if (index < tokens.Count) {
 
                     switch (tokens.ElementAt(index)) {
 
-                        case LParenToken _:
+                        case LParenToken _: {
 
                             index += 1;
 
                             break;
+                        }
 
                         ///
 
-                        case var t:
+                        case var t: {
 
-                            return new ErrorOr<Call>("expected '('", t.Span);
+                            return (
+                                call,
+                                new ParserError("expected '('", t.Span));
+                        }
                     }
                 }
                 else {
 
-                    return new ErrorOr<Call>("incomplete function", tokens[index - 1].Span);
+                    return (
+                        call,
+                        new ParserError("incomplete function", tokens.ElementAt(index - 1).Span));
                 }
-
-                ///
 
                 var cont = true;
 
@@ -1176,6 +1999,8 @@ public static partial class ParserFunctions {
 
                         case CommaToken _: {
 
+                            // Treat comma as whitespace? Might require them in the future
+
                             index += 1;
 
                             break;
@@ -1185,16 +2010,9 @@ public static partial class ParserFunctions {
 
                         default: {
 
-                            var exprOrError = ParseExpression(tokens, ref index);
+                            var (expr, exprError) = ParseExpression(tokens, ref index);
 
-                            if (exprOrError.Error != null) {
-
-                                throw new Exception();
-                            }
-
-                            var expr = exprOrError.Value ?? throw new Exception();
-
-                            ///
+                            error = error ?? exprError;
 
                             call.Args.Add((String.Empty, expr));
 
@@ -1203,24 +2021,30 @@ public static partial class ParserFunctions {
                     }
                 }
 
-                ///
-
                 if (index >= tokens.Count) {
 
-                    return new ErrorOr<Call>("incomplete function", tokens.ElementAt(index - 1).Span);
+                    error = error ?? new ParserError(
+                        "incomplete call", 
+                        tokens.ElementAt(index - 1).Span);
                 }
 
-                ///
-
-                return new ErrorOr<Call>(call);
+                break;
             }
 
             ///
 
             default: {
 
-                return new ErrorOr<Call>("expected function call", tokens.ElementAt(index).Span);
+                error = error ?? new ParserError(
+                    "expected function call", 
+                    tokens.ElementAt(index).Span);
+
+                break;
             }
         }
+
+        ///
+
+        return (call, error);
     }
 }

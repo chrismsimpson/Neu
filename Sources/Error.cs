@@ -82,6 +82,11 @@ public class ErrorOrVoid {
         this.Error = null;
     }
 
+    public ErrorOrVoid(Error e) {
+
+        this.Error = e;
+    }
+
     public ErrorOrVoid(
         ErrorType errorType,
         String? content = null) {
