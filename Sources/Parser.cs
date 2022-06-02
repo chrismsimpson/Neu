@@ -48,6 +48,29 @@ public partial class VoidType : NeuType {
 
 ///
 
+public partial class VarDecl {
+
+    public String Name { get; init; }
+
+    public NeuType Type { get; init; }
+
+    public bool Mutable { get; init; }
+
+    ///
+
+    public VarDecl(
+        String name,
+        NeuType type,
+        bool mutable) {
+
+        this.Name = name;
+        this.Type = type;
+        this.Mutable = mutable;
+    }
+}
+
+///
+
 public partial class Span {
 
     public FileId FileId { get; init; }
@@ -152,13 +175,17 @@ public partial class RCurlyToken: Token {
         : base(span) { }
 }
 
-
 public partial class MinusToken: Token {
 
     public MinusToken(Span span)
         : base(span) { }
 }
 
+public partial class EqualsToken: Token {
+
+    public EqualsToken(Span span) 
+        : base(span) { }
+}
 
 public partial class GreaterThanToken: Token {
 
@@ -349,6 +376,25 @@ public partial class DeferStatement: Statement {
 
 ///
 
+public partial class VarDeclStatement: Statement {
+
+    public VarDecl Decl { get; init; }
+
+    public Expression Expr { get; init; }
+
+    ///
+
+    public VarDeclStatement(
+        VarDecl decl,
+        Expression expr) {
+
+        this.Decl = decl;
+        this.Expr = expr;
+    }
+}
+
+///
+
 public partial class ReturnStatement: Statement {
 
     public Expression Expr { get; init; }
@@ -460,9 +506,17 @@ public static partial class ParserFunctions {
 
                             default: {
 
-                                return new ErrorOr<Function>("expected '('", tokens.ElementAt(index).Span);
+                                return new ErrorOr<Function>(
+                                    "expected '('", 
+                                    tokens.ElementAt(index).Span);
                             }
                         }
+                    }
+                    else {
+
+                        return new ErrorOr<Function>(
+                            "incomplete function", 
+                            tokens.ElementAt(index - 1).Span);
                     }
                     
                     var parameters = new List<(String, NeuType)>();
@@ -495,45 +549,16 @@ public static partial class ParserFunctions {
 
                             case NameToken nt: {
 
-                                var paramName = nt.Value;
+                                var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
 
-                                index += 1;
+                                if (varDeclOrError.Error != null) {
 
-                                if (index < tokens.Count) {
-
-                                    switch (tokens.ElementAt(index)) {
-
-                                        case ColonToken _: {
-
-                                            index += 1;
-
-                                            break;
-                                        }
-
-                                        ///
-
-                                        case var t: {
-
-                                            return new ErrorOr<Function>("expected ':'", t.Span);
-                                        }
-                                    }
+                                    throw new Exception();
                                 }
 
-                                if (index < tokens.Count) {
-
-                                    var paramTypeOrError = ParseTypeName(tokens, ref index);
-
-                                    if (paramTypeOrError.Error != null) {
-
-                                        throw new Exception();
-                                    }
-
-                                    var paramType = paramTypeOrError.Value ?? throw new Exception();
-
-                                    parameters.Add((paramName, paramType));
-
-                                    index += 1;
-                                }
+                                var varDecl = varDeclOrError.Value ?? throw new Exception();
+                            
+                                parameters.Add((varDecl.Name, varDecl.Type));
 
                                 break;
                             }
@@ -742,6 +767,71 @@ public static partial class ParserFunctions {
 
             ///
 
+            case NameToken nt when nt.Value == "let" || nt.Value == "var": {
+
+                var mutable = nt.Value == "var";
+
+                index += 1;
+
+                var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
+
+                if (varDeclOrError.Error != null) {
+
+                    throw new Exception();
+                }
+
+                var varDecl = varDeclOrError.Value ?? throw new Exception();
+
+                if (index < tokens.Count) {
+
+                    switch (tokens.ElementAt(index)) {
+
+                        case EqualsToken _: {
+
+                            index += 1;
+
+                            if (index < tokens.Count) {
+
+                                var exprOrError = ParseExpression(tokens, ref index);
+
+                                if (exprOrError.Error != null) {
+
+                                    throw new Exception();
+                                }
+
+                                var expr = exprOrError.Value ?? throw new Exception();
+
+                                return new ErrorOr<Statement>(new VarDeclStatement(varDecl, expr));
+                            }
+                            else {
+
+                                return new ErrorOr<Statement>(
+                                    "expected initializer",
+                                    tokens.ElementAt(index - 1).Span);
+
+                            }
+                        }
+
+                        ///
+
+                        default: {
+
+                            return new ErrorOr<Statement>(
+                                "expected initializer", 
+                                tokens.ElementAt(index - 1).Span);
+                        }
+                    }
+                }
+                else {
+
+                    return new ErrorOr<Statement>(
+                        "expected initializer", 
+                        tokens.ElementAt(index).Span);
+                }
+            }
+
+            ///
+
             default: {
 
                 var exprOrError = ParseExpression(tokens, ref index);
@@ -831,6 +921,74 @@ public static partial class ParserFunctions {
                 WriteLine($"{t}");
 
                 return new ErrorOr<Expression>("unsupported expression", t.Span);
+        }
+    }
+
+    public static ErrorOr<VarDecl> ParseVariableDeclaration(List<Token> tokens, ref int index) {
+
+        switch (tokens.ElementAt(index)) {
+
+            case NameToken nt: {
+
+                var varName = nt.Value;
+
+                index += 1;
+
+                if (index < tokens.Count) {
+
+                    switch (tokens.ElementAt(index)) {
+
+                        case ColonToken _ : {
+
+                            index += 1;
+
+                            break;
+                        }
+
+                        ///
+
+                        default: {
+
+                            return new ErrorOr<VarDecl>(
+                                "expected ':'", 
+                                tokens.ElementAt(index).Span);
+                        }
+                    }
+                }
+
+                if (index < tokens.Count) {
+
+                    var varTypeOrError = ParseTypeName(tokens, ref index);
+
+                    if (varTypeOrError.Error != null) {
+
+                        throw new Exception();
+                    }
+
+                    var varType = varTypeOrError.Value ?? throw new Exception();
+
+                    var result = new VarDecl(varName, varType, mutable: false);
+
+                    index += 1;
+
+                    return new ErrorOr<VarDecl>(result);
+                }
+                else {
+
+                    return new ErrorOr<VarDecl>(
+                        "expected type", 
+                        tokens.ElementAt(index).Span);
+                }
+            }
+
+            ///
+
+            default: {
+
+                return new ErrorOr<VarDecl>(
+                    "expected type", 
+                    tokens.ElementAt(index).Span);
+            }
         }
     }
 

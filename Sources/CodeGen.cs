@@ -14,7 +14,7 @@ public static partial class CodeGenFunctions {
 
         foreach (var fun in file.Functions) {
 
-            var funOutput = TranslateFunctionPredeclaration(fun);
+            var funOutput = compiler.TranslateFunctionPredeclaration(fun);
 
             output.Append(funOutput);
 
@@ -39,7 +39,7 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append(TranslateType(fun.ReturnType));
+        output.Append(compiler.TranslateType(fun.ReturnType));
 
         output.Append(" ");
 
@@ -60,7 +60,7 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
                 
-            var ty = TranslateType(p.Item2);
+            var ty = compiler.TranslateType(p.Item2);
 
             output.Append(ty);
 
@@ -79,6 +79,7 @@ public static partial class CodeGenFunctions {
     }
 
     public static String TranslateFunctionPredeclaration(
+        this Compiler compiler,
         Function fun) {
 
         var output = new StringBuilder();
@@ -102,7 +103,7 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
 
-            var ty = TranslateType(p.Item2);
+            var ty = compiler.TranslateType(p.Item2);
 
             output.Append(ty);
 
@@ -116,7 +117,9 @@ public static partial class CodeGenFunctions {
         return output.ToString();
     }
 
-    public static String TranslateType(NeuType ty) {
+    public static String TranslateType(
+        this Compiler compiler,
+        NeuType ty) {
 
         switch (ty) {
 
@@ -211,6 +214,25 @@ public static partial class CodeGenFunctions {
                 output.Append(exprStr);
                 
                 output.Append(");\n");
+
+                break;
+            }
+
+            ///
+
+            case VarDeclStatement vd: {
+
+                if (!vd.Decl.Mutable) {
+
+                    output.Append("const ");
+                }
+
+                output.Append(compiler.TranslateType(vd.Decl.Type));
+                output.Append(" ");
+                output.Append(vd.Decl.Name);
+                output.Append(" = ");
+                output.Append(compiler.TranslateExpr(vd.Expr));
+                output.Append(";\n");
 
                 break;
             }

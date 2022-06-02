@@ -58,6 +58,19 @@ public static partial class LexerFunctions {
 
                 ///
 
+                case '=': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new EqualsToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
                 case '>': {
 
                     var start = index;
