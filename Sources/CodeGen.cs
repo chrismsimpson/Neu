@@ -130,9 +130,54 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case Int8Type _: {
+
+                return "Int8";
+            }
+
+            case Int16Type _: {
+
+                return "Int16";
+            }
+
+            case Int32Type _: {
+
+                return "Int32";
+            }
+
             case Int64Type _: {
 
-                return "int"; // <- FIXME to Int64
+                return "Int64";
+            }
+
+            case UInt8Type _: {
+
+                return "UInt8";
+            }
+
+            case UInt16Type _: {
+
+                return "UInt16";
+            }
+
+            case UInt32Type _: {
+
+                return "UInt32";
+            }
+
+            case UInt64Type _: {
+
+                return "UInt64";
+            }
+
+            case FloatType _: {
+
+                return "Float";
+            }
+
+            case DoubleType _: {
+
+                return "Double";
             }
 
             ///

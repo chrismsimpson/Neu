@@ -34,9 +34,63 @@ public partial class StringType : NeuType {
         : base() { }
 }
 
+public partial class Int8Type : NeuType {
+
+    public Int8Type() 
+        : base() { }
+}
+
+public partial class Int16Type : NeuType {
+
+    public Int16Type() 
+        : base() { }
+}
+
+public partial class Int32Type : NeuType {
+
+    public Int32Type() 
+        : base() { }
+}
+
 public partial class Int64Type : NeuType {
 
     public Int64Type() 
+        : base() { }
+}
+
+public partial class UInt8Type : NeuType {
+
+    public UInt8Type() 
+        : base() { }
+}
+
+public partial class UInt16Type : NeuType {
+
+    public UInt16Type() 
+        : base() { }
+}
+
+public partial class UInt32Type : NeuType {
+
+    public UInt32Type() 
+        : base() { }
+}
+
+public partial class UInt64Type : NeuType {
+
+    public UInt64Type() 
+        : base() { }
+}
+
+public partial class FloatType : NeuType {
+
+    public FloatType() 
+        : base() { }
+}
+
+public partial class DoubleType : NeuType {
+
+    public DoubleType() 
         : base() { }
 }
 
@@ -1000,9 +1054,45 @@ public static partial class ParserFunctions {
 
                 switch (nt.Value) {
 
+                    case "Int8":
+
+                        return new ErrorOr<NeuType>(new Int8Type());
+
+                    case "Int16":
+
+                        return new ErrorOr<NeuType>(new Int16Type());
+
+                    case "Int32":
+
+                        return new ErrorOr<NeuType>(new Int32Type());
+
                     case "Int64":
 
                         return new ErrorOr<NeuType>(new Int64Type());
+
+                    case "UInt8":
+
+                        return new ErrorOr<NeuType>(new UInt8Type());
+
+                    case "UInt16":
+
+                        return new ErrorOr<NeuType>(new UInt16Type());
+
+                    case "UInt32":
+
+                        return new ErrorOr<NeuType>(new UInt32Type());
+
+                    case "UInt64":
+
+                        return new ErrorOr<NeuType>(new UInt64Type());
+
+                    case "Float":
+
+                        return new ErrorOr<NeuType>(new FloatType());
+
+                    case "Double":
+
+                        return new ErrorOr<NeuType>(new DoubleType());
 
                     case "String":
 

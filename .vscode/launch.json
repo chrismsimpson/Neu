@@ -13,7 +13,8 @@
                 // "./Samples/call.neu",
                 // "./Samples/callWithArg.neu",
                 // "./Samples/callWithReturn.neu",
-                "./Samples/var.neu"
+                // "./Samples/var.neu",
+                "./Samples/numberTypes.neu"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",

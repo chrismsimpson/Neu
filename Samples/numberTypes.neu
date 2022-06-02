@@ -1,0 +1,12 @@
+func main() {
+    let a: Int8 = 0;
+    let b: Int16 = 0;
+    let c: Int32 = 0;
+    let d: Int64 = 0;
+    let e: UInt8 = 0;
+    let f: UInt16 = 0;
+    let g: UInt32 = 0;
+    let h: UInt64 = 0;
+    let i: Float = 0;
+    let j: Double = 0;
+}
