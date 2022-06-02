@@ -21,6 +21,8 @@ public partial class Call {
     }
 }
 
+///
+
 public partial class NeuType {
 
     public NeuType() { }
@@ -28,12 +30,20 @@ public partial class NeuType {
 
 public partial class StringType : NeuType {
 
-    public StringType() { }
+    public StringType() 
+        : base() { }
 }
 
 public partial class Int64Type : NeuType {
 
-    public Int64Type() { }
+    public Int64Type() 
+        : base() { }
+}
+
+public partial class VoidType : NeuType {
+
+    public VoidType() 
+        : base() { }
 }
 
 ///
@@ -142,6 +152,20 @@ public partial class RCurlyToken: Token {
         : base(span) { }
 }
 
+
+public partial class MinusToken: Token {
+
+    public MinusToken(Span span)
+        : base(span) { }
+}
+
+
+public partial class GreaterThanToken: Token {
+
+    public GreaterThanToken(Span span)
+        : base(span) { }
+}
+
 public partial class CommaToken: Token {
 
     public CommaToken(Span span)
@@ -199,40 +223,26 @@ public partial class Function {
 
     public String Name { get; init; }
 
-    // public List<Parameter> Parameters { get; init; }
-
     public List<(String, NeuType)> Parameters { get; init; }
 
     public Block Block { get; init; }
+
+    public NeuType ReturnType { get; init; }
 
     ///
 
     public Function(
         String name,
-        // List<Parameter> parameters,
         List<(String, NeuType)> parameters,
-        Block block) {
+        Block block,
+        NeuType returnType) {
 
         this.Name = name;
         this.Parameters = parameters;
         this.Block = block;
+        this.ReturnType = returnType;
     }
 }
-
-///
-
-// public partial class Parameter {
-
-//     public String Name { get; init; }
-
-//     ///
-
-//     public Parameter(
-//         String name) {
-
-//         this.Name = name;
-//     }
-// }
 
 ///
 
@@ -339,6 +349,21 @@ public partial class DeferStatement: Statement {
 
 ///
 
+public partial class ReturnStatement: Statement {
+
+    public Expression Expr { get; init; }
+
+    ///
+
+    public ReturnStatement(
+        Expression expr) {
+
+        this.Expr = expr;
+    }
+}
+
+///
+
 public static partial class ParserFunctions {
 
     public static ErrorOr<ParsedFile> ParseFile(
@@ -417,15 +442,6 @@ public static partial class ParserFunctions {
             switch (tokens.ElementAt(index)) {
 
                 case NameToken name:
-
-                    // index += 3;
-
-                    // var blockOrError = ParseBlock(tokens, ref index);
-
-                    // if (blockOrError.Error != null) {
-
-                    //     throw new Exception();
-                    // }
 
                     index += 1;
 
@@ -538,6 +554,69 @@ public static partial class ParserFunctions {
 
                     ///
 
+                    NeuType returnType = new VoidType();
+
+                    if ((index + 2) < tokens.Count) {
+
+                        switch (tokens.ElementAt(index)) {
+
+                            case MinusToken _: {
+
+                                index += 1;
+
+                                switch (tokens.ElementAt(index)) {
+
+                                    case GreaterThanToken _: {
+
+                                        index += 1;
+
+                                        var returnTypeOrError = ParseTypeName(tokens, ref index);
+
+                                        if (returnTypeOrError.Error != null) {
+
+                                            throw new Exception();
+                                        }
+
+                                        returnType = returnTypeOrError.Value ?? throw new Exception();
+
+                                        index += 1;
+
+                                        break;
+                                    }
+
+                                    ///
+
+                                    default: {
+
+                                        return new ErrorOr<Function>(
+                                            "expected ->", 
+                                            tokens.ElementAt(index - 1).Span);
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            ///
+
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+
+                    ///
+
+                    if (index >= tokens.Count) {
+
+                        return new ErrorOr<Function>(
+                            "incomplete function", 
+                            tokens.ElementAt(index - 1).Span);
+                    }
+
+                    ///
+
                     var blockOrError = ParseBlock(tokens, ref index);
 
                     if (blockOrError.Error != null) {
@@ -547,7 +626,12 @@ public static partial class ParserFunctions {
 
                     var block = blockOrError.Value ?? throw new Exception();
 
-                    return new ErrorOr<Function>(new Function(name.Value, parameters, block));
+                    return new ErrorOr<Function>(
+                        new Function(
+                            name: name.Value, 
+                            parameters, 
+                            block,
+                            returnType));
 
                 ///
 
@@ -637,6 +721,26 @@ public static partial class ParserFunctions {
 
                 return new ErrorOr<Statement>(new DeferStatement(block));
             }
+
+            ///
+
+            case NameToken nt when nt.Value == "return": {
+
+                index += 1;
+
+                var exprOrError = ParseExpression(tokens, ref index);
+
+                if (exprOrError.Error != null) {
+
+                    throw new Exception();
+                }
+
+                var expr = exprOrError.Value ?? throw new Exception();
+
+                return new ErrorOr<Statement>(new ReturnStatement(expr));
+            }
+
+            ///
 
             default: {
 

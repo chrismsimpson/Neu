@@ -45,6 +45,32 @@ public static partial class LexerFunctions {
 
                 ///
 
+                case '-': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new MinusToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '>': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new GreaterThanToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
                 case ',': {
 
                     var start = index;

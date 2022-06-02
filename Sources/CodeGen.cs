@@ -39,7 +39,9 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append("void ");
+        output.Append(TranslateType(fun.ReturnType));
+
+        output.Append(" ");
 
         output.Append(fun.Name);
 
@@ -132,6 +134,13 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case VoidType _: {
+                
+                return "void";
+            }
+
+            ///
+
             default: {
 
                 throw new Exception();
@@ -169,17 +178,18 @@ public static partial class CodeGenFunctions {
 
         switch (stmt) {
 
-            case Expression expr:
+            case Expression expr: {
 
                 var exprStr = compiler.TranslateExpr(expr);
 
                 output.Append(exprStr);
 
                 break;
+            }
 
             ///
 
-            case DeferStatement defer:
+            case DeferStatement defer: {
 
                 output.Append("#define __DEFER_NAME __scope_guard_ ## __COUNTER__\n");
                 output.Append("Defer __DEFER_NAME  ([&] \n");
@@ -188,12 +198,29 @@ public static partial class CodeGenFunctions {
                 output.Append(")");
 
                 break;
+            }
 
             ///
 
-            default:
+            case ReturnStatement rs: {
+
+                var exprStr = compiler.TranslateExpr(rs.Expr);
+
+                output.Append("return (");
+                
+                output.Append(exprStr);
+                
+                output.Append(");\n");
+
+                break;
+            }
+
+            ///
+
+            default: {
 
                 throw new Exception();
+            }
         }
 
         ///
