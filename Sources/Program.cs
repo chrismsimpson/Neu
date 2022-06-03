@@ -56,11 +56,15 @@ public static partial class Program {
 
         while (index <= fileContents.Length) {
 
-            var c = '_';
+            var c = ' ';
 
             if (index < fileContents.Length) {
 
                 c = ToChar(fileContents[index]);
+            }
+            else if (span.Start == span.End && index == span.Start) {
+
+                c = '_';
             }
 
             if ((index >= span.Start && index < span.End)
@@ -68,7 +72,13 @@ public static partial class Program {
 
                 // In the error span
 
+                var ogColor = System.Console.ForegroundColor;
+
+                System.Console.ForegroundColor = ConsoleColor.Red;
+
                 Write(c);
+
+                System.Console.ForegroundColor = ogColor;
             }
             else {
 
