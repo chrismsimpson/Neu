@@ -96,7 +96,9 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append("void ");
+        output.Append(compiler.TranslateType(fun.ReturnType));
+
+        output.Append(" ");
 
         output.Append(fun.Name);
 
