@@ -536,6 +536,34 @@ public static partial class CodeGenFunctions {
 
                         break;
                     }
+                    
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.AddAssign: {
+
+                        output.Append(" += ");
+
+                        break;
+                    }
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.SubtractAssign: {
+
+                        output.Append(" -= ");
+
+                        break;
+                    }
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.MultiplyAssign: {
+
+                        output.Append(" *= ");
+
+                        break;
+                    }
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.DivideAssign: {
+
+                        output.Append(" /= ");
+
+                        break;
+                    }
 
                     ///
 

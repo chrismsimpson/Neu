@@ -53,6 +53,18 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new PlusEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
+
                     output.Add(new PlusToken(new Span(fileId, start, start + 1)));
 
                     break;
@@ -65,6 +77,18 @@ public static partial class LexerFunctions {
                     var start = index;
 
                     index += 1;
+
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new MinusEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
 
                     output.Add(new MinusToken(new Span(fileId, start, start + 1)));
 
@@ -79,6 +103,18 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new AsteriskEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
+
                     output.Add(new AsteriskToken(new Span(fileId, start, start + 1)));
 
                     break;
@@ -91,6 +127,18 @@ public static partial class LexerFunctions {
                     var start = index;
 
                     index += 1;
+
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new ForwardSlashEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
 
                     output.Add(new ForwardSlashToken(new Span(fileId, start, start + 1)));
 

@@ -256,6 +256,30 @@ public partial class EqualToken: Token {
         : base(span) { }
 }
 
+public partial class PlusEqualToken: Token {
+
+    public PlusEqualToken(Span span) 
+        : base(span) { }
+}
+
+public partial class MinusEqualToken: Token {
+
+    public MinusEqualToken(Span span) 
+        : base(span) { }
+}
+
+public partial class AsteriskEqualToken: Token {
+
+    public AsteriskEqualToken(Span span) 
+        : base(span) { }
+}
+
+public partial class ForwardSlashEqualToken: Token {
+
+    public ForwardSlashEqualToken(Span span) 
+        : base(span) { }
+}
+
 public partial class NotEqualToken: Token {
     
     public NotEqualToken(Span span) 
@@ -636,7 +660,11 @@ public partial class Expression: Statement {
         GreaterThan,
         LessThanOrEqual,
         GreaterThanOrEqual,
-        Assign
+        Assign,
+        AddAssign,
+        SubtractAssign,
+        MultiplyAssign,
+        DivideAssign
     }
 
     public partial class OperatorExpression: Expression {
@@ -699,7 +727,11 @@ public static partial class ExpressionFunctions {
             ///
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.Assign:
+                opExpr.Operator == Operator.Assign
+                || opExpr.Operator == Operator.AddAssign
+                || opExpr.Operator == Operator.SubtractAssign
+                || opExpr.Operator == Operator.MultiplyAssign
+                || opExpr.Operator == Operator.DivideAssign:
 
                 return 50;
 
@@ -1515,7 +1547,35 @@ public static partial class ParserFunctions {
                 
                 return (new OperatorExpression(Operator.Assign), null);
             }
+
+            case PlusEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.AddAssign), null);
+            }
             
+            case MinusEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.SubtractAssign), null);
+            }
+
+            case AsteriskEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.MultiplyAssign), null);
+            }
+
+            case ForwardSlashEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.DivideAssign), null);
+            }
+
             case DoubleEqualToken _: {
                 
                 index += 1;
