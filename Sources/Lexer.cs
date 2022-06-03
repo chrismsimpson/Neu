@@ -47,6 +47,19 @@ public static partial class LexerFunctions {
 
                 ///
 
+                case '+': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new PlusToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
                 case '-': {
 
                     var start = index;
@@ -54,6 +67,32 @@ public static partial class LexerFunctions {
                     index += 1;
 
                     output.Add(new MinusToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '*': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new AsteriskToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '/': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new ForwardSlashToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }

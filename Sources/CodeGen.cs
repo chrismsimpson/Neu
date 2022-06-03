@@ -263,7 +263,6 @@ public static partial class CodeGenFunctions {
 
                 output.Append(exprStr);
 
-                // output.Append(");\n");
                 output.Append(";\n");
 
                 break;
@@ -402,7 +401,18 @@ public static partial class CodeGenFunctions {
 
                         output.Append("(");
 
+                        var first = true;
+
                         foreach (var parameter in ce.Call.Args) {
+
+                            if (!first) {
+
+                                output.Append(", ");
+                            }
+                            else {
+
+                                first = false;
+                            }
 
                             output.Append(compiler.TranslateExpr(indent, parameter.Item2));
                         }
@@ -411,6 +421,65 @@ public static partial class CodeGenFunctions {
 
                         break;
                 }
+
+                break;
+            }
+
+            ///
+
+            case BinaryOpExpression binOp: {
+
+                output.Append("(");
+
+                output.Append(compiler.TranslateExpr(indent, binOp.Lhs));
+
+                switch (binOp.Op) {
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.Add: {
+
+                        output.Append(" + ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.Subtract: {
+
+                        output.Append(" - ");
+
+                        break;
+                    }
+                    
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.Multiply: {
+
+                        output.Append(" * ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.Divide: {
+
+                        output.Append(" / ");
+
+                        break;
+                    }
+
+                    ///
+
+                    default: {
+                        
+                        throw new Exception("Cannot codegen garbage operator");
+                    }
+                }
+
+                output.Append(compiler.TranslateExpr(indent, binOp.Rhs));
+
+                output.Append(")");
 
                 break;
             }
