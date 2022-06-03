@@ -28,6 +28,12 @@ public partial class NeuType {
     public NeuType() { }
 }
 
+public partial class BoolType : NeuType {
+
+    public BoolType() 
+        : base() { }
+}
+
 public partial class StringType : NeuType {
 
     public StringType() 
@@ -244,15 +250,45 @@ public partial class MinusToken: Token {
         : base(span) { }
 }
 
-public partial class EqualsToken: Token {
+public partial class EqualToken: Token {
 
-    public EqualsToken(Span span) 
+    public EqualToken(Span span) 
+        : base(span) { }
+}
+
+public partial class NotEqualToken: Token {
+    
+    public NotEqualToken(Span span) 
+        : base(span) { }
+}
+
+public partial class DoubleEqualToken: Token {
+    
+    public DoubleEqualToken(Span span) 
         : base(span) { }
 }
 
 public partial class GreaterThanToken: Token {
 
     public GreaterThanToken(Span span)
+        : base(span) { }
+}
+
+public partial class GreaterThanOrEqualToken: Token {
+    
+    public GreaterThanOrEqualToken(Span span) 
+        : base(span) { }
+}
+
+public partial class LessThanToken: Token {
+
+    public LessThanToken(Span span)
+        : base(span) { }
+}
+
+public partial class LessThanOrEqualToken: Token {
+    
+    public LessThanOrEqualToken(Span span) 
         : base(span) { }
 }
 
@@ -265,6 +301,12 @@ public partial class AsteriskToken: Token {
 public partial class ForwardSlashToken: Token {
 
     public ForwardSlashToken(Span span) 
+        : base(span) { }
+}
+
+public partial class ExclamationToken: Token {
+
+    public ExclamationToken(Span span)
         : base(span) { }
 }
 
@@ -368,6 +410,103 @@ public partial class Statement {
 
 ///
 
+public partial class DeferStatement: Statement {
+
+    public Block Block { get; init; }
+
+    ///
+
+    public DeferStatement(
+        Block block)
+        : base() { 
+
+        this.Block = block;
+    }
+}
+
+///
+
+public partial class VarDeclStatement: Statement {
+
+    public VarDecl Decl { get; init; }
+
+    public Expression Expr { get; init; }
+
+    ///
+
+    public VarDeclStatement(
+        VarDecl decl,
+        Expression expr) {
+
+        this.Decl = decl;
+        this.Expr = expr;
+    }
+}
+
+///
+
+public partial class IfStatement: Statement {
+
+    public Expression Expr { get; init; }
+
+    public Block Block { get; init; }
+
+    ///
+
+    public IfStatement(
+        Expression expr,
+        Block block)
+        : base() {
+
+        this.Expr = expr;
+        this.Block = block;
+    }
+}
+
+///
+
+public partial class WhileStatement: Statement {
+
+    public Expression Expr { get; init; }
+
+    public Block Block { get; init; }
+
+    ///
+
+    public WhileStatement(
+        Expression expr,
+        Block block) 
+        : base() {
+
+        this.Expr = expr;
+        this.Block = block;
+    }
+}
+
+///
+
+public partial class ReturnStatement: Statement {
+
+    public Expression Expr { get; init; }
+
+    ///
+
+    public ReturnStatement(
+        Expression expr) {
+
+        this.Expr = expr;
+    }
+}
+
+///
+
+public partial class GarbageStatement: Statement {
+
+    public GarbageStatement() { }
+}
+
+///
+
 public partial class Block {
 
     public List<Statement> Statements { get; init; }
@@ -392,6 +531,19 @@ public partial class Expression: Statement {
 }
 
     // Standalone
+
+    public partial class BooleanExpression: Expression {
+
+        public bool Value { get; init; }
+
+        ///
+
+        public BooleanExpression(
+            bool value) {
+
+            this.Value = value;
+        }
+    }
 
     public partial class CallExpression: Expression {
 
@@ -477,7 +629,14 @@ public partial class Expression: Statement {
         Add,
         Subtract,
         Multiply,
-        Divide
+        Divide,
+        Equal,
+        NotEqual,
+        LessThan,
+        GreaterThan,
+        LessThanOrEqual,
+        GreaterThanOrEqual,
+        Assign
     }
 
     public partial class OperatorExpression: Expression {
@@ -506,63 +665,6 @@ public partial class Expression: Statement {
 
 ///
 
-public partial class DeferStatement: Statement {
-
-    public Block Block { get; init; }
-
-    ///
-
-    public DeferStatement(
-        Block block)
-        : base() { 
-
-        this.Block = block;
-    }
-}
-
-///
-
-public partial class VarDeclStatement: Statement {
-
-    public VarDecl Decl { get; init; }
-
-    public Expression Expr { get; init; }
-
-    ///
-
-    public VarDeclStatement(
-        VarDecl decl,
-        Expression expr) {
-
-        this.Decl = decl;
-        this.Expr = expr;
-    }
-}
-
-///
-
-public partial class ReturnStatement: Statement {
-
-    public Expression Expr { get; init; }
-
-    ///
-
-    public ReturnStatement(
-        Expression expr) {
-
-        this.Expr = expr;
-    }
-}
-
-///
-
-public partial class GarbageStatement: Statement {
-
-    public GarbageStatement() { }
-}
-
-///
-
 public static partial class ExpressionFunctions {
 
     public static UInt64 Precendence(
@@ -570,15 +672,36 @@ public static partial class ExpressionFunctions {
 
         switch (expr) {
 
-            case OperatorExpression opExpr when opExpr.Operator == Operator.Multiply || opExpr.Operator == Operator.Divide:
+            case OperatorExpression opExpr when 
+                opExpr.Operator == Operator.Multiply || opExpr.Operator == Operator.Divide:
 
-                return 95;
+                return 100;
 
             ///
 
-            case OperatorExpression opExpr when opExpr.Operator == Operator.Add || opExpr.Operator == Operator.Subtract:
+            case OperatorExpression opExpr when 
+                opExpr.Operator == Operator.Add || opExpr.Operator == Operator.Subtract:
 
                 return 90;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == Operator.LessThan
+                || opExpr.Operator == Operator.LessThanOrEqual
+                || opExpr.Operator == Operator.GreaterThan
+                || opExpr.Operator == Operator.GreaterThanOrEqual
+                || opExpr.Operator == Operator.Equal
+                || opExpr.Operator == Operator.NotEqual:
+                
+                return 80;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == Operator.Assign:
+
+                return 50;
 
             ///
 
@@ -618,69 +741,6 @@ public static partial class IListFunctions {
 ///
 
 public static partial class ParserFunctions {
-
-    // public static ErrorOr<ParsedFile> ParseFile(
-    //     List<Token> tokens) {
-
-    //     var parsedFile = new ParsedFile();
-
-    //     int index = 0;
-
-    //     var cont = true;
-
-    //     while (index < tokens.Count && cont) {
-
-    //         var token = tokens.ElementAt(index);
-
-    //         switch (token) {
-
-    //             case NameToken name when name.Value == "func":
-
-    //                 var funcOrError = ParseFunction(tokens, ref index);
-
-    //                 if (funcOrError.Error != null) {
-
-    //                     throw new Exception();
-    //                 }
-
-    //                 var func = funcOrError.Value ?? throw new Exception();
-
-    //                 parsedFile.Functions.Add(func);
-                    
-    //                 break;
-
-    //             ///
-
-    //             case NameToken _:
-
-    //                 return new ErrorOr<ParsedFile>("unexpected keyword", token.Span);
-
-    //             ///
-
-    //             case EolToken _:
-
-    //                 index += 1;
-
-    //                 break;
-
-    //             ///
-
-    //             case EofToken _:
-
-    //                 cont = false;
-
-    //                 break;
-
-    //             ///
-
-    //             case Token _:
-
-    //                 return new ErrorOr<ParsedFile>("unexpected token (expected keyword)", token.Span);
-    //         }
-    //     }
-
-    //     return new ErrorOr<ParsedFile>(parsedFile);        
-    // }
 
     public static (ParsedFile, Error?) ParseFile(
         List<Token> tokens) {
@@ -764,203 +824,6 @@ public static partial class ParserFunctions {
 
         return (parsedFile, error);
     }
-
-
-    // public static ErrorOr<Function> ParseFunction(
-    //     List<Token> tokens,
-    //     ref int index) {
-
-    //     index += 1;
-
-    //     if (index < tokens.Count) {
-
-    //         // we're expecting the name of the function
-
-    //         switch (tokens.ElementAt(index)) {
-
-    //             case NameToken name:
-
-    //                 index += 1;
-
-    //                 if (index < tokens.Count) {
-
-    //                     switch (tokens.ElementAt(index)) {
-
-    //                         case LParenToken _: {
-
-    //                             index += 1;
-
-    //                             break;
-    //                         }
-
-    //                         ///
-
-    //                         default: {
-
-    //                             return new ErrorOr<Function>(
-    //                                 "expected '('", 
-    //                                 tokens.ElementAt(index).Span);
-    //                         }
-    //                     }
-    //                 }
-    //                 else {
-
-    //                     return new ErrorOr<Function>(
-    //                         "incomplete function", 
-    //                         tokens.ElementAt(index - 1).Span);
-    //                 }
-                    
-    //                 var parameters = new List<(String, NeuType)>();
-
-    //                 var cont = true;
-
-    //                 while (index < tokens.Count && cont) {
-
-    //                     switch (tokens.ElementAt(index)) {
-
-    //                         case RParenToken _: {
-
-    //                             index += 1;
-
-    //                             cont = false;
-
-    //                             break;
-    //                         }
-
-    //                         ///
-
-    //                         case CommaToken _: {
-
-    //                             index += 1;
-
-    //                             break;
-    //                         }
-
-    //                         ///
-
-    //                         case NameToken nt: {
-
-    //                             var varDeclOrError = ParseVariableDeclaration(tokens, ref index);
-
-    //                             if (varDeclOrError.Error != null) {
-
-    //                                 throw new Exception();
-    //                             }
-
-    //                             var varDecl = varDeclOrError.Value ?? throw new Exception();
-                            
-    //                             parameters.Add((varDecl.Name, varDecl.Type));
-
-    //                             break;
-    //                         }
-
-    //                         ///
-
-    //                         case var t: {
-
-    //                             return new ErrorOr<Function>("expected parameter", t.Span);
-    //                         }
-    //                     }
-    //                 }
-
-    //                 if (index >= tokens.Count) {
-
-    //                     return new ErrorOr<Function>("incomplete function", tokens.ElementAt(index - 1).Span);
-    //                 }
-
-    //                 ///
-
-    //                 NeuType returnType = new VoidType();
-
-    //                 if ((index + 2) < tokens.Count) {
-
-    //                     switch (tokens.ElementAt(index)) {
-
-    //                         case MinusToken _: {
-
-    //                             index += 1;
-
-    //                             switch (tokens.ElementAt(index)) {
-
-    //                                 case GreaterThanToken _: {
-
-    //                                     index += 1;
-
-    //                                     var returnTypeOrError = ParseTypeName(tokens, ref index);
-
-    //                                     if (returnTypeOrError.Error != null) {
-
-    //                                         throw new Exception();
-    //                                     }
-
-    //                                     returnType = returnTypeOrError.Value ?? throw new Exception();
-
-    //                                     index += 1;
-
-    //                                     break;
-    //                                 }
-
-    //                                 ///
-
-    //                                 default: {
-
-    //                                     return new ErrorOr<Function>(
-    //                                         "expected ->", 
-    //                                         tokens.ElementAt(index - 1).Span);
-    //                                 }
-    //                             }
-
-    //                             break;
-    //                         }
-
-    //                         ///
-
-    //                         default: {
-
-    //                             break;
-    //                         }
-    //                     }
-    //                 }
-
-    //                 ///
-
-    //                 if (index >= tokens.Count) {
-
-    //                     return new ErrorOr<Function>(
-    //                         "incomplete function", 
-    //                         tokens.ElementAt(index - 1).Span);
-    //                 }
-
-    //                 ///
-
-    //                 var blockOrError = ParseBlock(tokens, ref index);
-
-    //                 if (blockOrError.Error != null) {
-
-    //                     throw new Exception();
-    //                 }
-
-    //                 var block = blockOrError.Value ?? throw new Exception();
-
-    //                 return new ErrorOr<Function>(
-    //                     new Function(
-    //                         name: name.Value, 
-    //                         parameters, 
-    //                         block,
-    //                         returnType));
-
-    //             ///
-
-    //             default:    
-
-    //                 return new ErrorOr<Function>("expected function name", tokens.ElementAt(index).Span);
-    //         }
-    //     }
-    //     else {
-
-    //         return new ErrorOr<Function>("incomplete function definition", tokens.ElementAt(index).Span);
-    //     }
-    // }
 
     public static (Function, Error?) ParseFunction(
         List<Token> tokens,
@@ -1250,6 +1113,45 @@ public static partial class ParserFunctions {
 
             ///
 
+            case NameToken nt when nt.Value == "if": {
+
+                index += 1;
+
+                var (condExpr, condExprErr) = ParseExpression(tokens, ref index);
+
+                error = error ?? condExprErr;
+
+                var (block, blockErr) = ParseBlock(tokens, ref index);
+
+                error = error ?? blockErr;
+
+                return (
+                    new IfStatement(condExpr, block),
+                    error);
+            }
+
+            ///
+
+            case NameToken nt when nt.Value == "while": {
+
+                index += 1;
+
+                var (condExpr, condExprErr) = ParseExpression(tokens, ref index);
+
+                error = error ?? condExprErr;
+
+                var (block, blockErr) = ParseBlock(tokens, ref index);
+
+                error = error ?? blockErr;
+
+                return (
+                    new WhileStatement(condExpr, block),
+                    error
+                );
+            }
+
+            ///
+
             case NameToken nt when nt.Value == "return": {
 
                 index += 1;
@@ -1284,7 +1186,7 @@ public static partial class ParserFunctions {
 
                     switch (tokens.ElementAt(index)) {
 
-                        case EqualsToken _: {
+                        case EqualToken _: {
 
                             index += 1;
 
@@ -1448,6 +1350,28 @@ public static partial class ParserFunctions {
 
         switch (tokens.ElementAt(index)) {
 
+            case NameToken nt when nt.Value == "true": {
+
+                index += 1;
+
+                return (
+                    new BooleanExpression(true),
+                    null);
+            }
+
+            ///
+
+            case NameToken nt when nt.Value == "false": {
+
+                index += 1;
+
+                return (
+                    new BooleanExpression(false),
+                    null);
+            }
+
+            ///
+
             case NameToken nt: {
 
                 if ((index + 1) < tokens.Count) {
@@ -1479,6 +1403,40 @@ public static partial class ParserFunctions {
                 return (
                     new VarExpression(nt.Value),
                     error);
+            }
+
+            ///
+
+            case LParenToken _: {
+
+                index += 1;
+
+                var (expr, exprErr) = ParseExpression(tokens, ref index);
+
+                error = error ?? exprErr;
+
+                switch (tokens.ElementAt(index)) {
+
+                    case RParenToken _: {
+
+                        index += 1;
+
+                        break;
+                    }
+
+                    ///
+
+                    default: {
+
+                        error = error ?? new ParserError(
+                            "expected ')'", 
+                            tokens.ElementAt(index).Span);
+
+                        break;
+                    }
+                }
+
+                return (expr, error);
             }
 
             ///
@@ -1530,16 +1488,12 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(Operator.Add), null);
             }
 
-            ///
-
             case MinusToken _: {
 
                 index += 1;
 
                 return (new OperatorExpression(Operator.Subtract), null);
             }
-
-            ///
 
             case AsteriskToken _: {
 
@@ -1548,13 +1502,60 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(Operator.Multiply), null);
             }
 
-            ///
-
             case ForwardSlashToken _: {
 
                 index += 1;
 
                 return (new OperatorExpression(Operator.Divide), null);
+            }
+
+            case EqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.Assign), null);
+            }
+            
+            case DoubleEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.Equal), null);
+            }
+            
+            case NotEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.NotEqual), null);
+            }
+            
+            case LessThanToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.LessThan), null);
+            }
+            
+            case LessThanOrEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.LessThanOrEqual), null);
+            }
+            
+            case GreaterThanToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.GreaterThan), null);
+            }
+            
+            case GreaterThanOrEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.GreaterThanOrEqual), null);
             }
 
             ///
@@ -1564,8 +1565,8 @@ public static partial class ParserFunctions {
                 return (
                     new GarbageExpression(),
                     new ParserError(
-                        "unknown operator", 
-                        tokens.ElementAt(index - 1).Span));
+                        "unsupported operator", 
+                        tokens.ElementAt(index).Span));
             }
         }
     }
@@ -1706,6 +1707,10 @@ public static partial class ParserFunctions {
                     case "String":
 
                         return (new StringType(), null);
+
+                    case "Bool":
+
+                        return (new BoolType(), null);
 
                     default:
 

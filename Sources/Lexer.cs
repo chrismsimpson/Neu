@@ -105,7 +105,19 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
-                    output.Add(new EqualsToken(new Span(fileId, start, start + 1)));
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new DoubleEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
+
+                    output.Add(new EqualToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }
@@ -118,7 +130,69 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new GreaterThanOrEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
+
                     output.Add(new GreaterThanToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '<': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new LessThanOrEqualToken(new Span(fileId, start, start + 1)));
+
+                            continue;
+                        }
+                    }
+
+                    output.Add(new LessThanToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '!': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            new NotEqualToken(new Span(fileId, start, start + 1));
+
+                            continue;
+                        }
+                    }
+
+                    output.Add(new ExclamationToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }

@@ -140,12 +140,15 @@ public static partial class CodeGenFunctions {
 
         switch (ty) {
 
+            case BoolType _: {
+
+                return "bool";
+            }
+
             case StringType _: {
 
                 return "char*";
             }
-
-            ///
 
             case Int8Type _: {
 
@@ -239,6 +242,8 @@ public static partial class CodeGenFunctions {
             output.Append("return 0;\n");
         }
 
+        output.Append(new String(' ', indent));
+
         output.Append("}\n");
 
         return output.ToString();
@@ -292,6 +297,44 @@ public static partial class CodeGenFunctions {
                 output.Append(exprStr);
                 
                 output.Append(");\n");
+
+                break;
+            }
+
+            ///
+
+            case IfStatement ifStmt: {
+
+                var exprStr = compiler.TranslateExpr(indent, ifStmt.Expr);
+
+                output.Append("if (");
+                
+                output.Append(exprStr);
+                
+                output.Append(") ");
+
+                var blockStr = compiler.TranslateBlock(indent, ifStmt.Block);
+                
+                output.Append(blockStr);
+
+                break;
+            }
+
+            ///
+
+            case WhileStatement whileStmt: {
+
+                var exprStr = compiler.TranslateExpr(indent, whileStmt.Expr);
+
+                output.Append("while (");
+                
+                output.Append(exprStr);
+                
+                output.Append(") ");
+
+                var blockStr = compiler.TranslateBlock(indent, whileStmt.Block);
+                
+                output.Append(blockStr);
 
                 break;
             }
@@ -368,6 +411,22 @@ public static partial class CodeGenFunctions {
             case VarExpression v: {
 
                 output.Append(v.Value);
+
+                break;
+            }
+
+            ///
+
+            case BooleanExpression b: {
+
+                if (b.Value) {
+
+                    output.Append("true");
+                }
+                else {
+
+                    output.Append("false");
+                }
 
                 break;
             }
@@ -465,6 +524,69 @@ public static partial class CodeGenFunctions {
                     case OperatorExpression opExpr when opExpr.Operator == Operator.Divide: {
 
                         output.Append(" / ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.Assign: {
+
+                        output.Append(" = ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.Equal: {
+
+                        output.Append(" == ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.NotEqual: {
+
+                        output.Append(" != ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.LessThan: {
+
+                        output.Append(" < ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.LessThanOrEqual: {
+
+                        output.Append(" <= ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.GreaterThan: {
+
+                        output.Append(" > ");
+
+                        break;
+                    }
+
+                    ///
+
+                    case OperatorExpression opExpr when opExpr.Operator == Operator.GreaterThanOrEqual: {
+
+                        output.Append(" >= ");
 
                         break;
                     }
