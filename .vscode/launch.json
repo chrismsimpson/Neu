@@ -12,9 +12,10 @@
                 // "./Samples/defer.neu",
                 // "./Samples/call.neu",
                 // "./Samples/callWithArg.neu",
-                "./Samples/callWithReturn.neu",
+                // "./Samples/callWithReturn.neu",
                 // "./Samples/var.neu",
-                // "./Samples/numberTypes.neu"
+                // "./Samples/numberTypes.neu",
+                "./Samples/helloNumber.neu",
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",

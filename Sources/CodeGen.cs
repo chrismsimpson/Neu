@@ -3,13 +3,16 @@ namespace Neu;
 
 public static partial class CodeGenFunctions {
 
+    public static readonly int INDENT_SIZE = 4;
+
     public static String Translate(
         this Compiler compiler,
         ParsedFile file) {
 
         var output = new StringBuilder();
 
-        output.Append("#include <stdio.h>\n");
+        output.Append("#include <iostream>\n");
+
         output.Append("#include \"../../Runtime/lib.h\"\n");
 
         foreach (var fun in file.Functions) {
@@ -78,7 +81,7 @@ public static partial class CodeGenFunctions {
 
         output.Append(")");
 
-        var block = compiler.TranslateBlock(fun.Block, returnZero: fun.Name == "main");
+        var block = compiler.TranslateBlock(0, fun.Block, returnZero: fun.Name == "main");
 
         output.Append(block);
 
@@ -212,6 +215,7 @@ public static partial class CodeGenFunctions {
 
     public static String TranslateBlock(
         this Compiler compiler,
+        int indent,
         Block block,
         bool returnZero = false) {
 
@@ -221,14 +225,18 @@ public static partial class CodeGenFunctions {
 
         foreach (var stmt in block.Statements) {
 
-            var stmtStr = compiler.TranslateStmt(stmt);
+            var stmtStr = compiler.TranslateStmt(indent + INDENT_SIZE, stmt);
 
             output.Append(stmtStr);
         }
 
         if (returnZero) {
 
-            output.Append("\nreturn 0;\n");
+            output.Append("\n");
+
+            output.Append(new String(' ', indent + INDENT_SIZE));
+
+            output.Append("return 0;\n");
         }
 
         output.Append("}\n");
@@ -238,9 +246,12 @@ public static partial class CodeGenFunctions {
 
     public static String TranslateStmt(
         this Compiler compiler,
+        int indent,
         Statement stmt) {
 
         var output = new StringBuilder();
+
+        output.Append(new String(' ', indent));
 
         ///
 
@@ -248,9 +259,12 @@ public static partial class CodeGenFunctions {
 
             case Expression expr: {
 
-                var exprStr = compiler.TranslateExpr(expr);
+                var exprStr = compiler.TranslateExpr(indent, expr);
 
                 output.Append(exprStr);
+
+                // output.Append(");\n");
+                output.Append(";\n");
 
                 break;
             }
@@ -262,8 +276,8 @@ public static partial class CodeGenFunctions {
                 output.Append("#define __DEFER_NAME __scope_guard_ ## __COUNTER__\n");
                 output.Append("Defer __DEFER_NAME  ([&] \n");
                 output.Append("#undef __DEFER_NAME\n");
-                output.Append(compiler.TranslateBlock(defer.Block));
-                output.Append(")");
+                output.Append(compiler.TranslateBlock(indent, defer.Block));
+                output.Append(");\n");
 
                 break;
             }
@@ -272,7 +286,7 @@ public static partial class CodeGenFunctions {
 
             case ReturnStatement rs: {
 
-                var exprStr = compiler.TranslateExpr(rs.Expr);
+                var exprStr = compiler.TranslateExpr(indent, rs.Expr);
 
                 output.Append("return (");
                 
@@ -296,7 +310,7 @@ public static partial class CodeGenFunctions {
                 output.Append(" ");
                 output.Append(vd.Decl.Name);
                 output.Append(" = ");
-                output.Append(compiler.TranslateExpr(vd.Expr));
+                output.Append(compiler.TranslateExpr(indent, vd.Expr));
                 output.Append(";\n");
 
                 break;
@@ -320,15 +334,12 @@ public static partial class CodeGenFunctions {
 
         ///
 
-        output.Append(";\n");
-
-        ///
-
         return output.ToString();
     }
 
     public static String TranslateExpr(
         this Compiler compiler,
+        int indent,
         Expression expr) {
 
         var output = new StringBuilder();
@@ -370,7 +381,16 @@ public static partial class CodeGenFunctions {
 
                     case "print":
 
-                        output.Append("printf");
+                        output.Append("std::cout << ");
+                        
+                        output.Append("(");
+
+                        foreach (var param in ce.Call.Args) {
+
+                            output.Append(compiler.TranslateExpr(indent, param.Item2));
+                        }
+                        
+                        output.Append(") << std::endl");
 
                         break;
 
@@ -380,17 +400,17 @@ public static partial class CodeGenFunctions {
 
                         output.Append(ce.Call.Name);
 
+                        output.Append("(");
+
+                        foreach (var parameter in ce.Call.Args) {
+
+                            output.Append(compiler.TranslateExpr(indent, parameter.Item2));
+                        }
+
+                        output.Append(")");
+
                         break;
                 }
-
-                output.Append("(");
-
-                foreach (var parameter in ce.Call.Args) {
-
-                    output.Append(compiler.TranslateExpr(parameter.Item2));
-                }
-
-                output.Append(")");
 
                 break;
             }
