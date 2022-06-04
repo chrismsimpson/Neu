@@ -106,6 +106,12 @@ public partial class VoidType : NeuType {
         : base() { }
 }
 
+public partial class UnknownType : NeuType {
+
+    public UnknownType()
+        : base() { }
+}
+
 ///
 
 public partial class VarDecl {
@@ -560,12 +566,16 @@ public partial class Expression: Statement {
 
         public bool Value { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public BooleanExpression(
-            bool value) {
+            bool value,
+            Span span) {
 
             this.Value = value;
+            this.Span = span;
         }
     }
 
@@ -573,13 +583,17 @@ public partial class Expression: Statement {
 
         public Call Call { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public CallExpression(
-            Call call)
+            Call call,
+            Span span)
             : base() {
 
             this.Call = call;
+            this.Span = span;
         }
     }
 
@@ -587,13 +601,17 @@ public partial class Expression: Statement {
 
         public Int64 Value { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public Int64Expression(
-            Int64 value)
+            Int64 value,
+            Span span)
             : base() {
 
             this.Value = value;
+            this.Span = span;
         }
     }
 
@@ -601,13 +619,17 @@ public partial class Expression: Statement {
 
         public String Value { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public QuotedStringExpression(
-            String value)
+            String value,
+            Span span)
             : base() { 
             
             this.Value = value;
+            this.Span = span;
         }
     }
 
@@ -635,14 +657,18 @@ public partial class Expression: Statement {
     public partial class VarExpression: Expression {
 
         public String Value { get; init; }
+        
+        public Span Span { get; init; }
 
         ///
 
         public VarExpression(
-            String value) 
+            String value,
+            Span span) 
             : base() {
 
             this.Value = value;
+            this.Span = span;
         }
     }
 
@@ -670,14 +696,18 @@ public partial class Expression: Statement {
     public partial class OperatorExpression: Expression {
 
         public Operator Operator { get; init; }
+        
+        public Span Span { get; init; }
 
         ///
 
         public OperatorExpression(
-            Operator op)
+            Operator op,
+            Span span)
             : base() {
 
             this.Operator = op;
+            this.Span = span;
         }
     }
     
@@ -685,15 +715,73 @@ public partial class Expression: Statement {
 
     public partial class GarbageExpression: Expression {
 
+        public Span Span { get; init; }
+
         ///
 
-        public GarbageExpression() 
-            : base() { }
+        public GarbageExpression(
+            Span span) 
+            : base() {
+
+            this.Span = span;
+        }
     }
 
 ///
 
 public static partial class ExpressionFunctions {
+
+    public static Span GetSpan(
+        this Expression expr) {
+
+        switch (expr) {
+
+            case BooleanExpression be: {
+
+                return be.Span;
+            }
+
+            case CallExpression ce: {
+
+                return ce.Span;
+            }
+
+            case Int64Expression ie: {
+
+                return ie.Span;
+            }
+
+            case QuotedStringExpression qse: {
+
+                return qse.Span;
+            }
+
+            case BinaryOpExpression boe: {
+
+                return boe.Op.GetSpan();
+            }
+
+            case VarExpression ve: {
+
+                return ve.Span;
+            }
+
+            case OperatorExpression oe: {
+
+                return oe.Span;
+            }
+
+            case GarbageExpression ge: {
+
+                return ge.Span;
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+    }
 
     public static UInt64 Precendence(
         this Expression expr) {
@@ -701,14 +789,16 @@ public static partial class ExpressionFunctions {
         switch (expr) {
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.Multiply || opExpr.Operator == Operator.Divide:
+                opExpr.Operator == Operator.Multiply 
+                || opExpr.Operator == Operator.Divide:
 
                 return 100;
 
             ///
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.Add || opExpr.Operator == Operator.Subtract:
+                opExpr.Operator == Operator.Add 
+                || opExpr.Operator == Operator.Subtract:
 
                 return 90;
 
@@ -1318,9 +1408,9 @@ public static partial class ParserFunctions {
                     "incomplete math expression",
                     tokens.ElementAt(index - 1).Span);
 
-                exprStack.Add(new GarbageExpression());
+                exprStack.Add(new GarbageExpression(tokens.ElementAt(index - 1).Span));
                 
-                exprStack.Add(new GarbageExpression());
+                exprStack.Add(new GarbageExpression(tokens.ElementAt(index - 1).Span));
 
                 break;
             }
@@ -1380,6 +1470,8 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
+        var span = tokens.ElementAt(index).Span;
+
         switch (tokens.ElementAt(index)) {
 
             case NameToken nt when nt.Value == "true": {
@@ -1387,7 +1479,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new BooleanExpression(true),
+                    new BooleanExpression(true, span),
                     null);
             }
 
@@ -1398,7 +1490,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new BooleanExpression(false),
+                    new BooleanExpression(false, span),
                     null);
             }
 
@@ -1417,7 +1509,7 @@ public static partial class ParserFunctions {
                             error = error ?? callErr;
 
                             return (
-                                new CallExpression(call), 
+                                new CallExpression(call, span), 
                                 error);
                         }
 
@@ -1433,7 +1525,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new VarExpression(nt.Value),
+                    new VarExpression(nt.Value, span),
                     error);
             }
 
@@ -1478,7 +1570,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new Int64Expression(numTok.Value),
+                    new Int64Expression(numTok.Value, span),
                     error);
             }
 
@@ -1489,7 +1581,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new QuotedStringExpression(qs.Value),
+                    new QuotedStringExpression(qs.Value, span),
                     error);
             }
 
@@ -1498,7 +1590,7 @@ public static partial class ParserFunctions {
             default: {
 
                 return (
-                    new GarbageExpression(),
+                    new GarbageExpression(span),
                     new ParserError(
                         "unsupported expression",
                         tokens.ElementAt(index).Span)
@@ -1511,111 +1603,113 @@ public static partial class ParserFunctions {
 
     public static (Expression, Error?) ParseOperator(List<Token> tokens, ref int index) {
 
+        var span = tokens.ElementAt(index).Span;
+
         switch (tokens.ElementAt(index)) {
 
             case PlusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Add), null);
+                return (new OperatorExpression(Operator.Add, span), null);
             }
 
             case MinusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Subtract), null);
+                return (new OperatorExpression(Operator.Subtract, span), null);
             }
 
             case AsteriskToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Multiply), null);
+                return (new OperatorExpression(Operator.Multiply, span), null);
             }
 
             case ForwardSlashToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Divide), null);
+                return (new OperatorExpression(Operator.Divide, span), null);
             }
 
             case EqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.Assign), null);
+                return (new OperatorExpression(Operator.Assign, span), null);
             }
 
             case PlusEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.AddAssign), null);
+                return (new OperatorExpression(Operator.AddAssign, span), null);
             }
             
             case MinusEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.SubtractAssign), null);
+                return (new OperatorExpression(Operator.SubtractAssign, span), null);
             }
 
             case AsteriskEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.MultiplyAssign), null);
+                return (new OperatorExpression(Operator.MultiplyAssign, span), null);
             }
 
             case ForwardSlashEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.DivideAssign), null);
+                return (new OperatorExpression(Operator.DivideAssign, span), null);
             }
 
             case DoubleEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.Equal), null);
+                return (new OperatorExpression(Operator.Equal, span), null);
             }
             
             case NotEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.NotEqual), null);
+                return (new OperatorExpression(Operator.NotEqual, span), null);
             }
             
             case LessThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.LessThan), null);
+                return (new OperatorExpression(Operator.LessThan, span), null);
             }
             
             case LessThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.LessThanOrEqual), null);
+                return (new OperatorExpression(Operator.LessThanOrEqual, span), null);
             }
             
             case GreaterThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.GreaterThan), null);
+                return (new OperatorExpression(Operator.GreaterThan, span), null);
             }
             
             case GreaterThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.GreaterThanOrEqual), null);
+                return (new OperatorExpression(Operator.GreaterThanOrEqual, span), null);
             }
 
             ///
@@ -1623,7 +1717,7 @@ public static partial class ParserFunctions {
             default: {
 
                 return (
-                    new GarbageExpression(),
+                    new GarbageExpression(span),
                     new ParserError(
                         "unsupported operator", 
                         tokens.ElementAt(index).Span));

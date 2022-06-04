@@ -4,7 +4,8 @@ namespace Neu;
 public enum ErrorType {
 
     IO,
-    Parser
+    Parser,
+    TypeCheckError
 }
 
 public partial class Error {
@@ -39,6 +40,21 @@ public partial class ParserError: Error {
     }
 }
 
+public partial class TypeCheckError: Error {
+
+    public Span Span { get; init; }
+
+    ///
+
+    public TypeCheckError(
+        String content, 
+        Span span)
+        : base(ErrorType.TypeCheckError, content) {
+
+        this.Span = span;
+    }
+}
+
 public partial class ErrorOr<Result> {
 
     [MaybeNull]
@@ -63,11 +79,17 @@ public partial class ErrorOr<Result> {
     }
 
     public ErrorOr(
-        String content,
-        Span span) {
+        Error e) {
 
-        this.Error = new ParserError(content, span);
+        this.Error = e;
     }
+
+    // public ErrorOr(
+    //     String content,
+    //     Span span) {
+
+    //     this.Error = new ParserError(content, span);
+    // }
 }
 
 public class ErrorOrVoid {
