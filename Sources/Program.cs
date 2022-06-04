@@ -22,6 +22,12 @@ public static partial class Program {
 
                     break;
 
+                case var _ when compiledOrError.Error is TypeCheckError te:
+
+                    DisplayError(parser, te.Content, te.Span);
+
+                    break;
+
                 case var _ when compiledOrError.Error is Error e:
 
                     WriteLine($"Error: {compiledOrError.Error}");

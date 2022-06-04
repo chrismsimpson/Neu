@@ -501,26 +501,49 @@ public static partial class TypeCheckerFunctions {
         return (checkedBlock, error);
     }
 
-    public static bool IsNotSameType(NeuType a, NeuType b) {
+    // public static bool IsNotSameType(NeuType a, NeuType b) {
+
+    //     switch (true) {
+
+    //         case var _ when a is BoolType && b is BoolType:         return false;
+    //         case var _ when a is StringType && b is StringType:     return false;
+    //         case var _ when a is Int8Type && b is Int8Type:         return false;
+    //         case var _ when a is Int16Type && b is Int16Type:       return false;
+    //         case var _ when a is Int32Type && b is Int32Type:       return false;
+    //         case var _ when a is Int64Type && b is Int64Type:       return false;
+    //         case var _ when a is UInt8Type && b is UInt8Type:       return false;
+    //         case var _ when a is UInt16Type && b is UInt16Type:     return false;
+    //         case var _ when a is UInt32Type && b is UInt32Type:     return false;
+    //         case var _ when a is UInt64Type && b is UInt64Type:     return false;
+    //         case var _ when a is FloatType && b is FloatType:       return false;
+    //         case var _ when a is DoubleType && b is DoubleType:     return false;
+    //         case var _ when a is VoidType && b is VoidType:         return false;
+    //         case var _ when a is UnknownType && b is UnknownType:   return false;
+
+    //         default:                                                return true;
+    //     }
+    // }
+
+    public static bool IsSameType(NeuType a, NeuType b) {
 
         switch (true) {
 
-            case var _ when a is BoolType && b is BoolType:         return false;
-            case var _ when a is StringType && b is StringType:     return false;
-            case var _ when a is Int8Type && b is Int8Type:         return false;
-            case var _ when a is Int16Type && b is Int16Type:       return false;
-            case var _ when a is Int32Type && b is Int32Type:       return false;
-            case var _ when a is Int64Type && b is Int64Type:       return false;
-            case var _ when a is UInt8Type && b is UInt8Type:       return false;
-            case var _ when a is UInt16Type && b is UInt16Type:     return false;
-            case var _ when a is UInt32Type && b is UInt32Type:     return false;
-            case var _ when a is UInt64Type && b is UInt64Type:     return false;
-            case var _ when a is FloatType && b is FloatType:       return false;
-            case var _ when a is DoubleType && b is DoubleType:     return false;
-            case var _ when a is VoidType && b is VoidType:         return false;
-            case var _ when a is UnknownType && b is UnknownType:   return false;
+            case var _ when a is BoolType && b is BoolType:         return true;
+            case var _ when a is StringType && b is StringType:     return true;
+            case var _ when a is Int8Type && b is Int8Type:         return true;
+            case var _ when a is Int16Type && b is Int16Type:       return true;
+            case var _ when a is Int32Type && b is Int32Type:       return true;
+            case var _ when a is Int64Type && b is Int64Type:       return true;
+            case var _ when a is UInt8Type && b is UInt8Type:       return true;
+            case var _ when a is UInt16Type && b is UInt16Type:     return true;
+            case var _ when a is UInt32Type && b is UInt32Type:     return true;
+            case var _ when a is UInt64Type && b is UInt64Type:     return true;
+            case var _ when a is FloatType && b is FloatType:       return true;
+            case var _ when a is DoubleType && b is DoubleType:     return true;
+            case var _ when a is VoidType && b is VoidType:         return true;
+            case var _ when a is UnknownType && b is UnknownType:   return true;
 
-            default:                                                return true;
+            default:                                                return false;
         }
     }
 
@@ -556,7 +579,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                if (IsNotSameType(vds.Decl.Type, checkedExpr.GetNeuType())) {
+                if (!IsSameType(vds.Decl.Type, checkedExpr.GetNeuType())) {
                 // if (vds.Decl.Type != checkedExpr.GetNeuType()) {
 
                     error = error ?? new TypeCheckError(
