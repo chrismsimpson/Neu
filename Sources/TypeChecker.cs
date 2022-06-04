@@ -455,6 +455,8 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
+        stack.PushFrame();
+
         foreach (var p in fun.Parameters) {
 
             stack.AddVar(p);
@@ -499,6 +501,29 @@ public static partial class TypeCheckerFunctions {
         return (checkedBlock, error);
     }
 
+    public static bool IsNotSameType(NeuType a, NeuType b) {
+
+        switch (true) {
+
+            case var _ when a is BoolType && b is BoolType:         return false;
+            case var _ when a is StringType && b is StringType:     return false;
+            case var _ when a is Int8Type && b is Int8Type:         return false;
+            case var _ when a is Int16Type && b is Int16Type:       return false;
+            case var _ when a is Int32Type && b is Int32Type:       return false;
+            case var _ when a is Int64Type && b is Int64Type:       return false;
+            case var _ when a is UInt8Type && b is UInt8Type:       return false;
+            case var _ when a is UInt16Type && b is UInt16Type:     return false;
+            case var _ when a is UInt32Type && b is UInt32Type:     return false;
+            case var _ when a is UInt64Type && b is UInt64Type:     return false;
+            case var _ when a is FloatType && b is FloatType:       return false;
+            case var _ when a is DoubleType && b is DoubleType:     return false;
+            case var _ when a is VoidType && b is VoidType:         return false;
+            case var _ when a is UnknownType && b is UnknownType:   return false;
+
+            default:                                                return true;
+        }
+    }
+
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
         Stack stack) {
@@ -531,7 +556,8 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                if (vds.Decl.Type != checkedExpr.GetNeuType()) {
+                if (IsNotSameType(vds.Decl.Type, checkedExpr.GetNeuType())) {
+                // if (vds.Decl.Type != checkedExpr.GetNeuType()) {
 
                     error = error ?? new TypeCheckError(
                         "mismatch between declaration and initializer",
