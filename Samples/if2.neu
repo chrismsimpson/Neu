@@ -1,0 +1,7 @@
+func main() {
+    let x: Int64 = 100;
+
+    if (x == 100) {
+        print("true")
+    }
+}

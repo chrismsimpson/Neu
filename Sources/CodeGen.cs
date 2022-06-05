@@ -210,6 +210,13 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case UnknownType _: {
+
+                return "auto";
+            }
+
+            ///
+
             default: {
 
                 throw new Exception();

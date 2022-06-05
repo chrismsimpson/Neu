@@ -579,15 +579,24 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                if (!IsSameType(vds.Decl.Type, checkedExpr.GetNeuType())) {
-                // if (vds.Decl.Type != checkedExpr.GetNeuType()) {
+                NeuType varDeclType = vds.Decl.Type;
 
-                    error = error ?? new TypeCheckError(
-                        "mismatch between declaration and initializer",
-                        vds.Expr.GetSpan());
+                if (vds.Decl.Type is UnknownType) {
+
+                    varDeclType = checkedExpr.GetNeuType();
                 }
+                // Taking this out for now until we have better number type support
+                // else if (!IsSameType(vds.Decl.Type, checkedExpr.GetNeuType())) {
+                // // else if (vds.Decl.Type != checkedExpr.GetNeuType()) {
 
-                stack.AddVar((vds.Decl.Name, vds.Decl.Type));
+                //     error = error ?? new TypeCheckError(
+                //         "mismatch between declaration and initializer",
+                //         vds.Expr.GetSpan());
+                // }
+
+                // var ty = varDeclType ?? throw new Exception();
+
+                stack.AddVar((vds.Decl.Name, varDeclType));
 
                 return (
                     new CheckedVarDeclStatement(vds.Decl, checkedExpr),

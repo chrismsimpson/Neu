@@ -122,19 +122,24 @@ public partial class VarDecl {
 
     public bool Mutable { get; set; }
 
+    public Span Span { get; init; }
+
     ///
 
-    public VarDecl()
-        : this(String.Empty, new VoidType(), false) { }
+    public VarDecl(Span span)
+        : this(String.Empty, new VoidType(), false, span) { }
 
     public VarDecl(
         String name,
         NeuType type,
-        bool mutable) {
+        bool mutable,
+        Span span
+        ) {
 
         this.Name = name;
         this.Type = type;
         this.Mutable = mutable;
+        this.Span = span;
     }
 }
 
@@ -1757,12 +1762,24 @@ public static partial class ParserFunctions {
                         default: {
 
                             return (
-                                new VarDecl(), 
-                                new ParserError(
-                                    "expected ':'", 
-                                    tokens.ElementAt(index).Span));
+                                new VarDecl(
+                                    name: nt.Value, 
+                                    type: new UnknownType(), 
+                                    mutable: false,
+                                    span: tokens.ElementAt(index - 1).Span),
+                                null);
                         }
                     }
+                }
+                else {
+
+                    return (
+                        new VarDecl(
+                            name: nt.Value, 
+                            type: new UnknownType(), 
+                            mutable: false, 
+                            span: tokens.ElementAt(index - 1).Span), 
+                        null);
                 }
             
                 if (index < tokens.Count) {
@@ -1774,7 +1791,8 @@ public static partial class ParserFunctions {
                     var result = new VarDecl(
                         name: varName, 
                         type: varType, 
-                        mutable: false);
+                        mutable: false,
+                        span: tokens.ElementAt(index - 3).Span);
 
                     index += 1;
 
@@ -1785,8 +1803,9 @@ public static partial class ParserFunctions {
                     return (
                         new VarDecl(
                             nt.Value, 
-                            new VoidType(), 
-                            mutable: false), 
+                            new UnknownType(), 
+                            mutable: false,
+                            span: tokens.ElementAt(index - 2).Span), 
                         new ParserError(
                             "expected type", 
                             tokens.ElementAt(index).Span));
@@ -1798,7 +1817,7 @@ public static partial class ParserFunctions {
             default: {
 
                 return (
-                    new VarDecl(),
+                    new VarDecl(tokens.ElementAt(index).Span),
                     new ParserError(
                         "expected name", 
                         tokens.ElementAt(index).Span));
