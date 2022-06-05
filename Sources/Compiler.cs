@@ -35,8 +35,78 @@ public partial class Compiler {
 
 public partial class Compiler {
 
-    public ErrorOrVoid Compile(
-        String filename) {
+    // public ErrorOrVoid Compile(
+    //     String filename) {
+
+    //     var contents = ReadAllBytes(filename);
+        
+    //     this.RawFiles.Add((filename, contents));
+
+    //     var (lexed, lexErr) = LexerFunctions.Lex(
+    //         this.RawFiles.Count - 1, 
+    //         this.RawFiles[this.RawFiles.Count - 1].Item2);
+
+    //     switch (lexErr) {
+
+    //         case Error e: {
+
+    //             return new ErrorOrVoid(e);
+    //         }
+
+    //         ///
+
+    //         default: {
+
+    //             break;
+    //         }
+    //     }
+
+    //     var (parsedFile, parseErr) = ParserFunctions.ParseFile(lexed);
+
+    //     switch (parseErr) {
+
+    //         case Error e: {
+
+    //             return new ErrorOrVoid(e);
+    //         }
+
+    //         ///
+
+    //         default: {
+
+    //             break;
+    //         }
+    //     }
+
+    //     ///
+
+    //     var (checkedFile, checkErr) = TypeCheckerFunctions.TypeCheckFile(parsedFile);
+
+    //     switch (checkErr) {
+
+    //         case Error e: {
+
+    //             return new ErrorOrVoid(e);
+    //         }
+
+    //         default: {
+
+    //             break;
+    //         }
+    //     }
+
+    //     var cppFile = this.Translate(checkedFile);
+
+    //     WriteAllText("./Generated/Output/output.cpp", cppFile);
+
+    //     // TODO: do something with this
+
+    //     this.CheckedFiles.Add((filename, checkedFile));
+        
+    //     return new ErrorOrVoid();
+    // }
+
+    public ErrorOr<String> ConvertToCPP(String filename) {
 
         var contents = ReadAllBytes(filename);
         
@@ -50,7 +120,7 @@ public partial class Compiler {
 
             case Error e: {
 
-                return new ErrorOrVoid(e);
+                return new ErrorOr<String>(e);
             }
 
             ///
@@ -67,7 +137,7 @@ public partial class Compiler {
 
             case Error e: {
 
-                return new ErrorOrVoid(e);
+                return new ErrorOr<String>(e);
             }
 
             ///
@@ -86,7 +156,7 @@ public partial class Compiler {
 
             case Error e: {
 
-                return new ErrorOrVoid(e);
+                return new ErrorOr<String>(e);
             }
 
             default: {
@@ -95,14 +165,27 @@ public partial class Compiler {
             }
         }
 
-        var cppFile = this.Translate(checkedFile);
-
-        WriteAllText("./Generated/Output/output.cpp", cppFile);
-
         // TODO: do something with this
 
         this.CheckedFiles.Add((filename, checkedFile));
-        
+
+        return new ErrorOr<String>(this.Translate(checkedFile));
+    }
+    
+    public ErrorOrVoid Compile(
+        String filename) {
+
+        var cppStringOrError = this.ConvertToCPP(filename);
+
+        if (cppStringOrError.Error != null) {
+
+            throw new Exception();
+        }
+
+        var cppString = cppStringOrError.Value ?? throw new Exception();
+
+        File.WriteAllText("./Generated/Output/output.cpp", cppString);
+
         return new ErrorOrVoid();
     }
 

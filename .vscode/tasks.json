@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "build",
-            "command": "dotnet build Sources/",
+            "command": "dotnet build Neu.sln",
             "type": "shell",
             "args": [
             ],
