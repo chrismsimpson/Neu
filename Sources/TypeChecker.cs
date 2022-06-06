@@ -797,9 +797,21 @@ public static partial class TypeCheckerFunctions {
 
             default: {
 
-                var (_callee, resolveErr) = ResolveCall(call, span, file);
+                var (callee, resolveErr) = ResolveCall(call, span, file);
 
                 error = error ?? resolveErr;
+
+                if (callee != null) {
+
+                    // Check that we have the right number of arguments
+
+                    if (callee.Parameters.Count != call.Args.Count) {
+
+                        error = error ?? new ParserError(
+                            "wrong number of arguments", 
+                            span);
+                    }
+                }
 
                 break;
             }

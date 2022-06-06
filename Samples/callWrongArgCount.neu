@@ -1,0 +1,6 @@
+func foo(a: Int32, b: Int32, c: Int32) {
+}
+
+func main() {
+    foo(1, 2)
+}
