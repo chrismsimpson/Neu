@@ -439,7 +439,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var fun in file.Functions) {
 
-            var (checkedFun, funErr) = TypeCheckFunction(fun, stack);
+            var (checkedFun, funErr) = TypeCheckFunction(fun, stack, file);
 
             error = error ?? funErr;
 
@@ -451,7 +451,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedFunction, Error?) TypeCheckFunction(
         Function fun,
-        Stack stack) {
+        Stack stack,
+        ParsedFile file) {
 
         Error? error = null;
 
@@ -462,7 +463,7 @@ public static partial class TypeCheckerFunctions {
             stack.AddVar(p);
         }
 
-        var (block, blockErr) = TypeCheckBlock(fun.Block, stack);
+        var (block, blockErr) = TypeCheckBlock(fun.Block, stack, file);
 
         error = error ?? blockErr;
 
@@ -479,7 +480,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedBlock, Error?) TypeCheckBlock(
         Block block,
-        Stack stack) {
+        Stack stack,
+        ParsedFile file) {
 
         Error? error = null;
 
@@ -489,7 +491,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var stmt in block.Statements) {
 
-            var (checkedStmt, err) = TypeCheckStatement(stmt, stack);
+            var (checkedStmt, err) = TypeCheckStatement(stmt, stack, file);
 
             error = error ?? err;
 
@@ -500,29 +502,6 @@ public static partial class TypeCheckerFunctions {
 
         return (checkedBlock, error);
     }
-
-    // public static bool IsNotSameType(NeuType a, NeuType b) {
-
-    //     switch (true) {
-
-    //         case var _ when a is BoolType && b is BoolType:         return false;
-    //         case var _ when a is StringType && b is StringType:     return false;
-    //         case var _ when a is Int8Type && b is Int8Type:         return false;
-    //         case var _ when a is Int16Type && b is Int16Type:       return false;
-    //         case var _ when a is Int32Type && b is Int32Type:       return false;
-    //         case var _ when a is Int64Type && b is Int64Type:       return false;
-    //         case var _ when a is UInt8Type && b is UInt8Type:       return false;
-    //         case var _ when a is UInt16Type && b is UInt16Type:     return false;
-    //         case var _ when a is UInt32Type && b is UInt32Type:     return false;
-    //         case var _ when a is UInt64Type && b is UInt64Type:     return false;
-    //         case var _ when a is FloatType && b is FloatType:       return false;
-    //         case var _ when a is DoubleType && b is DoubleType:     return false;
-    //         case var _ when a is VoidType && b is VoidType:         return false;
-    //         case var _ when a is UnknownType && b is UnknownType:   return false;
-
-    //         default:                                                return true;
-    //     }
-    // }
 
     public static bool IsSameType(NeuType a, NeuType b) {
 
@@ -549,7 +528,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
-        Stack stack) {
+        Stack stack,
+        ParsedFile file) {
 
         Error? error = null;
 
@@ -557,7 +537,7 @@ public static partial class TypeCheckerFunctions {
 
             case Expression e: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack);
+                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack, file);
 
                 return (
                     checkedExpr,
@@ -566,7 +546,7 @@ public static partial class TypeCheckerFunctions {
 
             case DeferStatement ds: {
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ds.Block, stack);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ds.Block, stack, file);
 
                 return (
                     new CheckedDeferStatement(checkedBlock),
@@ -575,7 +555,7 @@ public static partial class TypeCheckerFunctions {
 
             case VarDeclStatement vds: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack);
+                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack, file);
 
                 error = error ?? exprErr;
 
@@ -605,11 +585,11 @@ public static partial class TypeCheckerFunctions {
 
             case IfStatement ifStmt: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack);
+                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack, file);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack, file);
                 
                 error = error ?? blockErr;
 
@@ -620,11 +600,11 @@ public static partial class TypeCheckerFunctions {
 
             case WhileStatement ws: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack);
+                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack, file);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack, file);
                 
                 error = error ?? blockErr;
 
@@ -635,7 +615,7 @@ public static partial class TypeCheckerFunctions {
 
             case ReturnStatement rs: {
 
-                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack);
+                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack, file);
 
                 return (
                     new CheckedReturnStatement(output), 
@@ -658,7 +638,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedExpression, Error?) TypeCheckExpression(
         Expression expr,
-        Stack stack) {
+        Stack stack,
+        ParsedFile file) {
 
         Error? error = null;
 
@@ -666,7 +647,7 @@ public static partial class TypeCheckerFunctions {
 
             case BinaryOpExpression e: {
 
-                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack);
+                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack, file);
 
                 error = error ?? checkedLhsErr;
 
@@ -675,7 +656,7 @@ public static partial class TypeCheckerFunctions {
                     _ => throw new Exception()
                 };
 
-                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack);
+                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file);
 
                 error = error ?? checkedRhsErr;
                 
@@ -699,7 +680,7 @@ public static partial class TypeCheckerFunctions {
 
             case CallExpression e: {
 
-                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack);
+                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, file);
 
                 return (
                     new CheckedCallExpression(checkedCall, new UnknownType()),
@@ -765,7 +746,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedCall, Error?) TypeCheckCall(
         Call call, 
-        Stack stack) {
+        Stack stack,
+        ParsedFile file) {
 
         var checkedArgs = new List<(String, CheckedExpression)>();
 
@@ -773,7 +755,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var arg in call.Args) {
 
-            var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack);
+            var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file);
 
             error = error ?? checkedArgErr;
 
