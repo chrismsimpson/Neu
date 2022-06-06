@@ -5,8 +5,6 @@ public partial class Compiler {
 
     public List<(String, byte[])> RawFiles { get; init; }
 
-    // public List<(String, ParsedFile)> ParsedFiles { get; init; }
-
     public List<(String, CheckedFile)> CheckedFiles { get; init; }
 
     ///
@@ -14,19 +12,16 @@ public partial class Compiler {
     public Compiler()
         : this(
             new List<(String, byte[])>(), 
-            // new List<(String, ParsedFile)>()
             new List<(String, CheckedFile)>()
             ) {
     }
 
     public Compiler(
         List<(String, byte[])> rawFiles,
-        // List<(String, ParsedFile)> parsedFiles
         List<(String, CheckedFile)> checkedFiles
         ) {
 
         this.RawFiles = rawFiles;
-        // this.ParsedFiles = parsedFiles;
         this.CheckedFiles = checkedFiles;
     }
 }
@@ -34,77 +29,6 @@ public partial class Compiler {
 ///
 
 public partial class Compiler {
-
-    // public ErrorOrVoid Compile(
-    //     String filename) {
-
-    //     var contents = ReadAllBytes(filename);
-        
-    //     this.RawFiles.Add((filename, contents));
-
-    //     var (lexed, lexErr) = LexerFunctions.Lex(
-    //         this.RawFiles.Count - 1, 
-    //         this.RawFiles[this.RawFiles.Count - 1].Item2);
-
-    //     switch (lexErr) {
-
-    //         case Error e: {
-
-    //             return new ErrorOrVoid(e);
-    //         }
-
-    //         ///
-
-    //         default: {
-
-    //             break;
-    //         }
-    //     }
-
-    //     var (parsedFile, parseErr) = ParserFunctions.ParseFile(lexed);
-
-    //     switch (parseErr) {
-
-    //         case Error e: {
-
-    //             return new ErrorOrVoid(e);
-    //         }
-
-    //         ///
-
-    //         default: {
-
-    //             break;
-    //         }
-    //     }
-
-    //     ///
-
-    //     var (checkedFile, checkErr) = TypeCheckerFunctions.TypeCheckFile(parsedFile);
-
-    //     switch (checkErr) {
-
-    //         case Error e: {
-
-    //             return new ErrorOrVoid(e);
-    //         }
-
-    //         default: {
-
-    //             break;
-    //         }
-    //     }
-
-    //     var cppFile = this.Translate(checkedFile);
-
-    //     WriteAllText("./Generated/Output/output.cpp", cppFile);
-
-    //     // TODO: do something with this
-
-    //     this.CheckedFiles.Add((filename, checkedFile));
-        
-    //     return new ErrorOrVoid();
-    // }
 
     public ErrorOr<String> ConvertToCPP(String filename) {
 
