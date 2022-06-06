@@ -486,14 +486,32 @@ public partial class IfStatement: Statement {
 
     public Block Block { get; init; }
 
+    public Statement? Trailing { get; init; }
+
     ///
 
     public IfStatement(
         Expression expr,
-        Block block)
+        Block block,
+        Statement? trailing)
         : base() {
 
         this.Expr = expr;
+        this.Block = block;
+        this.Trailing = trailing;
+    }
+}
+
+///
+
+public partial class BlockStatement: Statement {
+
+    public Block Block { get; init; }
+
+    public BlockStatement(
+        Block block) 
+        : base() {
+
         this.Block = block;
     }
 }
@@ -736,57 +754,57 @@ public partial class Expression: Statement {
 
 public static partial class ExpressionFunctions {
 
-    public static Span GetSpan(
-        this Expression expr) {
+    // public static Span GetSpan(
+    //     this Expression expr) {
 
-        switch (expr) {
+    //     switch (expr) {
 
-            case BooleanExpression be: {
+    //         case BooleanExpression be: {
 
-                return be.Span;
-            }
+    //             return be.Span;
+    //         }
 
-            case CallExpression ce: {
+    //         case CallExpression ce: {
 
-                return ce.Span;
-            }
+    //             return ce.Span;
+    //         }
 
-            case Int64Expression ie: {
+    //         case Int64Expression ie: {
 
-                return ie.Span;
-            }
+    //             return ie.Span;
+    //         }
 
-            case QuotedStringExpression qse: {
+    //         case QuotedStringExpression qse: {
 
-                return qse.Span;
-            }
+    //             return qse.Span;
+    //         }
 
-            case BinaryOpExpression boe: {
+    //         case BinaryOpExpression boe: {
 
-                return boe.Op.GetSpan();
-            }
+    //             return boe.Op.GetSpan();
+    //         }
 
-            case VarExpression ve: {
+    //         case VarExpression ve: {
 
-                return ve.Span;
-            }
+    //             return ve.Span;
+    //         }
 
-            case OperatorExpression oe: {
+    //         case OperatorExpression oe: {
 
-                return oe.Span;
-            }
+    //             return oe.Span;
+    //         }
 
-            case GarbageExpression ge: {
+    //         case GarbageExpression ge: {
 
-                return ge.Span;
-            }
+    //             return ge.Span;
+    //         }
 
-            default: {
+    //         default: {
 
-                throw new Exception();
-            }
-        }
-    }
+    //             throw new Exception();
+    //         }
+    //     }
+    // }
 
     public static UInt64 Precendence(
         this Expression expr) {
@@ -1240,21 +1258,26 @@ public static partial class ParserFunctions {
 
             ///
 
+            // case NameToken nt when nt.Value == "if": {
+
+            //     index += 1;
+
+            //     var (condExpr, condExprErr) = ParseExpression(tokens, ref index);
+
+            //     error = error ?? condExprErr;
+
+            //     var (block, blockErr) = ParseBlock(tokens, ref index);
+
+            //     error = error ?? blockErr;
+
+            //     return (
+            //         new IfStatement(condExpr, block),
+            //         error);
+            // }
+
             case NameToken nt when nt.Value == "if": {
 
-                index += 1;
-
-                var (condExpr, condExprErr) = ParseExpression(tokens, ref index);
-
-                error = error ?? condExprErr;
-
-                var (block, blockErr) = ParseBlock(tokens, ref index);
-
-                error = error ?? blockErr;
-
-                return (
-                    new IfStatement(condExpr, block),
-                    error);
+                return ParseIfStatement(tokens, ref index);
             }
 
             ///
@@ -1374,6 +1397,123 @@ public static partial class ParserFunctions {
                     error);
             }
         }
+    }
+
+    ///
+
+    public static (Statement, Error?) ParseIfStatement(
+        List<Token> tokens,
+        ref int index) {
+
+        Error? error = null;
+
+        switch (tokens.ElementAt(index)) {
+
+            case NameToken nt when nt.Value == "if": {
+
+                // Good, we have our keyword
+
+                break;
+            }
+
+            default: {
+
+                return (
+                    new GarbageStatement(),
+                    new ParserError(
+                        "expected if statement",
+                        tokens.ElementAt(index).Span));
+            }
+        }
+
+        index += 1;
+
+        var (cond, condErr) = ParseExpression(tokens, ref index);
+
+        error = error ?? condErr;
+
+        var (block, blockErr) = ParseBlock(tokens, ref index);
+
+        error = error ?? blockErr;
+
+        Statement? elseStmt = null;
+
+        if (index < tokens.Count) {
+
+            if (tokens.ElementAt(index) is EolToken) {
+
+                index += 1;
+            }
+
+            // Check for an 'else'
+
+            switch (tokens.ElementAt(index)) {
+
+                case NameToken n1 when n1.Value == "else": {
+
+                    // Good, we have our else keyword
+
+                    index += 1;
+
+                    if (index < tokens.Count) {
+
+                        switch (tokens.ElementAt(index)) {
+
+                            case NameToken n2 when n2.Value == "if": {
+
+                                var (elseIfStmt, elseIfErr) = ParseIfStatement(tokens, ref index);
+
+                                elseStmt = elseIfStmt;
+
+                                error = error ?? elseIfErr;
+
+                                break;
+                            }
+
+                            case LCurlyToken _: {
+
+                                var (elseBlock, elseBlockErr) = ParseBlock(tokens, ref index);
+
+                                elseStmt = new BlockStatement(elseBlock);
+
+                                error = error ?? elseBlockErr;
+
+                                break;
+                            }
+
+                            default: {
+
+                                error = error ?? new ParserError(
+                                    "else missing if or block",
+                                    tokens.ElementAt(index - 1).Span);
+
+                                break;
+                            }
+                        }
+
+                    }
+                    else {
+
+                        error = error ?? new ParserError(
+                            "else missing if or block",
+                            tokens.ElementAt(index - 1).Span);
+                    }
+
+                    break;
+                }
+
+                ///
+
+                default: {
+
+                    break;
+                }
+            }
+        
+            // try to parse an if statement again if we see an else
+        }
+
+        return (new IfStatement(cond, block, elseStmt), error);
     }
 
     ///

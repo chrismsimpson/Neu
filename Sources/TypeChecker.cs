@@ -107,13 +107,30 @@ public partial class CheckedStatement {
         
         public CheckedBlock Block { get; init; }
 
+        public CheckedStatement? Trailing { get; init; }
+
         ///
 
         public CheckedIfStatement(
             CheckedExpression expr,
-            CheckedBlock block) {
+            CheckedBlock block,
+            CheckedStatement? trailing) {
 
             this.Expr = expr;
+            this.Block = block;
+            this.Trailing = trailing;
+        }
+    }
+
+    public partial class CheckedBlockStatement: CheckedStatement {
+
+        public CheckedBlock Block { get; init; }
+
+        ///
+
+        public CheckedBlockStatement(
+            CheckedBlock block) {
+
             this.Block = block;
         }
     }
@@ -593,8 +610,23 @@ public static partial class TypeCheckerFunctions {
                 
                 error = error ?? blockErr;
 
+                CheckedStatement? elseOutput = null;
+
+                if (ifStmt.Trailing is Statement elseStmt) {
+
+                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, stack, file);
+
+                    error = error ?? checkedElseStmtErr;
+
+                    elseOutput = checkedElseStmt;
+                }
+                else {
+
+                    elseOutput = null;
+                }
+
                 return (
-                    new CheckedIfStatement(checkedCond, checkedBlock), 
+                    new CheckedIfStatement(checkedCond, checkedBlock, elseOutput), 
                     error);
             }
 
@@ -622,13 +654,22 @@ public static partial class TypeCheckerFunctions {
                     outputErr);
             }
 
+            case BlockStatement bs: {
+
+                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, stack, file);
+
+                return (
+                    new CheckedBlockStatement(checkedBlock),
+                    checkedBlockErr);
+            }
+            
             case GarbageStatement _: {
 
                 return (
                     new CheckedGarbageStatement(),
                     null);
             }
-            
+
             default: {
 
                 throw new Exception();

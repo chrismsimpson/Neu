@@ -1,0 +1,13 @@
+func main() {
+    let x: Int64 = 70;
+
+    if x == 100 {
+        print("true")
+    } 
+    else if x == 80 {
+        print("it is 80")
+    } 
+    else {
+        print("none of the above")
+    }
+}

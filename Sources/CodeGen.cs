@@ -325,6 +325,17 @@ public static partial class CodeGenFunctions {
                 
                 output.Append(blockStr);
 
+                if (ifStmt.Trailing is CheckedStatement e) {
+
+                    output.Append(new String(' ', indent));
+
+                    output.Append("else ");
+
+                    var elseStr = compiler.TranslateStmt(indent, e);
+
+                    output.Append(elseStr);
+                }
+
                 break;
             }
 
@@ -365,6 +376,19 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
+
+            ///
+
+            case CheckedBlockStatement chBlockStmt: {
+
+                var blockStr = compiler.TranslateBlock(indent, chBlockStmt.Block);
+
+                output.Append(blockStr);
+
+                break;
+            }
+
+            ///
 
             case CheckedGarbageStatement _: {
 
