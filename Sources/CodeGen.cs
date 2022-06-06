@@ -148,7 +148,7 @@ public static partial class CodeGenFunctions {
 
             case StringType _: {
 
-                return "char*";
+                return "char const*";
             }
 
             case Int8Type _: {
