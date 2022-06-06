@@ -138,6 +138,24 @@ public static partial class LexerFunctions {
 
                             continue;
                         }
+                        else if (ToChar(bytes[index]) == '/') {
+
+                            // We are in a comment, skip it
+
+                            while (index < bytes.Length) {
+
+                                if (ToChar(bytes[index]) == '\n') {
+
+                                    index += 1;
+
+                                    break;
+                                }
+
+                                index += 1;
+                            }
+
+                            continue;
+                        }
                     }
 
                     output.Add(new ForwardSlashToken(new Span(fileId, start, start + 1)));
