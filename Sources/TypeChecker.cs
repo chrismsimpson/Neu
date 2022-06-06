@@ -680,7 +680,7 @@ public static partial class TypeCheckerFunctions {
 
             case CallExpression e: {
 
-                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, file);
+                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, e.Span, file);
 
                 return (
                     new CheckedCallExpression(checkedCall, new UnknownType()),
@@ -744,14 +744,66 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
+    public static (Function?, Error?) ResolveCall(
+        Call call,
+        Span span,
+        ParsedFile file) {
+
+        Function? callee = null;
+        Error? error = null;
+
+        // FIXME: Support function overloading
+
+        foreach (var f in file.Functions) {
+
+            if (f.Name == call.Name) {
+
+                callee = f;
+
+                break;
+            }
+        }
+
+        if (callee == null) {
+
+            error = new TypeCheckError(
+                "call to unknown function",
+                span);
+        }
+
+        return (callee, error);
+    }
+
     public static (CheckedCall, Error?) TypeCheckCall(
         Call call, 
         Stack stack,
+        Span span,
         ParsedFile file) {
 
         var checkedArgs = new List<(String, CheckedExpression)>();
 
         Error? error = null;
+
+        switch (call.Name) {
+
+            case "print": {
+
+                // FIXME: This is a hack since print() is hard-coded into codegen at the moment
+
+                break;
+            }
+
+            ///
+
+            default: {
+
+                var (_callee, resolveErr) = ResolveCall(call, span, file);
+
+                error = error ?? resolveErr;
+
+                break;
+            }
+        }
 
         foreach (var arg in call.Args) {
 
