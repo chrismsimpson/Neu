@@ -2,4 +2,5 @@ bin
 obj
 output.cpp
 Build
-Generated
+Build*
+Generated*

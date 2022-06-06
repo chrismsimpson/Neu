@@ -1,0 +1,5 @@
+func main() {
+    var x: UInt64 = 100
+    x += 1
+    print(x)
+}
