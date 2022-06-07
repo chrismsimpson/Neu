@@ -28,6 +28,12 @@ public static partial class Program {
 
                     break;
 
+                case var _ when compiledOrError.Error is ValidationError ve:
+
+                    DisplayError(parser, ve.Content, ve.Span);
+
+                    break;
+
                 case var _ when compiledOrError.Error is Error e:
 
                     WriteLine($"Error: {compiledOrError.Error}");

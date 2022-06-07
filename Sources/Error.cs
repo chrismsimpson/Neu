@@ -5,7 +5,8 @@ public enum ErrorType {
 
     IO,
     Parser,
-    TypeCheckError
+    TypeCheck,
+    Validation
 }
 
 public partial class Error {
@@ -49,7 +50,22 @@ public partial class TypeCheckError: Error {
     public TypeCheckError(
         String content, 
         Span span)
-        : base(ErrorType.TypeCheckError, content) {
+        : base(ErrorType.TypeCheck, content) {
+
+        this.Span = span;
+    }
+}
+
+public partial class ValidationError: Error {
+
+    public Span Span { get; init; }
+
+    ///
+
+    public ValidationError(
+        String content, 
+        Span span)
+        : base(ErrorType.Validation, content) {
 
         this.Span = span;
     }

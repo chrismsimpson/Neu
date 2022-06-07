@@ -23,6 +23,14 @@ public partial class Call {
 
 ///
 
+public enum ExpressionKind {
+
+    ExpressionWithAssignments,
+    ExpressionWithoutAssignment
+}
+
+///
+
 public partial class NeuType {
 
     public NeuType() { }
@@ -1286,7 +1294,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (condExpr, condExprErr) = ParseExpression(tokens, ref index);
+                var (condExpr, condExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                 error = error ?? condExprErr;
 
@@ -1306,7 +1314,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (expr, exprErr) = ParseExpression(tokens, ref index);
+                var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                 error = error ?? exprErr;
 
@@ -1342,7 +1350,7 @@ public static partial class ParserFunctions {
 
                             if (index < tokens.Count) {
 
-                                var (expr, exprErr) = ParseExpression(tokens, ref index);
+                                var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                                 error = error ?? exprErr;
 
@@ -1388,9 +1396,21 @@ public static partial class ParserFunctions {
 
             case var t: {
 
-                var (expr, exprErr) = ParseExpression(tokens, ref index);
+                var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithAssignments);
 
                 error = error ?? exprErr;
+
+                // Make sure, if there is an error and we can make progress, that we make progress.
+                // This allows the parser to be more forgiving when there are errors
+                // and to ensure parsing continues to make progress.
+
+                if (error != null) {
+
+                    if (index < tokens.Count) {
+
+                        index += 1;
+                    }
+                }
 
                 return (
                     expr,
@@ -1428,7 +1448,7 @@ public static partial class ParserFunctions {
 
         index += 1;
 
-        var (cond, condErr) = ParseExpression(tokens, ref index);
+        var (cond, condErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
         error = error ?? condErr;
 
@@ -1518,9 +1538,12 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Expression, Error?) ParseExpression(List<Token> tokens, ref int index) {
+    public static (Expression, Error?) ParseExpression(
+        List<Token> tokens, 
+        ref int index, 
+        ExpressionKind exprKind) {
 
-        // As the exprStack grows, we increase the required precedence to grow larger
+        // As the exprStack grows, we increase the required precedence.
         // If, at any time, the operator we're looking at is the same or lower precedence
         // of what is in the expression stack, we collapse the expression stack.
 
@@ -1538,9 +1561,25 @@ public static partial class ParserFunctions {
 
         while (index < tokens.Count) {
 
-            var (op, opErr) = ParseOperator(tokens, ref index);
+            var (op, opErr) = ParseOperatorForKind(tokens, ref index, exprKind);
+            
+            if (opErr is Error e) {
+                
+                switch (e) {
 
-            if (opErr != null) {
+                    case ValidationError ve:
+
+                        // Because we just saw a validation error, we need to remember it
+                        // for later
+
+                        error = error ?? e;
+
+                        break;
+
+                    default:
+
+                        break;
+                }
 
                 break;
             }
@@ -1611,7 +1650,9 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Expression, Error?) ParseOperand(List<Token> tokens, ref int index) {
+    public static (Expression, Error?) ParseOperand(
+        List<Token> tokens, 
+        ref int index) {
 
         Error? error = null;
 
@@ -1680,7 +1721,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (expr, exprErr) = ParseExpression(tokens, ref index);
+                var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                 error = error ?? exprErr;
 
@@ -1746,7 +1787,176 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Expression, Error?) ParseOperator(List<Token> tokens, ref int index) {
+    public static (Expression, Error?) ParseOperatorForKind(
+        List<Token> tokens,
+        ref int index,
+        ExpressionKind exprKind) {
+
+        switch (exprKind) {
+
+            case ExpressionKind.ExpressionWithAssignments: 
+
+                return ParseOperatorWithAssignment(tokens, ref index);
+
+            case ExpressionKind.ExpressionWithoutAssignment:
+
+                return ParseOperator(tokens, ref index);
+
+            default:
+
+                throw new Exception();
+        }
+    }
+
+    public static (Expression, Error?) ParseOperator(
+        List<Token> tokens, 
+        ref int index) {
+
+        var span = tokens.ElementAt(index).Span;
+
+        switch (tokens.ElementAt(index)) {
+
+            case PlusToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.Add, span), null);
+            }
+
+            case MinusToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.Subtract, span), null);
+            }
+
+            case AsteriskToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.Multiply, span), null);
+            }
+
+            case ForwardSlashToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(Operator.Divide, span), null);
+            }
+
+            case EqualToken _: {
+                
+                index += 1;
+                
+                return (
+                    new OperatorExpression(Operator.Assign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case PlusEqualToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(Operator.AddAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+            
+            case MinusEqualToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(Operator.SubtractAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case AsteriskEqualToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(Operator.MultiplyAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case ForwardSlashEqualToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(Operator.DivideAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case DoubleEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.Equal, span), null);
+            }
+            
+            case NotEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.NotEqual, span), null);
+            }
+            
+            case LessThanToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.LessThan, span), null);
+            }
+            
+            case LessThanOrEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.LessThanOrEqual, span), null);
+            }
+            
+            case GreaterThanToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.GreaterThan, span), null);
+            }
+            
+            case GreaterThanOrEqualToken _: {
+                
+                index += 1;
+                
+                return (new OperatorExpression(Operator.GreaterThanOrEqual, span), null);
+            }
+
+            ///
+
+            default: {
+
+                return (
+                    new GarbageExpression(span),
+                    new ParserError(
+                        "unsupported operator", 
+                        tokens.ElementAt(index).Span));
+            }
+        }
+    }
+
+    public static (Expression, Error?) ParseOperatorWithAssignment(
+        List<Token> tokens, 
+        ref int index) {
 
         var span = tokens.ElementAt(index).Span;
 
@@ -2120,7 +2330,7 @@ public static partial class ParserFunctions {
 
                         default: {
 
-                            var (expr, exprError) = ParseExpression(tokens, ref index);
+                            var (expr, exprError) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                             error = error ?? exprError;
 
