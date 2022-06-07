@@ -59,7 +59,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new PlusEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new PlusEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -84,7 +84,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new MinusEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new MinusEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -109,7 +109,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new AsteriskEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new AsteriskEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -134,7 +134,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new ForwardSlashEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new ForwardSlashEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -177,7 +177,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new DoubleEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new DoubleEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -202,7 +202,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new GreaterThanOrEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new GreaterThanOrEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -227,7 +227,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new LessThanOrEqualToken(new Span(fileId, start, start + 1)));
+                            output.Add(new LessThanOrEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -252,7 +252,7 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            new NotEqualToken(new Span(fileId, start, start + 1));
+                            output.Add(new NotEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
