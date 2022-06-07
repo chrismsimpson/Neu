@@ -1,0 +1,5 @@
+func main() {
+    let x: Int64 = 100
+    x += 1
+    print(x)
+}

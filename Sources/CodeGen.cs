@@ -71,13 +71,13 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
                 
-            var ty = compiler.TranslateType(p.Item2);
+            var ty = compiler.TranslateType(p.Type);
 
             output.Append(ty);
 
             output.Append(" ");
 
-            output.Append(p.Item1);
+            output.Append(p.Name);
         }
 
         output.Append(")");
@@ -121,13 +121,13 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
 
-            var ty = compiler.TranslateType(p.Item2);
+            var ty = compiler.TranslateType(p.Type);
 
             output.Append(ty);
 
             output.Append(" ");
 
-            output.Append(p.Item1);
+            output.Append(p.Name);
         }
 
         output.Append(");");
@@ -442,7 +442,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedVarExpression v: {
 
-                output.Append(v.Name);
+                output.Append(v.Variable.Name);
 
                 break;
             }

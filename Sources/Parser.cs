@@ -416,7 +416,8 @@ public partial class Function {
 
     public String Name { get; init; }
 
-    public List<(String, NeuType)> Parameters { get; init; }
+    // public List<(String, NeuType)> Parameters { get; init; }
+    public List<Variable> Parameters { get; init; }
 
     public Block Block { get; init; }
 
@@ -427,13 +428,15 @@ public partial class Function {
     public Function()
         : this(
             String.Empty, 
-            new List<(string, NeuType)>(), 
+            // new List<(String, NeuType)>(), 
+            new List<Variable>(), 
             new Block(), 
             new VoidType()) { }
 
     public Function(
         String name,
-        List<(String, NeuType)> parameters,
+        // List<(String, NeuType)> parameters,
+        List<Variable> parameters,
         Block block,
         NeuType returnType) {
 
@@ -441,6 +444,29 @@ public partial class Function {
         this.Parameters = parameters;
         this.Block = block;
         this.ReturnType = returnType;
+    }
+}
+
+///
+
+public partial class Variable {
+
+    public String Name { get; init; }
+
+    public NeuType Type { get; init; }
+
+    public bool Mutable { get; init; }
+
+    ///
+
+    public Variable(
+        String name,
+        NeuType ty,
+        bool mutable) {
+
+        this.Name = name;
+        this.Type = ty;
+        this.Mutable = mutable;
     }
 }
 
@@ -1026,7 +1052,8 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
-                    var parameters = new List<(String, NeuType)>();
+                    // var parameters = new List<(String, NeuType)>();
+                    var parameters = new List<Variable>();
 
                     var cont = true;
 
@@ -1064,7 +1091,12 @@ public static partial class ParserFunctions {
 
                                 error = error ?? varDeclErr;
 
-                                parameters.Add((varDecl.Name, varDecl.Type));
+                                // parameters.Add((varDecl.Name, varDecl.Type));
+                                parameters.Add(
+                                    new Variable(
+                                        varDecl.Name, 
+                                        varDecl.Type, 
+                                        varDecl.Mutable));
 
                                 break;
                             }
@@ -1121,7 +1153,7 @@ public static partial class ParserFunctions {
                                     default: {
 
                                         error = error ?? new ParserError(
-                                            "expecrted ->",
+                                            "expected ->",
                                             tokens.ElementAt(index - 1).Span);
 
                                         break;

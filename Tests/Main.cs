@@ -9,38 +9,41 @@ public static partial class Program {
 
         ///
 
-        Build();
+        TestBasics();
+        TestControlFlow();
+        TestFunctions();
+        TestMath();
+        TestVariables();
     
         ///
 
         DeleteBuildCruft();
     }
 
-    public static ErrorOrVoid Build() {
+    public static ErrorOrVoid TestSamples(
+        String path) {
 
-        var n = Directory.GetFiles("./Samples");
+        foreach (var sample in Directory.GetFiles(path).OrderBy(x => x)) {
 
-        foreach (var path in n.OrderBy(x => x)) {
-
-            var ext = Path.GetExtension(path);
+            var ext = Path.GetExtension(sample);
 
             if (ext == ".neu") {
 
                 // Great, we found test file
 
-                var name = Path.GetFileNameWithoutExtension(path);
+                var name = Path.GetFileNameWithoutExtension(sample);
 
                 ///
 
                 var outputFilename = $"{name}.out";
 
-                var outputPath = $"./Samples/{outputFilename}";
+                var outputPath = $"{path}/{outputFilename}";
 
                 ///
 
                 var errorOutputFilename = $"{name}.error";
 
-                var errorOutputPath = $"./Samples/{errorOutputFilename}";
+                var errorOutputPath = $"{path}/{errorOutputFilename}";
 
                 ///
 
@@ -50,20 +53,13 @@ public static partial class Program {
                     
                     var og = Console.ForegroundColor;
                     
-                    Write($"Test: {path} ");
+                    Write($"Test: {sample} ");
 
                     ///
 
                     var compiler = new Compiler();
 
-                    var cppStringOrError = compiler.ConvertToCPP(path);
-
-                    // if (cppStringOrError.Error != null) {
-
-                    //     throw new Exception();
-                    // }
-
-                    // var cppString = cppStringOrError.Value ?? throw new Exception();
+                    var cppStringOrError = compiler.ConvertToCPP(sample);
 
                     String? cppString = null;
 
@@ -372,5 +368,32 @@ public static partial class Program {
                 ? errOutput.ToString() 
                 : output.ToString(), 
             error);
+    }
+
+    ///
+
+    public static ErrorOrVoid TestBasics() {
+
+        return TestSamples("./Samples/Basics");
+    }
+
+    public static ErrorOrVoid TestControlFlow() {
+
+        return TestSamples("./Samples/ControlFlow");
+    }
+
+    public static ErrorOrVoid TestFunctions() {
+
+        return TestSamples("./Samples/Functions");
+    }
+
+    public static ErrorOrVoid TestMath() {
+
+        return TestSamples("./Samples/Math");
+    }
+
+    public static ErrorOrVoid TestVariables() {
+
+        return TestSamples("./Samples/Variables");
     }
 }

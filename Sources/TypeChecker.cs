@@ -25,7 +25,8 @@ public partial class CheckedFunction {
     
     public NeuType ReturnType { get; init; }
     
-    public List<(String, NeuType)> Parameters { get; init; }
+    // public List<(String, NeuType)> Parameters { get; init; }
+    public List<Variable> Parameters { get; init; }
     
     public CheckedBlock Block { get; init; }
 
@@ -34,7 +35,8 @@ public partial class CheckedFunction {
     public CheckedFunction(
         String name,
         NeuType returnType,
-        List<(String, NeuType)> parameters,
+        // List<(String, NeuType)> parameters,
+        List<Variable> parameters,
         CheckedBlock block) { 
 
         this.Name = name;
@@ -260,18 +262,23 @@ public partial class CheckedExpression: CheckedStatement {
 
     public partial class CheckedVarExpression: CheckedExpression {
         
-        public String Name { get; init; }
+        // public String Name { get; init; }
 
-        public NeuType Type { get; init; }
+        // public NeuType Type { get; init; }
+
+        public Variable Variable { get; init; }
 
         ///
 
         public CheckedVarExpression(
-            String name,
-            NeuType type) {
+            // String name,
+            // NeuType type
+            Variable variable
+            ) {
 
-            this.Name = name;
-            this.Type = type;
+            // this.Name = name;
+            // this.Type = type;
+            this.Variable = variable;
         }
     }
 
@@ -316,9 +323,9 @@ public static partial class CheckedExpressionFunctions {
                 return e.Type;
             }
 
-            case CheckedVarExpression e: {
+            case CheckedVarExpression ve: {
 
-                return e.Type;
+                return ve.Variable.Type;
             }
 
             case CheckedGarbageExpression _: {
@@ -388,7 +395,15 @@ public static partial class StackFunctions {
         s.Frames.Pop();
     }
 
-    public static void AddVar(this Stack s, (String, NeuType) v) {
+    // public static void AddVar(this Stack s, (String, NeuType) v) {
+
+    //     if (s.Frames.Last() is StackFrame frame) {
+
+    //         frame.Vars.Add(v);
+    //     }
+    // }
+
+    public static void AddVar(this Stack s, Variable v) {
 
         if (s.Frames.Last() is StackFrame frame) {
 
@@ -396,17 +411,35 @@ public static partial class StackFunctions {
         }
     }
 
-    public static NeuType? FindVar(this Stack s, String v) {
+    // public static NeuType? FindVar(this Stack s, String v) {
+
+    //     for (var i = s.Frames.Count - 1; i >= 0; --i) {
+
+    //         var frame = s.Frames.ElementAt(i);
+
+    //         foreach (var va in frame.Vars) {
+
+    //             if (va.Item1 == v) {
+
+    //                 return va.Item2;
+    //             }
+    //         }
+    //     }
+
+    //     return null;
+    // }
+
+    public static Variable? FindVar(this Stack s, String varName) {
 
         for (var i = s.Frames.Count - 1; i >= 0; --i) {
 
             var frame = s.Frames.ElementAt(i);
 
-            foreach (var va in frame.Vars) {
+            foreach (var v in frame.Vars) {
 
-                if (va.Item1 == v) {
+                if (v.Name == varName) {
 
-                    return va.Item2;
+                    return v;
                 }
             }
         }
@@ -420,15 +453,18 @@ public static partial class StackFunctions {
 
 public partial class StackFrame {
     
-    public List<(String, NeuType)> Vars { get; init; }
+    // public List<(String, NeuType)> Vars { get; init; }
+    public List<Variable> Vars { get; init; }
 
     ///
 
     public StackFrame() 
-        : this(new List<(String, NeuType)>()) { }
+        // : this(new List<(String, NeuType)>()) { }
+        : this(new List<Variable>()) { }
 
     public StackFrame(
-        List<(String, NeuType)> vars) {
+        // List<(String, NeuType)> vars) {
+        List<Variable> vars) {
 
         this.Vars = vars;
     }
@@ -593,7 +629,13 @@ public static partial class TypeCheckerFunctions {
 
                 // var ty = varDeclType ?? throw new Exception();
 
-                stack.AddVar((vds.Decl.Name, varDeclType));
+                // stack.AddVar((vds.Decl.Name, varDeclType));
+
+                stack.AddVar(
+                    new Variable(
+                        name: vds.Decl.Name, 
+                        ty: varDeclType, 
+                        mutable: vds.Decl.Mutable));
 
                 return (
                     new CheckedVarDeclStatement(vds.Decl, checkedExpr),
@@ -692,6 +734,8 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedLhsErr;
 
+                var opSpan = e.Op.GetSpan();
+
                 var op = e.Op switch {
                     OperatorExpression o => o.Operator,
                     _ => throw new Exception()
@@ -700,15 +744,24 @@ public static partial class TypeCheckerFunctions {
                 var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file);
 
                 error = error ?? checkedRhsErr;
+
+                error = error ?? TypeCheckOperation(
+                    checkedLhs,
+                    op,
+                    checkedRhs,
+                    opSpan);
                 
                 // TODO: actually do the binary operator typecheck against safe operations
+                // For now, use a type we know
+
+                var ty = checkedLhs.GetNeuType();
 
                 return (
                     new CheckedBinaryOpExpression(
                         checkedLhs, 
                         op, 
                         checkedRhs, 
-                        new UnknownType()),
+                        ty),
                     error);
             }
 
@@ -744,16 +797,23 @@ public static partial class TypeCheckerFunctions {
 
             case VarExpression e: {
 
-                if (stack.FindVar(e.Value) is NeuType ty) {
+                if (stack.FindVar(e.Value) is Variable v) {
 
                     return (
-                        new CheckedVarExpression(e.Value, ty),
+                        // new CheckedVarExpression(e.Value, ty),
+                        new CheckedVarExpression(v),
                         null);
                 }
                 else {
                     
                     return (
-                        new CheckedVarExpression(e.Value, new UnknownType()),
+                        // new CheckedVarExpression(e.Value, new UnknownType()),
+                        new CheckedVarExpression(
+                            new Variable(
+                                e.Value, 
+                                ty: new UnknownType(), 
+                                mutable: false)
+                        ),
                         new TypeCheckError(
                             "variable not found",
                             e.Span));
@@ -783,6 +843,62 @@ public static partial class TypeCheckerFunctions {
                 throw new Exception();
             }
         }
+    }
+
+    public static Error? TypeCheckOperation(
+        CheckedExpression lhs,
+        Operator op,
+        CheckedExpression rhs,
+        Span span) {
+
+        switch (op) {
+
+            case Operator.Assign:
+            case Operator.AddAssign:
+            case Operator.SubtractAssign:
+            case Operator.MultiplyAssign:
+            case Operator.DivideAssign: {
+
+                var lhsTy = lhs.GetNeuType();
+                var rhsTy = rhs.GetNeuType();
+
+                if (!IsSameType(lhsTy, rhsTy)) {
+
+                    return new TypeCheckError(
+                        $"assignment between incompatible types ({lhsTy} and {rhsTy})",
+                        span);
+                }
+
+                switch (lhs) {
+
+                    case CheckedVarExpression v: {
+
+                        if (!v.Variable.Mutable) {
+
+                            return new TypeCheckError(
+                                "assignment to immutable variable", 
+                                span);
+                        }
+
+                        break;
+                    }
+                    
+                    default: {
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            default: {
+
+                break;
+            }
+        }
+
+        return null;
     }
 
     public static (Function?, Error?) ResolveCall(
@@ -871,7 +987,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? checkedArgErr;
 
-                            if (!IsSameType(checkedArg.GetNeuType(), callee.Parameters[idx].Item2)) {
+                            if (!IsSameType(checkedArg.GetNeuType(), callee.Parameters[idx].Type)) {
 
                                 error = error ?? new TypeCheckError(
                                     "Parameter type mismatch",
