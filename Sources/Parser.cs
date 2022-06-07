@@ -754,57 +754,57 @@ public partial class Expression: Statement {
 
 public static partial class ExpressionFunctions {
 
-    // public static Span GetSpan(
-    //     this Expression expr) {
+    public static Span GetSpan(
+        this Expression expr) {
 
-    //     switch (expr) {
+        switch (expr) {
 
-    //         case BooleanExpression be: {
+            case BooleanExpression be: {
 
-    //             return be.Span;
-    //         }
+                return be.Span;
+            }
 
-    //         case CallExpression ce: {
+            case CallExpression ce: {
 
-    //             return ce.Span;
-    //         }
+                return ce.Span;
+            }
 
-    //         case Int64Expression ie: {
+            case Int64Expression ie: {
 
-    //             return ie.Span;
-    //         }
+                return ie.Span;
+            }
 
-    //         case QuotedStringExpression qse: {
+            case QuotedStringExpression qse: {
 
-    //             return qse.Span;
-    //         }
+                return qse.Span;
+            }
 
-    //         case BinaryOpExpression boe: {
+            case BinaryOpExpression boe: {
 
-    //             return boe.Op.GetSpan();
-    //         }
+                return boe.Op.GetSpan();
+            }
 
-    //         case VarExpression ve: {
+            case VarExpression ve: {
 
-    //             return ve.Span;
-    //         }
+                return ve.Span;
+            }
 
-    //         case OperatorExpression oe: {
+            case OperatorExpression oe: {
 
-    //             return oe.Span;
-    //         }
+                return oe.Span;
+            }
 
-    //         case GarbageExpression ge: {
+            case GarbageExpression ge: {
 
-    //             return ge.Span;
-    //         }
+                return ge.Span;
+            }
 
-    //         default: {
+            default: {
 
-    //             throw new Exception();
-    //         }
-    //     }
-    // }
+                throw new Exception();
+            }
+        }
+    }
 
     public static UInt64 Precendence(
         this Expression expr) {

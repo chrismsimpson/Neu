@@ -831,6 +831,15 @@ public static partial class TypeCheckerFunctions {
 
                 // FIXME: This is a hack since print() is hard-coded into codegen at the moment
 
+                foreach (var arg in call.Args) {
+
+                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file);
+
+                    error = error ?? checkedArgErr;
+
+                    checkedArgs.Add((arg.Item1, checkedArg));
+                }
+
                 break;
             }
 
@@ -852,20 +861,42 @@ public static partial class TypeCheckerFunctions {
                             "wrong number of arguments", 
                             span);
                     }
+                    else {
+
+                        var idx = 0;
+
+                        while (idx < call.Args.Count) {
+
+                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file);
+
+                            error = error ?? checkedArgErr;
+
+                            if (!IsSameType(checkedArg.GetNeuType(), callee.Parameters[idx].Item2)) {
+
+                                error = error ?? new TypeCheckError(
+                                    "Parameter type mismatch",
+                                    call.Args[idx].Item2.GetSpan());
+                            }
+
+                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+
+                            idx += 1;
+                        }
+                    }
                 }
 
                 break;
             }
         }
 
-        foreach (var arg in call.Args) {
+        // foreach (var arg in call.Args) {
 
-            var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file);
+        //     var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file);
 
-            error = error ?? checkedArgErr;
+        //     error = error ?? checkedArgErr;
 
-            checkedArgs.Add((arg.Item1, checkedArg));
-        }
+        //     checkedArgs.Add((arg.Item1, checkedArg));
+        // }
 
         return (
             new CheckedCall(

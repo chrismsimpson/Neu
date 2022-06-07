@@ -16,7 +16,7 @@ public static partial class Program {
         DeleteBuildCruft();
     }
 
-    public static void Build() {
+    public static ErrorOrVoid Build() {
 
         var n = Directory.GetFiles("./Samples");
 
@@ -26,24 +26,80 @@ public static partial class Program {
 
             if (ext == ".neu") {
 
+                // Great, we found test file
+
                 var name = Path.GetFileNameWithoutExtension(path);
+
+                ///
 
                 var outputFilename = $"{name}.out";
 
                 var outputPath = $"./Samples/{outputFilename}";
 
-                if (File.Exists(outputPath)) {
+                ///
+
+                var errorOutputFilename = $"{name}.error";
+
+                var errorOutputPath = $"./Samples/{errorOutputFilename}";
+
+                ///
+
+                if (File.Exists(outputPath) || File.Exists(errorOutputPath)) {
+
+                    // We have an output to compare to, let's do it.
+                    
+                    var og = Console.ForegroundColor;
+                    
+                    Write($"Test: {path} ");
+
+                    ///
 
                     var compiler = new Compiler();
 
                     var cppStringOrError = compiler.ConvertToCPP(path);
 
-                    if (cppStringOrError.Error != null) {
+                    // if (cppStringOrError.Error != null) {
 
-                        throw new Exception();
+                    //     throw new Exception();
+                    // }
+
+                    // var cppString = cppStringOrError.Value ?? throw new Exception();
+
+                    String? cppString = null;
+
+                    if (cppStringOrError.Value is String c && cppStringOrError.Error == null) {
+
+                        cppString = c;
                     }
+                    else {
 
-                    var cppString = cppStringOrError.Value ?? throw new Exception();
+                        if (File.Exists(errorOutputPath)) {
+
+                            var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
+
+                            var returnedError = cppStringOrError.Error?.Content?.Trim() ?? "";
+
+                            if (!Equals(returnedError, expectedErrorMsg)) {
+
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                
+                                Write($" `{returnedError}`, expected `{expectedErrorMsg}`\n");
+
+                                Console.ForegroundColor = og;
+                            }
+                            else {
+
+                                Console.ForegroundColor = ConsoleColor.Green;
+
+                                Write($" Verified\n");
+
+                                Console.ForegroundColor = og;
+                            }
+
+                            continue;
+                        }
+
+                    }
 
                     var id = Guid.NewGuid();
 
@@ -115,12 +171,6 @@ public static partial class Program {
                     var cppFilename = $"{outputDir}/output.cpp";
 
                     File.WriteAllText(cppFilename, cppString);
-
-                    ///
-                    
-                    var og = Console.ForegroundColor;
-                    
-                    Write($"Test: {path} ");
 
                     ///
 
@@ -210,6 +260,8 @@ public static partial class Program {
                 }
             }
         }
+
+        return new ErrorOrVoid();
     }
 
     public static void DeleteBuildCruft() {
