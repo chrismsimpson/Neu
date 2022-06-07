@@ -69,6 +69,13 @@ public static partial class Program {
 
                     if (cppStringOrError.Value is String c && cppStringOrError.Error == null) {
 
+                        if (File.Exists(errorOutputPath)) {
+
+                            var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
+
+                            throw new Exception($"Expected error not created: {expectedErrorMsg}");
+                        }
+
                         cppString = c;
                     }
                     else {
