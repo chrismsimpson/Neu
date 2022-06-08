@@ -840,6 +840,25 @@ public static partial class ExpressionFunctions {
         }
     }
 
+    public static bool Eq(Expression a, Expression b) {
+
+        switch (true) {
+
+            case var _ when
+                a is BooleanExpression boolA
+                && b is BooleanExpression boolB:
+
+                return boolA.Value == boolB.Value;
+
+            ///
+
+            default: {
+
+                return false;
+            }
+        }
+    }
+
     public static UInt64 Precendence(
         this Expression expr) {
 
