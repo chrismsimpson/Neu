@@ -9,3 +9,5 @@ global using static System.Text.Encoding;
 global using static System.IO.File;
 
 global using FileId = System.Int32;
+
+global using static Neu.TraceFunctions;

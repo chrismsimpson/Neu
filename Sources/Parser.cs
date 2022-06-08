@@ -1,6 +1,19 @@
 
 namespace Neu;
 
+public static partial class TraceFunctions {
+
+    public static void Trace(
+        String expr) {
+
+        #if TRACE
+
+        WriteLine($"{expr}");
+
+        #endif
+    }
+}
+
 public partial class Call {
 
     public String Name { get; set; }
@@ -613,6 +626,8 @@ public partial class Function {
 
     public String Name { get; init; }
 
+    public Span NameSpan { get; init; }
+
     public List<Variable> Parameters { get; init; }
 
     public Block Block { get; init; }
@@ -623,18 +638,24 @@ public partial class Function {
 
     public Function()
         : this(
-            String.Empty, 
+            String.Empty,
+            new Span(
+                fileId: 0, 
+                start: 0, 
+                end: 0),
             new List<Variable>(), 
             new Block(), 
             new VoidType()) { }
 
     public Function(
         String name,
+        Span nameSpan,
         List<Variable> parameters,
         Block block,
         NeuType returnType) {
 
         this.Name = name;
+        this.NameSpan = nameSpan;
         this.Parameters = parameters;
         this.Block = block;
         this.ReturnType = returnType;
@@ -1476,6 +1497,8 @@ public static partial class ParserFunctions {
     public static (ParsedFile, Error?) ParseFile(
         List<Token> tokens) {
 
+        Trace($"parse_file");
+
         Error? error = null;
 
         var parsedFile = new ParsedFile();
@@ -1508,6 +1531,8 @@ public static partial class ParserFunctions {
                         ///
 
                         default: {
+
+                            Trace("ERROR: unexpected keyword");
 
                             error = error ?? new ParserError(
                                 "unexpected keyword", 
@@ -1544,6 +1569,8 @@ public static partial class ParserFunctions {
 
                 case var t: {
 
+                    Trace("ERROR: unexpected token (expected keyword)");
+
                     error = error ?? new ParserError(
                         "unexpected token (expected keyword)", 
                         t.Span);
@@ -1560,6 +1587,8 @@ public static partial class ParserFunctions {
         List<Token> tokens,
         ref int index) {
 
+        Trace($"ParseFunction: {tokens.ElementAt(index)}");
+
         Error? error = null;
 
         index += 1;
@@ -1571,6 +1600,8 @@ public static partial class ParserFunctions {
             switch (tokens.ElementAt(index)) {
 
                 case NameToken funNameToken: {
+
+                    var nameSpan = tokens.ElementAt(index).Span;
 
                     index += 1;
 
@@ -1589,6 +1620,8 @@ public static partial class ParserFunctions {
 
                             default: {
 
+                                Trace("ERROR: expected '('");
+
                                 error = error ?? new ParserError(
                                     "expected '('", 
                                     tokens.ElementAt(index).Span);
@@ -1599,12 +1632,13 @@ public static partial class ParserFunctions {
                     }
                     else {
 
+                        Trace("ERROR: incomplete function");
+
                         error = error ?? new ParserError(
                             "incomplete function", 
                             tokens.ElementAt(index).Span);
                     }
 
-                    // var parameters = new List<(String, NeuType)>();
                     var parameters = new List<Variable>();
 
                     var cont = true;
@@ -1643,7 +1677,15 @@ public static partial class ParserFunctions {
 
                                 error = error ?? varDeclErr;
 
-                                // parameters.Add((varDecl.Name, varDecl.Type));
+                                if (varDecl.Type is UnknownType) {
+
+                                    Trace("ERROR: parameter missing type");
+
+                                    error = error ?? new ParserError(
+                                        "parameter missing type",
+                                        varDecl.Span);
+                                }
+                                
                                 parameters.Add(
                                     new Variable(
                                         varDecl.Name, 
@@ -1657,6 +1699,8 @@ public static partial class ParserFunctions {
 
                             default: {
 
+                                Trace("ERROR: expected parameter");
+
                                 error = error ?? new ParserError(
                                     "expected parameter",
                                     tokens.ElementAt(index).Span);
@@ -1667,6 +1711,8 @@ public static partial class ParserFunctions {
                     }
 
                     if (index >= tokens.Count) {
+
+                        Trace("ERROR: incomplete function");
 
                         error = error ?? new ParserError(
                             "incomplete function",
@@ -1704,6 +1750,8 @@ public static partial class ParserFunctions {
 
                                     default: {
 
+                                        Trace("ERROR: expected ->");
+
                                         error = error ?? new ParserError(
                                             "expected ->",
                                             tokens.ElementAt(index - 1).Span);
@@ -1726,6 +1774,8 @@ public static partial class ParserFunctions {
 
                     if (index >= tokens.Count) {
 
+                        Trace("ERROR: incomplete function");
+
                         error = error ?? new ParserError(
                             "incomplete function", 
                             tokens.ElementAt(index - 1).Span);
@@ -1738,6 +1788,7 @@ public static partial class ParserFunctions {
                     return (
                         new Function(
                             name: funNameToken.Value,
+                            nameSpan,
                             parameters,
                             block,
                             returnType),
@@ -1748,6 +1799,8 @@ public static partial class ParserFunctions {
 
                 default: {
 
+                    Trace("ERROR: expected function name");
+
                     return (
                         new Function(),
                         new ParserError(
@@ -1757,6 +1810,8 @@ public static partial class ParserFunctions {
             }
         }
         else {
+
+            Trace("ERROR: incomplete function definition");
 
             return (
                 new Function(),
@@ -1770,9 +1825,13 @@ public static partial class ParserFunctions {
 
     public static (Block, Error?) ParseBlock(List<Token> tokens, ref int index) {
 
+        Trace($"ParseBlock: {tokens.ElementAt(index)}");
+
         var block = new Block();
 
         Error? error = null;
+
+        var start = tokens.ElementAt(index).Span;
 
         index += 1;
 
@@ -1820,22 +1879,31 @@ public static partial class ParserFunctions {
             }
         }
 
+        Trace("ERROR: expected complete block");
+
         return (
             new Block(),
             new ParserError(
                 "expected complete block", 
-                tokens.ElementAt(index - 1).Span));
+                new Span(
+                    fileId: start.FileId,
+                    start: start.Start,
+                    end: tokens.ElementAt(index - 1).Span.End)));
     }
     
     ///
 
     public static (Statement, Error?) ParseStatement(List<Token> tokens, ref int index) {
 
+        Trace($"ParseStatement: {tokens.ElementAt(index)}");
+
         Error? error = null;
 
         switch (tokens.ElementAt(index)) {
 
             case NameToken nt when nt.Value == "defer": {
+
+                Trace("parsing defer");
 
                 index += 1;
 
@@ -1850,23 +1918,6 @@ public static partial class ParserFunctions {
 
             ///
 
-            // case NameToken nt when nt.Value == "if": {
-
-            //     index += 1;
-
-            //     var (condExpr, condExprErr) = ParseExpression(tokens, ref index);
-
-            //     error = error ?? condExprErr;
-
-            //     var (block, blockErr) = ParseBlock(tokens, ref index);
-
-            //     error = error ?? blockErr;
-
-            //     return (
-            //         new IfStatement(condExpr, block),
-            //         error);
-            // }
-
             case NameToken nt when nt.Value == "if": {
 
                 return ParseIfStatement(tokens, ref index);
@@ -1875,6 +1926,8 @@ public static partial class ParserFunctions {
             ///
 
             case NameToken nt when nt.Value == "while": {
+
+                Trace("parsing while");
 
                 index += 1;
 
@@ -1896,6 +1949,8 @@ public static partial class ParserFunctions {
 
             case NameToken nt when nt.Value == "return": {
 
+                Trace("parsing return");
+
                 index += 1;
 
                 var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
@@ -1911,6 +1966,8 @@ public static partial class ParserFunctions {
             ///
 
             case NameToken nt when nt.Value == "let" || nt.Value == "var": {
+
+                Trace("parsing let/var");
 
                 var mutable = nt.Value == "var";
 
@@ -1978,7 +2035,22 @@ public static partial class ParserFunctions {
 
             ///
 
+            case LCurlyToken _: {
+
+                Trace("parsing block from statement parser");
+
+                var (block, blockErr) = ParseBlock(tokens, ref index);
+            
+                error = error ?? blockErr;
+
+                return (new BlockStatement(block), error);
+            }
+
+            ///
+
             case var t: {
+
+                Trace("parsing expression from statement parser");
 
                 var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithAssignments);
 
@@ -2008,6 +2080,8 @@ public static partial class ParserFunctions {
     public static (Statement, Error?) ParseIfStatement(
         List<Token> tokens,
         ref int index) {
+
+        Trace($"ParseIfStatement: {tokens.ElementAt(index)}");
 
         Error? error = null;
 
@@ -2139,6 +2213,8 @@ public static partial class ParserFunctions {
         ref int index, 
         ExpressionKind exprKind) {
 
+        Trace($"ParseExpression: {tokens.ElementAt(index)}");
+
         // As the exprStack grows, we increase the required precedence.
         // If, at any time, the operator we're looking at is the same or lower precedence
         // of what is in the expression stack, we collapse the expression stack.
@@ -2155,7 +2231,9 @@ public static partial class ParserFunctions {
 
         exprStack.Add(lhs);
 
-        while (index < tokens.Count) {
+        var cont = true;
+
+        while (index < tokens.Count && cont) {
 
             var (op, opErr) = ParseOperatorForKind(tokens, ref index, exprKind);
             
@@ -2174,8 +2252,13 @@ public static partial class ParserFunctions {
 
                     default:
 
+                        cont = false;
+
                         break;
                 }
+            }
+
+            if (!cont) {
 
                 break;
             }
@@ -2183,6 +2266,8 @@ public static partial class ParserFunctions {
             var precedence = op.Precendence();
 
             if (index == tokens.Count) {
+
+                Trace("ERROR: incomplete math expression");
 
                 error = error ?? new ParserError(
                     "incomplete math expression",
@@ -2249,6 +2334,8 @@ public static partial class ParserFunctions {
     public static (Expression, Error?) ParseOperand(
         List<Token> tokens, 
         ref int index) {
+
+        Trace($"ParseOperand: {tokens.ElementAt(index)}");
 
         Error? error = null;
 
@@ -2334,6 +2421,8 @@ public static partial class ParserFunctions {
 
                     default: {
 
+                        Trace("ERROR: expected ')'");
+
                         error = error ?? new ParserError(
                             "expected ')'", 
                             tokens.ElementAt(index).Span);
@@ -2370,6 +2459,8 @@ public static partial class ParserFunctions {
             ///
 
             default: {
+
+                Trace("ERROR: unsupported expression");
 
                 return (
                     new GarbageExpression(span),
@@ -2408,6 +2499,8 @@ public static partial class ParserFunctions {
         List<Token> tokens, 
         ref int index) {
 
+        Trace($"ParseOperator: {tokens.ElementAt(index)}");
+
         var span = tokens.ElementAt(index).Span;
 
         switch (tokens.ElementAt(index)) {
@@ -2441,6 +2534,8 @@ public static partial class ParserFunctions {
             }
 
             case EqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
                 
                 index += 1;
                 
@@ -2453,6 +2548,8 @@ public static partial class ParserFunctions {
 
             case PlusEqualToken _: {
 
+                Trace("ERROR: assignment not allowed in this position");
+
                 index += 1;
 
                 return (
@@ -2463,6 +2560,8 @@ public static partial class ParserFunctions {
             }
             
             case MinusEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
 
                 index += 1;
 
@@ -2475,6 +2574,8 @@ public static partial class ParserFunctions {
 
             case AsteriskEqualToken _: {
 
+                Trace("ERROR: assignment not allowed in this position");
+
                 index += 1;
 
                 return (
@@ -2485,6 +2586,8 @@ public static partial class ParserFunctions {
             }
 
             case ForwardSlashEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
 
                 index += 1;
 
@@ -2541,6 +2644,8 @@ public static partial class ParserFunctions {
 
             default: {
 
+                Trace("ERROR: unsupported operator");
+
                 return (
                     new GarbageExpression(span),
                     new ParserError(
@@ -2553,6 +2658,8 @@ public static partial class ParserFunctions {
     public static (Expression, Error?) ParseOperatorWithAssignment(
         List<Token> tokens, 
         ref int index) {
+
+        Trace($"ParseOperatorWithAssignment: {tokens.ElementAt(index)}");
 
         var span = tokens.ElementAt(index).Span;
 
@@ -2667,6 +2774,8 @@ public static partial class ParserFunctions {
 
             default: {
 
+                Trace("ERROR: unsupported operator");
+
                 return (
                     new GarbageExpression(span),
                     new ParserError(
@@ -2681,6 +2790,8 @@ public static partial class ParserFunctions {
     public static (VarDecl, Error?) ParseVariableDeclaration(
         List<Token> tokens,
         ref int index) {
+
+        Trace($"ParseVariableDeclaration: {tokens.ElementAt(index)}");
 
         Error? error = null;
 
@@ -2746,6 +2857,8 @@ public static partial class ParserFunctions {
                 }
                 else {
 
+                    Trace("ERROR: expected type");
+
                     return (
                         new VarDecl(
                             nt.Value, 
@@ -2762,6 +2875,8 @@ public static partial class ParserFunctions {
 
             default: {
 
+                Trace("ERROR: expected name");
+
                 return (
                     new VarDecl(tokens.ElementAt(index).Span),
                     new ParserError(
@@ -2776,6 +2891,8 @@ public static partial class ParserFunctions {
     public static (NeuType, Error?) ParseTypeName(
         List<Token> tokens, 
         ref int index) {
+
+        Trace($"ParseTypeName: {tokens.ElementAt(index)}");
 
         switch (tokens.ElementAt(index)) {
 
@@ -2833,6 +2950,8 @@ public static partial class ParserFunctions {
 
                     default:
 
+                        Trace("ERROR: unknown type");
+
                         return (
                             new VoidType(), 
                             new ParserError("unknown type", nt.Span));
@@ -2843,10 +2962,12 @@ public static partial class ParserFunctions {
 
             default: {
 
+                Trace("ERROR: expected type name");
+
                 return (
                     new VoidType(), 
                     new ParserError(
-                        "expected function all", 
+                        "expected type name", 
                         tokens.ElementAt(index).Span));
             }
         }
@@ -2855,6 +2976,8 @@ public static partial class ParserFunctions {
     ///
 
     public static (Call, Error?) ParseCall(List<Token> tokens, ref int index) {
+
+        Trace($"ParseCall: {tokens.ElementAt(index)}");
 
         var call = new Call();
 
@@ -2883,6 +3006,8 @@ public static partial class ParserFunctions {
 
                         case var t: {
 
+                            Trace("ERROR: expected '('");
+
                             return (
                                 call,
                                 new ParserError("expected '('", t.Span));
@@ -2890,6 +3015,8 @@ public static partial class ParserFunctions {
                     }
                 }
                 else {
+
+                    Trace("ERROR: incomplete function");
 
                     return (
                         call,
@@ -2939,6 +3066,8 @@ public static partial class ParserFunctions {
 
                 if (index >= tokens.Count) {
 
+                    Trace("ERROR: incomplete call");
+
                     error = error ?? new ParserError(
                         "incomplete call", 
                         tokens.ElementAt(index - 1).Span);
@@ -2950,6 +3079,8 @@ public static partial class ParserFunctions {
             ///
 
             default: {
+
+                Trace("ERROR: expected function call");
 
                 error = error ?? new ParserError(
                     "expected function call", 
