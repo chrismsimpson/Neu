@@ -21,6 +21,43 @@ public partial class Call {
     }
 }
 
+public static partial class CallFunctions {
+
+    public static bool Eq(
+        Call l, 
+        Call r) {
+
+        if (!Equals(l.Name, r.Name)) {
+
+            return false;
+        }
+
+        if (l.Args.Count != r.Args.Count) {
+
+            return false;
+        }
+
+        for (var i = 0; i < l.Args.Count; ++i) {
+
+            var argL = l.Args[i];
+
+            var argR = r.Args[i];
+
+            if (!Equals(argL.Item1, argR.Item1)) {
+
+                return false;
+            }
+
+            if (!ExpressionFunctions.Eq(argL.Item2, argR.Item2)) {
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
 ///
 
 public enum ExpressionKind {
@@ -34,6 +71,143 @@ public enum ExpressionKind {
 public partial class NeuType {
 
     public NeuType() { }
+}
+
+public static partial class NeuTypeFunctions {
+
+    public static bool Eq(
+        NeuType? l,
+        NeuType? r) {
+        
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        switch (true) {
+
+            case var _ when 
+                l is BoolType 
+                && r is BoolType:         
+                
+                return true;
+
+            ///
+
+            case var _ when 
+                l is StringType 
+                && r is StringType:     
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int8Type 
+                && r is Int8Type:         
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int16Type 
+                && r is Int16Type:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int32Type 
+                && r is Int32Type:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int64Type 
+                && r is Int64Type:       
+                    
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is UInt8Type 
+                && r is UInt8Type:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is UInt16Type 
+                && r is UInt16Type:     
+                
+                return true;
+
+            ///
+                
+            case var _ when 
+                l is UInt32Type 
+                && r is UInt32Type:     
+                
+                return true;
+
+            ///
+            
+            case var _ when
+                 l is UInt64Type 
+                && r is UInt64Type:     
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is FloatType 
+                && r is FloatType:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is DoubleType 
+                && r is DoubleType:     
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is VoidType 
+                && r is VoidType:         
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is UnknownType 
+                && r is UnknownType:   
+                    
+                return true;
+
+            ///
+            
+            default:                                                
+                
+                return false;
+        }
+    }
 }
 
 public partial class BoolType : NeuType {
@@ -141,13 +315,24 @@ public partial class VarDecl {
         String name,
         NeuType type,
         bool mutable,
-        Span span
-        ) {
+        Span span) {
 
         this.Name = name;
         this.Type = type;
         this.Mutable = mutable;
         this.Span = span;
+    }
+}
+
+public static partial class VarDeclFunctions {
+
+    public static bool Eq(
+        VarDecl l,
+        VarDecl r) {
+
+        return l.Name == r.Name 
+            && NeuTypeFunctions.Eq(l.Type, r.Type) 
+            && l.Mutable == r.Mutable;
     }
 }
 
@@ -171,6 +356,18 @@ public partial class Span {
         this.FileId = fileId;
         this.Start = start;
         this.End = end;
+    }
+}
+
+public partial class SpanFunctions {
+
+    public static bool Eq(
+        Span l,
+        Span r) {
+
+        return l.FileId == r.FileId
+            && l.Start == r.Start
+            && l.End == r.End;
     }
 }
 
@@ -416,7 +613,6 @@ public partial class Function {
 
     public String Name { get; init; }
 
-    // public List<(String, NeuType)> Parameters { get; init; }
     public List<Variable> Parameters { get; init; }
 
     public Block Block { get; init; }
@@ -428,14 +624,12 @@ public partial class Function {
     public Function()
         : this(
             String.Empty, 
-            // new List<(String, NeuType)>(), 
             new List<Variable>(), 
             new Block(), 
             new VoidType()) { }
 
     public Function(
         String name,
-        // List<(String, NeuType)> parameters,
         List<Variable> parameters,
         Block block,
         NeuType returnType) {
@@ -477,6 +671,117 @@ public partial class Statement {
     public Statement() { }
 }
 
+public static partial class StatementFunctions {
+
+    public static bool Eq(
+        Statement? l,
+        Statement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        ///
+
+        switch (true) {
+
+            case var _ when
+                l is DeferStatement deferL
+                && r is DeferStatement deferR:
+
+                return DeferStatementFunctions.Eq(deferL, deferR);
+
+            ///
+
+            case var _ when 
+                l is VarDeclStatement vdsL
+                && r is VarDeclStatement vdsR:
+
+                return VarDeclStatementFunctions.Eq(vdsL, vdsR);
+
+            ///
+
+            case var _ when
+                l is IfStatement ifL
+                && r is IfStatement ifR:
+
+                return IfStatementFunctions.Eq(ifL, ifR);
+
+            ///
+
+            case var _ when
+                l is BlockStatement blockL
+                && r is BlockStatement blockR:
+
+                return BlockStatementFunctions.Eq(blockL, blockR);
+
+            ///
+
+            case var _ when
+                l is WhileStatement whileL
+                && r is WhileStatement whileR:
+
+                return WhileStatementFunctions.Eq(whileL, whileR);
+
+            ///
+
+            case var _ when
+                l is ReturnStatement retL
+                && r is ReturnStatement retR:
+
+                return ReturnStatementFunctions.Eq(retL, retR);
+
+            ///
+
+            case var _ when
+                l is GarbageStatement gL
+                && r is GarbageStatement gR:
+
+                return GarbageStatementFunctions.Eq(gL, gR);
+
+            ///
+
+            case var _ when
+                l is Expression exprL
+                && r is Expression exprR:
+
+                return ExpressionFunctions.Eq(exprL, exprR);
+
+            ///
+
+            default:
+
+                return false;
+        }
+    }
+
+    public static bool Eq(
+        List<Statement> l,
+        List<Statement> r) {
+
+        if (l.Count != r.Count) {
+
+            return false;
+        }
+
+        for (var i = 0; i < l.Count; ++i) {
+
+            if (!StatementFunctions.Eq(l.ElementAt(i), r.ElementAt(i))) {
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
 ///
 
 public partial class DeferStatement: Statement {
@@ -490,6 +795,16 @@ public partial class DeferStatement: Statement {
         : base() { 
 
         this.Block = block;
+    }
+}
+
+public static partial class DeferStatementFunctions {
+
+    public static bool Eq(
+        DeferStatement? l,
+        DeferStatement? r) {
+
+        return BlockFunctions.Eq(l?.Block, r?.Block);
     }
 }
 
@@ -509,6 +824,36 @@ public partial class VarDeclStatement: Statement {
 
         this.Decl = decl;
         this.Expr = expr;
+    }
+}
+
+public static partial class VarDeclStatementFunctions {
+
+    public static bool Eq(
+        VarDeclStatement? l,
+        VarDeclStatement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        VarDeclStatement _l = l!;
+        VarDeclStatement _r = r!;
+
+        ///
+
+        if (!VarDeclFunctions.Eq(_l.Decl, _r.Decl)) {
+
+            return false;
+        }
+
+        return ExpressionFunctions.Eq(_l.Expr, _r.Expr);
     }
 }
 
@@ -536,6 +881,33 @@ public partial class IfStatement: Statement {
     }
 }
 
+public static partial class IfStatementFunctions {
+
+    public static bool Eq(
+        IfStatement? l,
+        IfStatement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        IfStatement _l = l!;
+        IfStatement _r = r!;
+
+        ///
+
+        return ExpressionFunctions.Eq(_l.Expr, _r.Expr)
+            && BlockFunctions.Eq(_l.Block, _r.Block)
+            && StatementFunctions.Eq(_l.Trailing, _r.Trailing);
+    }
+}
+
 ///
 
 public partial class BlockStatement: Statement {
@@ -547,6 +919,16 @@ public partial class BlockStatement: Statement {
         : base() {
 
         this.Block = block;
+    }
+}
+
+public static partial class BlockStatementFunctions {
+
+    public static bool Eq(
+        BlockStatement? l,
+        BlockStatement? r) {
+
+        return BlockFunctions.Eq(l?.Block, r?.Block);
     }
 }
 
@@ -570,6 +952,32 @@ public partial class WhileStatement: Statement {
     }
 }
 
+public static partial class WhileStatementFunctions {
+
+    public static bool Eq(
+        WhileStatement? l,
+        WhileStatement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        WhileStatement _l = l!;
+        WhileStatement _r = r!;
+
+        ///
+
+        return ExpressionFunctions.Eq(_l.Expr, _r.Expr) 
+            && BlockFunctions.Eq(_l.Block, _r.Block);
+    }
+}
+
 ///
 
 public partial class ReturnStatement: Statement {
@@ -585,11 +993,41 @@ public partial class ReturnStatement: Statement {
     }
 }
 
+public static partial class ReturnStatementFunctions {
+
+    public static bool Eq(
+        ReturnStatement? l,
+        ReturnStatement? r) {
+
+        return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
+    }
+}
+
 ///
 
 public partial class GarbageStatement: Statement {
 
     public GarbageStatement() { }
+}
+
+public static partial class GarbageStatementFunctions {
+
+    public static bool Eq(
+        GarbageStatement? l,
+        GarbageStatement? r) {
+        
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        return true;
+    }
 }
 
 ///
@@ -607,6 +1045,29 @@ public partial class Block {
         List<Statement> statements) {
 
         this.Statements = statements;
+    }
+}
+
+public static partial class BlockFunctions {
+
+    public static bool Eq(
+        Block? l,
+        Block? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        Block _l = l!;
+        Block _r = r!;
+
+        return StatementFunctions.Eq(_l.Statements, _r.Statements);
     }
 }
 
@@ -840,15 +1301,87 @@ public static partial class ExpressionFunctions {
         }
     }
 
-    public static bool Eq(Expression a, Expression b) {
+    public static bool Eq(
+        Expression? l, 
+        Expression? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        ///
 
         switch (true) {
 
             case var _ when
-                a is BooleanExpression boolA
-                && b is BooleanExpression boolB:
+                l is BooleanExpression boolL
+                && r is BooleanExpression boolR:
 
-                return boolA.Value == boolB.Value;
+                return boolL.Value == boolR.Value;
+
+            ///
+
+            case var _ when
+                l is CallExpression callL
+                && r is CallExpression callR:
+
+                return CallFunctions.Eq(callL.Call, callR.Call);
+
+            ///
+
+            case var _ when
+                l is Int64Expression intL
+                && r is Int64Expression intR:
+
+                return intL.Value == intR.Value;
+
+            ///
+
+            case var _ when
+                l is QuotedStringExpression strL
+                && r is QuotedStringExpression strR:
+
+                return Equals(strL.Value, strR.Value);
+            
+            ///
+
+            case var _ when
+                l is BinaryOpExpression binL
+                && r is BinaryOpExpression binR:
+
+                return ExpressionFunctions.Eq(binL.Lhs, binR.Lhs)
+                    && ExpressionFunctions.Eq(binL.Op, binR.Op)
+                    && ExpressionFunctions.Eq(binL.Rhs, binR.Rhs);
+
+            ///
+
+            case var _ when
+                l is VarExpression varL
+                && r is VarExpression varR:
+
+                return varL.Value == varR.Value;
+
+            ///
+
+            case var _ when
+                l is OperatorExpression opL
+                && r is OperatorExpression opR:
+
+                return opL.Operator == opR.Operator;
+
+            ///
+
+            case var _ when
+                l is GarbageExpression
+                && r is GarbageExpression:
+
+                return true;
 
             ///
 
@@ -1497,6 +2030,8 @@ public static partial class ParserFunctions {
             }
         }
 
+        var startingSpan = tokens.ElementAt(index).Span;
+
         index += 1;
 
         var (cond, condErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
@@ -1544,6 +2079,16 @@ public static partial class ParserFunctions {
                             case LCurlyToken _: {
 
                                 var (elseBlock, elseBlockErr) = ParseBlock(tokens, ref index);
+
+                                // Before we continue, quickly lint that the else block and the if block are not
+                                // the same. This helps prevent a copy/paste error
+
+                                if (BlockFunctions.Eq(block, elseBlock)) {
+
+                                    error = error ?? new ValidationError(
+                                        "if and else have identical blocks",
+                                        startingSpan);
+                                }
 
                                 elseStmt = new BlockStatement(elseBlock);
 
