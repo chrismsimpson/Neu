@@ -395,7 +395,7 @@ public static partial class StackFunctions {
         s.Frames.Pop();
     }
 
-    // public static void AddVar(this Stack s, (String, NeuType) v) {
+    // public static void AddVar(this Stack s, Variable v) {
 
     //     if (s.Frames.Last() is StackFrame frame) {
 
@@ -403,31 +403,28 @@ public static partial class StackFunctions {
     //     }
     // }
 
-    public static void AddVar(this Stack s, Variable v) {
+    public static Error? AddVar(
+        this Stack s, 
+        Variable v, 
+        Span span) {
 
         if (s.Frames.Last() is StackFrame frame) {
 
+            foreach (var existingVar in frame.Vars) {
+
+                if (v.Name == existingVar.Name) {
+
+                    return new TypeCheckError(
+                        $"redefinition of {v.Name}",
+                        span);
+                }
+            }
+
             frame.Vars.Add(v);
         }
+
+        return null;
     }
-
-    // public static NeuType? FindVar(this Stack s, String v) {
-
-    //     for (var i = s.Frames.Count - 1; i >= 0; --i) {
-
-    //         var frame = s.Frames.ElementAt(i);
-
-    //         foreach (var va in frame.Vars) {
-
-    //             if (va.Item1 == v) {
-
-    //                 return va.Item2;
-    //             }
-    //         }
-    //     }
-
-    //     return null;
-    // }
 
     public static Variable? FindVar(this Stack s, String varName) {
 
@@ -512,8 +509,11 @@ public static partial class TypeCheckerFunctions {
         stack.PushFrame();
 
         foreach (var p in fun.Parameters) {
+            
+            if (stack.AddVar(p, fun.NameSpan) is Error e) {
 
-            stack.AddVar(p);
+                error = error ?? e;
+            }
         }
 
         var (block, blockErr) = TypeCheckBlock(fun.Block, stack, file);
@@ -627,15 +627,15 @@ public static partial class TypeCheckerFunctions {
                 //         vds.Expr.GetSpan());
                 // }
 
-                // var ty = varDeclType ?? throw new Exception();
+                var v = new Variable(
+                    name: vds.Decl.Name, 
+                    ty: varDeclType, 
+                    mutable: vds.Decl.Mutable);
 
-                // stack.AddVar((vds.Decl.Name, varDeclType));
+                if (stack.AddVar(v, vds.Decl.Span) is Error e) {
 
-                stack.AddVar(
-                    new Variable(
-                        name: vds.Decl.Name, 
-                        ty: varDeclType, 
-                        mutable: vds.Decl.Mutable));
+                    error = error ?? e;
+                }
 
                 return (
                     new CheckedVarDeclStatement(vds.Decl, checkedExpr),
