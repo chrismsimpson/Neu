@@ -62,7 +62,7 @@
             "requireExactSource": true
         },
         {
-            "name": "neu-tests",
+            "name": "neu test-suite",
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/bin/Debug/net6.0/NeuTests.dll",
@@ -89,7 +89,7 @@
             "type": "cppdbg",
             "request": "launch",
             // "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Build/Output/output",
+            "program": "${workspaceFolder}/Build/varInference/Output/output-varInference",
             "args": [
 
             ],

@@ -122,10 +122,16 @@ public static partial class Program {
                     
                     ///
 
+                    // var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = compiler
+                    //     .Process(
+                    //         name: "cmake",
+                    //         arguments: $"{projGenDir} -B {projBuildDir} -G Ninja",
+                    //         printProgress: true);
+
                     var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = compiler
-                        .Process(
-                            name: "cmake",
-                            arguments: $"{projGenDir} -B {projBuildDir} -G Ninja",
+                        .GenerateNinjaCMake(
+                            projBuildDir, 
+                            projGenDir, 
                             printProgress: true);
 
                     if (cmakeGenerateBuildErr) {
@@ -144,10 +150,15 @@ public static partial class Program {
 
                     ///
 
+                    // var (cmakeBuildOutput, cmakeBuildErr) = compiler
+                    //     .Process(
+                    //         name: "cmake",
+                    //         arguments: $"--build {projBuildDir}",
+                    //         printProgress: true);
+
                     var (cmakeBuildOutput, cmakeBuildErr) = compiler
-                        .Process(
-                            name: "cmake",
-                            arguments: $"--build {projBuildDir}",
+                        .BuildWithCMake(
+                            projBuildDir,
                             printProgress: true);
                         
                     if (cmakeBuildErr) {
