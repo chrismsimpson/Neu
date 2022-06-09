@@ -42,7 +42,7 @@
                 // "./Samples/Variables/var2.neu",
                 // "./Samples/Variables/var3.neu",
                 // "./Samples/Variables/varBadAssignment.neu",
-                "./Samples/Variables/varInference.neu",
+                "all", "./Samples/Variables/varInference.neu",
                 // "./Samples/Variables/varRedefiniion.neu",
                 
             ],
@@ -62,7 +62,7 @@
             "requireExactSource": true
         },
         {
-            "name": "neu tests",
+            "name": "neu-tests",
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/bin/Debug/net6.0/NeuTests.dll",

@@ -99,146 +99,78 @@ public static partial class Program {
                         }
                     }
 
+                    ///
+
                     var id = Guid.NewGuid();
 
                     ///
 
-                    var buildAutoDir = $"./Build";
-
-                    if (!Directory.Exists(buildAutoDir)) {
-
-                        Directory.CreateDirectory(buildAutoDir);
-                    }
+                    var buildDir = $"./Build";
+                    var projBuildDir = $"{buildDir}/{id}";
+                    var genDir = $"./Generated";
+                    var projGenDir = $"{genDir}/{id}";
 
                     ///
 
-                    var buildDir = $"{buildAutoDir}/{id}";
+                    compiler.Generate(
+                        buildDir,
+                        projBuildDir,
+                        genDir,
+                        projGenDir,
+                        $"{id}", 
+                        cppString ?? throw new Exception());
                     
                     ///
 
-                    var generatedAutoDir = $"./Generated";
-
-                    if (!Directory.Exists(generatedAutoDir)) {
-
-                        Directory.CreateDirectory(generatedAutoDir);
-                    }
-
-                    ///
-
-                    var genDir = $"{generatedAutoDir}/{id}";
-
-                    if (!Directory.Exists(genDir)) {
-
-                        Directory.CreateDirectory(genDir);
-                    }
-
-                    ///
-
-                    var cmakeProjectFile = $"{genDir}/CMakeLists.txt";
-
-                    if (!File.Exists(cmakeProjectFile)) {
-
-                        File.WriteAllText(cmakeProjectFile, $"project(Generated-{id})\n\ncmake_minimum_required(VERSION 3.21)\n\nset(CMAKE_CXX_STANDARD 20)\n\nadd_subdirectory(Runtime)\nadd_subdirectory(Output)");
-                    }
-
-                    ///
-
-                    var runtimeDir = $"{genDir}/Runtime";
-
-                    if (!Directory.Exists(runtimeDir)) {
-
-                        Directory.CreateDirectory(runtimeDir);
-                    }
-
-                    ///
-
-                    var runtimeCmakeFile = $"{runtimeDir}/CMakeLists.txt";
-
-                    if (!File.Exists(runtimeCmakeFile)) {
-
-                        File.WriteAllText(runtimeCmakeFile, $"project (Runtime-{id})\n\nadd_library(runtime-{id} runtime.cpp)");
-                    }
-
-                    ///
-
-                    var runtimeCppFile = $"{runtimeDir}/runtime.cpp";
-
-                    if (!File.Exists(runtimeCppFile)) {
-
-                        File.WriteAllText(runtimeCppFile, $"#include \"../../../Runtime/lib.h\"\n\nvoid foo() {{\n\n}}");
-                    }
-
-                    ///
-
-                    var outputDir = $"{genDir}/Output";
-
-                    if (!Directory.Exists(outputDir)) {
-
-                        Directory.CreateDirectory(outputDir);
-                    }
-
-                    ///
-
-                    var outputCmakeFile = $"{outputDir}/CMakeLists.txt";
-
-                    if (!File.Exists(outputCmakeFile)) {
-
-                        File.WriteAllText(outputCmakeFile, $"project (Output-{id})\n\nadd_executable(output-{id} output.cpp)\n\ntarget_link_libraries(output-{id} runtime-{id})");
-                    }
-
-                    ///
-
-                    var cppFilename = $"{outputDir}/output.cpp";
-
-                    File.WriteAllText(cppFilename, cppString);
-
-                    ///
-
-                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = Process(
-                        name: "cmake",
-                        arguments: $"{genDir} -B {buildDir} -G Ninja",
-                        printProgress: true);
+                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = compiler
+                        .Process(
+                            name: "cmake",
+                            arguments: $"{projGenDir} -B {projBuildDir} -G Ninja",
+                            printProgress: true);
 
                     if (cmakeGenerateBuildErr) {
 
-                        if (!IsNullOrWhiteSpace(cmakeGenerateBuildOutput)) {
+                        // if (!IsNullOrWhiteSpace(cmakeGenerateBuildOutput)) {
 
                             Console.ForegroundColor = ConsoleColor.Red;
 
                             Write($" Failed to generated build\n");
 
                             Console.ForegroundColor = og;
-                        }
-
-                        continue;
-                    }
-
-                    var (cmakeBuildOutput, cmakeBuildErr) = Process(
-                        name: "cmake",
-                        arguments: $"--build {buildDir}",
-                        printProgress: true);
-                        
-                    if (cmakeBuildErr) {
-
-                        if (!IsNullOrWhiteSpace(cmakeBuildOutput)) {
-
-                            Console.ForegroundColor = ConsoleColor.Red;
-
-                            Write($" Failed to build\n");
-
-                            Console.ForegroundColor = og;
-                        }
+                        // }
 
                         continue;
                     }
 
                     ///
 
-                    var (builtOutput, builtErr) = Process(
-                        name: $"{buildDir}/Output/output-{id}",
-                        arguments: null,
-                        printProgress: true);
+                    var (cmakeBuildOutput, cmakeBuildErr) = compiler
+                        .Process(
+                            name: "cmake",
+                            arguments: $"--build {projBuildDir}",
+                            printProgress: true);
+                        
+                    if (cmakeBuildErr) {
 
+                        // if (!IsNullOrWhiteSpace(cmakeBuildOutput)) {
+
+                            Console.ForegroundColor = ConsoleColor.Red;
+
+                            Write($" Failed to build\n");
+
+                            Console.ForegroundColor = og;
+                        // }
+
+                        continue;
+                    }
+
+                    ///
+
+                    var (builtOutput, builtErr) = compiler
+                        .Process(
+                            name: $"{projBuildDir}/Output/output-{id}",
+                            arguments: null,
+                            printProgress: true);
 
                     if (builtErr) {
 
@@ -315,95 +247,95 @@ public static partial class Program {
         }
     }
 
-    public static (String, bool) Process(
-        String name,
-        String? arguments,
-        bool printProgress = false) {
+    // public static (String, bool) Process(
+    //     String name,
+    //     String? arguments,
+    //     bool printProgress = false) {
 
-        var processStartInfo = new System.Diagnostics.ProcessStartInfo();
+    //     var processStartInfo = new System.Diagnostics.ProcessStartInfo();
 
-        processStartInfo.FileName = name;
+    //     processStartInfo.FileName = name;
 
-        if (!IsNullOrWhiteSpace(arguments)) {
+    //     if (!IsNullOrWhiteSpace(arguments)) {
 
-            processStartInfo.Arguments = arguments;
-        }
+    //         processStartInfo.Arguments = arguments;
+    //     }
 
-        processStartInfo.CreateNoWindow = true;
+    //     processStartInfo.CreateNoWindow = true;
 
-        processStartInfo.UseShellExecute = false;
+    //     processStartInfo.UseShellExecute = false;
         
-        processStartInfo.RedirectStandardError = true;
+    //     processStartInfo.RedirectStandardError = true;
         
-        processStartInfo.RedirectStandardOutput = true;
+    //     processStartInfo.RedirectStandardOutput = true;
 
-        ///
+    //     ///
 
-        var process = System.Diagnostics.Process.Start(processStartInfo);
+    //     var process = System.Diagnostics.Process.Start(processStartInfo);
 
-        if (process == null) {
+    //     if (process == null) {
 
-            throw new Exception();
-        }
+    //         throw new Exception();
+    //     }
 
-        ///
+    //     ///
 
-        var error = false;
+    //     var error = false;
 
-        ///
+    //     ///
 
-        var output = new StringBuilder();
+    //     var output = new StringBuilder();
 
-        process.OutputDataReceived += (sender, e) => {
+    //     process.OutputDataReceived += (sender, e) => {
 
-            if (e.Data != null) {
+    //         if (e.Data != null) {
 
-                output.AppendLine(e.Data);
-            }
+    //             output.AppendLine(e.Data);
+    //         }
 
-            if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
+    //         if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
 
-                if (!error && printProgress) {
+    //             if (!error && printProgress) {
 
-                    Write(".");
-                }
-            }
-        };
+    //                 Write(".");
+    //             }
+    //         }
+    //     };
 
-        process.BeginOutputReadLine();
+    //     process.BeginOutputReadLine();
 
-        ///
+    //     ///
         
-        var errOutput = new StringBuilder();
+    //     var errOutput = new StringBuilder();
 
-        process.ErrorDataReceived += (sender, e) => {
+    //     process.ErrorDataReceived += (sender, e) => {
 
-            if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
+    //         if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
 
-                error = true;
+    //             error = true;
 
-                ///
+    //             ///
 
-                errOutput.AppendLine(l);
-            }
-        };
+    //             errOutput.AppendLine(l);
+    //         }
+    //     };
 
-        process.BeginErrorReadLine();
+    //     process.BeginErrorReadLine();
 
-        ///
+    //     ///
 
-        process.WaitForExit();
+    //     process.WaitForExit();
 
-        process.Close();
+    //     process.Close();
 
-        ///
+    //     ///
 
-        return (
-            error 
-                ? errOutput.ToString() 
-                : output.ToString(), 
-            error);
-    }
+    //     return (
+    //         error 
+    //             ? errOutput.ToString() 
+    //             : output.ToString(), 
+    //         error);
+    // }
 
     ///
 

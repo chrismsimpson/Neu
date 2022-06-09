@@ -106,7 +106,15 @@ public partial class Compiler {
 
         var cppString = cppStringOrError.Value ?? throw new Exception();
 
-        File.WriteAllText("./Generated/Output/output.cpp", cppString);
+        ///
+
+        var id = Path.GetFileNameWithoutExtension(filename);
+
+        ///
+
+        this.Generate(id, cppString);
+
+        ///
 
         return new ErrorOrVoid();
     }
