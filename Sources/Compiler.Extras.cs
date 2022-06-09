@@ -198,4 +198,31 @@ public partial class Compiler {
                 : output.ToString(), 
             error);
     }
+
+    ///
+
+    public (String, bool) GenerateNinjaCMake(
+        String projBuildDir,
+        String projGenDir,
+        bool printProgress = false) {
+
+        return this
+            .Process(
+                name: "cmake",
+                arguments: $"{projGenDir} -B {projBuildDir} -G Ninja",
+                printProgress: printProgress);
+    }
+
+    ///
+
+    public (String, bool) BuildWithCMake(
+        String projBuildDir,
+        bool printProgress = false) {
+
+        return this
+            .Process(
+                name: "cmake",
+                arguments: $"--build {projBuildDir}",
+                printProgress: printProgress);
+    }
 }

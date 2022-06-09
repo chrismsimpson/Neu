@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "neu",
+            "name": "neu verify ./X",
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
@@ -42,7 +42,7 @@
                 // "./Samples/Variables/var2.neu",
                 // "./Samples/Variables/var3.neu",
                 // "./Samples/Variables/varBadAssignment.neu",
-                "all", "./Samples/Variables/varInference.neu",
+                "verify", "./Samples/Variables/varInference.neu",
                 // "./Samples/Variables/varRedefiniion.neu",
                 
             ],

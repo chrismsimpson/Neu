@@ -1,12 +1,12 @@
-
 namespace Neu;
 
 public enum CompilerMode {
 
-    Transpile,
+    Clean,
     CMakeGenerate,
     CMakeBuild,
-    All
+    Transpile,
+    Verify
 }
 
 public static partial class Program {
@@ -25,6 +25,19 @@ public static partial class Program {
         var firstArg = args.FirstOrDefault();
 
         switch (firstArg?.ToLower()) {
+
+
+            ///
+
+            case "clean":
+
+                mode = CompilerMode.Clean;
+
+                _args = args.Skip(1);
+
+                break;
+
+            ///
 
             case "cmake-generate":
 
@@ -46,9 +59,9 @@ public static partial class Program {
 
             ///
 
-            case "all":
+            case "transpile":
 
-                mode = CompilerMode.All;
+                // already in correct mode
 
                 _args = args.Skip(1);
 
@@ -56,7 +69,17 @@ public static partial class Program {
 
             ///
 
-            case null:
+            case "verify":
+
+                mode = CompilerMode.Verify;
+
+                _args = args.Skip(1);
+
+                break;
+
+            ///
+
+            case null: // maybe you want help?
 
                 throw new Exception();
 
@@ -71,7 +94,29 @@ public static partial class Program {
 
         switch (mode) {
 
-            case CompilerMode.Transpile:
+            ///
+            
+            case CompilerMode.CMakeGenerate: {
+
+                throw new NotImplementedException();
+
+                // break;
+            }
+
+            ///
+
+            case CompilerMode.CMakeBuild: {
+
+                throw new NotImplementedException();
+
+                // break;
+            }
+
+            ///
+
+            case CompilerMode.Transpile: {
+
+                // Default
 
                 foreach (var arg in _args) {
 
@@ -112,26 +157,11 @@ public static partial class Program {
                 }
 
                 break;
-
-            ///
-            
-            case CompilerMode.CMakeGenerate:
-
-                throw new NotImplementedException();
-
-                // break;
+            }
 
             ///
 
-            case CompilerMode.CMakeBuild:
-
-                throw new NotImplementedException();
-
-                // break;
-
-            ///
-
-            case CompilerMode.All:
+            case CompilerMode.Verify: {
 
                 foreach (var arg in _args) {
 
@@ -181,14 +211,11 @@ public static partial class Program {
 
                     if (cmakeGenerateBuildErr) {
 
-                        // if (!IsNullOrWhiteSpace(cmakeGenerateBuildOutput)) {
+                        Console.ForegroundColor = ConsoleColor.Red;
 
-                            Console.ForegroundColor = ConsoleColor.Red;
+                        Write($" Failed to generated build\n");
 
-                            Write($" Failed to generated build\n");
-
-                            Console.ForegroundColor = og;
-                        // }
+                        Console.ForegroundColor = og;
 
                         continue;
                     }
@@ -203,14 +230,11 @@ public static partial class Program {
                         
                     if (cmakeBuildErr) {
 
-                        // if (!IsNullOrWhiteSpace(cmakeBuildOutput)) {
+                        Console.ForegroundColor = ConsoleColor.Red;
 
-                            Console.ForegroundColor = ConsoleColor.Red;
+                        Write($" Failed to build\n");
 
-                            Write($" Failed to build\n");
-
-                            Console.ForegroundColor = og;
-                        // }
+                        Console.ForegroundColor = og;
 
                         continue;
                     }
@@ -225,53 +249,16 @@ public static partial class Program {
                 }
 
                 break;
+            }
+
 
             ///
             
-            default:
+            default: {
 
                 throw new Exception("Unexpected");
+            }
         }
-
-        ///
-
-        // foreach (var arg in args) {
-
-        //     var compiledOrError = parser.Compile(arg);
-
-        //     switch (compiledOrError) {
-
-        //         case var _ when compiledOrError.Error is ParserError pe:
-
-        //             DisplayError(parser, pe.Content, pe.Span);
-
-        //             break;
-
-        //         case var _ when compiledOrError.Error is TypeCheckError te:
-
-        //             DisplayError(parser, te.Content, te.Span);
-
-        //             break;
-
-        //         case var _ when compiledOrError.Error is ValidationError ve:
-
-        //             DisplayError(parser, ve.Content, ve.Span);
-
-        //             break;
-
-        //         case var _ when compiledOrError.Error is Error e:
-
-        //             WriteLine($"Error: {compiledOrError.Error}");
-
-        //             break;
-
-        //         default:
-
-        //             WriteLine("Success!");
-
-        //             break;
-        //     }           
-        // }
     }
 
     public static void DisplayError(Compiler parser, String? msg, Span span) {
