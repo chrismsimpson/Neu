@@ -288,14 +288,6 @@ public static partial class Program {
 
         foreach (var dir in directories) {
 
-            // if (dir.StartsWith("./BuildAuto")
-            //     || dir.StartsWith("./Build-")
-            //     || dir.StartsWith("./GeneratedAuto")
-            //     || dir.StartsWith("./Generated-")) {
-
-            //     Directory.Delete(dir, true);
-            // }
-
             if (dir.StartsWith("./Build") || dir.StartsWith("./Generated")) {
 
                 foreach (var sub in Directory.GetDirectories(dir)) {
