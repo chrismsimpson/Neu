@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DefineConstants>TRACE</DefineConstants>
+    <!-- <DefineConstants>NEU_TRACE</DefineConstants> -->
   </PropertyGroup>
   
   <ItemGroup>

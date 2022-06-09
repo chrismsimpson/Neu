@@ -6,7 +6,7 @@ public static partial class TraceFunctions {
     public static void Trace(
         String expr) {
 
-        #if TRACE
+        #if NEU_TRACE
 
         WriteLine($"{expr}");
 

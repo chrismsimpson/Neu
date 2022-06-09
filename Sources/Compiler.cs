@@ -12,14 +12,12 @@ public partial class Compiler {
     public Compiler()
         : this(
             new List<(String, byte[])>(), 
-            new List<(String, CheckedFile)>()
-            ) {
+            new List<(String, CheckedFile)>()) {
     }
 
     public Compiler(
         List<(String, byte[])> rawFiles,
-        List<(String, CheckedFile)> checkedFiles
-        ) {
+        List<(String, CheckedFile)> checkedFiles) {
 
         this.RawFiles = rawFiles;
         this.CheckedFiles = checkedFiles;
@@ -112,6 +110,8 @@ public partial class Compiler {
 
         return new ErrorOrVoid();
     }
+
+    ///
 
     public byte[] GetFileContents(FileId fileId) {
 

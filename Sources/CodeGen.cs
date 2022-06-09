@@ -13,7 +13,7 @@ public static partial class CodeGenFunctions {
 
         output.Append("#include <iostream>\n");
 
-        output.Append("#include \"../../Runtime/lib.h\"\n");
+        output.Append("#include \"../../../Runtime/lib.h\"\n");
 
         foreach (var fun in file.CheckedFunctions) {
 

@@ -14,10 +14,6 @@ public static partial class Program {
         TestFunctions();
         TestMath();
         TestVariables();
-    
-        ///
-
-        DeleteBuildCruft();
     }
 
     public static ErrorOrVoid TestSamples(
@@ -101,23 +97,44 @@ public static partial class Program {
 
                             continue;
                         }
-
                     }
 
                     var id = Guid.NewGuid();
 
                     ///
 
-                    var cmakeDir = $"./Generated-{id}";
+                    var buildAutoDir = $"./Build";
 
-                    if (!Directory.Exists(cmakeDir)) {
+                    if (!Directory.Exists(buildAutoDir)) {
 
-                        Directory.CreateDirectory(cmakeDir);
+                        Directory.CreateDirectory(buildAutoDir);
                     }
 
                     ///
 
-                    var cmakeProjectFile = $"{cmakeDir}/CMakeLists.txt";
+                    var buildDir = $"{buildAutoDir}/{id}";
+                    
+                    ///
+
+                    var generatedAutoDir = $"./Generated";
+
+                    if (!Directory.Exists(generatedAutoDir)) {
+
+                        Directory.CreateDirectory(generatedAutoDir);
+                    }
+
+                    ///
+
+                    var genDir = $"{generatedAutoDir}/{id}";
+
+                    if (!Directory.Exists(genDir)) {
+
+                        Directory.CreateDirectory(genDir);
+                    }
+
+                    ///
+
+                    var cmakeProjectFile = $"{genDir}/CMakeLists.txt";
 
                     if (!File.Exists(cmakeProjectFile)) {
 
@@ -126,7 +143,7 @@ public static partial class Program {
 
                     ///
 
-                    var runtimeDir = $"{cmakeDir}/Runtime";
+                    var runtimeDir = $"{genDir}/Runtime";
 
                     if (!Directory.Exists(runtimeDir)) {
 
@@ -148,12 +165,12 @@ public static partial class Program {
 
                     if (!File.Exists(runtimeCppFile)) {
 
-                        File.WriteAllText(runtimeCppFile, $"#include \"../../Runtime/lib.h\"\n\nvoid foo() {{\n\n}}");
+                        File.WriteAllText(runtimeCppFile, $"#include \"../../../Runtime/lib.h\"\n\nvoid foo() {{\n\n}}");
                     }
 
                     ///
 
-                    var outputDir = $"{cmakeDir}/Output";
+                    var outputDir = $"{genDir}/Output";
 
                     if (!Directory.Exists(outputDir)) {
 
@@ -179,7 +196,7 @@ public static partial class Program {
 
                     var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = Process(
                         name: "cmake",
-                        arguments: $"Generated-{id} -B Build-{id} -G Ninja",
+                        arguments: $"{genDir} -B {buildDir} -G Ninja",
                         printProgress: true);
 
                     if (cmakeGenerateBuildErr) {
@@ -196,11 +213,9 @@ public static partial class Program {
                         continue;
                     }
 
-                    ///
-
                     var (cmakeBuildOutput, cmakeBuildErr) = Process(
                         name: "cmake",
-                        arguments: $"--build Build-{id}",
+                        arguments: $"--build {buildDir}",
                         printProgress: true);
                         
                     if (cmakeBuildErr) {
@@ -220,7 +235,7 @@ public static partial class Program {
                     ///
 
                     var (builtOutput, builtErr) = Process(
-                        name: $"./Build-{id}/Output/output-{id}",
+                        name: $"{buildDir}/Output/output-{id}",
                         arguments: null,
                         printProgress: true);
 
@@ -273,9 +288,37 @@ public static partial class Program {
 
         foreach (var dir in directories) {
 
-            if (dir.StartsWith("./Build-") || dir.StartsWith("./Generated-")) {
+            // if (dir.StartsWith("./BuildAuto")
+            //     || dir.StartsWith("./Build-")
+            //     || dir.StartsWith("./GeneratedAuto")
+            //     || dir.StartsWith("./Generated-")) {
 
-                Directory.Delete(dir, true);
+            //     Directory.Delete(dir, true);
+            // }
+
+            if (dir.StartsWith("./Build") || dir.StartsWith("./Generated")) {
+
+                foreach (var sub in Directory.GetDirectories(dir)) {
+
+                    var s = sub;
+
+                    if (s.StartsWith("./Build/")) {
+
+                        s = s.Substring(8, s.Length - 8);
+                    }
+
+                    if (s.StartsWith("./Generated/")) {
+
+                        s = s.Substring(12, s.Length - 12);
+                    }
+
+                    Guid g = Guid.Empty;
+
+                    if (Guid.TryParse(s, out g)) {
+
+                        Directory.Delete(sub, true);
+                    }
+                }
             }
         }
     }
