@@ -3,6 +3,7 @@ namespace Neu;
 public enum CompilerMode {
 
     Clean,
+    CleanTests,
     CMakeGenerate,
     CMakeBuild,
     Transpile,
@@ -26,12 +27,19 @@ public static partial class Program {
 
         switch (firstArg?.ToLower()) {
 
-
-            ///
-
             case "clean":
 
                 mode = CompilerMode.Clean;
+
+                _args = args.Skip(1);
+
+                break;
+
+            ///
+
+            case "clean-tests":
+
+                mode = CompilerMode.CleanTests;
 
                 _args = args.Skip(1);
 
@@ -94,22 +102,149 @@ public static partial class Program {
 
         switch (mode) {
 
+            case CompilerMode.Clean: {
+
+                var og = Console.ForegroundColor;
+            
+                Write($"Cleaning ");
+
+                ///
+
+                Compiler.Clean();
+
+                ///
+
+                Console.ForegroundColor = ConsoleColor.Green;
+
+                Write($" Cleaned\n");
+
+                Console.ForegroundColor = og;
+
+                break;
+            }
+
+            ///
+            
+            case CompilerMode.CleanTests: {
+
+                var og = Console.ForegroundColor;
+            
+                Write($"Cleaning tests ");
+
+                ///
+
+                Compiler.CleanTests();
+
+                ///
+
+                Console.ForegroundColor = ConsoleColor.Green;
+
+                Write($" Cleaned\n");
+
+                Console.ForegroundColor = og;
+
+                break;
+            }
+
             ///
             
             case CompilerMode.CMakeGenerate: {
 
-                throw new NotImplementedException();
+                foreach (var arg in _args) {
 
-                // break;
+                    var og = Console.ForegroundColor;
+                    
+                    Write($"Generating CMake build setup for {arg} ");
+
+                    ///
+
+                    var id = Path.GetFileNameWithoutExtension(arg);
+
+                    ///
+
+                    var buildDir = $"./Build";
+                    var projBuildDir = $"{buildDir}/{id}";
+                    var genDir = $"./Generated";
+                    var projGenDir = $"{genDir}/{id}";
+
+                    ///
+
+                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = parser
+                        .GenerateNinjaCMake(
+                            projBuildDir, 
+                            projGenDir, 
+                            printProgress: true);
+
+                    if (cmakeGenerateBuildErr) {
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+
+                        Write($" Failed to generate build\n");
+
+                        Console.ForegroundColor = og;
+
+                        continue;
+                    }
+
+                    ///
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+
+                    Write($" Generated\n");
+
+                    Console.ForegroundColor = og;
+                }
+
+                break;
             }
 
             ///
 
             case CompilerMode.CMakeBuild: {
 
-                throw new NotImplementedException();
+                foreach (var arg in _args) {
 
-                // break;
+                    var og = Console.ForegroundColor;
+                    
+                    Write($"Building via CMake for {arg} ");
+
+                    ///
+
+                    var id = Path.GetFileNameWithoutExtension(arg);
+
+                    ///
+
+                    var buildDir = $"./Build";
+                    var projBuildDir = $"{buildDir}/{id}";
+                    
+                    ///
+
+                    var (cmakeBuildOutput, cmakeBuildErr) = parser
+                        .BuildWithCMake(
+                            projBuildDir,
+                            printProgress: true);
+
+                    if (cmakeBuildErr) {
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+
+                        Write($" Failed to build\n");
+
+                        Console.ForegroundColor = og;
+
+                        continue;
+                    }
+
+                    ///
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+
+                    Write($" Built\n");
+
+                    Console.ForegroundColor = og;
+                }
+
+                break;
             }
 
             ///
@@ -204,16 +339,16 @@ public static partial class Program {
                     ///
 
                     var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = parser
-                        .Process(
-                            name: "cmake",
-                            arguments: $"{projGenDir} -B {projBuildDir} -G Ninja",
+                        .GenerateNinjaCMake(
+                            projBuildDir, 
+                            projGenDir, 
                             printProgress: true);
 
                     if (cmakeGenerateBuildErr) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 
-                        Write($" Failed to generated build\n");
+                        Write($" Failed to generate build\n");
 
                         Console.ForegroundColor = og;
 
@@ -223,9 +358,8 @@ public static partial class Program {
                     ///
 
                     var (cmakeBuildOutput, cmakeBuildErr) = parser
-                        .Process(
-                            name: "cmake",
-                            arguments: $"--build {projBuildDir}",
+                        .BuildWithCMake(
+                            projBuildDir, 
                             printProgress: true);
                         
                     if (cmakeBuildErr) {
@@ -250,7 +384,6 @@ public static partial class Program {
 
                 break;
             }
-
 
             ///
             

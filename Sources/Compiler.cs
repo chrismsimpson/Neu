@@ -101,7 +101,9 @@ public partial class Compiler {
 
         if (cppStringOrError.Error != null) {
 
-            throw new Exception();
+            // throw new Exception();
+
+            return new ErrorOrVoid(cppStringOrError.Error);
         }
 
         var cppString = cppStringOrError.Value ?? throw new Exception();

@@ -225,4 +225,55 @@ public partial class Compiler {
                 arguments: $"--build {projBuildDir}",
                 printProgress: printProgress);
     }
+
+    ///
+
+    public static void CleanTests() {
+
+        var directories = Directory.GetDirectories("./");
+
+        foreach (var dir in directories) {
+
+            if (dir.StartsWith("./Build") || dir.StartsWith("./Generated")) {
+
+                foreach (var sub in Directory.GetDirectories(dir)) {
+
+                    var s = sub;
+
+                    if (s.StartsWith("./Build/")) {
+
+                        s = s.Substring(8, s.Length - 8);
+                    }
+
+                    if (s.StartsWith("./Generated/")) {
+
+                        s = s.Substring(12, s.Length - 12);
+                    }
+
+                    Guid g = Guid.Empty;
+
+                    if (Guid.TryParse(s, out g)) {
+
+                        Directory.Delete(sub, true);
+                    }
+                }
+            }
+        }
+    }
+
+    public static void Clean() {
+
+        var directories = Directory.GetDirectories("./");
+
+        foreach (var dir in directories) {
+
+            if (dir.StartsWith("./Build") || dir.StartsWith("./Generated")) {
+
+                foreach (var sub in Directory.GetDirectories(dir)) {
+
+                    Directory.Delete(sub, true);
+                }
+            }
+        }
+    }
 }

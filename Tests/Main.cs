@@ -5,7 +5,7 @@ public static partial class Program {
 
     public static void Main() {
 
-        DeleteBuildCruft();
+        Compiler.CleanTests();
 
         ///
 
@@ -122,12 +122,6 @@ public static partial class Program {
                     
                     ///
 
-                    // var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = compiler
-                    //     .Process(
-                    //         name: "cmake",
-                    //         arguments: $"{projGenDir} -B {projBuildDir} -G Ninja",
-                    //         printProgress: true);
-
                     var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = compiler
                         .GenerateNinjaCMake(
                             projBuildDir, 
@@ -136,25 +130,16 @@ public static partial class Program {
 
                     if (cmakeGenerateBuildErr) {
 
-                        // if (!IsNullOrWhiteSpace(cmakeGenerateBuildOutput)) {
+                        Console.ForegroundColor = ConsoleColor.Red;
 
-                            Console.ForegroundColor = ConsoleColor.Red;
+                        Write($" Failed to generate build\n");
 
-                            Write($" Failed to generated build\n");
-
-                            Console.ForegroundColor = og;
-                        // }
+                        Console.ForegroundColor = og;
 
                         continue;
                     }
 
                     ///
-
-                    // var (cmakeBuildOutput, cmakeBuildErr) = compiler
-                    //     .Process(
-                    //         name: "cmake",
-                    //         arguments: $"--build {projBuildDir}",
-                    //         printProgress: true);
 
                     var (cmakeBuildOutput, cmakeBuildErr) = compiler
                         .BuildWithCMake(
@@ -163,14 +148,11 @@ public static partial class Program {
                         
                     if (cmakeBuildErr) {
 
-                        // if (!IsNullOrWhiteSpace(cmakeBuildOutput)) {
+                        Console.ForegroundColor = ConsoleColor.Red;
 
-                            Console.ForegroundColor = ConsoleColor.Red;
+                        Write($" Failed to build\n");
 
-                            Write($" Failed to build\n");
-
-                            Console.ForegroundColor = og;
-                        // }
+                        Console.ForegroundColor = og;
 
                         continue;
                     }
@@ -224,129 +206,6 @@ public static partial class Program {
 
         return new ErrorOrVoid();
     }
-
-    public static void DeleteBuildCruft() {
-        
-        var directories = Directory.GetDirectories("./");
-
-        foreach (var dir in directories) {
-
-            if (dir.StartsWith("./Build") || dir.StartsWith("./Generated")) {
-
-                foreach (var sub in Directory.GetDirectories(dir)) {
-
-                    var s = sub;
-
-                    if (s.StartsWith("./Build/")) {
-
-                        s = s.Substring(8, s.Length - 8);
-                    }
-
-                    if (s.StartsWith("./Generated/")) {
-
-                        s = s.Substring(12, s.Length - 12);
-                    }
-
-                    Guid g = Guid.Empty;
-
-                    if (Guid.TryParse(s, out g)) {
-
-                        Directory.Delete(sub, true);
-                    }
-                }
-            }
-        }
-    }
-
-    // public static (String, bool) Process(
-    //     String name,
-    //     String? arguments,
-    //     bool printProgress = false) {
-
-    //     var processStartInfo = new System.Diagnostics.ProcessStartInfo();
-
-    //     processStartInfo.FileName = name;
-
-    //     if (!IsNullOrWhiteSpace(arguments)) {
-
-    //         processStartInfo.Arguments = arguments;
-    //     }
-
-    //     processStartInfo.CreateNoWindow = true;
-
-    //     processStartInfo.UseShellExecute = false;
-        
-    //     processStartInfo.RedirectStandardError = true;
-        
-    //     processStartInfo.RedirectStandardOutput = true;
-
-    //     ///
-
-    //     var process = System.Diagnostics.Process.Start(processStartInfo);
-
-    //     if (process == null) {
-
-    //         throw new Exception();
-    //     }
-
-    //     ///
-
-    //     var error = false;
-
-    //     ///
-
-    //     var output = new StringBuilder();
-
-    //     process.OutputDataReceived += (sender, e) => {
-
-    //         if (e.Data != null) {
-
-    //             output.AppendLine(e.Data);
-    //         }
-
-    //         if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
-
-    //             if (!error && printProgress) {
-
-    //                 Write(".");
-    //             }
-    //         }
-    //     };
-
-    //     process.BeginOutputReadLine();
-
-    //     ///
-        
-    //     var errOutput = new StringBuilder();
-
-    //     process.ErrorDataReceived += (sender, e) => {
-
-    //         if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
-
-    //             error = true;
-
-    //             ///
-
-    //             errOutput.AppendLine(l);
-    //         }
-    //     };
-
-    //     process.BeginErrorReadLine();
-
-    //     ///
-
-    //     process.WaitForExit();
-
-    //     process.Close();
-
-    //     ///
-
-    //     return (
-    //         error 
-    //             ? errOutput.ToString() 
-    //             : output.ToString(), 
-    //         error);
-    // }
 
     ///
 

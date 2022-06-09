@@ -2,6 +2,121 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "neu clean",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
+            "args": [
+                "clean"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            },
+            "requireExactSource": true
+        },
+        {
+            "name": "neu clean-tests",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
+            "args": [
+                "clean-tests"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            },
+            "requireExactSource": true
+        },
+        {
+            "name": "neu cmake-build ./X",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
+            "args": [
+                "cmake-build", "./Samples/Variables/varInference.neu"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            },
+            "requireExactSource": true
+        },
+        {
+            "name": "neu cmake-generate ./X",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
+            "args": [
+                "cmake-generate", "./Samples/Variables/varInference.neu"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            },
+            "requireExactSource": true
+        },
+        {
+            "name": "neu transpile ./X",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
+            "args": [
+                "transpile", "./Samples/Variables/varInference.neu"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            },
+            "requireExactSource": true
+        },
+        {
             "name": "neu verify ./X",
             "type": "coreclr",
             "request": "launch",
