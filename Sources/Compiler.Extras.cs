@@ -192,9 +192,15 @@ public partial class Compiler {
 
         ///
 
+        var e = errOutput.ToString();
+
+        ///
+
         return (
             error 
-                ? errOutput.ToString() 
+                ? IsNullOrWhiteSpace(e)
+                    ? output.ToString()
+                    : e
                 : output.ToString(), 
             error);
     }

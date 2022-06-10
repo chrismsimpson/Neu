@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#include "Format.h"
+
+#include "Format.cpp"
+
 template<typename Block>
 class Defer {
 

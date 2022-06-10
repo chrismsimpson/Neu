@@ -2,12 +2,12 @@ namespace Neu;
 
 public enum CompilerMode {
 
+    Build,
     Clean,
     CleanTests,
     CMakeGenerate,
     CMakeBuild,
-    Transpile,
-    Verify
+    Transpile
 }
 
 public static partial class Program {
@@ -26,6 +26,16 @@ public static partial class Program {
         var firstArg = args.FirstOrDefault();
 
         switch (firstArg?.ToLower()) {
+
+            case "build":
+
+                mode = CompilerMode.Build;
+
+                _args = args.Skip(1);
+
+                break;
+
+            ///
 
             case "clean":
 
@@ -77,16 +87,6 @@ public static partial class Program {
 
             ///
 
-            case "verify":
-
-                mode = CompilerMode.Verify;
-
-                _args = args.Skip(1);
-
-                break;
-
-            ///
-
             case null: // maybe you want help?
 
                 throw new Exception();
@@ -102,6 +102,109 @@ public static partial class Program {
 
         switch (mode) {
 
+            case CompilerMode.Build: {
+
+                foreach (var arg in _args) {
+
+                    var og = Console.ForegroundColor;
+                    
+                    Write($"{arg} ");
+
+                    // Transpile
+
+                    var cppStringOrError = parser.ConvertToCPP(arg);
+
+                    if (cppStringOrError.Error != null) {
+
+                        throw new Exception();
+                    }
+
+                    var cppString = cppStringOrError.Value ?? throw new Exception();
+
+                    ///
+
+                    var id = Path.GetFileNameWithoutExtension(arg);
+
+                    ///
+
+                    var buildDir = $"./Build";
+                    var projBuildDir = $"{buildDir}/{id}";
+                    var genDir = $"./Generated";
+                    var projGenDir = $"{genDir}/{id}";
+
+                    ///
+
+                    parser.Generate(
+                        buildDir,
+                        projBuildDir,
+                        genDir,
+                        projGenDir,
+                        $"{id}", 
+                        cppString ?? throw new Exception());
+
+                    ///
+
+                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = parser
+                        .GenerateNinjaCMake(
+                            projBuildDir, 
+                            projGenDir, 
+                            printProgress: true);
+
+                    if (cmakeGenerateBuildErr) {
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+
+                        Write($" Failed to generate build\n");
+
+                        Console.ForegroundColor = og;
+
+                        if (!IsNullOrWhiteSpace(cmakeGenerateBuildOutput)) {
+
+                            WriteLine($"Generate CMake error:\n\n{cmakeGenerateBuildOutput}");
+                        }
+
+                        continue;
+                    }
+
+                    ///
+
+                    var (cmakeBuildOutput, cmakeBuildErr) = parser
+                        .BuildWithCMake(
+                            projBuildDir, 
+                            printProgress: true);
+                        
+                    if (cmakeBuildErr) {
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+
+                        Write($" Failed to build\n");
+
+                        Console.ForegroundColor = og;
+
+                        ///
+
+                        if (!IsNullOrWhiteSpace(cmakeBuildOutput)) {
+
+                            WriteLine($"Build CMake error:\n\n{cmakeBuildOutput}");
+                        }
+
+                        continue;
+                    }
+
+                    ///
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+
+                    Write($" Built\n");
+
+                    Console.ForegroundColor = og;
+                }
+
+                break;
+            }
+
+            ///
+            
             case CompilerMode.Clean: {
 
                 var og = Console.ForegroundColor;
@@ -296,97 +399,6 @@ public static partial class Program {
 
             ///
 
-            case CompilerMode.Verify: {
-
-                foreach (var arg in _args) {
-
-                    var og = Console.ForegroundColor;
-                    
-                    Write($"{arg} ");
-
-                    // Transpile
-
-                    var cppStringOrError = parser.ConvertToCPP(arg);
-
-                    if (cppStringOrError.Error != null) {
-
-                        throw new Exception();
-                    }
-
-                    var cppString = cppStringOrError.Value ?? throw new Exception();
-
-                    ///
-
-                    var id = Path.GetFileNameWithoutExtension(arg);
-
-                    ///
-
-                    var buildDir = $"./Build";
-                    var projBuildDir = $"{buildDir}/{id}";
-                    var genDir = $"./Generated";
-                    var projGenDir = $"{genDir}/{id}";
-
-                    ///
-
-                    parser.Generate(
-                        buildDir,
-                        projBuildDir,
-                        genDir,
-                        projGenDir,
-                        $"{id}", 
-                        cppString ?? throw new Exception());
-
-                    ///
-
-                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = parser
-                        .GenerateNinjaCMake(
-                            projBuildDir, 
-                            projGenDir, 
-                            printProgress: true);
-
-                    if (cmakeGenerateBuildErr) {
-
-                        Console.ForegroundColor = ConsoleColor.Red;
-
-                        Write($" Failed to generate build\n");
-
-                        Console.ForegroundColor = og;
-
-                        continue;
-                    }
-
-                    ///
-
-                    var (cmakeBuildOutput, cmakeBuildErr) = parser
-                        .BuildWithCMake(
-                            projBuildDir, 
-                            printProgress: true);
-                        
-                    if (cmakeBuildErr) {
-
-                        Console.ForegroundColor = ConsoleColor.Red;
-
-                        Write($" Failed to build\n");
-
-                        Console.ForegroundColor = og;
-
-                        continue;
-                    }
-
-                    ///
-
-                    Console.ForegroundColor = ConsoleColor.Green;
-
-                    Write($" Built\n");
-
-                    Console.ForegroundColor = og;
-                }
-
-                break;
-            }
-
-            ///
-            
             default: {
 
                 throw new Exception("Unexpected");

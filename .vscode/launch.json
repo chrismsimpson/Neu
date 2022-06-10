@@ -117,7 +117,7 @@
             "requireExactSource": true
         },
         {
-            "name": "neu verify ./X",
+            "name": "neu build ./X",
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
@@ -157,7 +157,7 @@
                 // "./Samples/Variables/var2.neu",
                 // "./Samples/Variables/var3.neu",
                 // "./Samples/Variables/varBadAssignment.neu",
-                "verify", "./Samples/Variables/varInference.neu",
+                "build", "./Samples/Variables/varInference.neu",
                 // "./Samples/Variables/varRedefiniion.neu",
                 
             ],
