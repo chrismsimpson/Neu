@@ -1,5 +1,5 @@
 func main() {
-    let x: Int64 = 70;
+    let x: Int64 = 70
 
     if x == 100 {
         print("true")
