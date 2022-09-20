@@ -7,17 +7,15 @@
 #include "Format.cpp"
 
 template<typename Block>
-class Defer {
+class ScopeGuard {
 
 public:
 
-    // or `ScopeGuard`
-
-    Defer(
+    ScopeGuard(
         Block block)
         : m_block(block) { }
 
-    ~Defer() { m_block(); }
+    ~ScopeGuard() { m_block(); }
 
 private:
 

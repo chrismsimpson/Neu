@@ -285,9 +285,9 @@ public static partial class CodeGenFunctions {
 
             case CheckedDeferStatement defer: {
 
-                output.Append("#define __DEFER_NAME __scope_guard_ ## __COUNTER__\n");
-                output.Append("Defer __DEFER_NAME  ([&] \n");
-                output.Append("#undef __DEFER_NAME\n");
+                output.Append("#define __SCOPE_GUARD_NAME __scope_guard_ ## __COUNTER__\n");
+                output.Append("ScopeGuard __SCOPE_GUARD_NAME  ([&] \n");
+                output.Append("#undef __SCOPE_GUARD_NAME\n");
                 output.Append(compiler.TranslateBlock(indent, defer.Block));
                 output.Append(");\n");
 
