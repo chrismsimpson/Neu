@@ -11,6 +11,8 @@ class Defer {
 
 public:
 
+    // or `ScopeGuard`
+
     Defer(
         Block block)
         : m_block(block) { }
