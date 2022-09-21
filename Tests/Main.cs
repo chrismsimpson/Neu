@@ -9,11 +9,11 @@ public static partial class Program {
 
         ///
 
-        // TestBasics();
+        TestBasics();
         TestControlFlow();
-        // TestFunctions();
-        // TestMath();
-        // TestVariables();
+        TestFunctions();
+        TestMath();
+        TestVariables();
     }
 
     public static ErrorOrVoid TestSamples(

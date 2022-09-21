@@ -21,3 +21,20 @@ cmake --build Build
 ```
 file ./Build/Output/output
 ```
+
+
+# Building the runtime in isolation
+
+```
+cmake Runtime -B Build/Runtime -G Ninja
+```
+
+```
+cmake --build Build/Runtime
+```
+
+Effective build command:
+
+```
+rm -Rf Build/Runtime && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime
+```

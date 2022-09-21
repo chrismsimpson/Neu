@@ -2,8 +2,11 @@
 
 #include <stdint.h>
 
+#include "CheckedFormattedString.h"
+#include "Detail.h"
 #include "Format.h"
 #include "ScopeGuard.h"
+#include "std.h"
 
 #include "Format.cpp"
 

@@ -3,18 +3,50 @@
     "tasks": [
         {
             "label": "build",
-            "command": "dotnet build Neu.sln",
+            "command": "dotnet build Neu.sln && rm -Rf Build/Runtime && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",
             "type": "shell",
             "args": [
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
+                // "isDefault": false
             },
             "presentation": {
                 "reveal": "always"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "dotnet: build neu",
+            "command": "dotnet build Neu.sln",
+            "type": "shell",
+            "args": [
+            ],
+            "group": {
+                "kind": "build",
+                // "isDefault": true
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "always"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "cmake: build runtime",
+            "command": "rm -Rf Build/Runtime && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",
+            "type": "shell",
+            "args": [],
+            "group": {
+                "kind": "build",
+                // "isDefault": true
+                "isDefault": false
+            },
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": []
         },
         {
             "label": "cmake: generate build",
