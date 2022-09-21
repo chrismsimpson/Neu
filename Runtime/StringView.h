@@ -3,6 +3,7 @@
 
 #include "Assertions.h"
 #include "Forward.h"
+#include "Span.h"
 #include "std.h"
 
 class StringView {
