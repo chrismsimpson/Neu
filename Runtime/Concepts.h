@@ -7,5 +7,7 @@
 
 namespace Concepts {
 
-    // concept Integral =    
+    template<typename T>
+    concept Integral = IsIntegral<T>;
+    
 }
