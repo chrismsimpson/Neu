@@ -25,6 +25,17 @@ public:
         }
     }
 
+    ALWAYS_INLINE StringView(unsigned char const* characters, size_t length)
+        : m_characters((char const*) characters),
+          m_length(length) {
+
+        VERIFY(!Checked<uintptr_t>::additionWouldOverflow((uintptr_t)characters, length));
+    }
+
+    // ALWAYS_INLINE StringView(ReadonlyBytes bytes)
+    //     : m_characters(reinterpret_cast<char const*>(bytes.data())), 
+    //       m_length(bytes.size()) { }
+
 private:
 
     char const* m_characters { nullptr };
