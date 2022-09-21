@@ -3,6 +3,27 @@
 
 namespace Detail {
 
+
+
+    ///
+
+    template<class T>
+    struct __RemoveConst {
+
+        using Type = T;
+    };
+
+    template<class T>
+    struct __RemoveConst<const T> {
+    
+        using Type = T;
+    };
+    
+    template<class T>
+    using RemoveConst = typename __RemoveConst<T>::Type;
+
+    ///
+
     ///
 
     template<typename T>
