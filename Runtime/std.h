@@ -14,6 +14,20 @@
 namespace std {
 
     template<typename T>
+    constexpr T&& forward(Detail::RemoveReference<T>& param) {
+
+        return static_cast<T&&>(param);
+    }
+
+    template<typename T>
+    constexpr T&& forward(Detail::RemoveReference<T>&& param) noexcept {
+
+        static_assert(!IsLValueReference<T>, "Can't forward an rvalue as an lvalue.");
+        
+        return static_cast<T&&>(param);
+    }
+
+    template<typename T>
     constexpr T&& move(T& arg) {
 
         return static_cast<T&&>(arg);
@@ -21,7 +35,28 @@ namespace std {
     
 } // namespace std
 
+using std::forward;
 using std::move;
+
+
+
+
+
+
+template<typename T, typename U = T>
+constexpr T exchange(T& slot, U&& value) {
+
+    T oldValue = move(slot);
+
+    slot = forward<U>(value);
+
+    return oldValue;
+}
+
+
+
+
+
 
 
 

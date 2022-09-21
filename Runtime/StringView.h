@@ -21,7 +21,7 @@ public:
 
         if (!isConstantEvaluated()) {
 
-            // TODO 
+            VERIFY(!Checked<uintptr_t>::additionWouldOverflow((uintptr_t)characters, length));
         }
     }
 
