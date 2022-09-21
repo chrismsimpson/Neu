@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "CheckedFormattedString.h"
+#include "CheckedFormatString.h"
 
 #include "Forward.h"
 

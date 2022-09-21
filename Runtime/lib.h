@@ -3,7 +3,8 @@
 #include <stdint.h>
 
 #include "Assertions.h"
-#include "CheckedFormattedString.h"
+#include "Checked.h"
+#include "CheckedFormatString.h"
 #include "Detail.h"
 #include "Format.h"
 #include "Platform.h"
