@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <stdint.h>
@@ -8,6 +9,7 @@
 #include "Detail.h"
 #include "Format.h"
 #include "IterationDecision.h"
+#include "NumericLimits.h"
 #include "Platform.h"
 #include "ScopeGuard.h"
 #include "Span.h"

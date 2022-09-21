@@ -108,5 +108,49 @@ namespace Concepts {
         -> SameAs<void>;
     };
 
+    ///
 
+    template<typename Func, typename... Args>
+    concept IteratorFunction = requires(Func func, Args... args) {
+
+        {
+            func(args...)
+        }
+        -> SameAs<IterationDecision>;
+    };
+
+    ///
+
+    template<typename T, typename EndT>
+    concept IteratorPairWith = requires(T it, EndT end) {
+        
+        *it;
+        { it != end } -> SameAs<bool>;
+        ++it;
+    };
+
+    ///
+
+    template<typename T>
+    concept IterableContainer = requires {
+
+        { declval<T>().begin() } -> IteratorPairWith<decltype(declval<T>().end())>;
+    };
 }
+
+using Concepts::Arithmetic;
+using Concepts::ArrayLike;
+using Concepts::Enum;
+using Concepts::FloatingPoint;
+using Concepts::Fundamental;
+using Concepts::Integral;
+using Concepts::IterableContainer;
+using Concepts::IteratorFunction;
+using Concepts::IteratorPairWith;
+using Concepts::OneOf;
+using Concepts::OneOfIgnoringConstVolatile;
+using Concepts::SameAs;
+using Concepts::Signed;
+using Concepts::SpecializationOf;
+using Concepts::Unsigned;
+using Concepts::VoidFunction;

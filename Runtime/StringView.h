@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Assertions.h"
+#include "Checked.h"
 #include "Forward.h"
 #include "Span.h"
 #include "std.h"
