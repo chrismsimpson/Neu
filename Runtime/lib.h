@@ -5,6 +5,7 @@
 #include "CheckedFormattedString.h"
 #include "Detail.h"
 #include "Format.h"
+#include "Platform.h"
 #include "ScopeGuard.h"
 #include "std.h"
 #include "StringView.h"
