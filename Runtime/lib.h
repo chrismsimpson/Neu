@@ -7,9 +7,11 @@
 #include "Format.h"
 #include "ScopeGuard.h"
 #include "std.h"
+#include "StringView.h"
 #include "Types.h"
 
 #include "Format.cpp"
+#include "StringView.cpp"
 
 using Int8 = int8_t;
 using Int16 = int16_t;

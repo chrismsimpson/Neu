@@ -5,7 +5,6 @@
 
 namespace std {
 
-
     template<typename T>
     constexpr T&& move(T& arg) {
 
