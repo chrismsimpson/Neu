@@ -24,6 +24,27 @@ namespace Detail {
 
     ///
 
+    template<class T>
+    struct __RemoveVolatile {
+    
+        using Type = T;
+    };
+
+    template<class T>
+    struct __RemoveVolatile<volatile T> {
+    
+        using Type = T;
+    };
+
+    template<typename T>
+    using RemoveVolatile = typename __RemoveVolatile<T>::Type;
+
+    ///
+
+    template<class T>
+    using RemoveConstVolatile = RemoveVolatile<RemoveConst<T>>;
+
+
     ///
 
     template<typename T>
