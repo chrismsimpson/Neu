@@ -1,3 +1,3 @@
 # Neu
 
-The escape hatch
+An experimental programming language
