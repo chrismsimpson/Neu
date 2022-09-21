@@ -6,6 +6,10 @@
         "*.c": "cpp",
         "*.C": "c",
         "*.cpp": "cpp",
-        "*.h": "cpp"
+        "*.h": "cpp",
+        "cstdio": "cpp",
+        "__bit_reference": "cpp",
+        "__string": "cpp",
+        "ios": "cpp"
     }
 }

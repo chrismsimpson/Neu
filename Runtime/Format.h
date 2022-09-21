@@ -2,8 +2,26 @@
 #pragma once
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 
 #include "CheckedFormattedString.h"
+
+#include "std.h" // TODO: Remove?
+
+// void outLine(const char * format, ...) {
+
+//     va_list arglist;
+
+//     va_start(arglist, format);
+
+//     vprintf(format, arglist);
+
+//     fputc('\n', stdout);
+
+//     va_end(arglist);
+// }
+
 
 template<typename... Parameters>
 void out(
@@ -11,19 +29,40 @@ void out(
     CheckedFormatString<Parameters...>&& fmtstr, 
     Parameters const&... parameters) {
 
-    // TODO
 }
 
 template<typename... Parameters>
 void outLine(
-    FILE* file, 
+    FILE* file,
     CheckedFormatString<Parameters...>&& fmtstr, 
-    Parameters const&... parameters) {
-
-    // TODO
+    Parameters const&... parameters) { 
+    
 }
 
-void outLine(
-    FILE* file) { fputc('\n', file); }
+// inline 
+void outLine(FILE* file) { 
+    
+    fputc('\n', file);
+}
 
-void outLine() { outLine(stdout); }
+template<typename... Parameters>
+void out(
+    CheckedFormatString<Parameters...>&& fmtstr, 
+    Parameters const&... parameters) { 
+    
+    out(stdout, move(fmtstr), parameters...);
+}
+
+template<typename... Parameters>
+void outLine(
+    CheckedFormatString<Parameters...>&& fmtstr, 
+    Parameters const&... parameters) { 
+    
+    outLine(stdout, move(fmtstr), parameters...);
+}
+
+// inline 
+void outLine() { 
+    
+    outLine(stdout);
+}

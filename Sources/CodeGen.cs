@@ -11,7 +11,7 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append("#include <iostream>\n");
+        // output.Append("#include <iostream>\n");
 
         output.Append("#include \"../../../Runtime/lib.h\"\n");
 
@@ -471,16 +471,21 @@ public static partial class CodeGenFunctions {
 
                     case "print":
 
-                        output.Append("std::cout << ");
+                        // output.Append("std::cout << ");
                         
-                        output.Append("(");
+                        // output.Append("(");
+
+                        // output.Append("outLine(\"{}\", ");
+                        output.Append("outLine(\"%s\", ");
 
                         foreach (var param in ce.Call.Args) {
 
                             output.Append(compiler.TranslateExpr(indent, param.Item2));
                         }
                         
-                        output.Append(") << std::endl");
+                        // output.Append(") << std::endl");
+
+                        output.Append(")");
 
                         break;
 

@@ -7,6 +7,7 @@
 #include "Format.h"
 #include "ScopeGuard.h"
 #include "std.h"
+#include "Types.h"
 
 #include "Format.cpp"
 

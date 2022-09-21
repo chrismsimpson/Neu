@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "Types.h" // TODO: Remove?
+
 #include "std.h"
 
 namespace Format::Detail {
@@ -8,6 +10,12 @@ namespace Format::Detail {
     template<typename... Args>
     struct CheckedFormatString {
 
+        template<size_t N>
+        consteval CheckedFormatString(
+            char const (&fmt)[N]
+        ) {
+
+        }
     };
     
 } // namespace Format::Detail
