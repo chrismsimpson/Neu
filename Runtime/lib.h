@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+#include "Assertions.h"
 #include "CheckedFormattedString.h"
 #include "Detail.h"
 #include "Format.h"

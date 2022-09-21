@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "Assertions.h"
 #include "Forward.h"
 #include "std.h"
 
@@ -16,9 +17,11 @@ public:
         : m_characters(characters),
           m_length(length) {
 
-        // TODO
-    } 
+        if (!isConstantEvaluated()) {
 
+            // TODO 
+        }
+    }
 
 private:
 

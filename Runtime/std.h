@@ -3,6 +3,14 @@
 
 #include "Detail.h"
 
+
+
+
+
+
+
+
+
 namespace std {
 
     template<typename T>
@@ -14,3 +22,15 @@ namespace std {
 } // namespace std
 
 using std::move;
+
+
+
+
+constexpr bool isConstantEvaluated() {
+
+#if __has_builtin(__builtin_is_constant_evaluated)
+    return __builtin_is_constant_evaluated();
+#else
+    return false;
+#endif
+}
