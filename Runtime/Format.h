@@ -1,6 +1,20 @@
 
 #pragma once
 
+#include <stdio.h>
+
 #include "CheckedFormattedString.h"
 
-void outLine();
+template<typename... Parameters>
+void outLine(
+    FILE* file, 
+    CheckedFormatString<Parameters...>&& fmtstr, 
+    Parameters const&... parameters) {
+
+    // TODO
+}
+
+void outLine(
+    FILE* file) { fputc('\n', file); }
+
+void outLine() { outLine(stdout); }

@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "build",
-            "command": "dotnet build Neu.sln && rm -Rf Build/Runtime && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",
+            "command": "rm -Rf Generated && rm -Rf Build && dotnet build Neu.sln && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",
             "type": "shell",
             "args": [
             ],
