@@ -27,15 +27,43 @@ namespace Detail {
             : m_values(values), 
               m_size(size) { }
 
-        // template<size_t size>
-        // ALWAYS_INLINE constexpr Span(Array<T, size>& array)
-        //     : m_values(array.data()), 
-        //       m_size(size) { }
+        template<size_t size>
+        ALWAYS_INLINE constexpr Span(Array<T, size>& array)
+            : m_values(array.data()),
+              m_size(size) { }
 
     protected:
 
         T* m_values { nullptr };
 
+        size_t m_size { 0 };
+    };
+
+    ///
+
+    template<>
+    class Span<UInt8> {
+
+    public:
+
+    protected:
+
+        UInt8* m_values { nullptr };
+
+        size_t m_size { 0 };
+    };
+
+    ///
+
+    template<>
+    class Span<UInt8 const> {
+
+    public:
+
+    protected:
+
+        UInt8 const* m_values { nullptr };
+        
         size_t m_size { 0 };
     };
 
@@ -157,4 +185,8 @@ public:
 
 
 
+    ALWAYS_INLINE constexpr operator Span<T const>() const {
+
+        return { data(), size() };
+    }
 };
