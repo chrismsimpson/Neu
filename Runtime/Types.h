@@ -14,5 +14,7 @@ using Int32 = __INT32_TYPE__;
 using Int16 = __INT16_TYPE__;
 using Int8 = __INT8_TYPE__;
 
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 

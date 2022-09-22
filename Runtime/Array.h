@@ -70,7 +70,7 @@ struct Array {
 
     ///
 
-
+    using ConstIterator = SimpleIterator<Array const, T const>;
 
 
     T __data[Size];
