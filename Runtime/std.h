@@ -3,13 +3,11 @@
 
 #include "Detail.h"
 
+#include "Assertions.h"
 
 
 
-
-
-
-
+///
 
 namespace std {
 
@@ -38,10 +36,47 @@ namespace std {
 using std::forward;
 using std::move;
 
+///
+
+namespace Detail {
+
+    template<typename T>
+    struct _RawPointer {
+
+        using Type = T*;
+    };
+}
+
+///
+
+template<typename T, typename SizeType = decltype(sizeof(T)), SizeType N>
+constexpr SizeType arraySize(T (&)[N]) {
+
+    return N;
+}
+
+///
+
+template<typename T>
+constexpr T min(const T& a, IdentityType<T> const& b) {
+
+    return b < a ? b : a;
+}
+
+///
+
+template<typename T>
+constexpr T max(const T& a, IdentityType<T> const& b) {
+
+    return a < b ? b : a;
+}
+
+///
 
 
 
 
+///
 
 template<typename T, typename U = T>
 constexpr T exchange(T& slot, U&& value) {
@@ -52,6 +87,13 @@ constexpr T exchange(T& slot, U&& value) {
 
     return oldValue;
 }
+
+///
+
+template<typename T>
+using RawPointer = typename Detail::_RawPointer<T>::Type;
+
+///
 
 
 

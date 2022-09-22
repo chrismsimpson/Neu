@@ -72,6 +72,71 @@ struct Array {
 
     using ConstIterator = SimpleIterator<Array const, T const>;
 
+    using Iterator = SimpleIterator<Array, T>;
+
+    ///
+
+    [[nodiscard]] constexpr ConstIterator begin() const { return ConstIterator::begin(*this); }
+
+    [[nodiscard]] constexpr Iterator begin() { return Iterator::begin(*this); }
+
+    ///
+
+    [[nodiscard]] constexpr ConstIterator end() const { return ConstIterator::end(*this); }
+
+    [[nodiscard]] constexpr Iterator end() { return Iterator::end(*this); }
+
+    ///
+
+    [[nodiscard]] constexpr operator Span<T const>() const { return span(); }
+
+    [[nodiscard]] constexpr operator Span<T>() { return span(); }
+
+    ///
+
+    constexpr size_t fill(T const& value) {
+
+        for (size_t idx = 0; idx < Size; ++idx) {
+
+            __data[idx] = value;
+        }
+
+        return Size;
+    }
+
+    ///
+
+    [[nodiscard]] constexpr T max() const requires(requires(T x, T y) { x < y; }) {
+
+        static_assert(Size > 0, "No values to max() over");
+
+        T value = __data[0];
+        
+        for (size_t i = 1; i < Size; ++i) {
+
+            value = ::max(__data[i], value);
+        }   
+            
+        return value;
+    }
+    
+    ///
+
+    [[nodiscard]] constexpr T min() const requires(requires(T x, T y) { x > y; }) {
+
+        static_assert(Size > 0, "No values to min() over");
+
+        T value = __data[0];
+
+        for (size_t i = 1; i < Size; ++i) {
+
+            value = ::min(__data[i], value);
+        }
+            
+        return value;
+    }
+
+    ///
 
     T __data[Size];
 };
