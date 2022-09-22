@@ -140,3 +140,29 @@ struct Array {
 
     T __data[Size];
 };
+
+///
+
+template<typename T, typename... Types>
+Array(T, Types...) -> Array<T, sizeof...(Types) + 1>;
+
+///
+
+namespace Detail {
+
+    template<typename T, size_t... Is>
+    constexpr auto integerSequenceGenerateArray([[maybe_unused]] T const offset, IntegerSequence<T, Is...>) -> Array<T, sizeof...(Is)> {
+
+        return { { (offset + Is)... } };
+    }
+}
+
+///
+
+template<typename T, T N>
+constexpr static auto iotaArray(T const offset = { }) {
+
+    static_assert(N >= T { }, "Negative sizes not allowed in iotaArray()");
+    
+    return Detail::integerSequenceGenerateArray<T>(offset, MakeIntegerSequence<T, N>());
+}

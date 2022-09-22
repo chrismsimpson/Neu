@@ -18,3 +18,4 @@ using Int8 = __INT8_TYPE__;
 #include <stdint.h>
 #include <sys/types.h>
 
+using FlatPointer = Conditional<sizeof(void*) == 8, UInt64, UInt32>;

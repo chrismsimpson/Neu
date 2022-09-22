@@ -9,6 +9,7 @@
 #include "CheckedFormatString.h"
 #include "Detail.h"
 #include "Format.h"
+#include "HashFunctions.h"
 #include "IterationDecision.h"
 #include "Iterator.h"
 #include "NumericLimits.h"
@@ -18,6 +19,7 @@
 #include "std.h"
 #include "String.h"
 #include "StringView.h"
+#include "TypedTransfer.h"
 #include "Types.h"
 
 #include "Format.cpp"
