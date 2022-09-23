@@ -1,14 +1,14 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <string.h>
-
 #include "CheckedFormatString.h"
 
 #include "Array.h"
 #include "Forward.h"
 #include "StringView.h"
+
+#include <stdio.h>
+#include <string.h>
 
 // void outLine(const char * format, ...) {
 
