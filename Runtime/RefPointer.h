@@ -48,6 +48,14 @@ public:
 
 
 
+    // NonNullRefPointer<T> releaseNonNull() {
+
+    //     auto* ptr = leakRef();
+        
+    //     VERIFY(ptr);
+        
+    //     return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, *ptr);
+    // }
 
     ALWAYS_INLINE T* pointer() { return asPointer(); }
 
