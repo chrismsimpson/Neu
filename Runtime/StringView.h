@@ -4,6 +4,7 @@
 #include "Assertions.h"
 #include "Checked.h"
 #include "Forward.h"
+#include "Optional.h"
 #include "Span.h"
 #include "std.h"
 
