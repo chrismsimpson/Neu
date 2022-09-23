@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-// #include "BitCast.h"
+#include "BitCast.h"
 #include "Concepts.h"
 #include "Forward.h"
 #include "HashFunctions.h"
