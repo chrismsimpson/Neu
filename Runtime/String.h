@@ -3,7 +3,7 @@
 
 #include "Format.h"
 #include "Forward.h"
-// #include "RefPtr.h"
+#include "RefPointer.h"
 // #include "Stream.h"
 // #include "StringBuilder.h"
 // #include "StringImpl.h"

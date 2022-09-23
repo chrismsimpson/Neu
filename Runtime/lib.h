@@ -17,11 +17,14 @@
 #include "IterationDecision.h"
 #include "Iterator.h"
 #include "NonCopyable.h"
+#include "NonNullOwnPointer.h"
+#include "NonNullRefPointer.h"
 #include "NumericLimits.h"
 #include "Optional.h"
 #include "OwnPointer.h"
 #include "Platform.h"
 #include "RefCounted.h"
+#include "RefPointer.h"
 #include "ScopeGuard.h"
 #include "Span.h"
 #include "std.h"
@@ -33,6 +36,7 @@
 #include "TypedTransfer.h"
 #include "Types.h"
 #include "Variant.h"
+#include "WeakPointer.h"
 
 
 #include "kmalloc.h"

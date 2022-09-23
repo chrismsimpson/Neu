@@ -16,19 +16,6 @@ public:
 
     ///
 
-    // NonnullOwnPtr<T> release_nonnull()
-    // {
-    //     VERIFY(m_ptr);
-    //     return NonnullOwnPtr<T>(NonnullOwnPtr<T>::Adopt, *leak_ptr());
-    // }
-
-    // template<typename U>
-    // NonnullOwnPtr<U> release_nonnull() {
-
-    //     VERIFY(m_ptr);
-        
-    //     return NonnullOwnPtr<U>(NonnullOwnPtr<U>::Adopt, static_cast<U&>(*leak_ptr()));
-    // }
 
     ///
 
@@ -103,7 +90,7 @@ protected:
         : m_ptr(ptr) {
 
         static_assert(
-            requires { requires typename T::AllowOwnPointer()(); } || !requires { requires !typename T::AllowOwnPointer()(); declval<T>().ref(); declval<T>().unref(); }, "Use RefPtr<> for RefCounted types");
+            requires { requires typename T::AllowOwnPointer()(); } || !requires { requires !typename T::AllowOwnPointer()(); declval<T>().ref(); declval<T>().unref(); }, "Use RefPointer<> for RefCounted types");
     }
 
 private:
