@@ -12,6 +12,7 @@
 #include "Detail.h"
 #include "Error.h"
 #include "Format.h"
+#include "Function.h"
 #include "HashFunctions.h"
 #include "IterationDecision.h"
 #include "Iterator.h"
