@@ -8,7 +8,7 @@
 // #include "StringBuilder.h"
 // #include "StringImpl.h"
 // #include "StringUtils.h"
-// #include "Traits.h"
+#include "Traits.h"
 
 class String {
 
