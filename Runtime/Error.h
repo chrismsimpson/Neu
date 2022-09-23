@@ -53,6 +53,22 @@ private:
 
 ///
 
-// class ErrorOr: pub {
+template<typename T, typename ErrorType>
+class [[nodiscard]] ErrorOr final: public Variant<T, ErrorType> {
 
-// };
+public:
+
+    using Variant<T, ErrorType>::Variant;
+
+
+
+};
+
+///
+
+template<typename ErrorType>
+class [[nodiscard]] ErrorOr<void, ErrorType> {
+
+// private:
+//     Optional<ErrorType> m_error;
+};
