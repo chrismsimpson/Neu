@@ -3,7 +3,7 @@
 
 
 #include "Assertions.h"
-// #include "Atomic.h"
+#include "Atomic.h"
 #include "BitCast.h"
 #include "NonCopyable.h"
 #include "ScopeGuard.h"

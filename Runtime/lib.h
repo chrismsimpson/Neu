@@ -7,6 +7,7 @@
 #include "AnyOf.h"
 #include "Array.h"
 #include "Assertions.h"
+#include "Atomic.h"
 #include "BitCast.h"
 #include "ByteBuffer.h"
 #include "Checked.h"

@@ -4,7 +4,7 @@
 #define REFPTR_SCRUB_BYTE 0xe0
 
 #include "Assertions.h"
-// #include "Atomic.h"
+#include "Atomic.h"
 #include "Error.h"
 #include "Format.h"
 #include "NonNullRefPointer.h"
