@@ -16,51 +16,180 @@ namespace Detail {
 
         ByteBuffer() = default;
 
+        ~ByteBuffer() {
 
+            clear();
+        }
 
+        ByteBuffer(ByteBuffer const& other) {
 
+            MUST(tryResize(other.size()));
+            
+            VERIFY(m_size == other.size());
+            
+            __builtin_memcpy(data(), other.data(), other.size());
+        }
 
+        ByteBuffer(ByteBuffer&& other) {
 
+            moveFrom(move(other));
+        }
 
+        ByteBuffer& operator=(ByteBuffer&& other) {
 
+            if (this != &other) {
 
+                if (!m_inline) {
 
+                    kfreeSized(m_outlineBuffer, m_outlineCapacity);
+                }
 
+                moveFrom(move(other));
+            }
 
+            return *this;
+        }
 
+        ByteBuffer& operator=(ByteBuffer const& other) {
 
+            if (this != &other) {
 
+                if (m_size > other.size()) {
+                    
+                    trim(other.size(), true);
+                } 
+                else {
 
+                    MUST(tryResize(other.size()));
+                }
 
+                __builtin_memcpy(data(), other.data(), other.size());
+            }
+
+            return *this;
+        }
+
+        ///
+
+        [[nodiscard]] static ErrorOr<ByteBuffer> createUninitialized(size_t size) {
+
+            auto buffer = ByteBuffer();
+            
+            TRY(buffer.tryResize(size));
+            
+            return { move(buffer) };
+        }
+
+        [[nodiscard]] static ErrorOr<ByteBuffer> createZeroed(size_t size) {
+
+            auto buffer = TRY(createUninitialized(size));
+
+            buffer.zeroFill();
+            
+            VERIFY(size == 0 || (buffer[0] == 0 && buffer[size - 1] == 0));
+            
+            return { move(buffer) };
+        }
+
+        ///
+
+        [[nodiscard]] static ErrorOr<ByteBuffer> copy(void const* data, size_t size) {
+
+            auto buffer = TRY(createUninitialized(size)); 
+            
+            if (size != 0) {
+
+                __builtin_memcpy(buffer.data(), data, size);
+            }
+
+            return { move(buffer) };
+        }
+
+        [[nodiscard]] static ErrorOr<ByteBuffer> copy(ReadOnlyBytes bytes) {
+
+            return copy(bytes.data(), bytes.size());
+        }
+
+        ///
+
+        template<size_t otherInlineCapacity>
+        bool operator==(ByteBuffer<otherInlineCapacity> const& other) const {
+
+            if (size() != other.size()) {
+
+                return false;
+            }
+
+            // So they both have data, and the same length.
+            
+            return !__builtin_memcmp(data(), other.data(), size());
+        }
+
+        bool operator!=(ByteBuffer const& other) const { return !(*this == other); }
+
+        [[nodiscard]] UInt8& operator[](size_t i) {
+
+            VERIFY(i < m_size);
+
+            return data()[i];
+        }
+
+        [[nodiscard]] UInt8 const& operator[](size_t i) const {
+
+            VERIFY(i < m_size);
+            
+            return data()[i];
+        }
+
+        ///
 
         [[nodiscard]] bool isEmpty() const { return m_size == 0; }
 
+        ///
+
         [[nodiscard]] size_t size() const { return m_size; }
+
+        ///
 
         [[nodiscard]] UInt8* data() { return m_inline ? m_inlineBuffer : m_outlineBuffer; }
 
         [[nodiscard]] UInt8 const* data() const { return m_inline ? m_inlineBuffer : m_outlineBuffer; }
 
+        ///
+
         [[nodiscard]] Bytes bytes() { return { data(), size() }; }
 
         [[nodiscard]] ReadOnlyBytes bytes() const { return { data(), size() }; }
 
+        ///
 
+        [[nodiscard]] Span<UInt8> span() { return { data(), size() }; }
+    
+        [[nodiscard]] Span<const UInt8> span() const { return { data(), size() }; }
 
+        ///
 
+        [[nodiscard]] UInt8* offsetPointer(int offset) { return data() + offset; }
+        
+        [[nodiscard]] UInt8 const* offsetPointer(int offset) const { return data() + offset; }
 
+        ///
 
+        [[nodiscard]] void* endPointer() { return data() + m_size; }
+        
+        [[nodiscard]] void const* endPointer() const { return data() + m_size; }
 
+        ///
 
+        // FIXME: Make this function handle failures too.
+        [[nodiscard]] ByteBuffer slice(size_t offset, size_t size) const {
 
+            // I cannot hand you a slice I don't have
+            
+            VERIFY(offset + size <= this->size());
 
-
-
-
-
-
-
-
+            return copy(offsetPointer(offset), size).releaseValue();
+        }
 
         void clear() {
 
@@ -174,52 +303,6 @@ namespace Detail {
             
             return { };
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         void operator+=(ByteBuffer const& other) {
 
