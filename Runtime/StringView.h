@@ -43,7 +43,11 @@ public:
         : m_characters(reinterpret_cast<char const*>(bytes.data())), 
           m_length(bytes.size()) { }
 
-    // StringView(ByteBuffer const&);
+    StringView(ByteBuffer const&);
+
+    StringView(String const&);
+
+    // StringView(FlyString const&);
 
 private:
 

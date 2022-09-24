@@ -3,11 +3,17 @@
 
 #include "Types.h"
 
+
+namespace Detail {
+
+    template<size_t inline_capacity>
+    class ByteBuffer;
+}
+
+using ByteBuffer = Detail::ByteBuffer<32>;
 class Error;
 class String;
 class StringView;
-
-
 
 template<typename T>
 class Span;
