@@ -20,6 +20,43 @@ using Int8 = __INT8_TYPE__;
 
 using FlatPointer = Conditional<sizeof(void*) == 8, UInt64, UInt32>;
 
+constexpr UInt64 KiB = 1024;
+constexpr UInt64 MiB = KiB * KiB;
+constexpr UInt64 GiB = KiB * KiB * KiB;
+constexpr UInt64 TiB = KiB * KiB * KiB * KiB;
+constexpr UInt64 PiB = KiB * KiB * KiB * KiB * KiB;
+constexpr UInt64 EiB = KiB * KiB * KiB * KiB * KiB * KiB;
+
+namespace std { // NOLINT(cert-dcl58-cpp) nullptr_t must be in ::std:: for some analysis tools
+
+    using nullptr_t = decltype(nullptr);
+}
+
+static constexpr FlatPointer explodeByte(UInt8 b) {
+
+    FlatPointer value = b;
+
+    if constexpr (sizeof(FlatPointer) == 4) {
+
+        return value << 24 | value << 16 | value << 8 | value;
+    }
+    else if (sizeof(FlatPointer) == 8) {
+
+        return value << 56 | value << 48 | value << 40 | value << 32 | value << 24 | value << 16 | value << 8 | value;
+    }
+}
+
+static_assert(explodeByte(0xff) == (FlatPointer) 0xffffffffffffffffull);
+static_assert(explodeByte(0x80) == (FlatPointer) 0x8080808080808080ull);
+static_assert(explodeByte(0x7f) == (FlatPointer) 0x7f7f7f7f7f7f7f7full);
+static_assert(explodeByte(0) == 0);
+
+constexpr size_t alignUpTo(const size_t value, const size_t alignment) {
+    
+    return (value + (alignment - 1)) & ~(alignment - 1);
+}
+
+
 enum MemoryOrder {
     
     memory_order_relaxed = __ATOMIC_RELAXED,
