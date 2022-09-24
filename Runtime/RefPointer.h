@@ -40,22 +40,176 @@ public:
     // }
 
 
+//     ALWAYS_INLINE ~RefPtr() {
 
+//         clear();
+// #    ifdef SANITIZE_PTRS
+//         m_ptr = reinterpret_cast<T*>(explode_byte(REFPTR_SCRUB_BYTE));
+// #    endif
+//     }
 
+    ///
 
+    template<typename U>
+    RefPointer(OwnPointer<U> const&) = delete;
 
+    template<typename U>
+    RefPointer& operator=(OwnPointer<U> const&) = delete;
 
+    ///
 
+    void swap(RefPointer& other) {
 
+        ::swap(m_ptr, other.m_ptr);
+    }
 
-    // NonNullRefPointer<T> releaseNonNull() {
+    template<typename U>
+    void swap(RefPointer<U>& other) requires(IsConvertible<U*, T*>) {
 
-    //     auto* ptr = leakRef();
+        ::swap(m_ptr, other.m_ptr);
+    }
+
+    ///
+
+    ALWAYS_INLINE RefPointer& operator=(RefPointer&& other) {
+
+        RefPointer tmp { move(other) };
+
+        swap(tmp);
         
-    //     VERIFY(ptr);
+        return *this;
+    }
+
+    template<typename U>
+    ALWAYS_INLINE RefPointer& operator=(RefPointer<U>&& other) requires(IsConvertible<U*, T*>) {
+
+        RefPointer tmp { move(other) };
         
-    //     return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, *ptr);
-    // }
+        swap(tmp);
+        
+        return *this;
+    }
+
+    template<typename U>
+    ALWAYS_INLINE RefPointer& operator=(NonNullRefPointer<U>&& other) requires(IsConvertible<U*, T*>) {
+
+        RefPointer tmp { move(other) };
+
+        swap(tmp);
+        
+        return *this;
+    }
+
+    ALWAYS_INLINE RefPointer& operator=(NonNullRefPointer<T> const& other) {
+
+        RefPointer tmp { other };
+        
+        swap(tmp);
+        
+        return *this;
+    }
+
+    template<typename U>
+    ALWAYS_INLINE RefPointer& operator=(NonNullRefPointer<U> const& other) requires(IsConvertible<U*, T*>) {
+
+        RefPointer tmp { other };
+
+        swap(tmp);
+        
+        return *this;
+    }
+
+    ALWAYS_INLINE RefPointer& operator=(RefPointer const& other) {
+
+        RefPointer tmp { other };
+        
+        swap(tmp);
+
+        return *this;
+    }
+
+    template<typename U>
+    ALWAYS_INLINE RefPointer& operator=(RefPointer<U> const& other) requires(IsConvertible<U*, T*>) {
+
+        RefPointer tmp { other };
+
+        swap(tmp);
+        
+        return *this;
+    }
+
+    ALWAYS_INLINE RefPointer& operator=(T const* ptr) {
+
+        RefPointer tmp { ptr };
+        
+        swap(tmp);
+        
+        return *this;
+    }
+
+    ALWAYS_INLINE RefPointer& operator=(T const& object) {
+
+        RefPointer tmp { object };
+        
+        swap(tmp);
+        
+        return *this;
+    }
+
+    RefPointer& operator=(std::nullptr_t) {
+
+        clear();
+        
+        return *this;
+    }
+
+    ALWAYS_INLINE bool assignIfNull(RefPointer&& other) {
+
+        if (this == &other) {
+
+            return isNull();
+        }
+
+        *this = move(other);
+        
+        return true;
+    }
+
+    template<typename U>
+    ALWAYS_INLINE bool assignIfNull(RefPointer<U>&& other) {
+
+        if (this == &other) {
+
+            return isNull();
+        }
+
+        *this = move(other);
+        
+        return true;
+    }
+
+    ALWAYS_INLINE void clear() {
+        
+        unrefIfNotNull(m_ptr);
+
+        m_ptr = nullptr;
+    }
+
+    bool operator!() const { return !m_ptr; }
+
+    [[nodiscard]] T* leakRef() {
+
+        return exchange(m_ptr, nullptr);
+    }
+
+    NonNullRefPointer<T> releaseNonNull() {
+
+        auto* ptr = leakRef();
+        
+        VERIFY(ptr);
+        
+        return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, *ptr);
+    }
 
     ALWAYS_INLINE T* pointer() { return asPointer(); }
 
