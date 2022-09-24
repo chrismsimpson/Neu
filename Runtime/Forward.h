@@ -3,6 +3,7 @@
 
 #include "Types.h"
 
+class Error;
 class String;
 class StringView;
 
@@ -20,3 +21,6 @@ class SimpleIterator;
 using ReadOnlyBytes = Span<const UInt8>;
 
 using Bytes = Span<UInt8>;
+
+template<typename T, typename ErrorType = Error>
+class [[nodiscard]] ErrorOr;

@@ -2,9 +2,10 @@
 #pragma once
 
 #include "Assertions.h"
-
+#include "Error.h"
 #include "Span.h"
 #include "Types.h"
+#include "kmalloc.h"
 
 namespace Detail {
 
@@ -14,6 +15,238 @@ namespace Detail {
     public:
 
         ByteBuffer() = default;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        [[nodiscard]] bool isEmpty() const { return m_size == 0; }
+
+        [[nodiscard]] size_t size() const { return m_size; }
+
+        [[nodiscard]] UInt8* data() { return m_inline ? m_inlineBuffer : m_outlineBuffer; }
+
+        [[nodiscard]] UInt8 const* data() const { return m_inline ? m_inlineBuffer : m_outlineBuffer; }
+
+        [[nodiscard]] Bytes bytes() { return { data(), size() }; }
+
+        [[nodiscard]] ReadOnlyBytes bytes() const { return { data(), size() }; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        void clear() {
+
+            if (!m_inline) {
+                
+                kfreeSized(m_outlineBuffer, m_outlineCapacity);
+
+                m_inline = true;
+            }
+
+            m_size = 0;
+        }
+
+        ALWAYS_INLINE void resize(size_t newSize) {
+
+            MUST(tryResize(newSize));
+        }
+
+        ALWAYS_INLINE void ensure_capacity(size_t newCapacity) {
+
+            MUST(tryEnsureCapacity(newCapacity));
+        }
+
+        ErrorOr<void> tryResize(size_t newSize) {
+
+            if (newSize <= m_size) {
+                
+                trim(newSize, false);
+                
+                return { };
+            }
+            
+            TRY(tryEnsureCapacity(newSize));
+            
+            m_size = newSize;
+            
+            return { };
+        }
+
+        ErrorOr<void> tryEnsureCapacity(size_t newCapacity) {
+
+            if (newCapacity <= capacity()) {
+
+                return { };
+            }
+
+            return tryEnsureCapacitySlowpath(newCapacity);
+        }
+
+        /// Return a span of bytes past the end of this ByteBuffer for writing.
+        /// Ensures that the required space is available.
+        ErrorOr<Bytes> getBytesForWriting(size_t length) {
+
+            TRY(tryEnsureCapacity(size() + length));
+
+            return Bytes { data() + size(), length };
+        }
+
+        /// Like getBytesForWriting, but crashes if allocation fails.
+        Bytes mustGetBytesForWriting(size_t length) {
+
+            return MUST(getBytesForWriting(length));
+        }
+
+        void append(UInt8 byte) {
+
+            MUST(tryAppend(byte));
+        }
+
+        void append(ReadOnlyBytes bytes) {
+
+            MUST(tryAppend(bytes));
+        }
+
+        void append(void const* data, size_t dataSize) { append({ data, dataSize }); }
+
+        ErrorOr<void> tryAppend(UInt8 byte) {
+
+            auto oldSize = size();
+            
+            auto newSize = oldSize + 1;
+            
+            VERIFY(newSize > oldSize);
+            
+            TRY(try_resize(newSize));
+            
+            data()[oldSize] = byte;
+            
+            return { };
+        }
+
+        ErrorOr<void> tryAppend(ReadOnlyBytes bytes) {
+
+            return tryAppend(bytes.data(), bytes.size());
+        }
+
+        ErrorOr<void> tryAppend(void const* data, size_t dataSize) {
+
+            if (dataSize == 0) {
+
+                return { };
+            }
+            
+            VERIFY(data != nullptr);
+            
+            int oldSize = size();
+            
+            TRY(try_resize(size() + dataSize));
+            
+            __builtin_memcpy(this->data() + oldSize, data, dataSize);
+            
+            return { };
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        void operator+=(ByteBuffer const& other) {
+
+            MUST(tryAppend(other.data(), other.size()));
+        }
+
+        void overwrite(size_t offset, void const* data, size_t dataSize) {
+
+            // make sure we're not told to write past the end
+            
+            VERIFY(offset + dataSize <= size());
+            
+            __builtin_memmove(this->data() + offset, data, dataSize);
+        }
+
+        void zeroFill() {
+
+            __builtin_memset(data(), 0, m_size);
+        }
+
+        operator Bytes() { return bytes(); }
+
+        operator ReadOnlyBytes() const { return bytes(); }
+
+        ///
+
+        ALWAYS_INLINE size_t capacity() const { return m_inline ? inlineCapacity : m_outlineCapacity; }
 
     private:
 
@@ -77,25 +310,36 @@ namespace Detail {
 
         ///
 
-        // NEVER_INLINE ErrorOr<void> try_ensure_capacity_slowpath(size_t new_capacity)
-        // {
-        //     new_capacity = kmalloc_good_size(new_capacity);
-        //     auto* new_buffer = (u8*)kmalloc(new_capacity);
-        //     if (!new_buffer)
-        //         return Error::from_errno(ENOMEM);
+        NEVER_INLINE ErrorOr<void> tryEnsureCapacitySlowpath(size_t newCapacity) {
 
-        //     if (m_inline) {
-        //         __builtin_memcpy(new_buffer, data(), m_size);
-        //     } else if (m_outline_buffer) {
-        //         __builtin_memcpy(new_buffer, m_outline_buffer, min(new_capacity, m_outline_capacity));
-        //         kfree_sized(m_outline_buffer, m_outline_capacity);
-        //     }
+            newCapacity = kmallocGoodSize(newCapacity);
+            
+            auto* newBuffer = (UInt8*) kmalloc(newCapacity);
 
-        //     m_outline_buffer = new_buffer;
-        //     m_outline_capacity = new_capacity;
-        //     m_inline = false;
-        //     return {};
-        // }
+            if (!newBuffer) {
+
+                return Error::fromError(ENOMEM);
+            }
+
+            if (m_inline) {
+                
+                __builtin_memcpy(newBuffer, data(), m_size);
+            }
+            else if (m_outlineBuffer) {
+                
+                __builtin_memcpy(newBuffer, m_outlineBuffer, min(newCapacity, m_outlineCapacity));
+                
+                kfreeSized(m_outlineBuffer, m_outlineCapacity);
+            }
+
+            m_outlineBuffer = newBuffer;
+            
+            m_outlineCapacity = newCapacity;
+            
+            m_inline = false;
+            
+            return { };
+        }
 
         ///
 

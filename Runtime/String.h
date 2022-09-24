@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "ByteBuffer.h"
 #include "Format.h"
 #include "Forward.h"
 #include "RefPointer.h"

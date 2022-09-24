@@ -448,7 +448,7 @@ public:
     template<typename T, typename StrippedT = RemoveConstVolatileReference<T>>
     void set(T&& t) requires(canContain<StrippedT>() && requires { StrippedT(forward<T>(t)); }) {
 
-        constexpr auto newIndex = index_of<StrippedT>();
+        constexpr auto newIndex = indexOf<StrippedT>();
 
         Helper::delete_(m_index, m_data);
 
@@ -460,7 +460,7 @@ public:
     template<typename T, typename StrippedT = RemoveConstVolatileReference<T>>
     void set(T&& t, Detail::VariantNoClearTag) requires(canContain<StrippedT>() && requires { StrippedT(forward<T>(t)); }) {
 
-        constexpr auto newIndex = index_of<StrippedT>();
+        constexpr auto newIndex = indexOf<StrippedT>();
 
         new (m_data) StrippedT(forward<T>(t));
         
@@ -470,7 +470,7 @@ public:
     template<typename T>
     T* getPointer() requires(canContain<T>()) {
 
-        if (index_of<T>() == m_index) {
+        if (indexOf<T>() == m_index) {
 
             return bitCast<T*>(&m_data);
         }
