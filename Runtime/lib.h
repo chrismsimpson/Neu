@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "AllOf.h"
+#include "AnyOf.h"
 #include "Array.h"
 #include "Assertions.h"
 #include "BitCast.h"
@@ -11,6 +13,7 @@
 #include "CheckedFormatString.h"
 #include "Detail.h"
 #include "Error.h"
+#include "Find.h"
 #include "Format.h"
 #include "Function.h"
 #include "HashFunctions.h"
