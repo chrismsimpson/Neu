@@ -28,5 +28,11 @@ using ReadOnlyBytes = Span<const UInt8>;
 
 using Bytes = Span<UInt8>;
 
+
+
+
+template<typename T, size_t inlineCapacity = 0>
+requires(!IsRValueReference<T>) class Vector;
+
 template<typename T, typename ErrorType = Error>
 class [[nodiscard]] ErrorOr;
