@@ -52,10 +52,16 @@ static_assert(explodeByte(0x7f) == (FlatPointer) 0x7f7f7f7f7f7f7f7full);
 static_assert(explodeByte(0) == 0);
 
 constexpr size_t alignUpTo(const size_t value, const size_t alignment) {
-    
+
     return (value + (alignment - 1)) & ~(alignment - 1);
 }
 
+enum class [[nodiscard]] TriState : UInt8 {
+
+    False,
+    True,
+    Unknown
+};
 
 enum MemoryOrder {
     
