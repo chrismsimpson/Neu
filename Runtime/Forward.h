@@ -29,7 +29,11 @@ using ReadOnlyBytes = Span<const UInt8>;
 using Bytes = Span<UInt8>;
 
 
+template<typename T>
+class OwnPointer;
 
+template<typename T>
+class WeakPointer;
 
 template<typename T, size_t inlineCapacity = 0>
 requires(!IsRValueReference<T>) class Vector;
