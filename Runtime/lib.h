@@ -32,6 +32,7 @@
 #include "Platform.h"
 #include "RefCounted.h"
 #include "RefPointer.h"
+#include "ReverseIterator.h"
 #include "ScopeGuard.h"
 #include "Span.h"
 #include "std.h"
