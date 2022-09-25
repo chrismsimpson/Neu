@@ -46,6 +46,7 @@
 #include "TypedTransfer.h"
 #include "Types.h"
 #include "Variant.h"
+#include "Vector.h"
 #include "WeakPointer.h"
 
 #include "kmalloc.h"
