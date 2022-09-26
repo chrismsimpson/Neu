@@ -6,30 +6,91 @@
 template<typename T>
 class TypedTransfer {
 
-public: 
+public:
 
-    // static void move(T* destination, T* source, size_t count) {
+    static void move(T* destination, T* source, size_t count) {
 
-    //     if (count == 0) {
+        if (count == 0) {
 
-    //         return;
-    //     }
+            return;
+        }
 
-    //     if constexpr (Traits<T>::isTrivial()) {
-    //         __builtin_memmove(destination, source, count * sizeof(T));
-    //         return;
-    //     }
+        if constexpr (Traits<T>::isTrivial()) {
 
-    //     for (size_t i = 0; i < count; ++i) {
-    //         if (destination <= source) {
+            __builtin_memmove(destination, source, count * sizeof(T));
+            
+            return;
+        }
 
-    //             new (&destination[i]) T(std::move(source[i]));
-    //         }
-    //         else {
+        for (size_t i = 0; i < count; ++i) {
 
-    //             new (&destination[count - i - 1]) T(std::move(source[count - i - 1]));
-    //         }
-    //     }
-    // }
+            if (destination <= source) {
 
+                new (&destination[i]) T(std::move(source[i]));
+            }
+            else {
+
+                new (&destination[count - i - 1]) T(std::move(source[count - i - 1]));
+            }
+        }
+    }
+
+    static size_t copy(T* destination, const T* source, size_t count) {
+
+        if (count == 0) {
+
+            return 0;
+        }
+
+        if constexpr (Traits<T>::isTrivial()) {
+
+            if (count == 1) {
+
+                *destination = *source;
+            }
+            else {
+
+                __builtin_memmove(destination, source, count * sizeof(T));
+            }
+
+            return count;
+        }
+
+        for (size_t i = 0; i < count; ++i) {
+
+            if (destination <= source) {
+
+                new (&destination[i]) T(source[i]);
+            }
+            else {
+
+                new (&destination[count - i - 1]) T(source[count - i - 1]);
+            }
+        }
+
+        return count;
+    }
+
+    static bool compare(const T* a, const T* b, size_t count) {
+
+        if (count == 0) {
+
+            return true;
+        }
+
+        if constexpr (Traits<T>::isTrivial()) {
+
+            return !__builtin_memcmp(a, b, count * sizeof(T));
+        }
+
+        for (size_t i = 0; i < count; ++i) {
+            
+            if (a[i] != b[i]) {
+
+                return false;
+            }
+        }
+
+        return true;
+    }
 };

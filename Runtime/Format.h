@@ -856,7 +856,6 @@ struct Formatter<FormatString> : Formatter<StringView> {
     ErrorOr<void> vformat(FormatBuilder& builder, StringView fmtstr, TypeErasedFormatParams& params);
 };
 
-
 template<>
 struct Formatter<Error> : Formatter<FormatString> {
 

@@ -16,6 +16,10 @@ class StringView;
 class StringImpl;
 class StringBuilder;
 class FlyString;
+class Utf16View;
+class Utf32View;
+class Utf8CodePointIterator;
+class Utf8View;
 
 template<typename T>
 class Span;
