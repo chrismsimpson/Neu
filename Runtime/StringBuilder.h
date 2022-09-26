@@ -18,12 +18,16 @@ public:
 
     ~StringBuilder() = default;
 
+    ErrorOr<void> tryAppend(StringView);
 
 
 
 
+// #ifndef KERNEL
 
+//     ErrorOr<void> try_append(Utf16View const&);
 
+// #endif
 
 
 
