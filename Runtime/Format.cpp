@@ -44,15 +44,18 @@ static constexpr size_t useNextIndex = NumericLimits<size_t>::max();
 // The worst case is that we have the largest 64-bit value formatted as binary number, this would take
 // 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
 
-static constexpr size_t convert_unsigned_to_string(UInt64 value, Array<UInt8, 128>& buffer, UInt8 base, bool upper_case) {
+static constexpr size_t convertUnsignedToString(UInt64 value, Array<UInt8, 128>& buffer, UInt8 base, bool upperCase) {
 
     VERIFY(base >= 2 && base <= 16);
 
-    constexpr char const* lowercase_lookup = "0123456789abcdef";
-    constexpr char const* uppercase_lookup = "0123456789ABCDEF";
+    constexpr char const* lowercaseLookup = "0123456789abcdef";
+    
+    constexpr char const* uppercaseLookup = "0123456789ABCDEF";
 
     if (value == 0) {
+
         buffer[0] = '0';
+        
         return 1;
     }
 
@@ -60,13 +63,13 @@ static constexpr size_t convert_unsigned_to_string(UInt64 value, Array<UInt8, 12
     
     while (value > 0) {
 
-        if (upper_case) {
+        if (upperCase) {
 
-            buffer[used++] = uppercase_lookup[value % base];
+            buffer[used++] = uppercaseLookup[value % base];
         }
         else {
 
-            buffer[used++] = lowercase_lookup[value % base];
+            buffer[used++] = lowercaseLookup[value % base];
         }
 
         value /= base;
