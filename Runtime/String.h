@@ -6,9 +6,9 @@
 #include "Forward.h"
 #include "RefPointer.h"
 // #include "Stream.h"
-// #include "StringBuilder.h"
-// #include "StringImpl.h"
-// #include "StringUtils.h"
+#include "StringBuilder.h"
+#include "StringImpl.h"
+#include "StringUtils.h"
 #include "Traits.h"
 
 class String {
@@ -24,6 +24,41 @@ public:
         // TODO
     }
 
+
+
+
+
+
+
+
+    [[nodiscard]] bool isNull() const { return !m_impl; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    [[nodiscard]] StringImpl const* impl() const { return m_impl.pointer(); }
+
+
+
+
+
 private:
 
+    RefPointer<StringImpl> m_impl;
 };

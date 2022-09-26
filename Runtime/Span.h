@@ -32,6 +32,11 @@ namespace Detail {
             : m_values(array.data()),
               m_size(size) { }
 
+        template<size_t size>
+        requires(IsConst<T>)
+        ALWAYS_INLINE constexpr Span(Array<T, size> const& array)
+            : m_values(array.data()), m_size(size) { }
+
     protected:
 
         T* m_values { nullptr };
@@ -46,6 +51,16 @@ namespace Detail {
 
     public:
 
+        ALWAYS_INLINE constexpr Span() = default;
+
+        ALWAYS_INLINE constexpr Span(UInt8* values, size_t size)
+            : m_values(values)
+            , m_size(size) { }
+            
+        ALWAYS_INLINE Span(void* values, size_t size)
+            : m_values(reinterpret_cast<UInt8*>(values))
+            , m_size(size) { }
+
     protected:
 
         UInt8* m_values { nullptr };
@@ -59,6 +74,19 @@ namespace Detail {
     class Span<UInt8 const> {
 
     public:
+
+        ALWAYS_INLINE constexpr Span() = default;
+
+        ALWAYS_INLINE constexpr Span(UInt8 const* values, size_t size)
+            : m_values(values), m_size(size) { }
+
+        ALWAYS_INLINE Span(void const* values, size_t size)
+            : m_values(reinterpret_cast<UInt8 const*>(values)),
+              m_size(size) { }
+              
+        ALWAYS_INLINE Span(char const* values, size_t size)
+            : m_values(reinterpret_cast<UInt8 const*>(values)), 
+              m_size(size) { }
 
     protected:
 
@@ -174,19 +202,125 @@ public:
 
     ///
 
-    // ALWAYS_INLINE constexpr size_t copyTo(Span<RemoveConst<T>> other) const {
+    ALWAYS_INLINE constexpr size_t copyTo(Span<RemoveConst<T>> other) const {
 
-    //     VERIFY(other.size() >= size());
+        VERIFY(other.size() >= size());
+
+        return TypedTransfer<RemoveConst<T>>::copy(other.data(), data(), size());
+    }
+
+    ALWAYS_INLINE constexpr size_t copyTrimmedTo(Span<RemoveConst<T>> other) const {
+
+        auto const count = min(size(), other.size());
+
+        return TypedTransfer<RemoveConst<T>>::copy(other.data(), data(), count);
+    }
+
+    ALWAYS_INLINE constexpr size_t fill(T const& value)
+    {
+        for (size_t idx = 0; idx < size(); ++idx) {
+
+            data()[idx] = value;
+        }
+
+        return size();
+    }
+
+    [[nodiscard]] bool constexpr containsSlow(T const& value) const {
+
+        for (size_t i = 0; i < size(); ++i) {
+
+            if (at(i) == value) {
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    [[nodiscard]] bool constexpr startsWith(Span<T const> other) const {
+
+        if (size() < other.size()) {
+
+            return false;
+        }
+
+        return TypedTransfer<T>::compare(data(), other.data(), other.size());
+    }
+
+    [[nodiscard]] ALWAYS_INLINE constexpr T const& at(size_t index) const {
+
+        VERIFY(index < this->m_size);
         
-    //     return TypedTransfer<RemoveConst<T>>::copy(other.data(), data(), size());
-    // }
+        return this->m_values[index];
+    }
 
+    [[nodiscard]] ALWAYS_INLINE constexpr T& at(size_t index) {
 
+        VERIFY(index < this->m_size);
+        
+        return this->m_values[index];
+    }
 
+    [[nodiscard]] ALWAYS_INLINE constexpr T const& last() const {
 
+        return this->at(this->size() - 1);
+    }
+
+    [[nodiscard]] ALWAYS_INLINE constexpr T& last() {
+
+        return this->at(this->size() - 1);
+    }
+
+    [[nodiscard]] ALWAYS_INLINE constexpr T const& operator[](size_t index) const {
+
+        return at(index);
+    }
+
+    [[nodiscard]] ALWAYS_INLINE constexpr T& operator[](size_t index) {
+
+        return at(index);
+    }
+
+    constexpr bool operator==(Span const& other) const {
+
+        if (size() != other.size()) {
+
+            return false;
+        }
+
+        return TypedTransfer<T>::compare(data(), other.data(), size());
+    }
 
     ALWAYS_INLINE constexpr operator Span<T const>() const {
 
         return { data(), size() };
     }
 };
+
+///
+
+template<typename T>
+struct Traits<Span<T>> : public GenericTraits<Span<T>> {
+
+    static unsigned hash(Span<T> const& span) {
+
+        unsigned hash = 0;
+
+        for (auto const& value : span) {
+            
+            auto valueHash = Traits<T>::hash(value);
+            
+            hash = hashPairUInt32(hash, valueHash);
+        }
+
+        return hash;
+    }
+};
+
+///
+
+using ReadOnlyBytes = Span<UInt8 const>;
+
+using Bytes = Span<UInt8>;

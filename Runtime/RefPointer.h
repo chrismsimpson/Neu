@@ -33,20 +33,68 @@ public:
 
     RefPointer() = default;
 
-    // RefPtr(T const* ptr)
-    //     : m_ptr(const_cast<T*>(ptr)) {
+    RefPointer(T const* ptr)
+        : m_ptr(const_cast<T*>(ptr)) {
 
-    //     refIfNotNull(m_ptr);
-    // }
+        refIfNotNull(m_ptr);
+    }
 
+    RefPointer(T const& object)
+        : m_ptr(const_cast<T*>(&object)) {
 
-//     ALWAYS_INLINE ~RefPtr() {
+        m_ptr->ref();
+    }
 
-//         clear();
-// #    ifdef SANITIZE_PTRS
-//         m_ptr = reinterpret_cast<T*>(explode_byte(REFPTR_SCRUB_BYTE));
-// #    endif
-//     }
+    RefPointer(AdoptTag, T& object)
+        : m_ptr(&object) { }
+
+    RefPointer(RefPointer&& other)
+        : m_ptr(other.leakRef()) { }
+
+    ALWAYS_INLINE RefPointer(NonNullRefPointer<T> const& other)
+        : m_ptr(const_cast<T*>(other.pointer())) {
+
+        m_ptr->ref();
+    }
+
+    template<typename U>
+    ALWAYS_INLINE RefPointer(NonNullRefPointer<U> const& other) requires(IsConvertible<U*, T*>)
+        : m_ptr(const_cast<T*>(static_cast<T const*>(other.pointer()))) {
+
+        m_ptr->ref();
+    }
+
+    template<typename U>
+    ALWAYS_INLINE RefPointer(NonNullRefPointer<U>&& other) requires(IsConvertible<U*, T*>)
+        : m_ptr(static_cast<T*>(&other.leakRef())) { }
+
+    template<typename U>
+    RefPointer(RefPointer<U>&& other) requires(IsConvertible<U*, T*>)
+        : m_ptr(static_cast<T*>(other.leakRef())) { }
+
+    RefPointer(RefPointer const& other)
+        : m_ptr(other.m_ptr) {
+
+        refIfNotNull(m_ptr);
+    }
+
+    template<typename U>
+    RefPointer(RefPointer<U> const& other) requires(IsConvertible<U*, T*>)
+        : m_ptr(const_cast<T*>(static_cast<T const*>(other.pointer()))) {
+
+        refIfNotNull(m_ptr);
+    }
+
+    ALWAYS_INLINE ~RefPointer() {
+
+        clear();
+
+#    ifdef SANITIZE_PTRS
+
+        m_ptr = reinterpret_cast<T*>(explodeByte(REFPTR_SCRUB_BYTE));
+
+#    endif
+    }
 
     ///
 
@@ -297,3 +345,82 @@ private:
 
     T* m_ptr { nullptr };
 };
+
+///
+
+template<typename T>
+struct Formatter<RefPointer<T>> : Formatter<const T*> {
+
+    ErrorOr<void> format(FormatBuilder& builder, RefPointer<T> const& value) {
+
+        return Formatter<const T*>::format(builder, value.ptr());
+    }
+};
+
+template<typename T>
+struct Traits<RefPointer<T>> : public GenericTraits<RefPointer<T>> {
+
+    using PeekType = T*;
+    
+    using ConstPeekType = const T*;
+    
+    static unsigned hash(RefPointer<T> const& p) { return hashPointer(p.pointer()); }
+    
+    static bool equals(RefPointer<T> const& a, RefPointer<T> const& b) { return a.pointer() == b.pointer(); }
+};
+
+template<typename T, typename U>
+inline NonNullRefPointer<T> staticPointerCast(NonNullRefPointer<U> const& ptr) {
+
+    return NonNullRefPointer<T>(static_cast<const T&>(*ptr));
+}
+
+template<typename T, typename U>
+inline RefPointer<T> staticPointerCast(RefPointer<U> const& ptr) {
+
+    return RefPointer<T>(static_cast<const T*>(ptr.pointer()));
+}
+
+template<typename T, typename U>
+inline void swap(RefPointer<T>& a, RefPointer<U>& b) requires(IsConvertible<U*, T*>) {
+
+    a.swap(b);
+}
+
+template<typename T>
+inline RefPointer<T> adoptRefIfNonNull(T* object) {
+
+    if (object) {
+
+        return RefPointer<T>(RefPointer<T>::Adopt, *object);
+    }
+
+    return { };
+}
+
+template<typename T, class... Args>
+requires(IsConstructible<T, Args...>) inline ErrorOr<NonNullRefPointer<T>> tryMakeRefCounted(Args&&... args) {
+
+    return adoptNonNullRefOrErrorNomem(new (nothrow) T(forward<Args>(args)...));
+}
+
+// FIXME: Remove once P0960R3 is available in Clang.
+
+template<typename T, class... Args>
+inline ErrorOr<NonNullRefPointer<T>> tryMakeRefCounted(Args&&... args) {
+
+    return adoptNonNullRefOrErrorNomem(new (nothrow) T { forward<Args>(args)... });
+}
+
+template<typename T>
+inline ErrorOr<NonNullRefPointer<T>> adoptNonNullRefOrErrorNomem(T* object) {
+
+    auto result = adoptRefIfNonNull(object);
+
+    if (!result) {
+
+        return Error::fromError(ENOMEM);
+    }
+
+    return result.releaseNonNull();
+}

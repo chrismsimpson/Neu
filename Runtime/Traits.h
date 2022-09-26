@@ -100,7 +100,7 @@ struct Traits<T> : public GenericTraits<T> {
 template<typename T>
 requires(Detail::IsPointerOfType<char, T>) struct Traits<T> : public GenericTraits<T> {
 
-    static unsigned hash(T const value) { return hashString(value, strlen(value)); }
+    static unsigned hash(T const value) { return stringHash(value, strlen(value)); }
     
     static constexpr bool equals(T const a, T const b) { return strcmp(a, b); }
     

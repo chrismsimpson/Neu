@@ -1,8 +1,21 @@
 
 #pragma once
 
+#include "AllOf.h"
+#include "AnyOf.h"
 #include "Array.h"
 #include "std.h"
+#include "StringView.h"
+
+#ifdef ENABLE_COMPILETIME_FORMAT_CHECK
+// FIXME: Seems like clang doesn't like calling 'consteval' functions inside 'consteval' functions quite the same way as GCC does,
+//        it seems to entirely forget that it accepted that parameters to a 'consteval' function to begin with.
+#    if defined(__clang__) || defined(__CLION_IDE_)
+#        undef ENABLE_COMPILETIME_FORMAT_CHECK
+#    endif
+#endif
+
+#ifdef ENABLE_COMPILETIME_FORMAT_CHECK
 
 namespace Format::Detail {
 
@@ -187,6 +200,8 @@ namespace Format::Detail {
     }
 }
 
+#endif
+
 namespace Format::Detail {
 
     template<typename... Args>
@@ -196,7 +211,11 @@ namespace Format::Detail {
         consteval CheckedFormatString(char const (&fmt)[N])
             : m_string { fmt } {
     
+        #ifdef ENABLE_COMPILETIME_FORMAT_CHECK
+
             checkFormatParameterConsistency<N, sizeof...(Args)>(fmt);
+
+        #endif
         }
 
         template<typename T>
@@ -204,6 +223,10 @@ namespace Format::Detail {
             : m_string(uncheckedFmt) { }
 
         auto view() const { return m_string; }
+
+    private:
+
+    #ifdef ENABLE_COMPILETIME_FORMAT_CHECK
 
         template<size_t N, size_t paramCount>
         consteval static bool checkFormatParameterConsistency(char const (&fmt)[N]) {
@@ -279,9 +302,9 @@ namespace Format::Detail {
 
             return true;
         }
-    
-    private:
 
+    #endif
+    
         StringView m_string;
     };
 }

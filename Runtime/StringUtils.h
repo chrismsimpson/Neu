@@ -50,8 +50,54 @@ struct MaskSpan {
 
 namespace StringUtils {
 
-    // bool matches(StringView str, StringView mask, CaseSensitivity = CaseSensitivity::CaseInsensitive, Vector<MaskSpan>* match_spans = nullptr);
+    bool matches(StringView str, StringView mask, CaseSensitivity = CaseSensitivity::CaseInsensitive, Vector<MaskSpan>* match_spans = nullptr);
 
-    // template<typename T = int>
-    // Optional<T> convertToInt(StringView, TrimWhitespace = TrimWhitespace::Yes);
+    template<typename T = int>
+    Optional<T> convertToInt(StringView, TrimWhitespace = TrimWhitespace::Yes);
+
+    template<typename T = unsigned>
+    Optional<T> convertToUInt(StringView, TrimWhitespace = TrimWhitespace::Yes);
+    
+    template<typename T = unsigned>
+    Optional<T> convertToUintFromHex(StringView, TrimWhitespace = TrimWhitespace::Yes);
+    
+    template<typename T = unsigned>
+    Optional<T> convertToUintFromOctal(StringView, TrimWhitespace = TrimWhitespace::Yes);
+        
+    bool equalsIgnoringCase(StringView, StringView);
+    
+    bool endsWith(StringView a, StringView b, CaseSensitivity);
+    
+    bool startsWith(StringView, StringView, CaseSensitivity);
+    
+    bool contains(StringView, StringView, CaseSensitivity);
+    
+    bool isWhitespace(StringView);
+    
+    StringView trim(StringView string, StringView characters, TrimMode mode);
+    
+    StringView trimWhitespace(StringView string, TrimMode mode);
+
+    Optional<size_t> find(StringView haystack, char needle, size_t start = 0);
+    
+    Optional<size_t> find(StringView haystack, StringView needle, size_t start = 0);
+    
+    Optional<size_t> findLast(StringView haystack, char needle);
+    
+    Vector<size_t> findAll(StringView haystack, StringView needle);
+    
+    enum class SearchDirection {
+        Forward,
+        Backward
+    };
+    
+    Optional<size_t> findAnyOf(StringView haystack, StringView needles, SearchDirection);
+
+    String toSnakecase(StringView);
+    
+    String toTitlecase(StringView);
+
+    String replace(StringView, StringView needle, StringView replacement, bool allOccurrences = false);
+    
+    size_t count(StringView, StringView needle);
 }

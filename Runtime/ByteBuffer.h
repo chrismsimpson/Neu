@@ -208,7 +208,7 @@ namespace Detail {
             MUST(tryResize(newSize));
         }
 
-        ALWAYS_INLINE void ensure_capacity(size_t newCapacity) {
+        ALWAYS_INLINE void ensureCapacity(size_t newCapacity) {
 
             MUST(tryEnsureCapacity(newCapacity));
         }
@@ -297,7 +297,7 @@ namespace Detail {
             
             int oldSize = size();
             
-            TRY(try_resize(size() + dataSize));
+            TRY(tryResize(size() + dataSize));
             
             __builtin_memcpy(this->data() + oldSize, data, dataSize);
             
@@ -383,7 +383,7 @@ namespace Detail {
 
             if (!mayDiscardExistingData) {
 
-                __builtin_memcpy(m_inlineBuffer, outlineCapacity, size);
+                __builtin_memcpy(m_inlineBuffer, outlineBuffer, size);
             }
 
             kfreeSized(outlineBuffer, outlineCapacity);

@@ -20,7 +20,6 @@ namespace Detail {
     template<typename StorageType, bool>
     struct CanBePlacedInsideVectorHelper;
 
-
     template<typename StorageType>
     struct CanBePlacedInsideVectorHelper<StorageType, true> {
 
@@ -31,7 +30,7 @@ namespace Detail {
 
     template<typename StorageType>
     struct CanBePlacedInsideVectorHelper<StorageType, false> {
-        
+
         template<typename U>
         static constexpr bool value = requires(U&& u) { StorageType(forward<U>(u)); };
     };
@@ -902,7 +901,7 @@ public:
             return Error::fromError(ENOMEM);
         }
 
-        if constexpr (Traits<StorageType>::is_trivial()) {
+        if constexpr (Traits<StorageType>::isTrivial()) {
             
             TypedTransfer<StorageType>::copy(newBuffer, data(), m_size);
         } 

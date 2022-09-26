@@ -3,7 +3,7 @@
 
 #include "Traits.h"
 
-constexpr UInt32 hashString(char const* characters, size_t length, UInt32 seed = 0) {
+constexpr UInt32 stringHash(char const* characters, size_t length, UInt32 seed = 0) {
 
     UInt32 hash = seed;
 
@@ -25,7 +25,7 @@ constexpr UInt32 hashString(char const* characters, size_t length, UInt32 seed =
     return hash;
 }
 
-constexpr UInt32 caseInsensitiveHashString(char const* characters, size_t length, UInt32 seed = 0) {
+constexpr UInt32 caseInsensitiveStringHash(char const* characters, size_t length, UInt32 seed = 0) {
 
     // CharacterTypes.h cannot be included from here.
 
