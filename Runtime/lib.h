@@ -23,6 +23,7 @@
 #include "Function.h"
 #include "HashFunctions.h"
 #include "HashTable.h"
+#include "IntegralMath.h"
 #include "IterationDecision.h"
 #include "Iterator.h"
 #include "NonCopyable.h"

@@ -2,7 +2,7 @@
 #include "CharacterTypes.h"
 #include "Format.h"
 // #include "GenericLexer.h"
-// #include "IntegralMath.h"
+#include "IntegralMath.h"
 #include "StringBuilder.h"
 #include "kstdio.h"
 
