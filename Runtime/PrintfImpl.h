@@ -27,7 +27,108 @@ extern "C" size_t strlen(char const*);
 template<typename PutChFunc, typename T, typename CharType>
 ALWAYS_INLINE int printHex(PutChFunc putch, CharType*& bufptr, T number, bool upperCase, bool alternateForm, bool leftPad, bool zeroPad, UInt32 fieldWidth, bool hasPrecision, UInt32 precision) {
 
-    // TODO
+    constexpr char const* printfHexDigitsLower = "0123456789abcdef";
+
+    constexpr char const* printfHexDigitsUpper = "0123456789ABCDEF";
+
+    UInt32 digits = 0;
+
+    for (T n = number; n > 0; n >>= 4) {
+
+        ++digits;
+    }
+
+    if (digits == 0) {
+
+        digits = 1;
+    }
+
+    bool notZero = number != 0;
+
+    char buf[16];
+
+    char* p = buf;
+
+    if (!(hasPrecision && precision == 0 && !notZero)) {
+
+        if (number == 0) {
+
+            (*p++) = '0';
+            
+            if (precision > 0) {
+
+                precision--;
+            }
+        } 
+        else {
+
+            UInt8 shiftCount = digits * 4;
+            
+            while (shiftCount) {
+
+                shiftCount -= 4;
+                
+                (*p++) = upperCase
+                    ? printfHexDigitsUpper[(number >> shiftCount) & 0x0f]
+                    : printfHexDigitsLower[(number >> shiftCount) & 0x0f];
+                
+                if (precision > 0) {
+
+                    precision--;
+                }
+            }
+        }
+    }
+
+    size_t numlen = p - buf;
+
+    if (!fieldWidth || fieldWidth < (numlen + hasPrecision * precision + (alternateForm * 2 * notZero))) {
+
+        fieldWidth = numlen + hasPrecision * precision + alternateForm * 2 * notZero;
+    }
+
+    if ((zeroPad && !hasPrecision) && (alternateForm && notZero)) {
+
+        putch(bufptr, '0');
+        
+        putch(bufptr, 'x');
+    }
+
+    if (!leftPad) {
+        
+        for (unsigned i = 0; i < fieldWidth - numlen - hasPrecision * precision - alternateForm * 2 * notZero; ++i) {
+        
+            putch(bufptr, (zeroPad && !hasPrecision) ? '0' : ' ');
+        }
+    }
+
+    if (!(zeroPad && !hasPrecision) && (alternateForm && notZero)) {
+        
+        putch(bufptr, '0');
+        
+        putch(bufptr, 'x');
+    }
+
+    if (hasPrecision) {
+
+        for (UInt32 i = 0; i < precision; ++i) {
+
+            putch(bufptr, '0');
+        }
+    }
+
+    for (unsigned i = 0; i < numlen; ++i) {
+
+        putch(bufptr, buf[i]);
+    }
+
+    if (leftPad) {
+
+        for (unsigned i = 0; i < fieldWidth - numlen - hasPrecision * precision - alternateForm * 2 * notZero; ++i) {
+
+            putch(bufptr, ' ');
+        }
+    }
 
     return fieldWidth;
 }
@@ -36,7 +137,94 @@ ALWAYS_INLINE int printHex(PutChFunc putch, CharType*& bufptr, T number, bool up
 template<typename PutChFunc, typename CharType>
 ALWAYS_INLINE int printDecimal(PutChFunc putch, CharType*& bufptr, UInt64 number, bool sign, bool alwaysSign, bool leftPad, bool zeroPad, UInt32 fieldWidth, bool hasPrecision, UInt32 precision) {
 
-    // TODO
+    UInt64 divisor = 10000000000000000000LLU;
+
+    char ch;
+    
+    char padding = 1;
+    
+    char buf[21];
+    
+    char* p = buf;
+
+    if (!(hasPrecision && precision == 0 && number == 0)) {
+
+        for (;;) {
+
+            ch = '0' + (number / divisor);
+            
+            number %= divisor;
+            
+            if (ch != '0') {
+
+                padding = 0;
+            }
+
+            if (!padding || divisor == 1) {
+
+                *(p++) = ch;
+
+                if (precision > 0) {
+
+                    precision--;
+                }
+            }
+
+            if (divisor == 1) {
+
+                break;
+            }
+            
+            divisor /= 10;
+        }
+    }
+
+    size_t numlen = p - buf;
+
+    if (!fieldWidth || fieldWidth < (numlen + hasPrecision * precision + (sign || alwaysSign))) {
+
+        fieldWidth = numlen + hasPrecision * precision + (sign || alwaysSign);
+    }
+
+    if ((zeroPad && !hasPrecision) && (sign || alwaysSign)) {
+
+        putch(bufptr, sign ? '-' : '+');
+    }
+
+    if (!leftPad) {
+
+        for (unsigned i = 0; i < fieldWidth - numlen - hasPrecision * precision - (sign || alwaysSign); ++i) {
+
+            putch(bufptr, (zeroPad && !hasPrecision) ? '0' : ' ');
+        }
+    }
+
+    if (!(zeroPad && !hasPrecision) && (sign || alwaysSign)) {
+
+        putch(bufptr, sign ? '-' : '+');
+    }
+
+    if (hasPrecision) {
+
+        for (UInt32 i = 0; i < precision; ++i) {
+
+            putch(bufptr, '0');
+        }
+    }
+
+    for (unsigned i = 0; i < numlen; ++i) {
+
+        putch(bufptr, buf[i]);
+    }
+
+    if (leftPad) {
+
+        for (unsigned i = 0; i < fieldWidth - numlen - hasPrecision * precision - (sign || alwaysSign); ++i) {
+
+            putch(bufptr, ' ');
+        }
+    }
+
 
     return fieldWidth;
 }
@@ -48,7 +236,72 @@ ALWAYS_INLINE int printDouble(PutChFunc putch, CharType*& bufptr, double number,
 
     int length = 0;
 
-    /// TODO
+    UInt32 wholeWidth = (fieldWidth >= precision + 1) ? fieldWidth - precision - 1 : 0;
+
+    bool sign = signbit(number);
+    
+    bool nan = isnan(number);
+    
+    bool inf = isinf(number);
+
+    if (nan || inf) {
+
+        for (unsigned i = 0; i < fieldWidth - 3 - sign; i++) {
+
+            putch(bufptr, ' ');
+            
+            length++;
+        }
+
+        if (sign) {
+
+            putch(bufptr, '-');
+            
+            length++;
+        }
+
+        if (nan) {
+            
+            putch(bufptr, 'n');
+            
+            putch(bufptr, 'a');
+            
+            putch(bufptr, 'n');
+        } 
+        else {
+            
+            putch(bufptr, 'i');
+            
+            putch(bufptr, 'n');
+            
+            putch(bufptr, 'f');
+        }
+
+        return length + 3;
+    }
+
+    if (sign) {
+
+        number = -number;
+    }
+
+    length = printDecimal(putch, bufptr, (Int64) number, sign, alwaysSign, leftPad, zeroPad, wholeWidth, false, 1);
+
+    if (precision > 0) {
+
+        putch(bufptr, '.');
+
+        length++;
+        
+        double fraction = number - (Int64) number;
+
+        for (UInt32 i = 0; i < precision; ++i) {
+
+            fraction = fraction * 10;
+        }
+
+        return length + printDecimal(putch, bufptr, (Int64) fraction, false, false, false, true, precision, false, 1);
+    }
 
     return length;
 }
@@ -58,16 +311,137 @@ ALWAYS_INLINE int printDouble(PutChFunc putch, CharType*& bufptr, double number,
 template<typename PutChFunc, typename CharType>
 ALWAYS_INLINE int printOctalNumber(PutChFunc putch, CharType*& bufptr, UInt64 number, bool alternateForm, bool leftPad, bool zeroPad, UInt32 fieldWidth, bool hasPrecision, UInt32 precision) {
 
-    // TODO
+    UInt32 divisor = 134217728;    
+    char ch;
+    
+    char padding = 1;
+    
+    char buf[32];
+    
+    char* p = buf;
+
+    if (alternateForm) {
+
+        (*p++) = '0';
+        
+        if (precision > 0) {
+
+            precision--;
+        }
+    }
+
+    if (!(hasPrecision && precision == 0 && number == 0)) {
+
+        for (;;) {
+
+            ch = '0' + (number / divisor);
+
+            number %= divisor;
+            
+            if (ch != '0') {
+
+                padding = 0;
+            }
+
+            if (!padding || divisor == 1) {
+
+                *(p++) = ch;
+
+                if (precision > 0) {
+
+                    precision--;
+                }
+            }
+            
+            if (divisor == 1) {
+
+                break;
+            }
+
+            divisor /= 8;
+        }
+    }
+
+    size_t numlen = p - buf;
+
+    if (!fieldWidth || fieldWidth < (numlen + hasPrecision * precision)) {
+
+        fieldWidth = numlen + hasPrecision * precision;
+    }
+
+    if (!leftPad) {
+
+        for (unsigned i = 0; i < fieldWidth - numlen - hasPrecision * precision; ++i) {
+
+            putch(bufptr, (zeroPad && !hasPrecision) ? '0' : ' ');
+        }
+    }
+
+    if (hasPrecision) {
+
+        for (UInt32 i = 0; i < precision; ++i) {
+
+            putch(bufptr, '0');
+        }
+    }
+
+    for (unsigned i = 0; i < numlen; ++i) {
+
+        putch(bufptr, buf[i]);
+    }
+
+    if (leftPad) {
+
+        for (unsigned i = 0; i < fieldWidth - numlen - hasPrecision * precision; ++i) {
+
+            putch(bufptr, ' ');
+        }
+    }
 
     return fieldWidth;
 }
 
 template<typename PutChFunc, typename T, typename CharType>
 ALWAYS_INLINE int printString(PutChFunc putch, CharType*& bufptr, T str, size_t len, bool leftPad, size_t fieldWidth, bool dot, size_t precision, bool hasFraction) {
+    
+    if (hasFraction) {
 
-    // TODO
+        len = min(len, precision);
+    }
 
+    if (!dot && (!fieldWidth || fieldWidth < len)) {
+
+        fieldWidth = len;
+    }
+
+    if (hasFraction && !fieldWidth) {
+
+        fieldWidth = len;
+    }
+
+    size_t padAmount = fieldWidth > len ? fieldWidth - len : 0;
+
+    if (!leftPad) {
+
+        for (size_t i = 0; i < padAmount; ++i) {
+
+            putch(bufptr, ' ');
+        }
+    }
+
+    for (size_t i = 0; i < min(len, fieldWidth); ++i) {
+
+        putch(bufptr, str[i]);
+    }
+
+    if (leftPad) {
+
+        for (size_t i = 0; i < padAmount; ++i) {
+
+            putch(bufptr, ' ');
+        }
+    }
+    
     return fieldWidth;
 }
 
@@ -115,59 +489,6 @@ struct PrintfImpl {
 
     ALWAYS_INLINE PrintfImpl(PutChFunc& putch, CharType*& bufptr, int const& nwritten)
         : m_bufptr(bufptr), m_nwritten(nwritten), m_putch(putch) { }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ALWAYS_INLINE int format_s(ModifierState const& state, ArgumentListRefT ap) const {
 
