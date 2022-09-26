@@ -36,6 +36,7 @@
 #include "Optional.h"
 #include "OwnPointer.h"
 #include "Platform.h"
+#include "PrintfImpl.h"
 #include "RefCounted.h"
 #include "RefPointer.h"
 #include "Result.h"

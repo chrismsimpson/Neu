@@ -82,3 +82,163 @@ static constexpr size_t convertUnsignedToString(UInt64 value, Array<UInt8, 128>&
 
     return used;
 }
+
+
+ErrorOr<void> vformatImpl(TypeErasedFormatParams& params, FormatBuilder& builder, FormatParser& parser) {
+
+    auto const literal = parser.consumeLiteral();
+    
+    TRY(builder.putLiteral(literal));
+
+    FormatParser::FormatSpecifier specifier;
+    
+    if (!parser.consumeSpecifier(specifier)) {
+        
+        VERIFY(parser.isEof());
+        
+        return { };
+    }
+
+    if (specifier.index == useNextIndex) {
+
+        specifier.index = params.takeNextIndex();
+    }
+
+    auto& parameter = params.parameters().at(specifier.index);
+
+    FormatParser argparser { specifier.flags };
+    
+    TRY(parameter.formatter(params, builder, argparser, parameter.value));
+    
+    TRY(vformatImpl(params, builder, parser));
+    
+    return { };
+}
+
+FormatParser::FormatParser(StringView input)
+    : GenericLexer(input) { }
+
+StringView FormatParser::consumeLiteral() {
+
+    auto const begin = tell();
+
+    while (!isEof()) {
+
+        if (consumeSpecific("{{"))
+            continue;
+
+        if (consumeSpecific("}}"))
+            continue;
+
+        if (nextIs(isAnyOf("{}"))) {
+
+            return m_input.substringView(begin, tell() - begin);
+        }
+
+        consume();
+    }
+
+    return m_input.substringView(begin);
+}
+
+bool FormatParser::consumeNumber(size_t& value) {
+
+    value = 0;
+
+    bool consumedAtLeastOne = false;
+
+    while (nextIs(isAsciiDigit)) {
+
+        value *= 10;
+        
+        value += parseAsciiDigit(consume());
+        
+        consumedAtLeastOne = true;
+    }
+
+    return consumedAtLeastOne;
+}
+
+bool FormatParser::consumeSpecifier(FormatSpecifier& specifier) {
+
+    VERIFY(!nextIs('}'));
+
+    if (!consumeSpecific('{'))
+        return false;
+
+    if (!consumeNumber(specifier.index)) {
+
+        specifier.index = useNextIndex;
+    }
+
+    if (consumeSpecific(':')) {
+
+        auto const begin = tell();
+
+        size_t level = 1;
+
+        while (level > 0) {
+
+            VERIFY(!isEof());
+
+            if (consumeSpecific('{')) {
+                
+                ++level;
+                
+                continue;
+            }
+
+            if (consumeSpecific('}')) {
+                
+                --level;
+                
+                continue;
+            }
+
+            consume();
+        }
+
+        specifier.flags = m_input.substringView(begin, tell() - begin - 1);
+    } 
+    else {
+
+        if (!consumeSpecific('}')) {
+
+            VERIFY_NOT_REACHED();
+        }
+
+        specifier.flags = "";
+    }
+
+    return true;
+}
+
+bool FormatParser::consumeReplacementField(size_t& index)
+{
+    if (!consumeSpecific('{')) {
+
+        return false;
+    }
+
+    if (!consumeNumber(index)) {
+
+        index = useNextIndex; 
+    }
+
+    if (!consumeSpecific('}')) {
+
+        VERIFY_NOT_REACHED();
+    }
+
+    return true;
+}
+
+// ErrorOr<void> FormatBuilder::putPadding(char fill, size_t amount) {
+
+//     for (size_t i = 0; i < amount; ++i) {
+
+//         TRY(m_builder.tryAppend(fill));
+//     }
+
+//     return { };
+// }

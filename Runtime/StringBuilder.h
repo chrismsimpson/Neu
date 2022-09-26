@@ -20,33 +20,59 @@ public:
 
     ErrorOr<void> tryAppend(StringView);
 
+#ifndef OS
 
+    ErrorOr<void> tryAppend(Utf16View const&);
 
+#endif
 
-// #ifndef KERNEL
+    ErrorOr<void> tryAppend(Utf32View const&);
 
-//     ErrorOr<void> try_append(Utf16View const&);
+    ErrorOr<void> tryAppendCodePoint(UInt32);
 
-// #endif
+    ErrorOr<void> tryAppend(char);
 
+    template<typename... Parameters>
+    ErrorOr<void> tryAppendff(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
 
+        VariadicFormatParams variadicFormatParams { parameters... };
 
+        return vformat(*this, fmtstr.view(), variadicFormatParams);
+    }
 
+    ErrorOr<void> tryAppend(char const*, size_t);
 
+    ErrorOr<void> tryAppendEscapedForJson(StringView);
 
+    void append(StringView);
 
+#ifndef OS
 
+    void append(Utf16View const&);
 
+#endif
 
-    // template<typename... Parameters>
-    // void appendff(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+    void append(Utf32View const&);
+    
+    void append(char);
+    
+    void appendCodePoint(UInt32);
+    
+    void append(char const*, size_t);
+    
+    void appendvf(char const*, va_list);
 
-    //     VariadicFormatParams variadicFormatParams { parameters... };
+    void appendAsLowercase(char);
+
+    void appendEscapedForJson(StringView);
+
+    template<typename... Parameters>
+    void appendff(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+
+        VariadicFormatParams variadicFormatParams { parameters... };
         
-    //     MUST(vformat(*this, fmtstr.view(), variadicFormatParams));
-    // }
-
-
+        MUST(vformat(*this, fmtstr.view(), variadicFormatParams));
+    }
 
 #ifndef OS
 
@@ -68,25 +94,25 @@ public:
 
     void trim(size_t count) { m_buffer.resize(m_buffer.size() - count); }
 
-    // template<class SeparatorType, class CollectionType>
-    // void join(SeparatorType const& separator, CollectionType const& collection, StringView fmtstr = "{}"sv) {
+    template<class SeparatorType, class CollectionType>
+    void join(SeparatorType const& separator, CollectionType const& collection, StringView fmtstr = "{}"sv) {
         
-    //     bool first = true;
+        bool first = true;
         
-    //     for (auto& item : collection) {
+        for (auto& item : collection) {
 
-    //         if (first) {
+            if (first) {
 
-    //             first = false;
-    //         }
-    //         else {
+                first = false;
+            }
+            else {
 
-    //             append(separator);
-    //         }
+                append(separator);
+            }
 
-    //         appendff(fmtstr, item);
-    //     }
-    // }
+            appendff(fmtstr, item);
+        }
+    }
 
 private:
 
