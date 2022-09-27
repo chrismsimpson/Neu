@@ -634,12 +634,12 @@ struct PrintfImpl {
     
     ALWAYS_INLINE int format_p(ModifierState const&, ArgumentListRefT ap) const {
 
-        return print_hex(m_putch, m_bufptr, NextArgument<FlatPointer>()(ap), false, true, false, true, 8, false, 1);
+        return printHex(m_putch, m_bufptr, NextArgument<FlatPointer>()(ap), false, true, false, true, 8, false, 1);
     }
     
     ALWAYS_INLINE int format_P(ModifierState const&, ArgumentListRefT ap) const {
 
-        return print_hex(m_putch, m_bufptr, NextArgument<FlatPointer>()(ap), true, true, false, true, 8, false, 1);
+        return printHex(m_putch, m_bufptr, NextArgument<FlatPointer>()(ap), true, true, false, true, 8, false, 1);
     }
 
     ALWAYS_INLINE int formatPercent(ModifierState const&, ArgumentListRefT) const {
@@ -658,7 +658,7 @@ struct PrintfImpl {
 
     ALWAYS_INLINE int formatUnrecognized(CharType formatOp, CharType const* fmt, ModifierState const&, ArgumentListRefT) const {
 
-        debugLine("printf_internal: Unimplemented format specifier {} (fmt: {})", formatOp, fmt);
+        debugLine("printfInternal: Unimplemented format specifier {} (fmt: {})", formatOp, fmt);
 
         return 0;
     }
@@ -687,7 +687,7 @@ struct VaArgNextArgument {
         break;
     
 template<typename PutChFunc, template<typename T, typename U, template<typename X, typename Y> typename V, typename C = char> typename Impl = PrintfImpl, typename ArgumentListT = va_list, template<typename T, typename V = decltype(declval<ArgumentListT&>())> typename NextArgument = VaArgNextArgument, typename CharType = char>
-ALWAYS_INLINE int printf_internal(PutChFunc putch, IdentityType<CharType>* buffer, CharType const*& fmt, ArgumentListT ap) {
+ALWAYS_INLINE int printfInternal(PutChFunc putch, IdentityType<CharType>* buffer, CharType const*& fmt, ArgumentListT ap) {
 
     int ret = 0;
 

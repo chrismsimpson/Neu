@@ -274,7 +274,7 @@ namespace Detail {
             
             VERIFY(newSize > oldSize);
             
-            TRY(try_resize(newSize));
+            TRY(tryResize(newSize));
             
             data()[oldSize] = byte;
             

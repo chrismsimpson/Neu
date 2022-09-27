@@ -5,7 +5,7 @@
 #include "Format.h"
 #include "Forward.h"
 #include "RefPointer.h"
-// #include "Stream.h"
+#include "Stream.h"
 #include "StringBuilder.h"
 #include "StringImpl.h"
 #include "StringUtils.h"
@@ -19,17 +19,135 @@ public:
 
     String() = default;
 
-    String(StringView view) {
+    String(StringView view)
+        : m_impl(StringImpl::create(view.charactersWithoutNullTermination(), view.length())) { }
 
-        // TODO
+    String(String const& other)
+        : m_impl(const_cast<String&>(other).m_impl) { }
+
+    String(String&& other)
+        : m_impl(move(other.m_impl)) { }
+
+    String(char const* cstring, ShouldChomp shouldChomp = NoChomp)
+        : m_impl(StringImpl::create(cstring, shouldChomp)) { }
+
+    String(char const* cstring, size_t length, ShouldChomp shouldChomp = NoChomp)
+        : m_impl(StringImpl::create(cstring, length, shouldChomp)) { }
+
+    explicit String(ReadOnlyBytes bytes, ShouldChomp shouldChomp = NoChomp)
+        : m_impl(StringImpl::create(bytes, shouldChomp)) { }
+
+    String(StringImpl const& impl)
+        : m_impl(const_cast<StringImpl&>(impl)) { }
+
+    String(StringImpl const* impl)
+        : m_impl(const_cast<StringImpl*>(impl)) { }
+
+    String(RefPointer<StringImpl>&& impl)
+        : m_impl(move(impl)) { }
+
+    String(NonNullRefPointer<StringImpl>&& impl)
+        : m_impl(move(impl)) { }
+
+    String(FlyString const&);
+
+    [[nodiscard]] static String repeated(char, size_t count);
+
+    [[nodiscard]] static String repeated(StringView, size_t count);
+
+    [[nodiscard]] static String bijectiveBaseFrom(size_t value, unsigned base = 26, StringView map = { });
+
+    [[nodiscard]] static String romanNumberFrom(size_t value);
+
+    template<class SeparatorType, class CollectionType>
+    [[nodiscard]] static String join(SeparatorType const& separator, CollectionType const& collection, StringView fmtstr = "{}"sv) {
+
+        StringBuilder builder;
+        
+        builder.join(separator, collection, fmtstr);
+        
+        return builder.build();
     }
 
+    [[nodiscard]] bool matches(StringView mask, CaseSensitivity = CaseSensitivity::CaseInsensitive) const;
 
+    [[nodiscard]] bool matches(StringView mask, Vector<MaskSpan>&, CaseSensitivity = CaseSensitivity::CaseInsensitive) const;
 
+    template<typename T = int>
+    [[nodiscard]] Optional<T> toInt(TrimWhitespace = TrimWhitespace::Yes) const;
+    
+    template<typename T = unsigned>
+    [[nodiscard]] Optional<T> toUInt(TrimWhitespace = TrimWhitespace::Yes) const;
 
+    [[nodiscard]] String toLowercase() const;
+    
+    [[nodiscard]] String toUppercase() const;
+    
+    [[nodiscard]] String toSnakecase() const;
+    
+    [[nodiscard]] String toTitlecase() const;
 
+    [[nodiscard]] bool isWhitespace() const { return StringUtils::isWhitespace(*this); }
 
+    [[nodiscard]] String trim(StringView characters, TrimMode mode = TrimMode::Both) const {
 
+        auto trimmedView = StringUtils::trim(view(), characters, mode);
+
+        if (view() == trimmedView) {
+
+            return *this;
+        }
+
+        return trimmedView;
+    }
+
+    [[nodiscard]] String trimWhitespace(TrimMode mode = TrimMode::Both) const {
+
+        auto trimmedView = StringUtils::trimWhitespace(view(), mode);
+        
+        if (view() == trimmedView) {
+
+            return *this;
+        }
+
+        return trimmedView;
+    }
+
+    [[nodiscard]] bool equalsIgnoringCase(StringView) const;
+
+    [[nodiscard]] bool contains(StringView, CaseSensitivity = CaseSensitivity::CaseSensitive) const;
+
+    [[nodiscard]] bool contains(char, CaseSensitivity = CaseSensitivity::CaseSensitive) const;
+
+    [[nodiscard]] Vector<String> splitLimit(char separator, size_t limit, bool keepEmpty = false) const;
+    
+    [[nodiscard]] Vector<String> split(char separator, bool keepEmpty = false) const;
+    
+    [[nodiscard]] Vector<StringView> splitView(char separator, bool keepEmpty = false) const;
+    
+    [[nodiscard]] Vector<StringView> splitView(Function<bool(char)> separator, bool keepEmpty = false) const;
+
+    [[nodiscard]] Optional<size_t> find(char needle, size_t start = 0) const { return StringUtils::find(*this, needle, start); }
+    
+    [[nodiscard]] Optional<size_t> find(StringView needle, size_t start = 0) const { return StringUtils::find(*this, needle, start); }
+    
+    [[nodiscard]] Optional<size_t> findLast(char needle) const { return StringUtils::findLast(*this, needle); }
+    
+    // FIXME: Implement find_last(StringView) for API symmetry.
+    
+    Vector<size_t> findAll(StringView needle) const;
+    
+    using SearchDirection = StringUtils::SearchDirection;
+    
+    [[nodiscard]] Optional<size_t> findAnyOf(StringView needles, SearchDirection direction) const { return StringUtils::findAnyOf(*this, needles, direction); }
+
+    [[nodiscard]] String substring(size_t start, size_t length) const;
+    
+    [[nodiscard]] String substring(size_t start) const;
+    
+    [[nodiscard]] StringView substringView(size_t start, size_t length) const;
+    
+    [[nodiscard]] StringView substringView(size_t start) const;
 
     [[nodiscard]] bool isNull() const { return !m_impl; }
 
@@ -62,76 +180,194 @@ public:
 
     using ConstIterator = SimpleIterator<const String, char const>;
 
+    [[nodiscard]] constexpr ConstIterator begin() const { return ConstIterator::begin(*this); }
 
+    [[nodiscard]] constexpr ConstIterator end() const { return ConstIterator::end(*this); }
 
+    [[nodiscard]] bool startsWith(StringView, CaseSensitivity = CaseSensitivity::CaseSensitive) const;
+    
+    [[nodiscard]] bool endsWith(StringView, CaseSensitivity = CaseSensitivity::CaseSensitive) const;
+    
+    [[nodiscard]] bool startsWith(char) const;
+    
+    [[nodiscard]] bool endsWith(char) const;
 
+    bool operator==(String const&) const;
 
+    bool operator!=(String const& other) const { return !(*this == other); }
 
+    bool operator==(StringView) const;
+    
+    bool operator!=(StringView other) const { return !(*this == other); }
 
+    bool operator==(FlyString const&) const;
+    
+    bool operator!=(FlyString const& other) const { return !(*this == other); }
 
+    bool operator<(String const&) const;
+    
+    bool operator<(char const*) const;
+    
+    bool operator>=(String const& other) const { return !(*this < other); }
+    
+    bool operator>=(char const* other) const { return !(*this < other); }
 
+    bool operator>(String const&) const;
+    
+    bool operator>(char const*) const;
+    
+    bool operator<=(String const& other) const { return !(*this > other); }
+    
+    bool operator<=(char const* other) const { return !(*this > other); }
 
+    bool operator==(char const* cstring) const;
+    
+    bool operator!=(char const* cstring) const { return !(*this == cstring); }
 
+    [[nodiscard]] String isolatedCopy() const;
+
+    [[nodiscard]] static String empty() {
+
+        return StringImpl::theEmptyStringImpl();
+    }
+
+    [[nodiscard]] StringImpl* impl() { return m_impl.pointer(); }
 
     [[nodiscard]] StringImpl const* impl() const { return m_impl.pointer(); }
 
+    String& operator=(String&& other) {
 
+        if (this != &other) {
 
+            m_impl = move(other.m_impl);
+        }
 
+        return *this;
+    }
 
+    String& operator=(String const& other) {
 
+        if (this != &other) {
 
+            m_impl = const_cast<String&>(other).m_impl;
+        }
 
+        return *this;
+    }
 
+    String& operator=(std::nullptr_t) {
 
+        m_impl = nullptr;
+        
+        return *this;
+    }
 
+    String& operator=(ReadOnlyBytes bytes) {
 
+        m_impl = StringImpl::create(bytes);
+        
+        return *this;
+    }
 
+    [[nodiscard]] UInt32 hash() const {
 
+        if (!m_impl) {
 
+            return 0;
+        }
 
+        return m_impl->hash();
+    }
 
+    [[nodiscard]] ByteBuffer toByteBuffer() const;
 
+    template<typename BufferType>
+    [[nodiscard]] static String copy(BufferType const& buffer, ShouldChomp shouldChomp = NoChomp) {
 
+        if (buffer.is_empty()) {
 
+            return empty();
+        }
 
+        return String((char const*)buffer.data(), buffer.size(), shouldChomp);
+    }
+
+    [[nodiscard]] static String vformatted(StringView fmtstr, TypeErasedFormatParams&);
+
+    template<typename... Parameters>
+    [[nodiscard]] static String formatted(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+
+        VariadicFormatParams variadicFormatParameters { parameters... };
+        
+        return vformatted(fmtstr.view(), variadicFormatParameters);
+    }
+
+    template<typename T>
+    [[nodiscard]] static String number(T value) requires IsArithmetic<T> {
+
+        return formatted("{}", value);
+    }
 
     [[nodiscard]] StringView view() const {
 
         return { characters(), length() };
     }
 
+    [[nodiscard]] String replace(StringView needle, StringView replacement, bool allOccurrences = false) const { return StringUtils::replace(*this, needle, replacement, allOccurrences); }
+    
+    [[nodiscard]] size_t count(StringView needle) const { return StringUtils::count(*this, needle); }
+    
+    [[nodiscard]] String reverse() const;
 
+    template<typename... Ts>
+    [[nodiscard]] ALWAYS_INLINE constexpr bool isOneOf(Ts&&... strings) const {
 
+        return (... || this->operator==(forward<Ts>(strings)));
+    }
 
+    template<typename... Ts>
+    [[nodiscard]] ALWAYS_INLINE constexpr bool isOneOfIgnoringCase(Ts&&... strings) const {
+        
+        return (... ||
+                [this, &strings]() -> bool {
 
+            if constexpr (requires(Ts a) { a.view()->StringView; }) {
 
+                return this->equalsIgnoringCase(forward<Ts>(strings.view()));
+            }
+            else {
 
-
-
-
-
-
-
-
-    // template<typename... Ts>
-    // [[nodiscard]] ALWAYS_INLINE constexpr bool is_one_of_ignoring_case(Ts&&... strings) const {
-
-    //     return (... ||
-    //             [this, &strings]() -> bool {
-
-    //         if constexpr (requires(Ts a) { a.view()->StringView; }) {
-
-    //             return this->equalsIgnoringCase(forward<Ts>(strings.view()));
-    //         }
-    //         else {
-
-    //             return this->equalsIgnoringCase(forward<Ts>(strings));
-    //         }
-    //     }());
-    // }
+                return this->equalsIgnoringCase(forward<Ts>(strings));
+            }
+        }());
+    }
 
 private:
 
     RefPointer<StringImpl> m_impl;
 };
+
+template<>
+struct Traits<String> : public GenericTraits<String> {
+    
+    static unsigned hash(String const& s) { return s.impl() ? s.impl()->hash() : 0; }
+};
+
+struct CaseInsensitiveStringTraits : public Traits<String> {
+    
+    static unsigned hash(String const& s) { return s.impl() ? s.impl()->caseInsensitiveHash() : 0; }
+    
+    static bool equals(String const& a, String const& b) { return a.equalsIgnoringCase(b); }
+};
+
+bool operator<(char const*, String const&);
+
+bool operator>=(char const*, String const&);
+
+bool operator>(char const*, String const&);
+
+bool operator<=(char const*, String const&);
+
+String escapeHtmlEntities(StringView html);
+
+// InputStream& operator>>(InputStream& stream, String& string);

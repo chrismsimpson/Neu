@@ -708,7 +708,6 @@ ErrorOr<void> vformat(StringBuilder&, StringView fmtstr, TypeErasedFormatParams&
 
 void vout(FILE*, StringView fmtstr, TypeErasedFormatParams&, bool newline = false);
 
-
 template<typename... Parameters>
 void out(FILE* file, CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
 
@@ -716,7 +715,6 @@ void out(FILE* file, CheckedFormatString<Parameters...>&& fmtstr, Parameters con
     
     vout(file, fmtstr.view(), variadicFormatParams);
 }
-
 
 template<typename... Parameters>
 void outLine(FILE* file, CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
@@ -800,7 +798,6 @@ void criticalDebugMessageLine(CheckedFormatString<Parameters...>&& fmt, Paramete
 #endif
 
 ///
-
 
 template<typename T>
 class FormatIfSupported {
