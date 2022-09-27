@@ -218,6 +218,12 @@ public:
 
     ///
 
+    ALWAYS_INLINE T const& operator*() const { return value(); }
+    ALWAYS_INLINE T& operator*() { return value(); }
+
+    ALWAYS_INLINE T const* operator->() const { return &value(); }
+    ALWAYS_INLINE T* operator->() { return &value(); }
+
 private:
 
     alignas(T) UInt8 m_storage[sizeof(T)];

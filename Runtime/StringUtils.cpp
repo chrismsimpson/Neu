@@ -574,147 +574,231 @@ namespace StringUtils {
         return { };
     }
 
-    // Optional<size_t> find(StringView haystack, StringView needle, size_t start) {
+    Optional<size_t> find(StringView haystack, StringView needle, size_t start) {
 
-    //     if (start > haystack.length()) {
+        if (start > haystack.length()) {
 
-    //         return { };
-    //     }
+            return { };
+        }
 
-    //     auto index = ::memmemOptional(
-    //         haystack.charactersWithoutNullTermination() + start, haystack.length() - start,
-    //         needle.charactersWithoutNullTermination(), needle.length());
+        auto index = ::memmemOptional(
+            haystack.charactersWithoutNullTermination() + start, haystack.length() - start,
+            needle.charactersWithoutNullTermination(), needle.length());
 
-    //     return index.hasValue() ? (*index + start) : index;
-    // }
+        return index.hasValue() ? (*index + start) : index;
+    }
 
-    // Optional<size_t> find_last(StringView haystack, char needle)
-    // {
-    //     for (size_t i = haystack.length(); i > 0; --i) {
-    //         if (haystack[i - 1] == needle)
-    //             return i - 1;
-    //     }
-    //     return {};
-    // }
+    Optional<size_t> findLast(StringView haystack, char needle) {
 
-    // Vector<size_t> find_all(StringView haystack, StringView needle)
-    // {
-    //     Vector<size_t> positions;
-    //     size_t current_position = 0;
-    //     while (current_position <= haystack.length()) {
-    //         auto maybe_position = AK::memmem_optional(
-    //             haystack.charactersWithoutNullTermination() + current_position, haystack.length() - current_position,
-    //             needle.charactersWithoutNullTermination(), needle.length());
-    //         if (!maybe_position.has_value())
-    //             break;
-    //         positions.append(current_position + *maybe_position);
-    //         current_position += *maybe_position + 1;
-    //     }
-    //     return positions;
-    // }
+        for (size_t i = haystack.length(); i > 0; --i) {
 
-    // Optional<size_t> find_any_of(StringView haystack, StringView needles, SearchDirection direction)
-    // {
-    //     if (haystack.isEmpty() || needles.isEmpty())
-    //         return {};
-    //     if (direction == SearchDirection::Forward) {
-    //         for (size_t i = 0; i < haystack.length(); ++i) {
-    //             if (needles.contains(haystack[i]))
-    //                 return i;
-    //         }
-    //     } else if (direction == SearchDirection::Backward) {
-    //         for (size_t i = haystack.length(); i > 0; --i) {
-    //             if (needles.contains(haystack[i - 1]))
-    //                 return i - 1;
-    //         }
-    //     }
-    //     return {};
-    // }
+            if (haystack[i - 1] == needle) {
 
-    // #ifndef KERNEL
-    // String to_snakecase(StringView str)
-    // {
-    //     auto should_insert_underscore = [&](auto i, auto current_char) {
-    //         if (i == 0)
-    //             return false;
-    //         auto previous_ch = str[i - 1];
-    //         if (is_ascii_lower_alpha(previous_ch) && is_ascii_upper_alpha(current_char))
-    //             return true;
-    //         if (i >= str.length() - 1)
-    //             return false;
-    //         auto next_ch = str[i + 1];
-    //         if (is_ascii_upper_alpha(current_char) && is_ascii_lower_alpha(next_ch))
-    //             return true;
-    //         return false;
-    //     };
+                return i - 1;
+            }
+        }
 
-    //     StringBuilder builder;
-    //     for (size_t i = 0; i < str.length(); ++i) {
-    //         auto ch = str[i];
-    //         if (should_insert_underscore(i, ch))
-    //             builder.append('_');
-    //         builder.append_as_lowercase(ch);
-    //     }
-    //     return builder.to_string();
-    // }
+        return { };
+    }
 
-    // String to_titlecase(StringView str)
-    // {
-    //     StringBuilder builder;
-    //     bool next_is_upper = true;
+    Vector<size_t> findAll(StringView haystack, StringView needle) {
 
-    //     for (auto ch : str) {
-    //         if (next_is_upper)
-    //             builder.append_code_point(to_ascii_uppercase(ch));
-    //         else
-    //             builder.append_code_point(toAsciiLowercase(ch));
-    //         next_is_upper = ch == ' ';
-    //     }
+        Vector<size_t> positions;
 
-    //     return builder.to_string();
-    // }
+        size_t currentPosition = 0;
+        
+        while (currentPosition <= haystack.length()) {
 
-    // String replace(StringView str, StringView needle, StringView replacement, bool all_occurrences)
-    // {
-    //     if (str.isEmpty())
-    //         return str;
+            auto maybePosition = ::memmemOptional(
+                haystack.charactersWithoutNullTermination() + currentPosition, haystack.length() - currentPosition,
+                needle.charactersWithoutNullTermination(), needle.length());
 
-    //     Vector<size_t> positions;
-    //     if (all_occurrences) {
-    //         positions = str.find_all(needle);
-    //         if (!positions.size())
-    //             return str;
-    //     } else {
-    //         auto pos = str.find(needle);
-    //         if (!pos.has_value())
-    //             return str;
-    //         positions.append(pos.value());
-    //     }
+            if (!maybePosition.hasValue()) {
 
-    //     StringBuilder replaced_string;
-    //     size_t last_position = 0;
-    //     for (auto& position : positions) {
-    //         replaced_string.append(str.substringView(last_position, position - last_position));
-    //         replaced_string.append(replacement);
-    //         last_position = position + needle.length();
-    //     }
-    //     replaced_string.append(str.substringView(last_position, str.length() - last_position));
-    //     return replaced_string.build();
-    // }
-    // #endif
+                break;
+            }
+            
+            positions.append(currentPosition + *maybePosition);
+            
+            currentPosition += *maybePosition + 1;
+        }
 
-    // // TODO: Benchmark against KMP (AK/MemMem.h) and switch over if it's faster for short strings too
-    // size_t count(StringView str, StringView needle)
-    // {
-    //     if (needle.isEmpty())
-    //         return str.length();
+        return positions;
+    }
 
-    //     size_t count = 0;
-    //     for (size_t i = 0; i < str.length() - needle.length() + 1; ++i) {
-    //         if (str.substringView(i).startsWith(needle))
-    //             count++;
-    //     }
-    //     return count;
-    // }
+    Optional<size_t> find_any_of(StringView haystack, StringView needles, SearchDirection direction) {
+        
+        if (haystack.isEmpty() || needles.isEmpty()) {
 
+            return { };
+        }
+
+        if (direction == SearchDirection::Forward) {
+
+            for (size_t i = 0; i < haystack.length(); ++i) {
+
+                if (needles.contains(haystack[i])) {
+
+                    return i;
+                }
+            }
+        } 
+        else if (direction == SearchDirection::Backward) {
+
+            for (size_t i = haystack.length(); i > 0; --i) {
+
+                if (needles.contains(haystack[i - 1])) {
+
+                    return i - 1;
+                }
+            }
+        }
+
+        return { };
+    }
+
+    #ifndef OS
+
+    String toSnakecase(StringView str) {
+
+        auto shouldInsertUnderscore = [&](auto i, auto currentChar) {
+
+            if (i == 0) {
+
+                return false;
+            }
+            
+            auto previousCh = str[i - 1];
+            
+            if (isAsciiLowerAlpha(previousCh) && isAsciiUpperAlpha(currentChar)) {
+
+                return true;
+            }
+
+            if (i >= str.length() - 1) {
+
+                return false;
+            }
+
+            auto nextCh = str[i + 1];
+
+            if (isAsciiUpperAlpha(currentChar) && isAsciiLowerAlpha(nextCh)) {
+
+                return true;
+            }
+
+            return false;
+        };
+
+        StringBuilder builder;
+
+        for (size_t i = 0; i < str.length(); ++i) {
+
+            auto ch = str[i];
+
+            if (shouldInsertUnderscore(i, ch)) {
+
+                builder.append('_');
+            }
+
+            builder.appendAsLowercase(ch);
+        }
+
+        return builder.toString();
+    }
+
+    String toTitlecase(StringView str) {
+
+        StringBuilder builder;
+        
+        bool nextIsUpper = true;
+
+        for (auto ch : str) {
+
+            if (nextIsUpper) {
+
+                builder.appendCodePoint(toAsciiUppercase(ch));
+            }
+            else {
+
+                builder.appendCodePoint(toAsciiLowercase(ch));
+            }
+
+            nextIsUpper = ch == ' ';
+        }
+
+        return builder.toString();
+    }
+
+    String replace(StringView str, StringView needle, StringView replacement, bool allOccurrences) {
+
+        if (str.isEmpty()) {
+
+            return str;
+        }
+
+        Vector<size_t> positions;
+
+        if (allOccurrences) {
+
+            positions = str.findAll(needle);
+
+            if (!positions.size()) {
+
+                return str;
+            }
+        } 
+        else {
+
+            auto pos = str.find(needle);
+
+            if (!pos.hasValue()) {
+
+                return str;
+            }
+
+            positions.append(pos.value());
+        }
+
+        StringBuilder replacedString;
+        
+        size_t lastPosition = 0;
+        
+        for (auto& position : positions) {
+
+            replacedString.append(str.substringView(lastPosition, position - lastPosition));
+            
+            replacedString.append(replacement);
+            
+            lastPosition = position + needle.length();
+        }
+
+        replacedString.append(str.substringView(lastPosition, str.length() - lastPosition));
+        
+        return replacedString.build();
+    }
+
+    #endif
+
+    // TODO: Benchmark against KMP (MemMem.h) and switch over if it's faster for short strings too
+
+    size_t count(StringView str, StringView needle) {
+
+        if (needle.isEmpty()) {
+
+            return str.length();
+        }
+
+        size_t count = 0;
+
+        for (size_t i = 0; i < str.length() - needle.length() + 1; ++i) {
+
+            if (str.substringView(i).startsWith(needle)) {
+
+                count++;
+            }
+        }
+
+        return count;
+    }
 }
