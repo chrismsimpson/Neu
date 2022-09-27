@@ -680,6 +680,7 @@ namespace Detail {
     struct __AddReference<T, VoidType<T&>> {
         
         using LValueType = T&;
+        
         using RValueType = T&&;
     };
 

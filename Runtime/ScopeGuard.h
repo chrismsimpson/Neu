@@ -1,18 +1,45 @@
 
 #pragma once 
 
-template<typename Block>
+template<typename Callback>
 class ScopeGuard {
 
 public:
 
-    ScopeGuard(
-        Block block)
-        : m_block(block) { }
+    ScopeGuard(Callback callback)
+        : m_callback(move(callback)) { }
 
-    ~ScopeGuard() { m_block(); }
+    ~ScopeGuard() {
+
+        m_callback();
+    }
 
 private:
 
-    Block m_block;
+    Callback m_callback;
+};
+
+template<typename Callback>
+class ArmedScopeGuard {
+
+public:
+
+    ArmedScopeGuard(Callback callback)
+        : m_callback(move(callback)) { }
+
+    ~ArmedScopeGuard() {
+
+        if (m_armed) {
+
+            m_callback();
+        }
+    }
+
+    void disarm() { m_armed = false; }
+
+private:
+
+    Callback m_callback;
+
+    bool m_armed { true };
 };

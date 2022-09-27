@@ -267,13 +267,42 @@ inline NonNullRefPointer<T> adoptRef(T& object) {
     return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, object);
 }
 
-///
+template<typename T>
+struct Formatter<NonNullRefPointer<T>> : Formatter<const T*> {
 
-// template<typename T>
-// struct Formatter<NonNullRefPointer<T>> : Formatter<const T*> {
+    ErrorOr<void> format(FormatBuilder& builder, NonNullRefPointer<T> const& value) {
 
-//     ErrorOr<void> format(FormatBuilder& builder, NonNullRefPointer<T> const& value) {
+        return Formatter<const T*>::format(builder, value.pointer());
+    }
+};
 
-//         return Formatter<const T*>::format(builder, value.pointer());
-//     }
-// };
+template<typename T, typename U>
+inline void swap(NonNullRefPointer<T>& a, NonNullRefPointer<U>& b) requires(IsConvertible<U*, T*>) {
+
+    a.swap(b);
+}
+
+template<typename T, class... Args>
+requires(IsConstructible<T, Args...>) inline NonNullRefPointer<T> makeRefCounted(Args&&... args) {
+
+    return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, *new T(forward<Args>(args)...));
+}
+
+// FIXME: Remove once P0960R3 is available in Clang.
+template<typename T, class... Args>
+inline NonNullRefPointer<T> makeRefCounted(Args&&... args) {
+
+    return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, *new T { forward<Args>(args)... });
+}
+
+template<typename T>
+struct Traits<NonNullRefPointer<T>> : public GenericTraits<NonNullRefPointer<T>> {
+
+    using PeekType = T*;
+
+    using ConstPeekType = const T*;
+    
+    static unsigned hash(NonNullRefPointer<T> const& p) { return hashPointer(p.pointer()); }
+    
+    static bool equals(NonNullRefPointer<T> const& a, NonNullRefPointer<T> const& b) { return a.pointer() == b.pointer(); }
+};

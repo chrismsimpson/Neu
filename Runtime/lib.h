@@ -20,6 +20,7 @@
 #include "Endian.h"
 #include "Error.h"
 #include "Find.h"
+#include "FixedPoint.h"
 #include "FlyString.h"
 #include "Format.h"
 #include "Function.h"
@@ -30,6 +31,7 @@
 #include "IntegralMath.h"
 #include "IterationDecision.h"
 #include "Iterator.h"
+#include "Math.h"
 #include "NonCopyable.h"
 #include "NonNullOwnPointer.h"
 #include "NonNullRefPointer.h"
@@ -64,6 +66,7 @@
 #include "Variant.h"
 #include "Vector.h"
 #include "WeakPointer.h"
+#include "Weakable.h"
 
 #include "kmalloc.h"
 #include "kstdio.h"

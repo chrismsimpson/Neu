@@ -174,7 +174,6 @@ OutputStream& operator<<(OutputStream& stream, Integral value) requires IsIntegr
     return stream;
 }
 
-
 #ifndef KERNEL
 
 template<typename FloatingPoint>

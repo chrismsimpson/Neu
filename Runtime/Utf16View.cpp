@@ -123,7 +123,6 @@ String Utf16View::toUtf8(AllowInvalidCodeUnits allowInvalidCodeUnits) const {
     return builder.build();
 }
 
-
 // size_t Utf16View::lengthInCodePoints() const {
 
 //     if (!m_lengthInCodePoints.hasValue()) {

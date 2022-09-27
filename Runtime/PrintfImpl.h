@@ -905,7 +905,6 @@ ALWAYS_INLINE int printfInternal(PutChFunc putch, IdentityType<CharType>* buffer
             ++ret;
         }
     }
-    /// TODO
 
     return ret;
 }
