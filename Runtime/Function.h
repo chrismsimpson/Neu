@@ -28,6 +28,172 @@ class Function<Out(In...)> {
 
 public:
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Function() = default;
+
+    Function(std::nullptr_t) { }
+
+    ~Function() {
+
+        clear(false);
+    }
+
+    template<typename CallableType>
+    Function(CallableType&& callable) requires((IsFunctionObject<CallableType> && IsCallableWithArguments<CallableType, In...> && !IsSame<RemoveConstVolatileReference<CallableType>, Function>)) {
+
+        initWithCallable(forward<CallableType>(callable));
+    }
+
+    template<typename FunctionType>
+    Function(FunctionType f) requires((IsFunctionPointer<FunctionType> && IsCallableWithArguments<RemovePointer<FunctionType>, In...> && !IsSame<RemoveConstVolatileReference<FunctionType>, Function>)) {
+
+        initWithCallable(move(f));
+    }
+
+    Function(Function&& other) {
+
+        moveFrom(move(other));
+    }
+
+    // Note: Despite this method being const, a mutable lambda _may_ modify its own captures.
+    Out operator()(In... in) const {
+        
+        auto* wrapper = callableWrapper();
+        
+        VERIFY(wrapper);
+        
+        ++m_callNestingLevel;
+        
+        ScopeGuard guard([this] {
+        
+            if (--m_callNestingLevel == 0 && m_deferredClear) {
+
+                const_cast<Function*>(this)->clear(false);
+            }
+        });
+        
+        return wrapper->call(forward<In>(in)...);
+    }
+
+    explicit operator bool() const { return !!callableWrapper(); }
+
+    template<typename CallableType>
+    Function& operator=(CallableType&& callable) requires((IsFunctionObject<CallableType> && IsCallableWithArguments<CallableType, In...>)) {
+
+        clear();
+        
+        initWithCallable(forward<CallableType>(callable));
+        
+        return *this;
+    }
+
+    template<typename FunctionType>
+    Function& operator=(FunctionType f) requires((IsFunctionPointer<FunctionType> && IsCallableWithArguments<RemovePointer<FunctionType>, In...>)) {
+
+        clear();
+
+        if (f) {
+
+            initWithCallable(move(f));
+        }
+
+        return *this;
+    }
+
+    Function& operator=(std::nullptr_t) {
+
+        clear();
+        
+        return *this;
+    }
+
+    Function& operator=(Function&& other) {
+
+        if (this != &other) {
+
+            clear();
+            
+            moveFrom(move(other));
+        }
+
+        return *this;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 private:
 
     class CallableWrapperBase {
@@ -79,7 +245,6 @@ private:
 
         CallableType m_callable;
     };
-
 
     enum class FunctionKind {
 
@@ -198,19 +363,6 @@ private:
 
         other.m_kind = FunctionKind::NullPointer;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     FunctionKind m_kind { FunctionKind::NullPointer };
     

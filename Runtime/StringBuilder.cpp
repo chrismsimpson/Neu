@@ -121,3 +121,144 @@ String StringBuilder::build() const {
 }
 
 #endif
+
+StringView StringBuilder::stringView() const {
+
+    return StringView { data(), m_buffer.size() };
+}
+
+void StringBuilder::clear() {
+
+    m_buffer.clear();
+}
+
+ErrorOr<void> StringBuilder::tryAppendCodePoint(UInt32 codePoint) {
+
+    auto nwritten = UnicodeUtils::codePointToUtf8(codePoint, [this](char c) { append(c); });
+    
+    if (nwritten < 0) {
+        
+        TRY(tryAppend(0xef));
+        
+        TRY(tryAppend(0xbf));
+        
+        TRY(tryAppend(0xbd));
+    }
+
+    return { };
+}
+
+void StringBuilder::appendCodePoint(UInt32 codePoint) {
+
+    MUST(tryAppendCodePoint(codePoint));
+}
+
+#ifndef OS
+
+ErrorOr<void> StringBuilder::tryAppend(Utf16View const& utf16View) {
+
+    for (size_t i = 0; i < utf16View.lengthInCodeUnits();) {
+
+        auto codePoint = utf16View.codePointAt(i);
+        
+        TRY(tryAppendCodePoint(codePoint));
+
+        i += (codePoint > 0xffff ? 2 : 1);
+    }
+
+    return { };
+}
+
+void StringBuilder::append(Utf16View const& utf16View) {
+
+    MUST(tryAppend(utf16View));
+}
+
+#endif
+
+ErrorOr<void> StringBuilder::tryAppend(Utf32View const& utf32View) {
+
+    for (size_t i = 0; i < utf32View.length(); ++i) {
+
+        auto codePoint = utf32View.codePoints()[i];
+        
+        TRY(tryAppendCodePoint(codePoint));
+    }
+
+    return { };
+}
+
+void StringBuilder::append(Utf32View const& utf32View) {
+
+    MUST(tryAppend(utf32View));
+}
+
+void StringBuilder::appendAsLowercase(char ch) {
+
+    if (ch >= 'A' && ch <= 'Z') {
+
+        append(ch + 0x20);
+    }
+    else {
+
+        append(ch);
+    }
+}
+
+void StringBuilder::appendEscapedForJson(StringView string) {
+
+    MUST(tryAppendEscapedForJson(string));
+}
+
+
+ErrorOr<void> StringBuilder::tryAppendEscapedForJson(StringView string) {
+
+    for (auto ch : string) {
+
+        switch (ch) {
+
+        case '\b':
+            
+            TRY(tryAppend("\\b"));
+            
+            break;
+
+        case '\n':
+            
+            TRY(tryAppend("\\n"));
+            
+            break;
+
+        case '\t':
+            
+            TRY(tryAppend("\\t"));
+            
+            break;
+        
+        case '\"':
+            
+            TRY(tryAppend("\\\""));
+            
+            break;
+        
+        case '\\':
+            
+            TRY(tryAppend("\\\\"));
+            
+            break;
+        
+        default:
+        
+            if (ch >= 0 && ch <= 0x1f) {
+
+                TRY(tryAppendff("\\u{:04x}", ch));
+            }
+            else {
+
+                TRY(tryAppend(ch));
+            }
+        }
+    }
+
+    return { };
+}

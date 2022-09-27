@@ -5,7 +5,17 @@
 
 #include "Assertions.h"
 
+template<typename T, typename U>
+constexpr auto roundUpToPowerOfTwo(T value, U powerOfTwo) requires(IsIntegral<T>&& IsIntegral<U>) {
 
+    return ((value - 1) & ~(powerOfTwo - 1)) + powerOfTwo;
+}
+
+template<typename T>
+constexpr bool isPowerOfTwo(T value) requires(IsIntegral<T>) {
+
+    return value && !((value) & (value - 1));
+}
 
 ///
 

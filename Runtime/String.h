@@ -370,4 +370,4 @@ bool operator<=(char const*, String const&);
 
 String escapeHtmlEntities(StringView html);
 
-// InputStream& operator>>(InputStream& stream, String& string);
+InputStream& operator>>(InputStream& stream, String& string);

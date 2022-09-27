@@ -11,6 +11,7 @@ namespace Detail {
 
 using ByteBuffer = Detail::ByteBuffer<32>;
 class Error;
+class GenericLexer;
 class String;
 class StringView;
 class StringImpl;
@@ -27,6 +28,9 @@ class OutputStream;
 class InputBitStream;
 class OutputBitStream;
 class OutputMemoryStream;
+
+template<size_t Capacity>
+class CircularDuplexStream;
 
 template<typename T>
 class Span;
