@@ -122,8 +122,8 @@ inline OutputStream& operator<<(OutputStream& stream, ReadOnlyBytes bytes) {
     return stream;
 }
 
-// template<typename T>
-// InputStream& operator>>(InputStream& stream, LittleEndian<T>& value) {
+template<typename T>
+InputStream& operator>>(InputStream& stream, LittleEndian<T>& value) {
 
-//     return stream >> Bytes { &value.m_value, sizeof(value.m_value) };
-// }
+    return stream >> Bytes { &value.m_value, sizeof(value.m_value) };
+}

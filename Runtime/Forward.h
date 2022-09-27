@@ -20,6 +20,13 @@ class Utf16View;
 class Utf32View;
 class Utf8CodePointIterator;
 class Utf8View;
+class InputStream;
+class InputMemoryStream;
+class DuplexMemoryStream;
+class OutputStream;
+class InputBitStream;
+class OutputBitStream;
+class OutputMemoryStream;
 
 template<typename T>
 class Span;

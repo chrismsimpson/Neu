@@ -6,6 +6,7 @@
 #include "Platform.h"
 
 #if defined(OS_MACOS)
+
 #    include <libkern/OSByteOrder.h>
 #    include <machine/endian.h>
 
@@ -27,4 +28,145 @@
 #    define __BIG_ENDIAN BIG_ENDIAN
 #    define __LITTLE_ENDIAN LITTLE_ENDIAN
 #    define __BYTE_ORDER BYTE_ORDER
+
 #endif
+
+template<typename T>
+ALWAYS_INLINE constexpr T converBetweenHostAndLittleEndian(T value) {
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    
+    return value;
+
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+
+    if constexpr (sizeof(T) == 8) {
+
+        return __builtin_bswap64(value);
+    }
+
+    if constexpr (sizeof(T) == 4) {
+
+        return __builtin_bswap32(value);
+    }
+
+    if constexpr (sizeof(T) == 2) {
+
+        return __builtin_bswap16(value);
+    }
+
+    if constexpr (sizeof(T) == 1) {
+
+        return value;
+    }
+
+#endif
+}
+
+template<typename T>
+ALWAYS_INLINE constexpr T convertBetweenHostAndBigEndian(T value) {
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+
+    if constexpr (sizeof(T) == 8) {
+
+        return __builtin_bswap64(value);
+    }
+    if constexpr (sizeof(T) == 4) {
+
+        return __builtin_bswap32(value);
+    }
+    if constexpr (sizeof(T) == 2) {
+
+        return __builtin_bswap16(value);
+    }
+    if constexpr (sizeof(T) == 1) {
+
+        return value;
+    }
+
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+
+    return value;
+
+#endif
+}
+
+template<typename T>
+ALWAYS_INLINE T convertBetweenHostAndNetworkEndian(T value) {
+
+    return convertBetweenHostAndBigEndian(value);
+}
+
+template<typename T>
+class LittleEndian;
+
+template<typename T>
+InputStream& operator>>(InputStream&, LittleEndian<T>&);
+
+template<typename T>
+OutputStream& operator<<(OutputStream&, LittleEndian<T>);
+
+template<typename T>
+class [[gnu::packed]] LittleEndian {
+
+public:
+
+    friend InputStream& operator>><T>(InputStream&, LittleEndian<T>&);
+
+    friend OutputStream& operator<< <T>(OutputStream&, LittleEndian<T>);
+
+    constexpr LittleEndian() = default;
+
+    constexpr LittleEndian(T value)
+        : m_value(convertBetweenHostAndLittleEndian(value)) { }
+
+    constexpr operator T() const { return convertBetweenHostAndLittleEndian(m_value); }
+
+private:
+
+    T m_value { 0 };
+};
+
+template<typename T>
+class BigEndian;
+
+template<typename T>
+InputStream& operator>>(InputStream&, BigEndian<T>&);
+
+template<typename T>
+OutputStream& operator<<(OutputStream&, BigEndian<T>);
+
+template<typename T>
+class [[gnu::packed]] BigEndian {
+
+public:
+
+    friend InputStream& operator>><T>(InputStream&, BigEndian<T>&);
+
+    friend OutputStream& operator<< <T>(OutputStream&, BigEndian<T>);
+
+    constexpr BigEndian() = default;
+
+    constexpr BigEndian(T value)
+        : m_value(convertBetweenHostAndBigEndian(value)) { }
+
+    constexpr operator T() const { return convertBetweenHostAndBigEndian(m_value); }
+
+private:
+
+    T m_value { 0 };
+};
+
+template<typename T>
+using NetworkOrdered = BigEndian<T>;
+
+template<typename T>
+requires(HasFormatter<T>) struct Formatter<LittleEndian<T>> : Formatter<T> {
+
+};
+
+template<typename T>
+requires(HasFormatter<T>) struct Formatter<BigEndian<T>> : Formatter<T> {
+    
+};
