@@ -127,3 +127,70 @@ InputStream& operator>>(InputStream& stream, LittleEndian<T>& value) {
 
     return stream >> Bytes { &value.m_value, sizeof(value.m_value) };
 }
+
+template<typename T>
+OutputStream& operator<<(OutputStream& stream, LittleEndian<T> value) {
+
+    return stream << ReadOnlyBytes { &value.m_value, sizeof(value.m_value) };
+}
+
+template<typename T>
+InputStream& operator>>(InputStream& stream, BigEndian<T>& value) {
+
+    return stream >> Bytes { &value.m_value, sizeof(value.m_value) };
+}
+
+template<typename T>
+OutputStream& operator<<(OutputStream& stream, BigEndian<T> value) {
+
+    return stream << ReadOnlyBytes { &value.m_value, sizeof(value.m_value) };
+}
+
+template<typename T>
+InputStream& operator>>(InputStream& stream, Optional<T>& value) {
+    
+    T temporary;
+    
+    stream >> temporary;
+    
+    value = temporary;
+    
+    return stream;
+}
+
+template<typename Integral>
+InputStream& operator>>(InputStream& stream, Integral& value) requires IsIntegral<Integral> {
+
+    stream.readOrError({ &value, sizeof(value) });
+    
+    return stream;
+}
+
+template<typename Integral>
+OutputStream& operator<<(OutputStream& stream, Integral value) requires IsIntegral<Integral> {
+
+    stream.writeOrError({ &value, sizeof(value) });
+    
+    return stream;
+}
+
+
+#ifndef KERNEL
+
+template<typename FloatingPoint>
+InputStream& operator>>(InputStream& stream, FloatingPoint& value) requires IsFloatingPoint<FloatingPoint> {
+
+    stream.readOrError({ &value, sizeof(value) });
+
+    return stream;
+}
+
+template<typename FloatingPoint>
+OutputStream& operator<<(OutputStream& stream, FloatingPoint value) requires IsFloatingPoint<FloatingPoint> {
+    
+    stream.writeOrError({ &value, sizeof(value) });
+
+    return stream;
+}
+
+#endif

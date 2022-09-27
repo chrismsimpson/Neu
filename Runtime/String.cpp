@@ -441,3 +441,175 @@ String String::romanNumberFrom(size_t value) {
 
     return builder.toString();
 }
+
+bool String::matches(StringView mask, Vector<MaskSpan>& maskSpans, CaseSensitivity caseSensitivity) const {
+
+    return StringUtils::matches(*this, mask, caseSensitivity, &maskSpans);
+}
+
+bool String::matches(StringView mask, CaseSensitivity caseSensitivity) const {
+
+    return StringUtils::matches(*this, mask, caseSensitivity);
+}
+
+bool String::contains(StringView needle, CaseSensitivity caseSensitivity) const {
+
+    return StringUtils::contains(*this, needle, caseSensitivity);
+}
+
+bool String::contains(char needle, CaseSensitivity caseSensitivity) const {
+
+    return StringUtils::contains(*this, StringView(&needle, 1), caseSensitivity);
+}
+
+bool String::equalsIgnoringCase(StringView other) const {
+
+    return StringUtils::equalsIgnoringCase(view(), other);
+}
+
+String String::reverse() const {
+
+    StringBuilder reversedString(length());
+
+    for (size_t i = length(); i-- > 0;) {
+        
+        reversedString.append(characters()[i]);
+    }
+
+    return reversedString.toString();
+}
+
+String escapeHtmlEntities(StringView html) {
+
+    StringBuilder builder;
+
+    for (size_t i = 0; i < html.length(); ++i) {
+
+        if (html[i] == '<') {
+
+            builder.append("&lt;");
+        }
+        else if (html[i] == '>') {
+
+            builder.append("&gt;");
+        }
+        else if (html[i] == '&') {
+
+            builder.append("&amp;");
+        }
+        else if (html[i] == '"') {
+
+            builder.append("&quot;");
+        }
+        else {
+
+            builder.append(html[i]);
+        }
+    }
+
+    return builder.toString();
+}
+
+String::String(FlyString const& string)
+    : m_impl(string.impl()) { }
+
+String String::toLowercase() const {
+
+    if (!m_impl) {
+
+        return { };
+    }
+
+    return m_impl->toLowercase();
+}
+
+String String::toUppercase() const {
+
+    if (!m_impl) {
+
+        return { };
+    }
+
+    return m_impl->toUppercase();
+}
+
+String String::toSnakecase() const {
+
+    return StringUtils::toSnakecase(*this);
+}
+
+String String::toTitlecase() const {
+
+    return StringUtils::toTitlecase(*this);
+}
+
+bool operator<(char const* characters, String const& string) {
+
+    return string.view() > characters;
+}
+
+bool operator>=(char const* characters, String const& string) {
+
+    return string.view() <= characters;
+}
+
+bool operator>(char const* characters, String const& string) {
+
+    return string.view() < characters;
+}
+
+bool operator<=(char const* characters, String const& string) {
+
+    return string.view() >= characters;
+}
+
+bool String::operator==(char const* cstring) const {
+
+    return view() == cstring;
+}
+
+InputStream& operator>>(InputStream& stream, String& string) {
+
+    StringBuilder builder;
+
+    for (;;) {
+
+        char nextChar;
+        
+        stream >> nextChar;
+
+        if (stream.hasAnyError()) {
+            
+            stream.setFatalError();
+            
+            string = nullptr;
+            
+            return stream;
+        }
+
+        if (nextChar) {
+
+            builder.append(nextChar);
+        } 
+        else {
+            
+            string = builder.toString();
+            
+            return stream;
+        }
+    }
+}
+
+String String::vformatted(StringView fmtstr, TypeErasedFormatParams& params) {
+
+    StringBuilder builder;
+    
+    MUST(vformat(builder, fmtstr, params));
+    
+    return builder.toString();
+}
+
+Vector<size_t> String::findAll(StringView needle) const {
+
+    return StringUtils::findAll(*this, needle);
+}

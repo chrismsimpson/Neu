@@ -138,11 +138,11 @@ inline size_t allocationSizeForStringImpl(size_t length) {
     return sizeof(StringImpl) + (sizeof(char) * length) + sizeof(char);
 }
 
-// template<>
-// struct Formatter<StringImpl> : Formatter<StringView> {
+template<>
+struct Formatter<StringImpl> : Formatter<StringView> {
 
-//     ErrorOr<void> format(FormatBuilder& builder, StringImpl const& value) {
+    ErrorOr<void> format(FormatBuilder& builder, StringImpl const& value) {
 
-//         return Formatter<StringView>::format(builder, { value.characters(), value.length() });
-//     }
-// };
+        return Formatter<StringView>::format(builder, { value.characters(), value.length() });
+    }
+};
