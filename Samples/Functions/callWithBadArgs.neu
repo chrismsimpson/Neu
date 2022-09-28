@@ -4,5 +4,5 @@ func greet(msg: String, msg2: String) {
 }
 
 func main() {
-    greet(1, 2)
+    greet(msg: 1, msg2: 2)
 }

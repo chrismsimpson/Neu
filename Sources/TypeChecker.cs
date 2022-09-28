@@ -25,8 +25,7 @@ public partial class CheckedFunction {
     
     public NeuType ReturnType { get; init; }
     
-    // public List<(String, NeuType)> Parameters { get; init; }
-    public List<Variable> Parameters { get; init; }
+    public List<Parameter> Parameters { get; init; }
     
     public CheckedBlock Block { get; init; }
 
@@ -35,8 +34,7 @@ public partial class CheckedFunction {
     public CheckedFunction(
         String name,
         NeuType returnType,
-        // List<(String, NeuType)> parameters,
-        List<Variable> parameters,
+        List<Parameter> parameters,
         CheckedBlock block) { 
 
         this.Name = name;
@@ -558,7 +556,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var p in fun.Parameters) {
             
-            if (stack.AddVar(p, fun.NameSpan) is Error e) {
+            if (stack.AddVar(p.Variable, fun.NameSpan) is Error e) {
 
                 error = error ?? e;
             }
@@ -1147,7 +1145,16 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? checkedArgErr;
 
-                            if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx].Type)) {
+                            if (callee.Parameters[idx].RequiresLabel
+                                && call.Args[idx].Item1 != callee.Parameters[idx].Variable.Name) {
+
+                                error = error ?? 
+                                    new TypeCheckError(
+                                        "Wrong parameter name in argument label",
+                                        call.Args[idx].Item2.GetSpan());
+                            }
+
+                            if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx].Variable.Type)) {
 
                                 error = error ?? new TypeCheckError(
                                     "Parameter type mismatch",

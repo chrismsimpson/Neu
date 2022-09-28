@@ -69,13 +69,13 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
                 
-            var ty = compiler.TranslateType(p.Type);
+            var ty = compiler.TranslateType(p.Variable.Type);
 
             output.Append(ty);
 
             output.Append(" ");
 
-            output.Append(p.Name);
+            output.Append(p.Variable.Name);
         }
 
         output.Append(")");
@@ -119,13 +119,13 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
 
-            var ty = compiler.TranslateType(p.Type);
+            var ty = compiler.TranslateType(p.Variable.Type);
 
             output.Append(ty);
 
             output.Append(" ");
 
-            output.Append(p.Name);
+            output.Append(p.Variable.Name);
         }
 
         output.Append(");");

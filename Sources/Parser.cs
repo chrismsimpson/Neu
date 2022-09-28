@@ -655,7 +655,7 @@ public partial class Function {
 
     public Span NameSpan { get; init; }
 
-    public List<Variable> Parameters { get; init; }
+    public List<Parameter> Parameters { get; init; }
 
     public Block Block { get; init; }
 
@@ -670,14 +670,14 @@ public partial class Function {
                 fileId: 0, 
                 start: 0, 
                 end: 0),
-            new List<Variable>(), 
+            new List<Parameter>(), 
             new Block(), 
             new VoidType()) { }
 
     public Function(
         String name,
         Span nameSpan,
-        List<Variable> parameters,
+        List<Parameter> parameters,
         Block block,
         NeuType returnType) {
 
@@ -709,6 +709,25 @@ public partial class Variable {
         this.Name = name;
         this.Type = ty;
         this.Mutable = mutable;
+    }
+}
+
+///
+
+public partial class Parameter {
+
+    public bool RequiresLabel { get; init; }
+
+    public Variable Variable { get; init; }
+
+    ///
+
+    public Parameter(
+        bool requiresLabel,
+        Variable variable) {
+
+        this.RequiresLabel = requiresLabel;
+        this.Variable = variable;
     }
 }
 
@@ -1720,7 +1739,9 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
-                    var parameters = new List<Variable>();
+                    var parameters = new List<Parameter>();
+
+                    var currentParamRequiresLabel = true;
 
                     var cont = true;
 
@@ -1742,6 +1763,19 @@ public static partial class ParserFunctions {
                             case CommaToken _: {
 
                                 // Treat comma as whitespace? Might require them in the future
+
+                                index += 1;
+
+                                currentParamRequiresLabel = true;
+
+                                break;
+                            }
+
+                            ///
+
+                            case NameToken nt when nt.Value == "_": {
+
+                                currentParamRequiresLabel = false;
 
                                 index += 1;
 
@@ -1768,10 +1802,12 @@ public static partial class ParserFunctions {
                                 }
                                 
                                 parameters.Add(
-                                    new Variable(
-                                        varDecl.Name, 
-                                        varDecl.Type, 
-                                        varDecl.Mutable));
+                                    new Parameter(
+                                        requiresLabel: currentParamRequiresLabel,
+                                        variable: new Variable(
+                                            varDecl.Name, 
+                                            varDecl.Type, 
+                                            varDecl.Mutable)));
 
                                 break;
                             }
@@ -3279,6 +3315,30 @@ public static partial class ParserFunctions {
 
     ///
 
+    public static (String, Error?) ParseCallParameterName(List<Token> tokens, ref int index) {
+
+        if (tokens.ElementAt(index) is NameToken nt) {
+
+            if (index + 1 < tokens.Count) {
+
+                if (tokens.ElementAt(index + 1) is ColonToken) {
+
+                    index += 2;
+
+                    return (
+                        nt.Value, 
+                        null);
+                }
+            }
+        }
+
+        return (
+            String.Empty,
+            null);
+    }
+
+    ///
+
     public static (Call, Error?) ParseCall(List<Token> tokens, ref int index) {
 
         Trace($"ParseCall: {tokens.ElementAt(index)}");
@@ -3357,11 +3417,15 @@ public static partial class ParserFunctions {
 
                         default: {
 
+                            var (paramName, parseCallParamNameErr) = ParseCallParameterName(tokens, ref index);
+                            
+                            error = error ?? parseCallParamNameErr;
+
                             var (expr, exprError) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                             error = error ?? exprError;
 
-                            call.Args.Add((String.Empty, expr));
+                            call.Args.Add((paramName, expr));
 
                             break;
                         }

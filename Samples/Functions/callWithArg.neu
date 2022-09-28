@@ -3,5 +3,5 @@ func greet(msg: String) {
 }
 
 func main() {
-    greet("hello foo")
+    greet(msg: "hello foo")
 }

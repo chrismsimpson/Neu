@@ -3,5 +3,5 @@ func subtract(x: Int64, y: Int64) {
 }
 
 func main() {
-    subtract(10, 3)
+    subtract(x: 10, y: 3)
 }
