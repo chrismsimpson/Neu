@@ -173,7 +173,18 @@ public static partial class Program {
 
                         Write($" Failed to run\n");
 
+                        ///
+
+                        if (!IsNullOrWhiteSpace(builtOutput)) {
+
+                            WriteLine(cmakeBuildOutput);
+                        }
+
+                        ///
+
                         Console.ForegroundColor = og;
+
+                        ///
 
                         continue;
                     }

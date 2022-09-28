@@ -438,8 +438,9 @@ public static partial class CodeGenFunctions {
 
             case CheckedInt64Expression i: {
 
+                output.Append("static_cast<Int64>(");
                 output.Append($"{i.Value}");
-                output.Append("LL");
+                output.Append("LL)");
 
                 break;
             }
