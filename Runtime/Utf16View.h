@@ -18,7 +18,6 @@ Vector<UInt16, 1> utf32ToUtf16(Utf32View const&);
 
 void codePointToUtf16(Vector<UInt16, 1>&, UInt32);
 
-
 class Utf16CodePointIterator {
     
     friend class Utf16View;
@@ -139,11 +138,11 @@ private:
     mutable Optional<size_t> m_lengthInCodePoints;
 };
 
-// template<>
-// struct Formatter<Utf16View> : Formatter<FormatString> {
+template<>
+struct Formatter<Utf16View> : Formatter<FormatString> {
 
-//     ErrorOr<void> format(FormatBuilder& builder, Utf16View const& value) {
+    ErrorOr<void> format(FormatBuilder& builder, Utf16View const& value) {
 
-//         return builder.builder().tryAppend(value);
-//     }
-// };
+        return builder.builder().tryAppend(value);
+    }
+};
