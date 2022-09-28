@@ -1,9 +1,25 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // {
+        //     "label": "build",
+        //     "command": "rm -Rf Generated && rm -Rf Build && dotnet build Neu.sln && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",
+        //     "type": "shell",
+        //     "args": [
+        //     ],
+        //     "group": {
+        //         "kind": "build",
+        //         "isDefault": true
+        //         // "isDefault": false
+        //     },
+        //     "presentation": {
+        //         "reveal": "always"
+        //     },
+        //     "problemMatcher": "$msCompile"
+        // },
         {
-            "label": "build",
-            "command": "rm -Rf Generated && rm -Rf Build && dotnet build Neu.sln && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",
+            "label": "dotnet: build neu",
+            "command": "dotnet build Neu.sln",
             "type": "shell",
             "args": [
             ],
@@ -17,22 +33,6 @@
             },
             "problemMatcher": "$msCompile"
         },
-        // {
-        //     "label": "dotnet: build neu",
-        //     "command": "dotnet build Neu.sln",
-        //     "type": "shell",
-        //     "args": [
-        //     ],
-        //     "group": {
-        //         "kind": "build",
-        //         // "isDefault": true
-        //         "isDefault": false
-        //     },
-        //     "presentation": {
-        //         "reveal": "always"
-        //     },
-        //     "problemMatcher": "$msCompile"
-        // },
         {
             "label": "cmake: build runtime",
             "command": "rm -Rf Build/Runtime && mkdir -p Build/Runtime && cmake Runtime -B Build/Runtime -G Ninja && cmake --build Build/Runtime",

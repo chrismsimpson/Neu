@@ -451,14 +451,6 @@ public static partial class StackFunctions {
         s.Frames.Pop();
     }
 
-    // public static void AddVar(this Stack s, Variable v) {
-
-    //     if (s.Frames.Last() is StackFrame frame) {
-
-    //         frame.Vars.Add(v);
-    //     }
-    // }
-
     public static Error? AddVar(
         this Stack s, 
         Variable v, 
@@ -612,28 +604,31 @@ public static partial class TypeCheckerFunctions {
         return (checkedBlock, error);
     }
 
-    // public static bool IsSameType(NeuType a, NeuType b) {
+    public static bool CompareTypes(NeuType a, NeuType b) {
 
-    //     switch (true) {
+        switch (true) {
 
-    //         case var _ when a is BoolType && b is BoolType:         return true;
-    //         case var _ when a is StringType && b is StringType:     return true;
-    //         case var _ when a is Int8Type && b is Int8Type:         return true;
-    //         case var _ when a is Int16Type && b is Int16Type:       return true;
-    //         case var _ when a is Int32Type && b is Int32Type:       return true;
-    //         case var _ when a is Int64Type && b is Int64Type:       return true;
-    //         case var _ when a is UInt8Type && b is UInt8Type:       return true;
-    //         case var _ when a is UInt16Type && b is UInt16Type:     return true;
-    //         case var _ when a is UInt32Type && b is UInt32Type:     return true;
-    //         case var _ when a is UInt64Type && b is UInt64Type:     return true;
-    //         case var _ when a is FloatType && b is FloatType:       return true;
-    //         case var _ when a is DoubleType && b is DoubleType:     return true;
-    //         case var _ when a is VoidType && b is VoidType:         return true;
-    //         case var _ when a is UnknownType && b is UnknownType:   return true;
+            case var _ when a is BoolType && b is BoolType:             return true;
+            case var _ when a is StringType && b is StringType:         return true;
+            case var _ when a is Int8Type && b is Int8Type:             return true;
+            case var _ when a is Int16Type && b is Int16Type:           return true;
+            case var _ when a is Int32Type && b is Int32Type:           return true;
+            case var _ when a is Int64Type && b is Int64Type:           return true;
+            case var _ when a is UInt8Type && b is UInt8Type:           return true;
+            case var _ when a is UInt16Type && b is UInt16Type:         return true;
+            case var _ when a is UInt32Type && b is UInt32Type:         return true;
+            case var _ when a is UInt64Type && b is UInt64Type:         return true;
+            case var _ when a is FloatType && b is FloatType:           return true;
+            case var _ when a is DoubleType && b is DoubleType:         return true;
+            case var _ when a is VoidType && b is VoidType:             return true;
 
-    //         default:                                                return false;
-    //     }
-    // }
+            // case var _ when a is VectorType va && b is VectorType vb:   return CompareTypes(va.Type, vb.Type);
+
+            case var _ when a is UnknownType && b is UnknownType:       return true;
+
+            default:                                                    return false;
+        }
+    }
 
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
@@ -897,7 +892,8 @@ public static partial class TypeCheckerFunctions {
                     }
                     else {
 
-                        if (innerType != checkedExpr.GetNeuType()) {
+                        // if (innerType != checkedExpr.GetNeuType()) {
+                        if (!CompareTypes(innerType, checkedExpr.GetNeuType())) {
 
                             error = error ?? 
                                 new TypeCheckError(
@@ -914,8 +910,8 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedVectorExpression(
                         expressions: output,
-                        innerType),
-                        error);
+                        new VectorType(innerType)),
+                    error);
             }
 
             ///
@@ -963,7 +959,7 @@ public static partial class TypeCheckerFunctions {
 
                     ///
 
-                    default: {
+                    case var n: {
 
                         error = error ?? 
                             new TypeCheckError(
