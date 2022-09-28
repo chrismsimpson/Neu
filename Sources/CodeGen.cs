@@ -11,8 +11,6 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        // output.Append("#include <iostream>\n");
-
         output.Append("#include \"../../../Runtime/lib.h\"\n");
 
         foreach (var fun in file.CheckedFunctions) {
