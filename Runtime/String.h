@@ -289,7 +289,7 @@ public:
             return empty();
         }
 
-        return String((char const*)buffer.data(), buffer.size(), shouldChomp);
+        return String((char const*) buffer.data(), buffer.size(), shouldChomp);
     }
 
     [[nodiscard]] static String vformatted(StringView fmtstr, TypeErasedFormatParams&);

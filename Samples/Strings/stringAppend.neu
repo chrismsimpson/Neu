@@ -1,0 +1,9 @@
+func main() {
+    let a = "n"
+    let b = "eu"
+    print(a + b)
+
+    var str = "programming "
+    str += "language"
+    print(str)
+}

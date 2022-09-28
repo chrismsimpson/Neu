@@ -313,7 +313,7 @@ public partial class VarDecl {
 
     public String Name { get; init; }
 
-    public NeuType Type { get; init; }
+    public NeuType Type { get; set; }
 
     public bool Mutable { get; set; }
 

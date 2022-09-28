@@ -14,6 +14,7 @@ public static partial class Program {
         TestFunctions();
         TestMath();
         TestVariables();
+        TestStrings();
     }
 
     public static ErrorOrVoid TestSamples(
@@ -232,5 +233,10 @@ public static partial class Program {
     public static ErrorOrVoid TestVariables() {
 
         return TestSamples("./Samples/Variables");
+    }
+
+    public static ErrorOrVoid TestStrings() {
+
+        return TestSamples("./Samples/Strings");
     }
 }

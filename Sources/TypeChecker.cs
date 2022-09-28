@@ -612,12 +612,11 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                NeuType varDeclType = vds.Decl.Type;
-
                 if (vds.Decl.Type is UnknownType) {
 
-                    varDeclType = checkedExpr.GetNeuType();
+                    vds.Decl.Type = checkedExpr.GetNeuType();
                 }
+
                 // Taking this out for now until we have better number type support
                 // else if (!NeuTypeFunctions.Eq(vds.Decl.Type, checkedExpr.GetNeuType())) {
                 // // else if (vds.Decl.Type != checkedExpr.GetNeuType()) {
@@ -629,7 +628,7 @@ public static partial class TypeCheckerFunctions {
 
                 var v = new Variable(
                     name: vds.Decl.Name, 
-                    ty: varDeclType, 
+                    ty: vds.Decl.Type, 
                     mutable: vds.Decl.Mutable);
 
                 if (stack.AddVar(v, vds.Decl.Span) is Error e) {
