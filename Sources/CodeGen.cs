@@ -471,20 +471,13 @@ public static partial class CodeGenFunctions {
 
                     case "print":
 
-                        // output.Append("std::cout << ");
-                        
-                        // output.Append("(");
-
                         output.Append("outLine(\"{}\", ");
-                        // output.Append("outLine(\"%s\", ");
-
+                        
                         foreach (var param in ce.Call.Args) {
 
                             output.Append(compiler.TranslateExpr(indent, param.Item2));
                         }
                         
-                        // output.Append(") << std::endl");
-
                         output.Append(")");
 
                         break;
