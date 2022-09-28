@@ -330,6 +330,32 @@ public static partial class LexerFunctions {
 
                 ///
 
+                case '[': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new LSquareToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case ']': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new RSquareToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
                 case '\r':
                 case ' ':
                 case '\t': {

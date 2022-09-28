@@ -260,6 +260,52 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
+
+
+    public partial class CheckedVectorExpression: CheckedExpression {
+
+        public List<CheckedExpression> Expressions { get; init; }
+        
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedVectorExpression(
+            List<CheckedExpression> expressions,
+            NeuType type) 
+            : base() {
+
+            this.Expressions = expressions;
+            this.Type = type;
+        }
+    }
+
+    public partial class CheckedIndexedExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+        
+        public CheckedExpression Index { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedIndexedExpression(
+            CheckedExpression expression,
+            CheckedExpression index,
+            NeuType type) 
+            : base() {
+
+            this.Expression = expression;
+            this.Index = index;
+            this.Type = type;
+        }
+    }
+
+
+
+
+
     public partial class CheckedVarExpression: CheckedExpression {
         
         // public String Name { get; init; }
@@ -326,6 +372,16 @@ public static partial class CheckedExpressionFunctions {
             case CheckedVarExpression ve: {
 
                 return ve.Variable.Type;
+            }
+
+            case CheckedVectorExpression vecExpr: {
+
+                return vecExpr.Type;
+            }
+
+            case CheckedIndexedExpression ie: {
+
+                return ie.Type;
             }
 
             case CheckedGarbageExpression _: {
@@ -818,6 +874,115 @@ public static partial class TypeCheckerFunctions {
                             e.Span));
                 }
             }
+
+            ///
+
+            case VectorExpression ve: {
+
+                NeuType innerType = new UnknownType();
+
+                var output = new List<CheckedExpression>();
+
+                ///
+
+                foreach (var v in ve.Expressions) {
+
+                    var (checkedExpr, err) = TypeCheckExpression(v, stack, file);
+
+                    error = error ?? err;
+
+                    if (innerType is UnknownType) {
+
+                        innerType = checkedExpr.GetNeuType();
+                    }
+                    else {
+
+                        if (innerType != checkedExpr.GetNeuType()) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "value does not match type of previous values",
+                                    v.GetSpan());
+                        }
+                    }
+
+                    output.Add(checkedExpr);
+                }
+
+                ///
+
+                return (
+                    new CheckedVectorExpression(
+                        expressions: output,
+                        innerType),
+                        error);
+            }
+
+            ///
+
+            case IndexedExpression ie: {
+
+                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, stack, file);
+                
+                error = error ?? typeCheckExprErr;
+
+                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, stack, file);
+            
+                error = error ?? typeCheckIdxErr;
+
+                NeuType ty = new UnknownType();
+
+                switch (checkedExpr.GetNeuType()) {
+
+                    case VectorType vt: {
+
+                        switch (vt.Type) {
+
+                            case Int64Type _: {
+
+                                ty = vt.Type;
+
+                                break;
+                            }
+
+                            ///
+
+                            default: {
+
+                                error = error ?? 
+                                    new TypeCheckError(
+                                        "index is not an integer",
+                                        ie.Index.GetSpan());
+
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    ///
+
+                    default: {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "index used on value that can't be indexed",
+                                expr.GetSpan());
+
+                        break;
+                    }
+                }
+
+                return (
+                    new CheckedIndexedExpression(
+                        checkedExpr,
+                        checkedIdx,
+                        ty),
+                    error);
+            }
+
+            ///
 
             case OperatorExpression e: {
 

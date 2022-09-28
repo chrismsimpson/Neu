@@ -208,6 +208,13 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case VectorType vt: {
+
+                return $"Vector<{compiler.TranslateType(vt.Type)}>";
+            }
+
+            ///
+
             case UnknownType _: {
 
                 return "auto";
@@ -420,10 +427,10 @@ public static partial class CodeGenFunctions {
 
             case CheckedQuotedStringExpression qs: {
                 
-                output.Append("\"");
+                output.Append('"');
                 output.Append(qs.Value);
-                output.Append("\"");
-
+                output.Append('"');
+            
                 break;
             }
 
@@ -432,6 +439,7 @@ public static partial class CodeGenFunctions {
             case CheckedInt64Expression i: {
 
                 output.Append($"{i.Value}");
+                output.Append("LL");
 
                 break;
             }
@@ -664,6 +672,52 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case CheckedVectorExpression ve: {
+
+                // (Vector({1, 2, 3}))
+
+                output.Append("(Vector({");
+
+                var first = true;
+
+                foreach (var val in ve.Expressions) {
+                    
+                    if (!first) {
+                        
+                        output.Append(", ");
+                    } 
+                    else {
+                        
+                        first = false;
+                    }
+
+                    output.Append(compiler.TranslateExpr(indent, val));
+                }
+
+                output.Append("}))");
+
+                break;
+            }
+
+            ///
+
+            case CheckedIndexedExpression ie: {
+
+                output.Append("((");
+            
+                output.Append(compiler.TranslateExpr(indent, ie.Expression));
+            
+                output.Append(")[");
+            
+                output.Append(compiler.TranslateExpr(indent, ie.Index));
+            
+                output.Append("])");
+
+                break;
+            }
+
+            ///
+            
             case CheckedGarbageExpression _: {
 
                 // Incorrect parse/typecheck

@@ -301,6 +301,21 @@ public partial class VoidType : NeuType {
         : base() { }
 }
 
+///
+
+public partial class VectorType : NeuType {
+
+    public NeuType Type { get; init; }
+
+    public VectorType(
+        NeuType type) : base() {
+        
+        this.Type = type;
+    }
+}
+
+///
+
 public partial class UnknownType : NeuType {
 
     public UnknownType()
@@ -464,6 +479,18 @@ public partial class LCurlyToken: Token {
 public partial class RCurlyToken: Token {
 
     public RCurlyToken(Span span)
+        : base(span) { }
+}
+
+public partial class LSquareToken: Token {
+
+    public LSquareToken(Span span)
+        : base(span) { }
+}
+
+public partial class RSquareToken: Token {
+
+    public RSquareToken(Span span)
         : base(span) { }
 }
 
@@ -1172,6 +1199,50 @@ public partial class Expression: Statement {
         }
     }
 
+    ///
+
+    public partial class VectorExpression: Expression {
+
+        public List<Expression> Expressions { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public VectorExpression(
+            List<Expression> expressions,
+            Span span) {
+
+            this.Expressions = expressions;
+            this.Span = span;
+        }
+    }
+
+    ///
+
+    public partial class IndexedExpression: Expression {
+
+        public Expression Expression { get; init; }
+
+        public Expression Index { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public IndexedExpression(
+            Expression expression,
+            Expression index,
+            Span span) {
+
+            this.Expression = expression;
+            this.Index = index;
+            this.Span = span;
+        }
+    }
+
+    ///
+
     public partial class BinaryOpExpression: Expression {
 
         public Expression Lhs { get; init; }
@@ -1293,6 +1364,16 @@ public static partial class ExpressionFunctions {
             case QuotedStringExpression qse: {
 
                 return qse.Span;
+            }
+
+            case VectorExpression ve: {
+
+                return ve.Span;
+            }
+
+            case IndexedExpression ie: {
+
+                return ie.Span;
             }
 
             case BinaryOpExpression boe: {
@@ -2341,15 +2422,17 @@ public static partial class ParserFunctions {
 
         var span = tokens.ElementAt(index).Span;
 
+        Expression? expr = null;
+
         switch (tokens.ElementAt(index)) {
 
             case NameToken nt when nt.Value == "true": {
 
                 index += 1;
 
-                return (
-                    new BooleanExpression(true, span),
-                    null);
+                expr = new BooleanExpression(true, span);
+
+                break;
             }
 
             ///
@@ -2358,9 +2441,9 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (
-                    new BooleanExpression(false, span),
-                    null);
+                expr = new BooleanExpression(false, span);
+
+                break;
             }
 
             ///
@@ -2377,25 +2460,34 @@ public static partial class ParserFunctions {
 
                             error = error ?? callErr;
 
-                            return (
-                                new CallExpression(call, span), 
-                                error);
+                            expr = new CallExpression(call, span);
+
+                            break;
                         }
 
                         ///
 
                         default: {
 
+
+                            index += 1;
+
+                            expr =new VarExpression(nt.Value, span);
+
                             break;
                         }
                     }
                 }
+                else {
 
-                index += 1;
+                    index += 1;
 
-                return (
-                    new VarExpression(nt.Value, span),
-                    error);
+                    return (
+                        new VarExpression(nt.Value, span),
+                        error);
+                }
+
+                break;
             }
 
             ///
@@ -2404,7 +2496,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+                var (_expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                 error = error ?? exprErr;
 
@@ -2431,7 +2523,22 @@ public static partial class ParserFunctions {
                     }
                 }
 
-                return (expr, error);
+                expr = _expr;
+
+                break;
+            }
+
+            ///
+
+            case LSquareToken _: {
+
+                var (_expr, exprErr) = ParseVector(tokens, ref index);
+
+                error = error ?? exprErr;
+
+                expr = _expr;
+
+                break;
             }
 
             ///
@@ -2440,9 +2547,9 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (
-                    new Int64Expression(numTok.Value, span),
-                    error);
+                expr = new Int64Expression(numTok.Value, span);
+
+                break;
             }
 
             ///
@@ -2451,9 +2558,9 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (
-                    new QuotedStringExpression(qs.Value, span),
-                    error);
+                expr = new QuotedStringExpression(qs.Value, span);
+
+                break;
             }
 
             ///
@@ -2462,14 +2569,91 @@ public static partial class ParserFunctions {
 
                 Trace("ERROR: unsupported expression");
 
-                return (
-                    new GarbageExpression(span),
+                error = error ??
                     new ParserError(
                         "unsupported expression",
-                        tokens.ElementAt(index).Span)
-                );
+                        tokens.ElementAt(index).Span);
+
+                expr = new GarbageExpression(span);
+
+                break;
             }
         }
+
+        if (index < tokens.Count) {
+
+            switch (tokens.ElementAt(index)) {
+
+                case LSquareToken _: {
+
+                    index += 1;
+
+                    if (index < tokens.Count) {
+
+                        var (idx, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                        error = error ?? parseExprErr;
+
+                        var end = index;
+
+                        if (index < tokens.Count) {
+
+                            switch (tokens.ElementAt(index)) {
+
+                                case RSquareToken _: {
+
+                                    index += 1;
+
+                                    break;
+                                }
+
+                                ///
+
+                                case var t: {
+
+                                    error = error ?? 
+                                        new ParserError(
+                                            "expected ']'", 
+                                            t.Span);
+
+                                    break;
+                                }
+                            }
+                        }
+                        else {
+
+                            end -= 1;
+
+                            error = error ?? 
+                                new ParserError(
+                                    "expected ']'",
+                                    tokens.ElementAt(index - 1).Span);
+                        }
+
+                        return (
+                            new IndexedExpression(
+                                expr, 
+                                idx, 
+                                new Span(
+                                    span.FileId, 
+                                    start: span.Start, 
+                                    end: end)),
+                            error);
+                    }
+
+                    break;
+                }
+
+                ///
+
+                default: {
+
+                    break;
+                }
+            }
+        }
+
+        return (expr, error);
     }
 
     ///
@@ -2644,7 +2828,7 @@ public static partial class ParserFunctions {
 
             default: {
 
-                Trace("ERROR: unsupported operator");
+                Trace("ERROR: unsupported operator (possibly just the end of an expression)");
 
                 return (
                     new GarbageExpression(span),
@@ -2774,7 +2958,7 @@ public static partial class ParserFunctions {
 
             default: {
 
-                Trace("ERROR: unsupported operator");
+                Trace("ERROR: unsupported operator (possibly just the end of an expression)");
 
                 return (
                     new GarbageExpression(span),
@@ -2783,6 +2967,126 @@ public static partial class ParserFunctions {
                         tokens.ElementAt(index).Span));
             }
         }
+    }
+
+    ///
+
+    public static (Expression, Error?) ParseVector(
+        List<Token> tokens,
+        ref int index) {
+
+        Error? error = null;
+
+        var output = new List<Expression>();
+
+        var start = index;
+
+        if (index < tokens.Count) {
+
+            switch (tokens.ElementAt(index)) {
+
+                case LSquareToken _: {
+
+                    index += 1;
+
+                    break;
+                }
+
+                ///
+
+                default: {
+
+                    Trace($"Error: expected '[");
+
+                    error = error ?? 
+                        new ParserError(
+                            "expected '(", 
+                            tokens.ElementAt(index).Span);
+
+                    break;
+                }
+            }
+        }
+        else {
+
+            start -= 1;
+
+            Trace($"ERROR: incomplete function");
+
+            error = error ?? 
+                new ParserError(
+                    "incomplete function", 
+                    tokens.ElementAt(index - 1).Span);
+        }
+
+        ///
+
+        var cont = true;
+
+        while (cont && index < tokens.Count) {
+
+            switch (tokens.ElementAt(index)) {
+
+                case RSquareToken _: {
+
+                    index += 1;
+
+                    cont = false;
+
+                    break;
+                }
+
+                ///
+
+                case CommaToken _: {
+
+                    // Treat comma as whitespace? Might require them in the future
+
+                    index += 1;
+
+                    break;
+                }
+
+                ///
+
+                default: {
+
+                    var (expr, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                    error = error ?? err;
+
+                    output.Add(expr);
+
+                    break;
+                }
+            }
+        }
+
+        ///
+
+        var end = index;
+
+        if (index >= tokens.Count) {
+
+            Trace("ERROR: incomplete function");
+
+            error = error ?? new ParserError(
+                "incomplete function",
+                tokens.ElementAt(index - 1).Span);
+
+            end -= 1;
+        }
+
+        ///
+
+        return (
+            new VectorExpression(
+                expressions: output,
+                new Span(
+                    fileId: tokens.ElementAt(start).Span.FileId,
+                    start: tokens.ElementAt(start).Span.Start,
+                    end: tokens.ElementAt(end).Span.End)),
+            error);
     }
 
     ///
