@@ -342,6 +342,8 @@ public:
         }());
     }
 
+    String& operator+=(String const&);
+
 private:
 
     RefPointer<StringImpl> m_impl;
@@ -367,6 +369,8 @@ bool operator>=(char const*, String const&);
 bool operator>(char const*, String const&);
 
 bool operator<=(char const*, String const&);
+
+String operator+(String const&, String const&);
 
 String escapeHtmlEntities(StringView html);
 
