@@ -475,8 +475,8 @@ public static partial class CodeGenFunctions {
                         
                         // output.Append("(");
 
-                        // output.Append("outLine(\"{}\", ");
-                        output.Append("outLine(\"%s\", ");
+                        output.Append("outLine(\"{}\", ");
+                        // output.Append("outLine(\"%s\", ");
 
                         foreach (var param in ce.Call.Args) {
 
