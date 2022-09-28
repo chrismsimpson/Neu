@@ -897,7 +897,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? 
                                 new TypeCheckError(
-                                    "value does not match type of previous values",
+                                    "does not match type of previous values in vector",
                                     v.GetSpan());
                         }
                     }
@@ -932,7 +932,7 @@ public static partial class TypeCheckerFunctions {
 
                     case VectorType vt: {
 
-                        switch (vt.Type) {
+                        switch (checkedIdx.GetNeuType()) {
 
                             case Int64Type _: {
 

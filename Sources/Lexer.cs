@@ -475,9 +475,9 @@ public static partial class LexerFunctions {
 
             var str = UTF8.GetString(bytes[(start + 1)..index]);
 
-            var end = index;
-
             index += 1;
+
+            var end = index;
 
             return (
                 new QuotedStringToken(
