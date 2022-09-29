@@ -300,29 +300,63 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
-
-
-
-
     public partial class CheckedVarExpression: CheckedExpression {
         
-        // public String Name { get; init; }
-
-        // public NeuType Type { get; init; }
-
         public Variable Variable { get; init; }
 
         ///
 
         public CheckedVarExpression(
-            // String name,
-            // NeuType type
-            Variable variable
-            ) {
+            Variable variable) {
 
-            // this.Name = name;
-            // this.Type = type;
             this.Variable = variable;
+        }
+    }
+
+    public partial class CheckedOptionalNoneExpression: CheckedExpression {
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedOptionalNoneExpression(
+            NeuType type) {
+
+            this.Type = type;
+        }
+    }
+
+    public partial class CheckedOptionalSomeExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedOptionalSomeExpression(
+            CheckedExpression expression,
+            NeuType type) {
+
+            this.Expression = expression;
+            this.Type = type;
+        }
+    }
+
+    public partial class CheckedForceUnwrapExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedForceUnwrapExpression(
+            CheckedExpression expression,
+            NeuType type) {
+
+            this.Expression = expression;
+            this.Type = type;
         }
     }
 
@@ -380,6 +414,21 @@ public static partial class CheckedExpressionFunctions {
             case CheckedIndexedExpression ie: {
 
                 return ie.Type;
+            }
+
+            case CheckedOptionalNoneExpression ckdOptNoneExpr: {
+
+                return ckdOptNoneExpr.Type;
+            }
+
+            case CheckedOptionalSomeExpression ckdOptSomeExpr: {
+
+                return ckdOptSomeExpr.Type;
+            }
+
+            case CheckedForceUnwrapExpression ckdForceUnwrapExpr: {
+
+                return ckdForceUnwrapExpr.Type;
             }
 
             case CheckedGarbageExpression _: {
@@ -810,6 +859,60 @@ public static partial class TypeCheckerFunctions {
                         op, 
                         checkedRhs, 
                         ty),
+                    error);
+            }
+
+            case OptionalNoneExpression e: {
+
+                return (
+                    new CheckedOptionalNoneExpression(
+                        new UnknownType()),
+                    error);
+            }
+
+            case OptionalSomeExpression e: {
+
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file);
+
+                error = error ?? ckdExprError;
+
+                var type = ckdExpr.GetNeuType();
+
+                return (
+                    new CheckedOptionalSomeExpression(ckdExpr, type),
+                    error);
+            }
+
+            case ForcedUnwrapExpression e: {
+
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file);
+
+                NeuType type = new UnknownType();
+
+                switch (ckdExpr.GetNeuType()) {
+
+                    case OptionalType opt: {
+
+                        type = opt.Type;
+
+                        break;
+                    }
+
+                    ///
+
+                    default: {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Forced unwrap only works on Optional",
+                                e.Expression.GetSpan());
+
+                        break;
+                    }
+                }
+
+                return (
+                    new CheckedForceUnwrapExpression(ckdExpr, type),
                     error);
             }
 

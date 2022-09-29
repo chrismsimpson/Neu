@@ -215,6 +215,13 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case OptionalType ot: {
+
+                return $"Optional<{compiler.TranslateType(ot.Type)}>";
+            }
+
+            ///
+
             case UnknownType _: {
 
                 return "auto";
@@ -424,6 +431,35 @@ public static partial class CodeGenFunctions {
         var output = new StringBuilder();
 
         switch (expr) {
+
+            case CheckedOptionalNoneExpression _: {
+
+                output.Append("{ }");
+
+                break;
+            }
+
+            ///
+
+            case CheckedOptionalSomeExpression o: {
+
+                output.Append('(');
+                output.Append(compiler.TranslateExpr(indent, o.Expression));
+                output.Append(')');
+
+                break;
+            }
+
+            case CheckedForceUnwrapExpression f: {
+
+                output.Append('(');
+                output.Append(compiler.TranslateExpr(indent, f.Expression));
+                output.Append(".value())");
+
+                break;
+            }
+
+            ///
 
             case CheckedQuotedStringExpression qs: {
                 

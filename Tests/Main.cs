@@ -11,11 +11,12 @@ public static partial class Program {
 
         // TestBasics();
         // TestControlFlow();
-        TestFunctions();
-        TestMath();
+        // TestFunctions();
+        // TestMath();
         // TestVariables();
         // TestStrings();
         // TestVectors();
+        TestOptional();
     }
 
     public static ErrorOrVoid TestSamples(
@@ -255,5 +256,10 @@ public static partial class Program {
     public static ErrorOrVoid TestVectors() {
 
         return TestSamples("./Samples/Vectors");
+    }
+
+    public static ErrorOrVoid TestOptional() {
+
+        return TestSamples("./Samples/Optional");
     }
 }

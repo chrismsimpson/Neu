@@ -301,11 +301,11 @@ public partial class VoidType : NeuType {
         : base() { }
 }
 
-///
-
 public partial class VectorType : NeuType {
 
     public NeuType Type { get; init; }
+
+    ///
 
     public VectorType(
         NeuType type) : base() {
@@ -314,7 +314,18 @@ public partial class VectorType : NeuType {
     }
 }
 
-///
+public partial class OptionalType : NeuType {
+
+    public NeuType Type { get; init; }
+
+    ///
+
+    public OptionalType(
+        NeuType type) {
+
+        this.Type = type;
+    }
+}
 
 public partial class UnknownType : NeuType {
 
@@ -587,6 +598,13 @@ public partial class ForwardSlashToken: Token {
 public partial class ExclamationToken: Token {
 
     public ExclamationToken(Span span)
+        : base(span) { }
+}
+
+public partial class QuestionToken: Token {
+
+    public QuestionToken(
+        Span span)
         : base(span) { }
 }
 
@@ -1301,6 +1319,55 @@ public partial class Expression: Statement {
         }
     }
 
+    public partial class ForcedUnwrapExpression: Expression {
+
+        public Expression Expression { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public ForcedUnwrapExpression(
+            Expression expression,
+            Span span) {
+
+            this.Expression = expression;
+            this.Span = span;
+        }
+    }
+
+    // FIXME: These should be implemented as `enum` variant values once available.
+
+    public partial class OptionalNoneExpression: Expression {
+
+        public Span Span { get; init; }
+        
+        ///
+
+        public OptionalNoneExpression(
+            Span span) : base() {
+
+            this.Span = span;
+        }
+    }
+
+    public partial class OptionalSomeExpression: Expression {
+
+        public Expression Expression { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public OptionalSomeExpression(
+            Expression expression,
+            Span span) {
+
+            this.Expression = expression;
+            this.Span = span;
+        }
+    }
+
     // Not standalone
 
     public enum Operator {
@@ -1408,6 +1475,21 @@ public static partial class ExpressionFunctions {
             case OperatorExpression oe: {
 
                 return oe.Span;
+            }
+
+            case OptionalNoneExpression optNoneExpr: {
+
+                return optNoneExpr.Span;
+            }
+
+            case OptionalSomeExpression optSomeExpr: {
+
+                return optSomeExpr.Span;
+            }
+
+            case ForcedUnwrapExpression forceUnwrapExpr: {
+
+                return forceUnwrapExpr.Span;
             }
 
             case GarbageExpression ge: {
@@ -2486,17 +2568,44 @@ public static partial class ParserFunctions {
 
             case NameToken nt: {
 
-                if ((index + 1) < tokens.Count) {
+                if (index + 1 < tokens.Count) {
 
                     switch (tokens.ElementAt(index + 1)) {
 
                         case LParenToken _: {
 
-                            var (call, callErr) = ParseCall(tokens, ref index);
+                            switch (nt.Value) {
 
-                            error = error ?? callErr;
+                                case "Some": {
 
-                            expr = new CallExpression(call, span);
+                                    index += 1;
+
+                                    var (someExpr, parseSomeExprErr) = ParseExpression(
+                                        tokens, 
+                                        ref index, 
+                                        ExpressionKind.ExpressionWithoutAssignment);
+
+                                    error = error ?? parseSomeExprErr;
+
+                                    expr = new OptionalSomeExpression(someExpr, span);
+
+                                    break;
+                                }
+
+                                ///
+
+                                default: {
+
+                                    var (call, parseCallErr) = ParseCall(tokens, ref index);
+
+                                    error = error ?? parseCallErr;
+
+                                    expr = new CallExpression(call, span);
+
+                                    break;
+                                }
+
+                            }
 
                             break;
                         }
@@ -2505,10 +2614,26 @@ public static partial class ParserFunctions {
 
                         default: {
 
-
                             index += 1;
 
-                            expr =new VarExpression(nt.Value, span);
+                            switch (nt.Value) {
+
+                                case "None": {
+
+                                    expr = new OptionalNoneExpression(span);
+
+                                    break;
+                                }
+
+                                ///
+
+                                default: {
+
+                                    expr = new VarExpression(nt.Value, span);
+
+                                    break;
+                                }
+                            }
 
                             break;
                         }
@@ -2518,9 +2643,7 @@ public static partial class ParserFunctions {
 
                     index += 1;
 
-                    return (
-                        new VarExpression(nt.Value, span),
-                        error);
+                    expr = new VarExpression(nt.Value, span);
                 }
 
                 break;
@@ -2616,9 +2739,24 @@ public static partial class ParserFunctions {
             }
         }
 
+        // Check for postfix operators, while we're at it
+
         if (index < tokens.Count) {
 
             switch (tokens.ElementAt(index)) {
+
+                case ExclamationToken _: {
+
+                    index += 1;
+
+                    // Forced Optional unwrap
+
+                    expr = new ForcedUnwrapExpression(expr, span);
+
+                    break;
+                }
+
+                ///
 
                 case LSquareToken _: {
 
@@ -3234,68 +3372,140 @@ public static partial class ParserFunctions {
 
         Trace($"ParseTypeName: {tokens.ElementAt(index)}");
 
+        Error? error = null;
+
+        NeuType baseType = new VoidType();
+
         switch (tokens.ElementAt(index)) {
 
             case NameToken nt: {
 
                 switch (nt.Value) {
 
-                    case "Int8":
+                    case "Int8": {
 
-                        return (new Int8Type(), null);
+                        baseType = new Int8Type();
 
-                    case "Int16":
+                        break;
+                    }
 
-                        return (new Int16Type(), null);
+                    ///
 
-                    case "Int32":
+                    case "Int16": {
 
-                        return (new Int32Type(), null);
+                        baseType = new Int16Type();
 
-                    case "Int64":
+                        break;
+                    }
 
-                        return (new Int64Type(), null);
+                    ///
 
-                    case "UInt8":
+                    case "Int32": {
 
-                        return (new UInt8Type(), null);
+                        baseType = new Int32Type();
 
-                    case "UInt16":
+                        break;
+                    }
 
-                        return (new UInt16Type(), null);
+                    ///
 
-                    case "UInt32":
+                    case "Int64": {
 
-                        return (new UInt32Type(), null);
+                        baseType = new Int64Type();
 
-                    case "UInt64":
+                        break;
+                    }
 
-                        return (new UInt64Type(), null);
+                    ///
 
-                    case "Float":
+                    case "UInt8": {
 
-                        return (new FloatType(), null);
+                        baseType = new UInt8Type();
 
-                    case "Double":
+                        break;
+                    }
 
-                        return (new DoubleType(), null);
+                    ///
 
-                    case "String":
+                    case "UInt16": {
 
-                        return (new StringType(), null);
+                        baseType = new UInt16Type();
 
-                    case "Bool":
+                        break;
+                    }
 
-                        return (new BoolType(), null);
+                    ///
 
-                    default:
+                    case "UInt32": {
+
+                        baseType = new UInt32Type();
+
+                        break;
+                    }
+
+                    ///
+
+                    case "UInt64": {
+
+                        baseType = new UInt64Type();
+
+                        break;
+                    }
+
+                    ///
+
+                    case "Float": {
+
+                        baseType = new FloatType();
+
+                        break;
+                    }
+
+                    ///
+
+                    case "Double": {
+
+                        baseType = new DoubleType();
+
+                        break;
+                    }
+
+                    ///
+
+                    case "String": {
+
+                        baseType = new StringType();
+
+                        break;
+                    }
+
+                    ///
+
+                    case "Bool": {
+
+                        baseType = new BoolType();
+
+                        break;
+                    }
+
+                    ///
+
+                    default: {
 
                         Trace("ERROR: unknown type");
 
-                        return (
-                            new VoidType(), 
-                            new ParserError("unknown type", nt.Span));
+                        baseType = new VoidType();
+
+                        error = error ?? 
+                            new ParserError(
+                                "unknown type", 
+                                nt.Span);
+
+                        break;
+                    }
                 }
+            
+                break;
             }
 
             ///
@@ -3304,13 +3514,32 @@ public static partial class ParserFunctions {
 
                 Trace("ERROR: expected type name");
 
-                return (
-                    new VoidType(), 
+                baseType = new VoidType();
+
+                error = error ?? 
                     new ParserError(
                         "expected type name", 
-                        tokens.ElementAt(index).Span));
+                        tokens.ElementAt(index).Span);
+
+                break;
             }
         }
+
+        if (index + 1 < tokens.Count) {
+
+            if (tokens.ElementAt(index + 1) is QuestionToken) {
+
+                // T? is shorthand for Optional<T>
+
+                index += 1;
+
+                return (
+                    new OptionalType(baseType),
+                    error);
+            }
+        }
+
+        return (baseType, error);
     }
 
     ///

@@ -19,6 +19,10 @@ public static partial class Program {
 
         ///
 
+        Error? firstError = null;
+
+        ///
+
         var mode = CompilerMode.Transpile;
 
         ///
@@ -362,6 +366,8 @@ public static partial class Program {
 
                     var compiledOrError = parser.Compile(arg);
 
+                    ///
+
                     switch (compiledOrError) {
 
                         case var _ when compiledOrError.Error is ParserError pe:
@@ -393,7 +399,14 @@ public static partial class Program {
                             WriteLine("Success!");
 
                             break;
-                    }           
+                    }   
+
+                    ///        
+
+                    if (compiledOrError.Error is Error transpileErr) {
+
+                        firstError = firstError ?? transpileErr;
+                    }
                 }
 
                 break;
@@ -405,6 +418,13 @@ public static partial class Program {
 
                 throw new Exception("Unexpected");
             }
+        }
+    
+        ///
+
+        if (firstError != null) {
+
+            throw new Exception($"{firstError}");
         }
     }
 

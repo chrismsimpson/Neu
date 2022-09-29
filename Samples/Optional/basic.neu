@@ -1,0 +1,5 @@
+func main() {
+    let foo : Int64? = 123
+    let bar = foo! + 2
+    print(bar)
+}
