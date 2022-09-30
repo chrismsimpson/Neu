@@ -1,6 +1,260 @@
 
 namespace Neu;
 
+public partial class NeuType {
+
+    public NeuType() { }
+}
+
+public static partial class NeuTypeFunctions {
+
+    public static bool Eq(
+        NeuType? l,
+        NeuType? r) {
+        
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        switch (true) {
+
+            case var _ when 
+                l is BoolType 
+                && r is BoolType:         
+                
+                return true;
+
+            ///
+
+            case var _ when 
+                l is StringType 
+                && r is StringType:     
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int8Type 
+                && r is Int8Type:         
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int16Type 
+                && r is Int16Type:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int32Type 
+                && r is Int32Type:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is Int64Type 
+                && r is Int64Type:       
+                    
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is UInt8Type 
+                && r is UInt8Type:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is UInt16Type 
+                && r is UInt16Type:     
+                
+                return true;
+
+            ///
+                
+            case var _ when 
+                l is UInt32Type 
+                && r is UInt32Type:     
+                
+                return true;
+
+            ///
+            
+            case var _ when
+                 l is UInt64Type 
+                && r is UInt64Type:     
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is FloatType 
+                && r is FloatType:       
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is DoubleType 
+                && r is DoubleType:     
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is VoidType 
+                && r is VoidType:         
+                
+                return true;
+
+            ///
+            
+            case var _ when 
+                l is UnknownType 
+                && r is UnknownType:   
+                    
+                return true;
+
+            ///
+            
+            default:                                                
+                
+                return false;
+        }
+    }
+}
+
+public partial class BoolType : NeuType {
+
+    public BoolType() 
+        : base() { }
+}
+
+public partial class StringType : NeuType {
+
+    public StringType() 
+        : base() { }
+}
+
+public partial class Int8Type : NeuType {
+
+    public Int8Type() 
+        : base() { }
+}
+
+public partial class Int16Type : NeuType {
+
+    public Int16Type() 
+        : base() { }
+}
+
+public partial class Int32Type : NeuType {
+
+    public Int32Type() 
+        : base() { }
+}
+
+public partial class Int64Type : NeuType {
+
+    public Int64Type() 
+        : base() { }
+}
+
+public partial class UInt8Type : NeuType {
+
+    public UInt8Type() 
+        : base() { }
+}
+
+public partial class UInt16Type : NeuType {
+
+    public UInt16Type() 
+        : base() { }
+}
+
+public partial class UInt32Type : NeuType {
+
+    public UInt32Type() 
+        : base() { }
+}
+
+public partial class UInt64Type : NeuType {
+
+    public UInt64Type() 
+        : base() { }
+}
+
+public partial class FloatType : NeuType {
+
+    public FloatType() 
+        : base() { }
+}
+
+public partial class DoubleType : NeuType {
+
+    public DoubleType() 
+        : base() { }
+}
+
+public partial class VoidType : NeuType {
+
+    public VoidType() 
+        : base() { }
+}
+
+public partial class VectorType : NeuType {
+
+    public NeuType Type { get; init; }
+
+    ///
+
+    public VectorType(
+        NeuType type) : base() {
+        
+        this.Type = type;
+    }
+}
+
+public partial class OptionalType : NeuType {
+
+    public NeuType Type { get; init; }
+
+    ///
+
+    public OptionalType(
+        NeuType type) {
+
+        this.Type = type;
+    }
+}
+
+public partial class UnknownType : NeuType {
+
+    public UnknownType()
+        : base() { }
+}
+
+///
+
 public partial class CheckedFile {
 
     public List<CheckedFunction> CheckedFunctions { get; init; }

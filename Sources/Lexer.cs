@@ -1,6 +1,289 @@
 
 namespace Neu;
 
+public partial class Span {
+
+    public FileId FileId { get; init; }
+
+    public int Start { get; init; }
+    
+    public int End { get; init; }
+
+    ///
+
+    public Span(
+        FileId fileId,
+        int start,
+        int end) {
+
+        this.FileId = fileId;
+        this.Start = start;
+        this.End = end;
+    }
+}
+
+public partial class SpanFunctions {
+
+    public static bool Eq(
+        Span l,
+        Span r) {
+
+        return l.FileId == r.FileId
+            && l.Start == r.Start
+            && l.End == r.End;
+    }
+}
+
+///
+
+public partial class Token {
+
+    public Span Span { get; init; }
+
+    ///
+
+    public Token(
+        Span span) {
+
+        this.Span = span;
+    }
+}
+
+    public partial class QuotedStringToken: Token {
+
+        public String Value { get; init; }
+
+        ///
+
+        public QuotedStringToken(
+            String value,
+            Span span)
+            : base(span) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class NumberToken: Token {
+
+        public Int64 Value { get; init; }
+
+        ///
+
+        public NumberToken(
+            Int64 value,
+            Span span)
+            : base(span) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class NameToken: Token {
+
+        public String Value { get; init; }
+
+        ///
+
+        public NameToken(
+            String value,
+            Span span)
+            : base(span) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class SemicolonToken: Token {
+
+        public SemicolonToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class ColonToken: Token {
+
+        public ColonToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class LParenToken: Token {
+
+        public LParenToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class RParenToken: Token {
+
+        public RParenToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class LCurlyToken: Token {
+
+        public LCurlyToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class RCurlyToken: Token {
+
+        public RCurlyToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class LSquareToken: Token {
+
+        public LSquareToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class RSquareToken: Token {
+
+        public RSquareToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class PlusToken: Token {
+
+        public PlusToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class MinusToken: Token {
+
+        public MinusToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class EqualToken: Token {
+
+        public EqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class PlusEqualToken: Token {
+
+        public PlusEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class PlusPlusToken: Token {
+
+        public PlusPlusToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class MinusEqualToken: Token {
+
+        public MinusEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class MinusMinusToken: Token {
+
+        public MinusMinusToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class AsteriskEqualToken: Token {
+
+        public AsteriskEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class ForwardSlashEqualToken: Token {
+
+        public ForwardSlashEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class NotEqualToken: Token {
+        
+        public NotEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class DoubleEqualToken: Token {
+        
+        public DoubleEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class GreaterThanToken: Token {
+
+        public GreaterThanToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class GreaterThanOrEqualToken: Token {
+        
+        public GreaterThanOrEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class LessThanToken: Token {
+
+        public LessThanToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class LessThanOrEqualToken: Token {
+        
+        public LessThanOrEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class AsteriskToken: Token {
+
+        public AsteriskToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class ForwardSlashToken: Token {
+
+        public ForwardSlashToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class ExclamationToken: Token {
+
+        public ExclamationToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class QuestionToken: Token {
+
+        public QuestionToken(
+            Span span)
+            : base(span) { }
+    }
+
+    public partial class CommaToken: Token {
+
+        public CommaToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class EolToken: Token {
+
+        public EolToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class EofToken: Token {
+
+        public EofToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class UnknownToken: Token {
+
+        public UnknownToken(Span span) 
+            : base(span) { }
+    }
+
+    ///
+
+
 public static partial class LexerFunctions {
 
     public static (List<Token>, Error?) Lex(
@@ -63,6 +346,14 @@ public static partial class LexerFunctions {
 
                             continue;
                         }
+                        else if (ToChar(bytes[index]) == '+') {
+
+                            index += 1;
+
+                            output.Add(new PlusPlusToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
                     }
 
                     output.Add(new PlusToken(new Span(fileId, start, start + 1)));
@@ -87,6 +378,12 @@ public static partial class LexerFunctions {
                             output.Add(new MinusEqualToken(new Span(fileId, start, start + 2)));
 
                             continue;
+                        }
+                        else if (ToChar(bytes[index]) == '-') {
+
+                            index += 1;
+
+                            output.Add(new MinusMinusToken(new Span(fileId, start, start + 2)));
                         }
                     }
 
