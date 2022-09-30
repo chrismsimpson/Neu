@@ -567,9 +567,6 @@ struct Formatter<unsigned char[Size]> : Formatter<StringView> {
 template<>
 struct Formatter<String> : Formatter<StringView> { };
 
-template<>
-struct Formatter<FlyString> : Formatter<StringView> { };
-
 template<typename T>
 struct Formatter<T*> : StandardFormatter {
 

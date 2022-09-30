@@ -1,7 +1,6 @@
 
 
 #include "CharacterTypes.h"
-#include "FlyString.h"
 #include "HashTable.h"
 #include "Memory.h"
 #include "std.h"
@@ -27,13 +26,7 @@ StringImpl::StringImpl(ConstructWithInlineBufferTag, size_t length)
     : m_length(length) { }
 
 
-StringImpl::~StringImpl() {
-
-    if (m_fly) {
-
-        FlyString::didDestroyImpl({ }, *this);
-    }
-}
+StringImpl::~StringImpl() { }
 
 NonNullRefPointer<StringImpl> StringImpl::createUninitialized(size_t length, char*& buffer) {
 

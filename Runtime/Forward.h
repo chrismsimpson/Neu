@@ -16,21 +16,8 @@ class String;
 class StringView;
 class StringImpl;
 class StringBuilder;
-class FlyString;
-class Utf16View;
-class Utf32View;
 class Utf8CodePointIterator;
 class Utf8View;
-class InputStream;
-class InputMemoryStream;
-class DuplexMemoryStream;
-class OutputStream;
-class InputBitStream;
-class OutputBitStream;
-class OutputMemoryStream;
-
-template<size_t Capacity>
-class CircularDuplexStream;
 
 template<typename T>
 class Span;
@@ -47,15 +34,6 @@ using Bytes = Span<UInt8>;
 
 template<typename T, ::MemoryOrder DefaultMemoryOrder>
 class Atomic;
-
-template<typename T>
-class SinglyLinkedList;
-
-template<typename T>
-class DoublyLinkedList;
-
-template<typename T, size_t capacity>
-class CircularQueue;
 
 template<typename T>
 struct Traits;
@@ -75,9 +53,6 @@ using OrderedHashMap = HashMap<K, V, KeyTraits, true>;
 template<typename T>
 class Badge;
 
-template<typename T>
-class FixedArray;
-
 template<size_t precision, typename Underlying = Int32>
 class FixedPoint;
 
@@ -92,12 +67,6 @@ class NonNullRefPointer;
 
 template<typename T>
 class NonNullOwnPointer;
-
-template<typename T, size_t inlineCapacity = 0>
-class NonNullRefPointerVector;
-
-template<typename T, size_t inlineCapacity = 0>
-class NonNullOwnPointerVector;
 
 template<typename T>
 class Optional;

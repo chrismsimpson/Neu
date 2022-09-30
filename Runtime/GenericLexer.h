@@ -150,24 +150,6 @@ public:
     
     StringView consumeQuotedString(char escapeChar = 0);
 
-#ifndef OS
-
-    String consumeAndUnescapeString(char escapeChar = '\\');
-
-#endif
-
-    enum class UnicodeEscapeError {
-        
-        MalformedUnicodeEscape,
-        UnicodeEscapeOverflow
-    };
-
-#ifndef OS
-    
-    Result<UInt32, UnicodeEscapeError> consumeEscapedCodePoint(bool combineSurrogatePairs = true);
-
-#endif
-
     constexpr void ignore(size_t count = 1) {
 
         count = min(count, m_input.length() - m_index);
@@ -287,14 +269,6 @@ protected:
     size_t m_index { 0 };
 
 private:
-
-#ifndef OS
-    
-    Result<UInt32, UnicodeEscapeError> decodeCodePoint();
-    
-    Result<UInt32, UnicodeEscapeError> decodeSingleOrPairedSurrogate(bool combineSurrogatePairs);
-
-#endif
 
 };
 

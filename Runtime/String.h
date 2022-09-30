@@ -5,7 +5,6 @@
 #include "Format.h"
 #include "Forward.h"
 #include "RefPointer.h"
-#include "Stream.h"
 #include "StringBuilder.h"
 #include "StringImpl.h"
 #include "StringUtils.h"
@@ -48,8 +47,6 @@ public:
 
     String(NonNullRefPointer<StringImpl>&& impl)
         : m_impl(move(impl)) { }
-
-    String(FlyString const&);
 
     [[nodiscard]] static String repeated(char, size_t count);
 
@@ -199,10 +196,6 @@ public:
     bool operator==(StringView) const;
     
     bool operator!=(StringView other) const { return !(*this == other); }
-
-    bool operator==(FlyString const&) const;
-    
-    bool operator!=(FlyString const& other) const { return !(*this == other); }
 
     bool operator<(String const&) const;
     
@@ -374,4 +367,3 @@ String operator+(String const&, String const&);
 
 String escapeHtmlEntities(StringView html);
 
-InputStream& operator>>(InputStream& stream, String& string);

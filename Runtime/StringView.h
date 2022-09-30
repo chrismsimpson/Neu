@@ -51,8 +51,6 @@ public:
 
     StringView(String const&);
 
-    StringView(FlyString const&);
-
 #endif
 
     explicit StringView(ByteBuffer&&) = delete;
@@ -60,8 +58,6 @@ public:
 #ifndef OS
 
     explicit StringView(String&&) = delete;
-
-    explicit StringView(FlyString&&) = delete;
 
 #endif
 

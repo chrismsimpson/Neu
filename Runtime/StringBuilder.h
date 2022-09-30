@@ -20,14 +20,6 @@ public:
 
     ErrorOr<void> tryAppend(StringView);
 
-#ifndef OS
-
-    ErrorOr<void> tryAppend(Utf16View const&);
-
-#endif
-
-    ErrorOr<void> tryAppend(Utf32View const&);
-
     ErrorOr<void> tryAppendCodePoint(UInt32);
 
     ErrorOr<void> tryAppend(char);
@@ -45,22 +37,12 @@ public:
     ErrorOr<void> tryAppendEscapedForJson(StringView);
 
     void append(StringView);
-
-#ifndef OS
-
-    void append(Utf16View const&);
-
-#endif
-
-    void append(Utf32View const&);
     
     void append(char);
     
     void appendCodePoint(UInt32);
     
     void append(char const*, size_t);
-    
-    void appendvf(char const*, va_list);
 
     void appendAsLowercase(char);
 

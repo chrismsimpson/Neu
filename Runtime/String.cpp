@@ -1,6 +1,5 @@
 
 #include "ByteBuffer.h"
-#include "FlyString.h"
 #include "Format.h"
 #include "Function.h"
 #include "Memory.h"
@@ -8,11 +7,6 @@
 #include "String.h"
 #include "StringView.h"
 #include "Vector.h"
-
-bool String::operator==(FlyString const& flyString) const {
-
-    return m_impl == flyString.impl() || view() == flyString.view();
-}
 
 bool String::operator==(String const& other) const {
 
@@ -510,9 +504,6 @@ String escapeHtmlEntities(StringView html) {
     return builder.toString();
 }
 
-String::String(FlyString const& string)
-    : m_impl(string.impl()) { }
-
 String String::toLowercase() const {
 
     if (!m_impl) {
@@ -566,38 +557,6 @@ bool operator<=(char const* characters, String const& string) {
 bool String::operator==(char const* cstring) const {
 
     return view() == cstring;
-}
-
-InputStream& operator>>(InputStream& stream, String& string) {
-
-    StringBuilder builder;
-
-    for (;;) {
-
-        char nextChar;
-        
-        stream >> nextChar;
-
-        if (stream.hasAnyError()) {
-            
-            stream.setFatalError();
-            
-            string = nullptr;
-            
-            return stream;
-        }
-
-        if (nextChar) {
-
-            builder.append(nextChar);
-        } 
-        else {
-            
-            string = builder.toString();
-            
-            return stream;
-        }
-    }
 }
 
 String String::vformatted(StringView fmtstr, TypeErasedFormatParams& params) {

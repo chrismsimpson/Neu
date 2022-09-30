@@ -92,10 +92,6 @@ public:
 
     unsigned caseInsensitiveHash() const;
 
-    bool isFly() const { return m_fly; }
-    
-    void setFly(Badge<FlyString>, bool fly) const { m_fly = fly; }
-
 private:
 
     enum ConstructTheEmptyStringImplTag {
@@ -103,8 +99,7 @@ private:
         ConstructTheEmptyStringImpl
     };
 
-    explicit StringImpl(ConstructTheEmptyStringImplTag)
-        : m_fly(true) {
+    explicit StringImpl(ConstructTheEmptyStringImplTag) {
 
         m_inlineBuffer[0] = '\0';
     }
@@ -127,8 +122,6 @@ private:
     mutable unsigned m_hash { 0 };
     
     mutable bool m_hasHash { false };
-    
-    mutable bool m_fly { false };
     
     char m_inlineBuffer[0];
 };

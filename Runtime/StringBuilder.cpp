@@ -1,17 +1,10 @@
 
 #include "ByteBuffer.h"
 #include "Checked.h"
-#include "PrintfImpl.h"
 #include "std.h"
 #include "StringBuilder.h"
 #include "StringView.h"
 #include "UnicodeUtils.h"
-#include "Utf32View.h"
-
-#ifndef OS
-#    include "String.h"
-#    include "Utf16View.h"
-#endif
 
 inline ErrorOr<void> StringBuilder::willAppend(size_t size) {
 
@@ -87,23 +80,12 @@ void StringBuilder::append(char ch) {
     MUST(tryAppend(ch));
 }
 
-void StringBuilder::appendvf(char const* fmt, va_list ap) {
-
-    printfInternal([this](char*&, char ch) {
-        
-            append(ch);
-        },
-        nullptr, fmt, ap);
-}
-
 ByteBuffer StringBuilder::toByteBuffer() const {
 
     // FIXME: Handle OOM failure.
     
     return ByteBuffer::copy(data(), length()).releaseValueButFixmeShouldPropagateErrors();
 }
-
-#ifndef KERNEL
 
 String StringBuilder::toString() const {
 
@@ -119,8 +101,6 @@ String StringBuilder::build() const {
 
     return toString();
 }
-
-#endif
 
 StringView StringBuilder::stringView() const {
 
@@ -151,46 +131,6 @@ ErrorOr<void> StringBuilder::tryAppendCodePoint(UInt32 codePoint) {
 void StringBuilder::appendCodePoint(UInt32 codePoint) {
 
     MUST(tryAppendCodePoint(codePoint));
-}
-
-#ifndef OS
-
-ErrorOr<void> StringBuilder::tryAppend(Utf16View const& utf16View) {
-
-    for (size_t i = 0; i < utf16View.lengthInCodeUnits();) {
-
-        auto codePoint = utf16View.codePointAt(i);
-        
-        TRY(tryAppendCodePoint(codePoint));
-
-        i += (codePoint > 0xffff ? 2 : 1);
-    }
-
-    return { };
-}
-
-void StringBuilder::append(Utf16View const& utf16View) {
-
-    MUST(tryAppend(utf16View));
-}
-
-#endif
-
-ErrorOr<void> StringBuilder::tryAppend(Utf32View const& utf32View) {
-
-    for (size_t i = 0; i < utf32View.length(); ++i) {
-
-        auto codePoint = utf32View.codePoints()[i];
-        
-        TRY(tryAppendCodePoint(codePoint));
-    }
-
-    return { };
-}
-
-void StringBuilder::append(Utf32View const& utf32View) {
-
-    MUST(tryAppend(utf32View));
 }
 
 void StringBuilder::appendAsLowercase(char ch) {
