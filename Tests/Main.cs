@@ -9,13 +9,13 @@ public static partial class Program {
 
         ///
 
-        // TestBasics();
-        // TestControlFlow();
-        // TestFunctions();
-        // TestMath();
-        // TestVariables();
-        // TestStrings();
-        // TestVectors();
+        TestBasics();
+        TestControlFlow();
+        TestFunctions();
+        TestMath();
+        TestVariables();
+        TestStrings();
+        TestVectors();
         TestOptional();
     }
 
