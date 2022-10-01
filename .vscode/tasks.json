@@ -9,8 +9,8 @@
             ],
             "group": {
                 "kind": "build",
-                "isDefault": true
-                // "isDefault": false
+                // "isDefault": true
+                "isDefault": false
             },
             "presentation": {
                 "reveal": "always"
@@ -40,8 +40,8 @@
             "args": [],
             "group": {
                 "kind": "build",
-                // "isDefault": true
-                "isDefault": false
+                "isDefault": true
+                // "isDefault": false
             },
             "presentation": {
                 "reveal": "silent"
