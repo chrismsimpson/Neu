@@ -24,6 +24,11 @@ public static partial class CodeGenFunctions {
 
         foreach (var fun in file.CheckedFunctions) {
 
+            if (fun.Linkage == FunctionLinkage.External) {
+
+                continue;
+            }
+
             var funOutput = compiler.TranslateFunction(fun);
 
             output.Append(funOutput);
@@ -97,6 +102,11 @@ public static partial class CodeGenFunctions {
         }
 
         var output = new StringBuilder();
+
+        if (fun.Linkage == FunctionLinkage.External) {
+
+            output.Append("extern ");
+        }
 
         output.Append(compiler.TranslateType(fun.ReturnType));
 

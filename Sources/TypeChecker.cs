@@ -296,18 +296,22 @@ public partial class CheckedFunction {
     
     public CheckedBlock Block { get; init; }
 
+    public FunctionLinkage Linkage { get; init; }
+
     ///
 
     public CheckedFunction(
         String name,
         NeuType returnType,
         List<Parameter> parameters,
-        CheckedBlock block) { 
+        CheckedBlock block,
+        FunctionLinkage linkage) { 
 
         this.Name = name;
         this.ReturnType = returnType;
         this.Parameters = parameters;
         this.Block = block;
+        this.Linkage = linkage;
     }
 }
 
@@ -994,7 +998,8 @@ public static partial class TypeCheckerFunctions {
             name: fun.Name,
             returnType: returnType,
             parameters: fun.Parameters,
-            block);
+            block,
+            linkage: fun.Linkage);
 
         return (output, error);
     }

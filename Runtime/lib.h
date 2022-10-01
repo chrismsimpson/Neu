@@ -77,5 +77,12 @@
 using Float = float; // 32-bit
 using Double = double; // 64-bit
 
+// FIXME: Remove this once we can call qualified functions like "String.number" directly from neu
+
+inline String runtimeHelperNumberToString(Int64 number) {
+
+    return String::number(number);
+}
+
 static_assert(sizeof(Float) == 4);
 static_assert(sizeof(Double) == 8);

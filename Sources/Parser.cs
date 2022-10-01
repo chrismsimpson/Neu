@@ -144,6 +144,12 @@ public partial class ParsedFile {
 
 ///
 
+public enum FunctionLinkage { 
+
+    Internal,
+    External
+}
+
 public partial class Function {
 
     public String Name { get; init; }
@@ -156,9 +162,12 @@ public partial class Function {
 
     public NeuType ReturnType { get; init; }
 
+    public FunctionLinkage Linkage { get; init; }
+
     ///
 
-    public Function()
+    public Function(
+        FunctionLinkage linkage)
         : this(
             String.Empty,
             new Span(
@@ -167,20 +176,23 @@ public partial class Function {
                 end: 0),
             new List<Parameter>(), 
             new Block(), 
-            new VoidType()) { }
+            new VoidType(),
+            linkage) { }
 
     public Function(
         String name,
         Span nameSpan,
         List<Parameter> parameters,
         Block block,
-        NeuType returnType) {
+        NeuType returnType,
+        FunctionLinkage linkage) {
 
         this.Name = name;
         this.NameSpan = nameSpan;
         this.Parameters = parameters;
         this.Block = block;
         this.ReturnType = returnType;
+        this.Linkage = linkage;
     }
 }
 
@@ -1262,11 +1274,76 @@ public static partial class ParserFunctions {
 
                         case "func": {
 
-                            var (fun, err) = ParseFunction(tokens, ref index);
+                            var (fun, err) = ParseFunction(tokens, ref index, FunctionLinkage.Internal);
 
                             error = error ?? err;
 
                             parsedFile.Functions.Add(fun);
+
+                            break;
+                        }
+
+                        ///
+
+                        case "extern": {
+
+                            if (index + 1 < tokens.Count) {
+
+                                switch (tokens.ElementAt(index + 1)) {
+
+                                    case NameToken nt2: {
+
+                                        switch (nt2.Value) {
+
+                                            case "func": {
+
+                                                index += 1;
+
+                                                var (fun, err) = ParseFunction(
+                                                    tokens, 
+                                                    ref index, 
+                                                    FunctionLinkage.External);
+
+                                                error = error ?? err;
+
+                                                parsedFile.Functions.Add(fun);
+
+                                                break;
+                                            }
+
+                                            ///
+
+                                            default: {
+
+                                                Trace("ERROR: unexpected keyword");
+
+                                                error = error ??
+                                                    new ParserError(
+                                                        "unexpected keyword",
+                                                        nt2.Span);
+
+                                                break;
+                                            }
+                                        }
+
+                                        break;
+                                    }
+
+                                    ///
+
+                                    default: {
+
+                                        Trace("ERROR: unexpected keyword");
+
+                                        error = error ??
+                                            new ParserError(
+                                                "unexpected keyword",
+                                                nt.Span);
+
+                                        break;
+                                    }
+                                }
+                            }
 
                             break;
                         }
@@ -1328,7 +1405,8 @@ public static partial class ParserFunctions {
 
     public static (Function, Error?) ParseFunction(
         List<Token> tokens,
-        ref int index) {
+        ref int index,
+        FunctionLinkage linkage) {
 
         Trace($"ParseFunction: {tokens.ElementAt(index)}");
 
@@ -1587,6 +1665,19 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index - 1).Span);
                     }
 
+                    if (linkage == FunctionLinkage.External) {
+
+                        return (
+                            new Function(
+                                name: funNameToken.Value,
+                                nameSpan,
+                                parameters,
+                                block: new Block(),
+                                returnType,
+                                linkage),
+                            error);
+                    }
+
                     Block? block = null;
 
                     switch (fatArrowExpr) {
@@ -1620,7 +1711,8 @@ public static partial class ParserFunctions {
                             nameSpan,
                             parameters,
                             block,
-                            returnType),
+                            returnType,
+                            linkage),
                         error);
                 }
 
@@ -1631,7 +1723,7 @@ public static partial class ParserFunctions {
                     Trace("ERROR: expected function name");
 
                     return (
-                        new Function(),
+                        new Function(FunctionLinkage.Internal),
                         new ParserError(
                             "expected function name", 
                             tokens.ElementAt(index).Span));
@@ -1643,7 +1735,7 @@ public static partial class ParserFunctions {
             Trace("ERROR: incomplete function definition");
 
             return (
-                new Function(),
+                new Function(FunctionLinkage.Internal),
                 new ParserError(
                     "incomplete function definition", 
                     tokens.ElementAt(index).Span));
