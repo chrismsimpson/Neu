@@ -651,6 +651,15 @@ public static partial class CodeGenFunctions {
 
                     ///
 
+                    case BinaryOperator.Modulo: {
+
+                        output.Append(" % ");
+
+                        break;
+                    }
+
+                    ///
+
                     case BinaryOperator.Divide: {
 
                         output.Append(" / ");
@@ -684,6 +693,13 @@ public static partial class CodeGenFunctions {
                     case BinaryOperator.MultiplyAssign: {
 
                         output.Append(" *= ");
+
+                        break;
+                    }
+
+                    case BinaryOperator.ModuloAssign: {
+
+                        output.Append(" %= ");
 
                         break;
                     }

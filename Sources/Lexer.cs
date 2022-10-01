@@ -142,6 +142,12 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class PercentToken: Token {
+
+        public PercentToken(Span span)
+            : base(span) { } 
+    }
+
     public partial class PlusToken: Token {
 
         public PlusToken(Span span) 
@@ -193,6 +199,13 @@ public partial class Token {
     public partial class ForwardSlashEqualToken: Token {
 
         public ForwardSlashEqualToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class PercentEqualToken: Token {
+
+        public PercentEqualToken(
+            Span span)
             : base(span) { }
     }
 
@@ -558,6 +571,31 @@ public static partial class LexerFunctions {
                     }
 
                     output.Add(new ExclamationToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '%': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '=') {
+
+                            index += 1;
+
+                            output.Add(new PercentEqualToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
+                    }
+
+                    output.Add(new PercentToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }

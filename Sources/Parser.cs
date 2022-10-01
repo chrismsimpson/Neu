@@ -880,6 +880,7 @@ public partial class Expression: Statement {
         Subtract,
         Multiply,
         Divide,
+        Modulo,
         Equal,
         NotEqual,
         LessThan,
@@ -890,7 +891,8 @@ public partial class Expression: Statement {
         AddAssign,
         SubtractAssign,
         MultiplyAssign,
-        DivideAssign
+        DivideAssign,
+        ModuloAssign
     }
 
     public partial class OperatorExpression: Expression {
@@ -1111,6 +1113,7 @@ public static partial class ExpressionFunctions {
 
             case OperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.Multiply 
+                || opExpr.Operator == BinaryOperator.Modulo
                 || opExpr.Operator == BinaryOperator.Divide:
 
                 return 100;
@@ -1142,6 +1145,7 @@ public static partial class ExpressionFunctions {
                 || opExpr.Operator == BinaryOperator.AddAssign
                 || opExpr.Operator == BinaryOperator.SubtractAssign
                 || opExpr.Operator == BinaryOperator.MultiplyAssign
+                || opExpr.Operator == BinaryOperator.ModuloAssign
                 || opExpr.Operator == BinaryOperator.DivideAssign:
 
                 return 50;
@@ -2532,6 +2536,13 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(BinaryOperator.Divide, span), null);
             }
 
+            case PercentToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.Modulo, span), null);
+            }
+
             case EqualToken _: {
 
                 Trace("ERROR: assignment not allowed in this position");
@@ -2592,6 +2603,19 @@ public static partial class ParserFunctions {
 
                 return (
                     new OperatorExpression(BinaryOperator.DivideAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case PercentEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.ModuloAssign, span),
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -2690,6 +2714,13 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (new OperatorExpression(BinaryOperator.Divide, span), null);
+            }
+
+            case PercentToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.Modulo, span), null);
             }
 
             case EqualToken _: {
