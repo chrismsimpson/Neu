@@ -814,6 +814,44 @@ public partial class Expression: Statement {
             this.Span = span;
         }
     }
+    
+    public partial class TupleExpression: Expression {
+
+        public List<Expression> Expressions { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public TupleExpression(
+            List<Expression> expressions,
+            Span span) {
+
+            this.Expressions = expressions;
+            this.Span = span;
+        }
+    }
+
+    public partial class IndexedTupleExpression: Expression {
+
+        public Expression Expression { get; init; }
+
+        public UInt64 Index { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public IndexedTupleExpression(
+            Expression expression,
+            UInt64 index,
+            Span span) {
+
+            this.Expression = expression;
+            this.Index = index;
+            this.Span = span;
+        }
+    }
 
     public partial class ForcedUnwrapExpression: Expression {
 
@@ -963,9 +1001,19 @@ public static partial class ExpressionFunctions {
                 return ve.Span;
             }
 
+            case TupleExpression te: {
+
+                return te.Span;
+            }
+
             case IndexedExpression ie: {
 
                 return ie.Span;
+            }
+
+            case IndexedTupleExpression ite: {
+
+                return ite.Span;
             }
 
             case UnaryOpExpression uoe: {
@@ -2214,6 +2262,8 @@ public static partial class ParserFunctions {
 
             case LParenToken _: {
 
+                var start = tokens.ElementAt(index).Span;
+
                 index += 1;
 
                 var (_expr, exprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
@@ -2226,6 +2276,81 @@ public static partial class ParserFunctions {
 
                         index += 1;
 
+                        break;
+                    }
+
+                    ///
+
+                    case CommaToken _: {
+
+                        // We have a tuple
+
+                        var exprs = new List<Expression>();
+
+                        exprs.Add(_expr);
+
+                        index += 1;
+
+                        var end = start;
+
+                        var contTuple = true;
+
+                        while (contTuple && index < tokens.Count) {
+
+                            switch (tokens.ElementAt(index)) {
+
+                                case RParenToken _: {
+
+                                    index += 1;
+
+                                    contTuple = false;
+
+                                    break;
+                                }
+
+                                case CommaToken _: {
+
+                                    index += 1;
+
+                                    break;
+                                }
+
+                                default: {
+
+                                    var (_expr2, expr2Err) = ParseExpression(
+                                        tokens, 
+                                        ref index,
+                                        ExpressionKind.ExpressionWithoutAssignment);
+
+                                    end = _expr2.GetSpan();
+
+                                    error = error ?? expr2Err;
+
+                                    exprs.Add(_expr2);
+
+                                    break;
+                                }
+                            }
+                        }
+                    
+                        if (index >= tokens.Count) {
+
+                            Trace("ERROR: expected ')'");
+
+                            error = error ?? 
+                                new ParserError(
+                                    "expected ')'",
+                                    tokens.ElementAt(index).Span
+                                );
+                        }
+
+                        _expr = new TupleExpression(
+                            exprs, 
+                            new Span(
+                                fileId: start.FileId, 
+                                start: start.Start, 
+                                end: end.End));
+                    
                         break;
                     }
 
@@ -2397,6 +2522,56 @@ public static partial class ParserFunctions {
                         end: endSpan.End);
 
                     expr = new UnaryOpExpression(expr, UnaryOperator.PostDecrement, _span);
+
+                    break;
+                }
+
+                ///
+
+                case PeriodToken _: {
+
+                    index += 1;
+
+                    if (index < tokens.Count) {
+
+                        var (idxExpr, parseIdxExprErr) = ParseExpression(
+                            tokens, 
+                            ref index, 
+                            ExpressionKind.ExpressionWithoutAssignment);
+
+                        error = error ?? parseIdxExprErr;
+
+                        UInt64 idx = 0;
+
+                        switch (idxExpr) {
+
+                            case Int64Expression ie: {
+
+                                idx = ToUInt64(ie.Value);
+
+                                break;
+                            }
+
+                            ///
+
+                            default: {
+
+                                error = error ??
+                                    new ParserError(
+                                        "Unsupported index",
+                                        span);
+
+                                break;
+                            }
+                        }
+
+                        var _span = new Span(
+                            fileId: expr.GetSpan().FileId,
+                            start: expr.GetSpan().Start,
+                            end: idxExpr.GetSpan().End);
+
+                        expr = new IndexedTupleExpression(expr, idx, _span);
+                    }
 
                     break;
                 }

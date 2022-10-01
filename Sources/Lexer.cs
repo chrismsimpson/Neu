@@ -276,6 +276,12 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class PeriodToken: Token {
+
+        public PeriodToken(Span span)
+            : base(span) { }
+    }
+
     public partial class EolToken: Token {
 
         public EolToken(Span span)
@@ -622,6 +628,19 @@ public static partial class LexerFunctions {
                     index += 1;
 
                     output.Add(new CommaToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '.': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new PeriodToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }

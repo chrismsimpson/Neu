@@ -199,28 +199,45 @@ public static partial class CodeGenFunctions {
                 return "Double";
             }
 
-            ///
-
             case VoidType _: {
                 
                 return "void";
             }
-
-            ///
 
             case VectorType vt: {
 
                 return $"Vector<{compiler.TranslateType(vt.Type)}>";
             }
 
-            ///
+            case TupleType tt: {
+
+                var output = new StringBuilder("Tuple<");
+
+                var first = true;
+
+                foreach (var t in tt.Types) {
+
+                    if (!first) {
+
+                        output.Append(", ");
+                    }
+                    else {
+
+                        first = false;
+                    }
+
+                    output.Append(compiler.TranslateType(t));
+                }
+
+                output.Append('>');
+
+                return output.ToString();
+            }
 
             case OptionalType ot: {
 
                 return $"Optional<{compiler.TranslateType(ot.Type)}>";
             }
-
-            ///
 
             case UnknownType _: {
 
@@ -462,10 +479,10 @@ public static partial class CodeGenFunctions {
             ///
 
             case CheckedQuotedStringExpression qs: {
-                
-                output.Append('"');
+            
+                output.Append("String(\"");        
                 output.Append(qs.Value);
-                output.Append('"');
+                output.Append("\")");
             
                 break;
             }
@@ -811,6 +828,34 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case CheckedTupleExpression te: {
+
+                // (Tuple{1, 2, 3})
+
+                output.Append("(Tuple{");
+                
+                var first = true;
+
+                foreach (var val in te.Expressions) {
+
+                    if (!first) {
+                        output.Append(", ");
+                    } 
+                    else {
+
+                        first = false;
+                    }
+
+                    output.Append(compiler.TranslateExpr(indent, val));
+                }
+
+                output.Append("})");
+
+                break;
+            }
+
+            ///
+
             case CheckedIndexedExpression ie: {
 
                 output.Append("((");
@@ -822,6 +867,19 @@ public static partial class CodeGenFunctions {
                 output.Append(compiler.TranslateExpr(indent, ie.Index));
             
                 output.Append("])");
+
+                break;
+            }
+
+            ///
+
+            case CheckedIndexedTupleExpression ite: {
+
+                // x.get<1>()
+                
+                output.Append("((");
+                output.Append(compiler.TranslateExpr(indent, ite.Expression));
+                output.Append($").get<{ite.Index}>())");
 
                 break;
             }

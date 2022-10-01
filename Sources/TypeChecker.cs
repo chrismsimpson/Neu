@@ -234,6 +234,19 @@ public partial class VectorType : NeuType {
     }
 }
 
+public partial class TupleType : NeuType {
+
+    public List<NeuType> Types { get; init; }
+
+    ///
+
+    public TupleType(
+        List<NeuType> types) {
+
+        this.Types = types;
+    }
+}
+
 public partial class OptionalType : NeuType {
 
     public NeuType Type { get; init; }
@@ -533,6 +546,23 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
+    public partial class CheckedTupleExpression: CheckedExpression {
+
+        public List<CheckedExpression> Expressions { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedTupleExpression(
+            List<CheckedExpression> expressions,
+            NeuType type) {
+
+            this.Expressions = expressions;
+            this.Type = type;
+        }
+    }
+
     public partial class CheckedVectorExpression: CheckedExpression {
 
         public List<CheckedExpression> Expressions { get; init; }
@@ -566,6 +596,27 @@ public partial class CheckedExpression: CheckedStatement {
             CheckedExpression index,
             NeuType type) 
             : base() {
+
+            this.Expression = expression;
+            this.Index = index;
+            this.Type = type;
+        }
+    }
+
+    public partial class CheckedIndexedTupleExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+
+        public UInt64 Index { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedIndexedTupleExpression(
+            CheckedExpression expression,
+            UInt64 index,
+            NeuType type) {
 
             this.Expression = expression;
             this.Index = index;
@@ -689,9 +740,19 @@ public static partial class CheckedExpressionFunctions {
                 return vecExpr.Type;
             }
 
+            case CheckedTupleExpression tupleExpr: {
+
+                return tupleExpr.Type;
+            }
+
             case CheckedIndexedExpression ie: {
 
                 return ie.Type;
+            }
+
+            case CheckedIndexedTupleExpression ite: {
+
+                return ite.Type;
             }
 
             case CheckedOptionalNoneExpression ckdOptNoneExpr: {
@@ -1257,8 +1318,6 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            ///
-
             case VectorExpression ve: {
 
                 NeuType innerType = new UnknownType();
@@ -1301,7 +1360,29 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            ///
+            case TupleExpression te: {
+
+                var checkedItems = new List<CheckedExpression>();
+
+                var checkedTypes = new List<NeuType>();
+
+                foreach (var item in te.Expressions) {
+
+                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, stack, file);
+
+                    error = error ?? typeCheckItemExprErr;
+
+                    checkedTypes.Add(checkedItemExpr.GetNeuType());
+
+                    checkedItems.Add(checkedItemExpr);
+                }
+
+                return (
+                    new CheckedTupleExpression(
+                        checkedItems, 
+                        new TupleType(checkedTypes)),
+                    error);
+            }
 
             case IndexedExpression ie: {
 
@@ -1365,7 +1446,56 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            ///
+            case IndexedTupleExpression ite: {
+
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, stack, file);
+
+                error = error ?? chkExprErr;
+
+                NeuType ty = new UnknownType();
+
+                switch (checkedExpr.GetNeuType()) {
+
+                    case TupleType tt: {
+
+                        switch (tt.Types[ToInt32(ite.Index)]) {
+
+                            case NeuType t: {
+
+                                ty = t;
+
+                                break;
+                            }
+
+                            default: {
+
+                                error = error ?? 
+                                    new TypeCheckError(
+                                        "tuple index past the end of the tuple",
+                                        ite.Span);
+
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "tuple index used non-tuple value",
+                                ite.Expression.GetSpan());
+
+                        break;
+                    }
+                }
+
+                return (
+                    new CheckedIndexedTupleExpression(checkedExpr, ite.Index, ty),
+                    error);
+            }
 
             case OperatorExpression e: {
 
