@@ -9,15 +9,16 @@ public static partial class Program {
 
         ///
 
-        TestBasics();
-        TestControlFlow();
-        TestFunctions();
-        TestMath();
-        TestVariables();
-        TestStrings();
-        TestVectors();
-        TestOptional();
-        TestTuples();
+        // TestBasics();
+        // TestControlFlow();
+        // TestFunctions();
+        // TestMath();
+        // TestVariables();
+        // TestStrings();
+        // TestVectors();
+        // TestOptional();
+        // TestTuples();
+        TestStructs();
     }
 
     public static ErrorOrVoid TestSamples(
@@ -267,5 +268,10 @@ public static partial class Program {
     public static ErrorOrVoid TestTuples() {
 
         return TestSamples("./Samples/Tuples");
+    }
+
+    public static ErrorOrVoid TestStructs() {
+
+        return TestSamples("./Samples/Structs");
     }
 }

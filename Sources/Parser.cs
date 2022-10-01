@@ -81,11 +81,48 @@ public enum ExpressionKind {
 
 ///
 
+public partial class UncheckedType {
+
+    public String Name { get; set; }
+
+    public bool Optional { get; set; }
+
+    public Span Span { get; init; }
+
+    ///
+
+    public UncheckedType(
+        String name,
+        bool optional,
+        Span span) {
+
+        this.Name = name;
+        this.Optional = optional;
+        this.Span = span;
+    }
+
+    public UncheckedType(
+        Span span)
+        : this(String.Empty, false, span) { }
+}
+
+public static partial class UncheckedTypeFunctions {
+
+    public static bool Eq(UncheckedType lhs, UncheckedType rhs) {
+
+        return lhs.Name == rhs.Name
+            && lhs.Optional == rhs.Optional
+            && (lhs.Span.Start == rhs.Span.Start && lhs.Span.End == rhs.Span.End);
+    }
+}
+
+///
+
 public partial class VarDecl {
 
     public String Name { get; init; }
 
-    public NeuType Type { get; set; }
+    public UncheckedType Type { get; set; }
 
     public bool Mutable { get; set; }
 
@@ -94,11 +131,11 @@ public partial class VarDecl {
     ///
 
     public VarDecl(Span span)
-        : this(String.Empty, new VoidType(), false, span) { }
+        : this(String.Empty, new UncheckedType(span), false, span) { }
 
     public VarDecl(
         String name,
-        NeuType type,
+        UncheckedType type,
         bool mutable,
         Span span) {
 
@@ -116,13 +153,10 @@ public static partial class VarDeclFunctions {
         VarDecl r) {
 
         return l.Name == r.Name 
-            && NeuTypeFunctions.Eq(l.Type, r.Type) 
+            && UncheckedTypeFunctions.Eq(l.Type, r.Type)
             && l.Mutable == r.Mutable;
     }
 }
-
-///
-
 
 ///
 
@@ -130,15 +164,42 @@ public partial class ParsedFile {
 
     public List<Function> Functions { get; init; }
 
+    public List<Struct> Structs { get; init; }
+
     ///
 
     public ParsedFile()
-        : this(new List<Function>()) { }
+        : this(new List<Function>(), new List<Struct>()) { }
 
     public ParsedFile(
-        List<Function> functions) {
+        List<Function> functions,
+        List<Struct> structs) {
 
         this.Functions = functions;
+        this.Structs = structs;
+    }
+}
+
+///
+
+public partial class Struct {
+    
+    public String Name { get; init; }
+
+    public List<VarDecl> Members { get; init; }
+
+    public Span Span { get; init; }
+
+    ///
+
+    public Struct(
+        String name,
+        List<VarDecl> members,
+        Span span) {
+
+        this.Name = name;
+        this.Members = members;
+        this.Span = span;
     }
 }
 
@@ -147,7 +208,8 @@ public partial class ParsedFile {
 public enum FunctionLinkage { 
 
     Internal,
-    External
+    External,
+    ImplicitConstructor
 }
 
 public partial class Function {
@@ -160,7 +222,7 @@ public partial class Function {
 
     public Block Block { get; init; }
 
-    public NeuType ReturnType { get; init; }
+    public UncheckedType ReturnType { get; init; }
 
     public FunctionLinkage Linkage { get; init; }
 
@@ -176,7 +238,12 @@ public partial class Function {
                 end: 0),
             new List<Parameter>(), 
             new Block(), 
-            new VoidType(),
+            returnType: 
+                new UncheckedType(
+                    new Span(
+                        fileId: 0, 
+                        start: 0, 
+                        end: 0)),
             linkage) { }
 
     public Function(
@@ -184,7 +251,7 @@ public partial class Function {
         Span nameSpan,
         List<Parameter> parameters,
         Block block,
-        NeuType returnType,
+        UncheckedType returnType,
         FunctionLinkage linkage) {
 
         this.Name = name;
@@ -202,7 +269,7 @@ public partial class Variable {
 
     public String Name { get; init; }
 
-    public NeuType Type { get; init; }
+    public UncheckedType Type { get; init; }
 
     public bool Mutable { get; init; }
 
@@ -210,7 +277,7 @@ public partial class Variable {
 
     public Variable(
         String name,
-        NeuType ty,
+        UncheckedType ty,
         bool mutable) {
 
         this.Name = name;
@@ -865,6 +932,27 @@ public partial class Expression: Statement {
         }
     }
 
+    public partial class IndexedStructExpression: Expression {
+
+        public Expression Expression { get; init; }
+        
+        public String Name { get; init; }
+        
+        public Span Span { get; init; }
+
+        ///
+
+        public IndexedStructExpression(
+            Expression expression,
+            String name,
+            Span span) {
+
+            this.Expression = expression;
+            this.Name = name;
+            this.Span = span;
+        }
+    }
+
     public partial class ForcedUnwrapExpression: Expression {
 
         public Expression Expression { get; init; }
@@ -1026,6 +1114,11 @@ public static partial class ExpressionFunctions {
             case IndexedTupleExpression ite: {
 
                 return ite.Span;
+            }
+
+            case IndexedStructExpression ise: {
+
+                return ise.Span;
             }
 
             case UnaryOpExpression uoe: {
@@ -1285,6 +1378,19 @@ public static partial class ParserFunctions {
 
                         ///
 
+                        case "struct": {
+
+                            var (structure, parseStructErr) = ParseStruct(tokens, ref index);
+
+                            error = error ?? parseStructErr;
+
+                            parsedFile.Structs.Add(structure);
+
+                            break;
+                        }
+
+                        ///
+
                         case "extern": {
 
                             if (index + 1 < tokens.Count) {
@@ -1354,6 +1460,8 @@ public static partial class ParserFunctions {
 
                             Trace("ERROR: unexpected keyword");
 
+                            index += 1;
+
                             error = error ?? new ParserError(
                                 "unexpected keyword", 
                                 nt.Span);
@@ -1391,6 +1499,8 @@ public static partial class ParserFunctions {
 
                     Trace("ERROR: unexpected token (expected keyword)");
 
+                    index += 1;
+
                     error = error ?? new ParserError(
                         "unexpected token (expected keyword)", 
                         t.Span);
@@ -1402,6 +1512,183 @@ public static partial class ParserFunctions {
 
         return (parsedFile, error);
     }
+
+    ///
+
+    public static (Struct, Error?) ParseStruct(List<Token> tokens, ref int index) {
+
+        Trace($"ParseStruct: {tokens.ElementAt(index)}");
+
+        Error? error = null;
+
+        index += 1;
+
+        if (index < tokens.Count) {
+
+            switch (tokens.ElementAt(index)) {
+
+                case NameToken nt: {
+
+                    index += 1;
+
+                    if (index < tokens.Count) {
+
+                        switch (tokens.ElementAt(index)) {
+
+                            case LCurlyToken _: {
+
+                                index += 1;
+
+                                break;
+                            }
+
+                            default: {
+        
+                                Trace("ERROR: expected '{'");
+
+                                error = error ??
+                                    new ParserError(
+                                        "expected '{'",
+                                        tokens.ElementAt(index).Span);
+                                
+                                break;
+                            }
+                        }
+                    }
+                    else {
+
+                        Trace("ERROR: incomplete struct");
+
+                        error = error ?? 
+                            new ParserError(
+                                "incomplete struct",
+                                tokens.ElementAt(index - 1).Span);
+                    }
+
+                    var fields = new List<VarDecl>();
+
+                    var contFields = true;
+
+                    while (contFields && index < tokens.Count) {
+
+                        switch (tokens.ElementAt(index)) {
+
+                            case RCurlyToken _: {
+
+                                index += 1;
+
+                                contFields = false;
+
+                                break;
+                            }
+
+                            case CommaToken _:
+                            case EolToken _: {
+
+                                // Treat comma as whitespace? Might require them in the future
+
+                                index += 1;
+
+                                break;
+                            }
+
+                            case NameToken _: {
+
+                                // Now lets parse a parameter
+
+                                var (varDecl, parseVarDeclErr) = ParseVariableDeclaration(tokens, ref index);
+                                
+                                error = error ?? parseVarDeclErr;
+
+                                // Ignore immutable flag for now
+                                
+                                varDecl.Mutable = false;
+
+                                if (IsNullOrWhiteSpace(varDecl.Type.Name)) {
+
+                                    Trace("ERROR: parameter missing type");
+
+                                    error = error ?? 
+                                        new ParserError(
+                                            "parameter missing type",
+                                            varDecl.Span);
+                                }
+
+                                fields.Add(varDecl);
+
+                                break;
+                            }
+
+                            default: {
+
+                                Trace($"ERROR: expected field, found: {tokens.ElementAt(index)}");
+
+                                error = error ?? 
+                                    new ParserError(
+                                        "expected field",
+                                        tokens.ElementAt(index).Span);
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if (index >= tokens.Count) {
+
+                        Trace("ERROR: incomplete struct");
+
+                        error = error ?? 
+                            new ParserError(
+                                "incomplete struct",
+                                tokens.ElementAt(index - 1).Span);
+                    }
+
+                    return (
+                        new Struct(
+                            name: nt.Value,
+                            members: fields,
+                            span: tokens.ElementAt(index - 1).Span),
+                        error
+                    );
+                }
+
+                default: {
+
+                    Trace("ERROR: expected struct name");
+
+                    error = error ??
+                        new ParserError(
+                            "expected struct name",
+                            tokens.ElementAt(index).Span);
+                
+                    return (
+                        new Struct(
+                            name: String.Empty,
+                            members: new List<VarDecl>(),
+                            span: tokens.ElementAt(index).Span),
+                        error);
+                }
+            }
+        }
+        else {
+
+            Trace("ERROR: expected struct name");
+
+            error = error ?? 
+                new ParserError(
+                    "expected struct name",
+                    tokens.ElementAt(index).Span);
+
+            return (
+                new Struct(
+                    name: String.Empty, 
+                    members: new List<VarDecl>(),
+                    span: tokens.ElementAt(index).Span),
+                error);
+        }
+    }
+
+    ///
 
     public static (Function, Error?) ParseFunction(
         List<Token> tokens,
@@ -1513,13 +1800,14 @@ public static partial class ParserFunctions {
 
                                 error = error ?? varDeclErr;
 
-                                if (varDecl.Type is UnknownType) {
+                                if (IsNullOrWhiteSpace(varDecl.Type.Name)) {
 
                                     Trace("ERROR: parameter missing type");
 
-                                    error = error ?? new ParserError(
-                                        "parameter missing type",
-                                        varDecl.Span);
+                                    error = error ?? 
+                                        new ParserError(
+                                            "parameter missing type",
+                                            varDecl.Span);
                                 }
                                 
                                 parameters.Add(
@@ -1557,7 +1845,7 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
-                    NeuType returnType = new VoidType();
+                    var returnType = new UncheckedType(tokens.ElementAt(index - 1).Span);
 
                     Expression? fatArrowExpr = null;
 
@@ -1580,7 +1868,7 @@ public static partial class ParserFunctions {
                                             ref index, 
                                             ExpressionKind.ExpressionWithoutAssignment);
 
-                                        returnType = new UnknownType();
+                                        returnType = new UncheckedType(tokens.ElementAt(index).Span);
 
                                         fatArrowExpr = _fatArrowExpr;
 
@@ -2695,43 +2983,48 @@ public static partial class ParserFunctions {
 
                     if (index < tokens.Count) {
 
-                        var (idxExpr, parseIdxExprErr) = ParseExpression(
-                            tokens, 
-                            ref index, 
-                            ExpressionKind.ExpressionWithoutAssignment);
+                        switch (tokens.ElementAt(index)) {
 
-                        error = error ?? parseIdxExprErr;
+                            case NumberToken number: {
 
-                        UInt64 idx = 0;
+                                index += 1;
 
-                        switch (idxExpr) {
+                                var _span = new Span(
+                                    fileId: expr.GetSpan().FileId,
+                                    start: expr.GetSpan().Start,
+                                    end: tokens.ElementAt(index).Span.End);
 
-                            case Int64Expression ie: {
-
-                                idx = ToUInt64(ie.Value);
+                                expr = new IndexedTupleExpression(expr, ToUInt32(number.Value), _span);
 
                                 break;
                             }
 
-                            ///
+                            case NameToken name: {
+
+                                index += 1;
+
+                                var _span = new Span(
+                                    fileId: expr.GetSpan().FileId,
+                                    start: expr.GetSpan().Start,
+                                    end: tokens.ElementAt(index).Span.End);
+
+                                expr = new IndexedStructExpression(expr, name.Value, _span);
+
+                                break;
+                            }
 
                             default: {
+
+                                index += 1;
 
                                 error = error ??
                                     new ParserError(
                                         "Unsupported index",
-                                        span);
+                                        tokens.ElementAt(index).Span);
 
                                 break;
                             }
                         }
-
-                        var _span = new Span(
-                            fileId: expr.GetSpan().FileId,
-                            start: expr.GetSpan().Start,
-                            end: idxExpr.GetSpan().End);
-
-                        expr = new IndexedTupleExpression(expr, idx, _span);
                     }
 
                     break;
@@ -3307,7 +3600,7 @@ public static partial class ParserFunctions {
                             return (
                                 new VarDecl(
                                     name: nt.Value, 
-                                    type: new UnknownType(), 
+                                    type: new UncheckedType(tokens.ElementAt(index - 1).Span),
                                     mutable: false,
                                     span: tokens.ElementAt(index - 1).Span),
                                 null);
@@ -3319,7 +3612,7 @@ public static partial class ParserFunctions {
                     return (
                         new VarDecl(
                             name: nt.Value, 
-                            type: new UnknownType(), 
+                            type: new UncheckedType(tokens.ElementAt(index - 1).Span), 
                             mutable: false, 
                             span: tokens.ElementAt(index - 1).Span), 
                         null);
@@ -3348,7 +3641,7 @@ public static partial class ParserFunctions {
                     return (
                         new VarDecl(
                             nt.Value, 
-                            new UnknownType(), 
+                            type: new UncheckedType(tokens.ElementAt(index - 2).Span),
                             mutable: false,
                             span: tokens.ElementAt(index - 2).Span), 
                         new ParserError(
@@ -3374,165 +3667,214 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (NeuType, Error?) ParseTypeName(
+    // public static (NeuType, Error?) ParseTypeName(
+    //     List<Token> tokens, 
+    //     ref int index) {
+
+    //     Trace($"ParseTypeName: {tokens.ElementAt(index)}");
+
+    //     Error? error = null;
+
+    //     NeuType baseType = new VoidType();
+
+    //     switch (tokens.ElementAt(index)) {
+
+    //         case NameToken nt: {
+
+    //             switch (nt.Value) {
+
+    //                 case "Int8": {
+
+    //                     baseType = new Int8Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "Int16": {
+
+    //                     baseType = new Int16Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "Int32": {
+
+    //                     baseType = new Int32Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "Int64": {
+
+    //                     baseType = new Int64Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "UInt8": {
+
+    //                     baseType = new UInt8Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "UInt16": {
+
+    //                     baseType = new UInt16Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "UInt32": {
+
+    //                     baseType = new UInt32Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "UInt64": {
+
+    //                     baseType = new UInt64Type();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "Float": {
+
+    //                     baseType = new FloatType();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "Double": {
+
+    //                     baseType = new DoubleType();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "String": {
+
+    //                     baseType = new StringType();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 case "Bool": {
+
+    //                     baseType = new BoolType();
+
+    //                     break;
+    //                 }
+
+    //                 ///
+
+    //                 default: {
+
+    //                     Trace("ERROR: unknown type");
+
+    //                     baseType = new VoidType();
+
+    //                     error = error ?? 
+    //                         new ParserError(
+    //                             "unknown type", 
+    //                             nt.Span);
+
+    //                     break;
+    //                 }
+    //             }
+            
+    //             break;
+    //         }
+
+    //         ///
+
+    //         default: {
+
+    //             Trace("ERROR: expected type name");
+
+    //             baseType = new VoidType();
+
+    //             error = error ?? 
+    //                 new ParserError(
+    //                     "expected type name", 
+    //                     tokens.ElementAt(index).Span);
+
+    //             break;
+    //         }
+    //     }
+
+    //     if (index + 1 < tokens.Count) {
+
+    //         if (tokens.ElementAt(index + 1) is QuestionToken) {
+
+    //             // T? is shorthand for Optional<T>
+
+    //             index += 1;
+
+    //             return (
+    //                 new OptionalType(baseType),
+    //                 error);
+    //         }
+    //     }
+
+    //     return (baseType, error);
+    // }
+
+    public static (UncheckedType, Error?) ParseTypeName(
         List<Token> tokens, 
         ref int index) {
 
-        Trace($"ParseTypeName: {tokens.ElementAt(index)}");
+        var uncheckedType = new UncheckedType(tokens.ElementAt(index).Span);
 
         Error? error = null;
 
-        NeuType baseType = new VoidType();
+        Trace($"parse_typename: {tokens.ElementAt(index)}");
 
         switch (tokens.ElementAt(index)) {
 
             case NameToken nt: {
 
-                switch (nt.Value) {
+                uncheckedType.Name = nt.Value;
 
-                    case "Int8": {
-
-                        baseType = new Int8Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "Int16": {
-
-                        baseType = new Int16Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "Int32": {
-
-                        baseType = new Int32Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "Int64": {
-
-                        baseType = new Int64Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "UInt8": {
-
-                        baseType = new UInt8Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "UInt16": {
-
-                        baseType = new UInt16Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "UInt32": {
-
-                        baseType = new UInt32Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "UInt64": {
-
-                        baseType = new UInt64Type();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "Float": {
-
-                        baseType = new FloatType();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "Double": {
-
-                        baseType = new DoubleType();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "String": {
-
-                        baseType = new StringType();
-
-                        break;
-                    }
-
-                    ///
-
-                    case "Bool": {
-
-                        baseType = new BoolType();
-
-                        break;
-                    }
-
-                    ///
-
-                    default: {
-
-                        Trace("ERROR: unknown type");
-
-                        baseType = new VoidType();
-
-                        error = error ?? 
-                            new ParserError(
-                                "unknown type", 
-                                nt.Span);
-
-                        break;
-                    }
-                }
-            
                 break;
             }
-
-            ///
 
             default: {
 
                 Trace("ERROR: expected type name");
 
-                baseType = new VoidType();
-
                 error = error ?? 
                     new ParserError(
-                        "expected type name", 
+                        "expected type name",
                         tokens.ElementAt(index).Span);
 
                 break;
             }
         }
-
+        
         if (index + 1 < tokens.Count) {
 
             if (tokens.ElementAt(index + 1) is QuestionToken) {
@@ -3541,13 +3883,11 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (
-                    new OptionalType(baseType),
-                    error);
+                uncheckedType.Optional = true;
             }
         }
 
-        return (baseType, error);
+        return (uncheckedType, error);
     }
 
     ///

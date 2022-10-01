@@ -13,36 +13,186 @@ public static partial class CodeGenFunctions {
 
         output.Append("#include \"../../../Runtime/lib.h\"\n");
 
-        foreach (var fun in file.CheckedFunctions) {
+        foreach (var structure in file.Structs) {
 
-            var funOutput = compiler.TranslateFunctionPredeclaration(fun);
+            var structOutput = compiler.TranslateStructPredecl(structure);
 
-            output.Append(funOutput);
+            output.Append(structOutput);
 
-            output.Append("\n");
+            output.Append('\n');
+        }
+        
+        output.Append('\n');
+
+        foreach (var structure in file.Structs) {
+
+            var structOutput = compiler.TranslateStruct(structure, file);
+
+            output.Append(structOutput);
+            
+            output.Append('\n');
         }
 
-        foreach (var fun in file.CheckedFunctions) {
+        output.Append('\n');
 
-            if (fun.Linkage == FunctionLinkage.External) {
+        foreach (var func in file.Functions) {
+
+            var funcOutput = compiler.TranslateFuncPredecl(func, file);
+            
+            if (func.Linkage != FunctionLinkage.ImplicitConstructor) {
+
+                output.Append(funcOutput);
+
+                output.Append('\n');
+            }
+        }
+
+        output.Append('\n');
+
+        foreach (var func in file.Functions) {
+
+            if (func.Linkage == FunctionLinkage.External) {
 
                 continue;
             }
+            else if (func.Linkage == FunctionLinkage.ImplicitConstructor) {
 
-            var funOutput = compiler.TranslateFunction(fun);
+                var funcOutput = compiler.TranslateConstructor(func, file);
 
-            output.Append(funOutput);
+                output.Append(funcOutput);
 
-            output.Append("\n");
+                output.Append("\n");
+            }
+            else {
+                
+                var funOutput = compiler.TranslateFunc(func, file);
+
+                output.Append(funOutput);
+
+                output.Append("\n");
+            }
         }
 
         return output.ToString();
-
     }
 
-    public static String TranslateFunction(
+    public static String TranslateStructPredecl(
         this Compiler compiler,
-        CheckedFunction fun) {
+        CheckedStruct structure) {
+
+        return $"struct {structure.Name};";
+    }
+
+    public static String TranslateStruct(
+        this Compiler compiler,
+        CheckedStruct structure,
+        CheckedFile file) {
+
+        var output = new StringBuilder($"struct {structure.Name} {{\n");
+
+        foreach (var member in structure.Members) {
+
+            output.Append(new String(' ', INDENT_SIZE));
+
+            output.Append(compiler.TranslateType(member.Type, file));
+            
+            output.Append(' ');
+            
+            output.Append(member.Name);
+            
+            output.Append(";\n");
+        }
+
+        // Put together our own constructor
+        // eg) Person(String name, i64 age);
+
+        output.Append(new String(' ', INDENT_SIZE));
+        output.Append(structure.Name);
+        output.Append('(');
+
+        var first = true;
+
+        foreach (var member in structure.Members) {
+
+            if (!first) {
+
+                output.Append(", ");
+            }
+            else {
+
+                first = false;
+            }
+            
+            output.Append(compiler.TranslateType(member.Type, file));
+            output.Append(' ');
+            output.Append(member.Name);
+        }
+
+        output.Append(");\n");
+
+        output.Append("};");
+
+        return output.ToString();
+    }
+
+    public static String TranslateFuncPredecl(
+        this Compiler compiler,
+        CheckedFunction fun,
+        CheckedFile file) {
+        
+        var output = new StringBuilder();
+
+        if (fun.Linkage == FunctionLinkage.External) {
+
+            output.Append("extern ");
+        }
+
+        if (fun.Name == "main") {
+
+            output.Append("int");
+        }
+        else {
+
+            output.Append(compiler.TranslateType(fun.ReturnType, file));
+        }
+
+        output.Append(' ');
+
+        output.Append(fun.Name);
+
+        output.Append('(');
+
+        var first = true;
+
+        foreach (var p in fun.Parameters) {
+
+            if (!first) {
+
+                output.Append(", ");
+            }
+            else {
+
+                first = false;
+            }
+
+            var ty = compiler.TranslateType(p.Variable.Type, file);
+
+            output.Append(ty);
+
+            output.Append(" ");
+
+            output.Append(p.Variable.Name);
+        }
+
+        output.Append(");");
+
+        return output.ToString();
+    }
+
+    public static String TranslateFunc(
+        this Compiler compiler,
+        CheckedFunction fun,
+        CheckedFile file) {
 
         var output = new StringBuilder();
 
@@ -52,14 +202,14 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            output.Append(compiler.TranslateType(fun.ReturnType));
+            output.Append(compiler.TranslateType(fun.ReturnType, file));
         }
 
-        output.Append(" ");
+        output.Append(' ');
 
         output.Append(fun.Name);
 
-        output.Append("(");
+        output.Append('(');
 
         var first = true;
 
@@ -74,54 +224,45 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
                 
-            var ty = compiler.TranslateType(p.Variable.Type);
+            var ty = compiler.TranslateType(p.Variable.Type, file);
 
             output.Append(ty);
 
-            output.Append(" ");
+            output.Append(' ');
 
             output.Append(p.Variable.Name);
         }
 
-        output.Append(")");
+        output.Append(')');
 
-        var block = compiler.TranslateBlock(0, fun.Block, returnZero: fun.Name == "main");
+        var block = compiler.TranslateBlock(0, fun.Block, file);
 
         output.Append(block);
 
         return output.ToString();
     }
 
-    public static String TranslateFunctionPredeclaration(
+    public static String TranslateConstructor(
         this Compiler compiler,
-        CheckedFunction fun) {
-
-        if (fun.Name == "main") {
-
-            return String.Empty;
-        }
+        CheckedFunction func,
+        CheckedFile file) {
 
         var output = new StringBuilder();
 
-        if (fun.Linkage == FunctionLinkage.External) {
+        output.Append(compiler.TranslateType(func.ReturnType, file));
 
-            output.Append("extern ");
-        }
+        output.Append("::");
 
-        output.Append(compiler.TranslateType(fun.ReturnType));
-
-        output.Append(" ");
-
-        output.Append(fun.Name);
-
-        output.Append("(");
+        output.Append(func.Name);
+        
+        output.Append('(');
 
         var first = true;
-
-        foreach (var p in fun.Parameters) {
-
+        
+        foreach (var p in func.Parameters) {
+            
             if (!first) {
-
+                
                 output.Append(", ");
             }
             else {
@@ -129,23 +270,42 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
 
-            var ty = compiler.TranslateType(p.Variable.Type);
-
+            var ty = compiler.TranslateType(p.Variable.Type, file);
             output.Append(ty);
-
-            output.Append(" ");
-
+            output.Append(" a_");
             output.Append(p.Variable.Name);
         }
 
-        output.Append(");");
+        output.Append("): ");
+
+        first = true;
+        
+        foreach (var p in func.Parameters) {
+
+            if (!first) {
+                
+                output.Append(", ");
+            } 
+            else {
+                
+                first = false;
+            }
+
+            output.Append(p.Variable.Name);
+            output.Append("(a_");
+            output.Append(p.Variable.Name);
+            output.Append(')');
+        }
+
+        output.Append("{}\n");
 
         return output.ToString();
     }
 
     public static String TranslateType(
         this Compiler compiler,
-        NeuType ty) {
+        NeuType ty,
+        CheckedFile file) {
 
         switch (ty) {
 
@@ -216,7 +376,7 @@ public static partial class CodeGenFunctions {
 
             case VectorType vt: {
 
-                return $"Vector<{compiler.TranslateType(vt.Type)}>";
+                return $"Vector<{compiler.TranslateType(vt.Type, file)}>";
             }
 
             case TupleType tt: {
@@ -236,7 +396,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.TranslateType(t));
+                    output.Append(compiler.TranslateType(t, file));
                 }
 
                 output.Append('>');
@@ -246,7 +406,12 @@ public static partial class CodeGenFunctions {
 
             case OptionalType ot: {
 
-                return $"Optional<{compiler.TranslateType(ot.Type)}>";
+                return $"Optional<{compiler.TranslateType(ot.Type, file)}>";
+            }
+
+            case StructType st: {
+
+                return file.Structs[ToInt32(st.StructId)].Name;
             }
 
             case UnknownType _: {
@@ -267,7 +432,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedBlock block,
-        bool returnZero = false) {
+        CheckedFile file) {
 
         var output = new StringBuilder();
 
@@ -275,18 +440,9 @@ public static partial class CodeGenFunctions {
 
         foreach (var stmt in block.Stmts) {
 
-            var stmtStr = compiler.TranslateStmt(indent + INDENT_SIZE, stmt);
+            var stmtStr = compiler.TranslateStmt(indent + INDENT_SIZE, stmt, file);
 
             output.Append(stmtStr);
-        }
-
-        if (returnZero) {
-
-            output.Append("\n");
-
-            output.Append(new String(' ', indent + INDENT_SIZE));
-
-            output.Append("return 0;\n");
         }
 
         output.Append(new String(' ', indent));
@@ -299,7 +455,8 @@ public static partial class CodeGenFunctions {
     public static String TranslateStmt(
         this Compiler compiler,
         int indent,
-        CheckedStatement stmt) {
+        CheckedStatement stmt,
+        CheckedFile file) {
 
         var output = new StringBuilder();
 
@@ -311,7 +468,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedExpression expr: {
 
-                var exprStr = compiler.TranslateExpr(indent, expr);
+                var exprStr = compiler.TranslateExpr(indent, expr, file);
 
                 output.Append(exprStr);
 
@@ -327,7 +484,7 @@ public static partial class CodeGenFunctions {
                 output.Append("#define __SCOPE_GUARD_NAME __scope_guard_ ## __COUNTER__\n");
                 output.Append("ScopeGuard __SCOPE_GUARD_NAME  ([&] \n");
                 output.Append("#undef __SCOPE_GUARD_NAME\n");
-                output.Append(compiler.TranslateBlock(indent, defer.Block));
+                output.Append(compiler.TranslateBlock(indent, defer.Block, file));
                 output.Append(");\n");
 
                 break;
@@ -337,7 +494,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedReturnStatement rs: {
 
-                var exprStr = compiler.TranslateExpr(indent, rs.Expr);
+                var exprStr = compiler.TranslateExpr(indent, rs.Expr, file);
 
                 output.Append("return (");
                 
@@ -352,7 +509,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedIfStatement ifStmt: {
 
-                var exprStr = compiler.TranslateExpr(indent, ifStmt.Expr);
+                var exprStr = compiler.TranslateExpr(indent, ifStmt.Expr, file);
 
                 output.Append("if (");
                 
@@ -360,7 +517,7 @@ public static partial class CodeGenFunctions {
                 
                 output.Append(") ");
 
-                var blockStr = compiler.TranslateBlock(indent, ifStmt.Block);
+                var blockStr = compiler.TranslateBlock(indent, ifStmt.Block, file);
                 
                 output.Append(blockStr);
 
@@ -370,7 +527,7 @@ public static partial class CodeGenFunctions {
 
                     output.Append("else ");
 
-                    var elseStr = compiler.TranslateStmt(indent, e);
+                    var elseStr = compiler.TranslateStmt(indent, e, file);
 
                     output.Append(elseStr);
                 }
@@ -382,7 +539,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedWhileStatement whileStmt: {
 
-                var exprStr = compiler.TranslateExpr(indent, whileStmt.Expression);
+                var exprStr = compiler.TranslateExpr(indent, whileStmt.Expression, file);
 
                 output.Append("while (");
                 
@@ -390,7 +547,7 @@ public static partial class CodeGenFunctions {
                 
                 output.Append(") ");
 
-                var blockStr = compiler.TranslateBlock(indent, whileStmt.Block);
+                var blockStr = compiler.TranslateBlock(indent, whileStmt.Block, file);
                 
                 output.Append(blockStr);
 
@@ -406,11 +563,11 @@ public static partial class CodeGenFunctions {
                     output.Append("const ");
                 }
 
-                output.Append(compiler.TranslateType(vd.VarDecl.Type));
+                output.Append(compiler.TranslateType(vd.VarDecl.Type, file));
                 output.Append(" ");
                 output.Append(vd.VarDecl.Name);
                 output.Append(" = ");
-                output.Append(compiler.TranslateExpr(indent, vd.Expr));
+                output.Append(compiler.TranslateExpr(indent, vd.Expr, file));
                 output.Append(";\n");
 
                 break;
@@ -420,7 +577,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedBlockStatement chBlockStmt: {
 
-                var blockStr = compiler.TranslateBlock(indent, chBlockStmt.Block);
+                var blockStr = compiler.TranslateBlock(indent, chBlockStmt.Block, file);
 
                 output.Append(blockStr);
 
@@ -453,7 +610,8 @@ public static partial class CodeGenFunctions {
     public static String TranslateExpr(
         this Compiler compiler,
         int indent,
-        CheckedExpression expr) {
+        CheckedExpression expr,
+        CheckedFile file) {
 
         var output = new StringBuilder();
 
@@ -471,7 +629,7 @@ public static partial class CodeGenFunctions {
             case CheckedOptionalSomeExpression o: {
 
                 output.Append('(');
-                output.Append(compiler.TranslateExpr(indent, o.Expression));
+                output.Append(compiler.TranslateExpr(indent, o.Expression, file));
                 output.Append(')');
 
                 break;
@@ -480,7 +638,7 @@ public static partial class CodeGenFunctions {
             case CheckedForceUnwrapExpression f: {
 
                 output.Append('(');
-                output.Append(compiler.TranslateExpr(indent, f.Expression));
+                output.Append(compiler.TranslateExpr(indent, f.Expression, file));
                 output.Append(".value())");
 
                 break;
@@ -545,7 +703,7 @@ public static partial class CodeGenFunctions {
                         
                         foreach (var param in ce.Call.Args) {
 
-                            output.Append(compiler.TranslateExpr(indent, param.Item2));
+                            output.Append(compiler.TranslateExpr(indent, param.Item2, file));
                         }
                         
                         output.Append(")");
@@ -573,7 +731,7 @@ public static partial class CodeGenFunctions {
                                 first = false;
                             }
 
-                            output.Append(compiler.TranslateExpr(indent, parameter.Item2));
+                            output.Append(compiler.TranslateExpr(indent, parameter.Item2, file));
                         }
 
                         output.Append(")");
@@ -612,7 +770,7 @@ public static partial class CodeGenFunctions {
                     }
                 }
 
-                output.Append(compiler.TranslateExpr(indent, unaryOp.Expression));
+                output.Append(compiler.TranslateExpr(indent, unaryOp.Expression, file));
 
                 switch (unaryOp.Operator) {
 
@@ -647,7 +805,7 @@ public static partial class CodeGenFunctions {
 
                 output.Append("(");
 
-                output.Append(compiler.TranslateExpr(indent, binOp.Lhs));
+                output.Append(compiler.TranslateExpr(indent, binOp.Lhs, file));
 
                 switch (binOp.Operator) {
 
@@ -800,7 +958,7 @@ public static partial class CodeGenFunctions {
                     }
                 }
 
-                output.Append(compiler.TranslateExpr(indent, binOp.Rhs));
+                output.Append(compiler.TranslateExpr(indent, binOp.Rhs, file));
 
                 output.Append(")");
 
@@ -828,7 +986,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.TranslateExpr(indent, val));
+                    output.Append(compiler.TranslateExpr(indent, val, file));
                 }
 
                 output.Append("}))");
@@ -856,7 +1014,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.TranslateExpr(indent, val));
+                    output.Append(compiler.TranslateExpr(indent, val, file));
                 }
 
                 output.Append("})");
@@ -870,11 +1028,11 @@ public static partial class CodeGenFunctions {
 
                 output.Append("((");
             
-                output.Append(compiler.TranslateExpr(indent, ie.Expression));
+                output.Append(compiler.TranslateExpr(indent, ie.Expression, file));
             
                 output.Append(")[");
             
-                output.Append(compiler.TranslateExpr(indent, ie.Index));
+                output.Append(compiler.TranslateExpr(indent, ie.Index, file));
             
                 output.Append("])");
 
@@ -888,8 +1046,21 @@ public static partial class CodeGenFunctions {
                 // x.get<1>()
                 
                 output.Append("((");
-                output.Append(compiler.TranslateExpr(indent, ite.Expression));
+                output.Append(compiler.TranslateExpr(indent, ite.Expression, file));
                 output.Append($").get<{ite.Index}>())");
+
+                break;
+            }
+
+            ///
+
+            case CheckedIndexedStructExpression ise: {
+
+                // x.someName
+                
+                output.Append("((");
+                output.Append(compiler.TranslateExpr(indent, ise.Expression, file));
+                output.Append($").{ise.Name})");
 
                 break;
             }
@@ -914,5 +1085,4 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
-
 }
