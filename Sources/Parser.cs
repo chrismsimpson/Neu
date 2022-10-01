@@ -1481,9 +1481,55 @@ public static partial class ParserFunctions {
 
                     NeuType returnType = new VoidType();
 
+                    Expression? fatArrowExpr = null;
+
                     if ((index + 2) < tokens.Count) {
 
                         switch (tokens.ElementAt(index)) {
+
+                            case EqualToken _: {
+
+                                index += 1;
+
+                                switch (tokens.ElementAt(index)) {
+
+                                    case GreaterThanToken _: {
+
+                                        index += 1;
+
+                                        var (_fatArrowExpr, fatArrowExprErr) = ParseExpression(
+                                            tokens, 
+                                            ref index, 
+                                            ExpressionKind.ExpressionWithoutAssignment);
+
+                                        returnType = new UnknownType();
+
+                                        fatArrowExpr = _fatArrowExpr;
+
+                                        error = error ??fatArrowExprErr;
+
+                                        index += 1;
+
+                                        break;
+                                    }
+
+                                    default: {
+
+                                        Trace("ERROR: expected =>");
+
+                                        error = error ?? 
+                                            new ParserError(
+                                                "expected =>",
+                                                tokens.ElementAt(index - 1).Span);
+                                        
+                                        break;
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            ///
 
                             case MinusToken _: {
 
@@ -1541,9 +1587,32 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index - 1).Span);
                     }
 
-                    var (block, blockErr) = ParseBlock(tokens, ref index);
+                    Block? block = null;
 
-                    error = error ?? blockErr;
+                    switch (fatArrowExpr) {
+
+                        case Expression fae: {
+
+                            var _block = new Block();
+
+                            _block.Statements.Add(new ReturnStatement(fae));
+
+                            block = _block;
+
+                            break;
+                        }
+
+                        default: {
+
+                            var (_block, parseBlockErr) = ParseBlock(tokens, ref index);
+
+                            error = error ?? parseBlockErr;
+
+                            block = _block;
+
+                            break;
+                        }
+                    }
 
                     return (
                         new Function(

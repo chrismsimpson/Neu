@@ -956,9 +956,43 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
+        NeuType? returnType = null;
+
+        switch (fun.ReturnType) {
+
+            case UnknownType _: {
+
+                switch (block.Stmts.FirstOrDefault()) {
+
+                    case CheckedReturnStatement rs: {
+
+                        returnType = rs.Expr.GetNeuType();
+
+                        break;
+                    }
+
+                    default: {
+
+                        returnType = new UnknownType();
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            default: {
+                
+                returnType = fun.ReturnType;
+
+                break;
+            }
+        }
+
         var output = new CheckedFunction(
             name: fun.Name,
-            returnType: fun.ReturnType,
+            returnType: returnType,
             parameters: fun.Parameters,
             block);
 
