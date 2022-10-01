@@ -384,6 +384,8 @@ public static partial class LexerFunctions {
                             index += 1;
 
                             output.Add(new MinusMinusToken(new Span(fileId, start, start + 2)));
+
+                            continue;
                         }
                     }
 

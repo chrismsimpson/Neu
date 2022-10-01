@@ -487,11 +487,32 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
+    public partial class CheckedUnaryOpExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+
+        public UnaryOperator Operator { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedUnaryOpExpression(
+            CheckedExpression expression,
+            UnaryOperator op,
+            NeuType type) {
+
+            this.Expression = expression;
+            this.Operator = op;
+            this.Type = type;
+        }
+    }
+
     public partial class CheckedBinaryOpExpression: CheckedExpression {
 
         public CheckedExpression Lhs { get; init; }
 
-        public Operator Operator { get; init; }
+        public BinaryOperator Operator { get; init; }
 
         public CheckedExpression Rhs { get; init; }
 
@@ -501,7 +522,7 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedBinaryOpExpression(
             CheckedExpression lhs,
-            Operator op,
+            BinaryOperator op,
             CheckedExpression rhs,
             NeuType type) {
 
@@ -511,8 +532,6 @@ public partial class CheckedExpression: CheckedStatement {
             this.Type = type;
         }
     }
-
-
 
     public partial class CheckedVectorExpression: CheckedExpression {
 
@@ -648,6 +667,11 @@ public static partial class CheckedExpressionFunctions {
             case CheckedQuotedStringExpression _: {
 
                 return new StringType();   
+            }
+
+            case CheckedUnaryOpExpression u: {
+
+                return u.Type;
             }
 
             case CheckedBinaryOpExpression e: {
@@ -1085,22 +1109,15 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedLhsErr;
 
-                var opSpan = e.Op.GetSpan();
-
-                var op = e.Op switch {
-                    OperatorExpression o => o.Operator,
-                    _ => throw new Exception()
-                };
-
                 var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file);
 
                 error = error ?? checkedRhsErr;
 
-                error = error ?? TypeCheckOperation(
+                error = error ?? TypeCheckBinaryOperation(
                     checkedLhs,
-                    op,
+                    e.Operator,
                     checkedRhs,
-                    opSpan);
+                    e.Span);
                 
                 // TODO: actually do the binary operator typecheck against safe operations
                 // For now, use a type we know
@@ -1110,9 +1127,24 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedBinaryOpExpression(
                         checkedLhs, 
-                        op, 
+                        e.Operator, 
                         checkedRhs, 
                         ty),
+                    error);
+            }
+
+            case UnaryOpExpression u: {
+
+                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, stack, file);
+
+                error = error ?? checkedExprErr;
+
+                error = error ?? TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span);
+
+                var ty = checkedExpr.GetNeuType();
+
+                return (
+                    new CheckedUnaryOpExpression(checkedExpr, u.Operator, ty),
                     error);
             }
 
@@ -1360,19 +1392,91 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
-    public static Error? TypeCheckOperation(
+    public static Error? TypeCheckUnaryOperation(
+        CheckedExpression expr,
+        UnaryOperator op,
+        Span span) {
+
+        switch (expr.GetNeuType()) {
+
+            case Int8Type:
+            case Int16Type:
+            case Int32Type:
+            case Int64Type:
+            case UInt8Type:
+            case UInt16Type:
+            case UInt32Type:
+            case UInt64Type:
+            case FloatType:
+            case DoubleType: {
+
+                switch (expr) {
+
+                    case CheckedVarExpression v: {
+
+                        if (!v.Variable.Mutable) {
+
+                            switch (op) {
+
+                                case UnaryOperator.PreIncrement:
+                                case UnaryOperator.PostIncrement: {
+
+                                    return new TypeCheckError(
+                                        "increment on immutable variable",
+                                        span);
+                                }
+
+                                case UnaryOperator.PreDecrement:
+                                case UnaryOperator.PostDecrement: {
+
+                                    return new TypeCheckError(
+                                        "decrement on immutable variable",
+                                        span);
+                                }
+
+                                default: {
+
+                                    throw new Exception(); // assume not reached
+                                }
+                            }
+                        }
+                        else {
+
+                            return null;
+                        }
+                    }
+
+                    default: {
+
+                        // TODO: we probably want to check if what we're working on can be updated
+
+                        return null;
+                    }
+                }
+            }
+
+            default: {
+
+                return new TypeCheckError(
+                    "unary operation on non-numeric value", 
+                    span);
+            }
+        }
+    }
+
+    public static Error? TypeCheckBinaryOperation(
         CheckedExpression lhs,
-        Operator op,
+        BinaryOperator op,
         CheckedExpression rhs,
         Span span) {
 
         switch (op) {
 
-            case Operator.Assign:
-            case Operator.AddAssign:
-            case Operator.SubtractAssign:
-            case Operator.MultiplyAssign:
-            case Operator.DivideAssign: {
+            case BinaryOperator.Assign:
+            case BinaryOperator.AddAssign:
+            case BinaryOperator.SubtractAssign:
+            case BinaryOperator.MultiplyAssign:
+            case BinaryOperator.DivideAssign: {
 
                 var lhsTy = lhs.GetNeuType();
                 var rhsTy = rhs.GetNeuType();

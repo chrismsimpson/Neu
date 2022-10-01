@@ -713,8 +713,6 @@ public partial class Expression: Statement {
         }
     }
 
-    ///
-
     public partial class VectorExpression: Expression {
 
         public List<Expression> Expressions { get; init; }
@@ -731,8 +729,6 @@ public partial class Expression: Statement {
             this.Span = span;
         }
     }
-
-    ///
 
     public partial class IndexedExpression: Expression {
 
@@ -755,26 +751,49 @@ public partial class Expression: Statement {
         }
     }
 
-    ///
+    public partial class UnaryOpExpression: Expression {
+
+        public Expression Expression { get; init; }
+        
+        public UnaryOperator Operator { get; init; }
+        
+        public Span Span { get; init; }
+
+        ///
+
+        public UnaryOpExpression(
+            Expression expression,
+            UnaryOperator op,
+            Span Span) {
+
+            this.Expression = expression;
+            this.Operator = op;
+            this.Span = Span;
+        }
+    }
 
     public partial class BinaryOpExpression: Expression {
 
         public Expression Lhs { get; init; }
         
-        public Expression Op { get; init; }
+        public BinaryOperator Operator { get; init; }
         
         public Expression Rhs { get; init; }
+
+        public Span Span { get; init; }
 
         ///
 
         public BinaryOpExpression(
             Expression lhs,
-            Expression op,
-            Expression rhs) {
+            BinaryOperator op,
+            Expression rhs,
+            Span span) {
 
             this.Lhs = lhs;
-            this.Op = op;
+            this.Operator = op;
             this.Rhs = rhs;
+            this.Span = span;
         }
     }
 
@@ -847,7 +866,15 @@ public partial class Expression: Statement {
 
     // Not standalone
 
-    public enum Operator {
+    public enum UnaryOperator {
+
+        PreIncrement,
+        PostIncrement,
+        PreDecrement,
+        PostDecrement
+    }
+
+    public enum BinaryOperator {
 
         Add,
         Subtract,
@@ -868,14 +895,14 @@ public partial class Expression: Statement {
 
     public partial class OperatorExpression: Expression {
 
-        public Operator Operator { get; init; }
+        public BinaryOperator Operator { get; init; }
         
         public Span Span { get; init; }
 
         ///
 
         public OperatorExpression(
-            Operator op,
+            BinaryOperator op,
             Span span)
             : base() {
 
@@ -939,9 +966,14 @@ public static partial class ExpressionFunctions {
                 return ie.Span;
             }
 
+            case UnaryOpExpression uoe: {
+
+                return uoe.Span;
+            }
+
             case BinaryOpExpression boe: {
 
-                return boe.Op.GetSpan();
+                return boe.Span;
             }
 
             case VarExpression ve: {
@@ -1032,12 +1064,12 @@ public static partial class ExpressionFunctions {
             ///
 
             case var _ when
-                l is BinaryOpExpression binL
-                && r is BinaryOpExpression binR:
+                l is BinaryOpExpression lbo
+                && r is BinaryOpExpression rbo: 
 
-                return ExpressionFunctions.Eq(binL.Lhs, binR.Lhs)
-                    && ExpressionFunctions.Eq(binL.Op, binR.Op)
-                    && ExpressionFunctions.Eq(binL.Rhs, binR.Rhs);
+                return ExpressionFunctions.Eq(lbo.Lhs, rbo.Lhs)
+                    && lbo.Operator == rbo.Operator
+                    && ExpressionFunctions.Eq(lbo.Rhs, rbo.Rhs);
 
             ///
 
@@ -1078,39 +1110,39 @@ public static partial class ExpressionFunctions {
         switch (expr) {
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.Multiply 
-                || opExpr.Operator == Operator.Divide:
+                opExpr.Operator == BinaryOperator.Multiply 
+                || opExpr.Operator == BinaryOperator.Divide:
 
                 return 100;
 
             ///
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.Add 
-                || opExpr.Operator == Operator.Subtract:
+                opExpr.Operator == BinaryOperator.Add 
+                || opExpr.Operator == BinaryOperator.Subtract:
 
                 return 90;
 
             ///
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.LessThan
-                || opExpr.Operator == Operator.LessThanOrEqual
-                || opExpr.Operator == Operator.GreaterThan
-                || opExpr.Operator == Operator.GreaterThanOrEqual
-                || opExpr.Operator == Operator.Equal
-                || opExpr.Operator == Operator.NotEqual:
+                opExpr.Operator == BinaryOperator.LessThan
+                || opExpr.Operator == BinaryOperator.LessThanOrEqual
+                || opExpr.Operator == BinaryOperator.GreaterThan
+                || opExpr.Operator == BinaryOperator.GreaterThanOrEqual
+                || opExpr.Operator == BinaryOperator.Equal
+                || opExpr.Operator == BinaryOperator.NotEqual:
                 
                 return 80;
 
             ///
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == Operator.Assign
-                || opExpr.Operator == Operator.AddAssign
-                || opExpr.Operator == Operator.SubtractAssign
-                || opExpr.Operator == Operator.MultiplyAssign
-                || opExpr.Operator == Operator.DivideAssign:
+                opExpr.Operator == BinaryOperator.Assign
+                || opExpr.Operator == BinaryOperator.AddAssign
+                || opExpr.Operator == BinaryOperator.SubtractAssign
+                || opExpr.Operator == BinaryOperator.MultiplyAssign
+                || opExpr.Operator == BinaryOperator.DivideAssign:
 
                 return 50;
 
@@ -1909,12 +1941,18 @@ public static partial class ParserFunctions {
 
         var cont = true;
 
-        while (index < tokens.Count && cont) {
+        while (cont && index < tokens.Count) {
 
-            var (op, opErr) = ParseOperatorForKind(tokens, ref index, exprKind);
+            var (op, opErr) = exprKind switch {
+                ExpressionKind.ExpressionWithAssignments => ParseOperatorWithAssignment(tokens, ref index),
+                ExpressionKind.ExpressionWithoutAssignment => ParseOperator(tokens, ref index),
+                _ => throw new Exception()
+            };
+
+            // var (op, opErr) = ParseOperatorForKind(tokens, ref index, exprKind);
             
             if (opErr is Error e) {
-                
+
                 switch (e) {
 
                     case ValidationError ve:
@@ -1979,7 +2017,27 @@ public static partial class ParserFunctions {
 
                 var _lhs = exprStack.Pop();
 
-                exprStack.Add(new BinaryOpExpression(_lhs, _op, _rhs));
+                switch (_op) {
+
+                    case OperatorExpression oe: {
+
+                        var span = new Span(
+                            fileId: _lhs.GetSpan().FileId,
+                            start: _lhs.GetSpan().Start,
+                            end: _rhs.GetSpan().End);
+
+                        exprStack.Add(new BinaryOpExpression(_lhs, oe.Operator, _rhs, span));
+
+                        break;
+                    }
+
+                    ///
+
+                    default: {
+
+                        throw new Exception("internal error: operator is not an operator");
+                    }
+                }
             }
 
             exprStack.Add(op);
@@ -1997,7 +2055,29 @@ public static partial class ParserFunctions {
 
             var _lhs = exprStack.Pop();
 
-            exprStack.Add(new BinaryOpExpression(_lhs, _op, _rhs));
+            // exprStack.Add(new BinaryOpExpression(_lhs, _op, _rhs));
+
+            switch (_op) {
+
+                case OperatorExpression oe: {
+
+                    var span = new Span(
+                        fileId: _lhs.GetSpan().FileId,
+                        start: _lhs.GetSpan().Start,
+                        end: _rhs.GetSpan().End);
+
+                    exprStack.Add(new BinaryOpExpression(_lhs, oe.Operator, _rhs, span));
+
+                    break;
+                }
+
+                ///
+
+                default: {
+
+                    throw new Exception("internal error: operator is not an operator");
+                }
+            }
         }
 
         var output = exprStack.Pop();
@@ -2179,6 +2259,50 @@ public static partial class ParserFunctions {
 
             ///
 
+            case PlusPlusToken _: {
+                
+                var startSpan = tokens.ElementAt(index).Span;
+
+                index += 1;
+
+                var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                error = error ?? parseExprErr;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: _expr.GetSpan().End);
+
+                expr = new UnaryOpExpression(_expr, UnaryOperator.PreIncrement, _span);
+
+                break;
+            }
+
+            ///
+
+            case MinusMinusToken _: {
+
+                var startSpan = tokens.ElementAt(index).Span;
+
+                index += 1;
+
+                var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                error = error ?? parseExprErr;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: _expr.GetSpan().End);
+
+                expr = new UnaryOpExpression(_expr, UnaryOperator.PreDecrement, _span);
+
+                break;
+            }
+
+            ///
+
             case NumberToken numTok: {
 
                 index += 1;
@@ -2218,7 +2342,11 @@ public static partial class ParserFunctions {
 
         // Check for postfix operators, while we're at it
 
-        if (index < tokens.Count) {
+        // if (index < tokens.Count) {
+
+        var cont = true;
+
+        while (cont && index < tokens.Count) {
 
             switch (tokens.ElementAt(index)) {
 
@@ -2229,6 +2357,42 @@ public static partial class ParserFunctions {
                     // Forced Optional unwrap
 
                     expr = new ForcedUnwrapExpression(expr, span);
+
+                    break;
+                }
+
+                ///
+
+                case PlusPlusToken _: {
+
+                    var endSpan = tokens.ElementAt(index).Span;
+
+                    index += 1;
+
+                    var _span = new Span(
+                        fileId: expr.GetSpan().FileId,
+                        start: expr.GetSpan().Start,
+                        end: endSpan.End);
+
+                    expr = new UnaryOpExpression(expr, UnaryOperator.PostIncrement, _span);
+
+                    break;
+                }
+
+                ///
+
+                case MinusMinusToken _: {
+
+                    var endSpan = tokens.ElementAt(index).Span;
+
+                    index += 1;
+
+                    var _span = new Span(
+                        fileId: expr.GetSpan().FileId,
+                        start: expr.GetSpan().Start,
+                        end: endSpan.End);
+
+                    expr = new UnaryOpExpression(expr, UnaryOperator.PostDecrement, _span);
 
                     break;
                 }
@@ -2281,15 +2445,13 @@ public static partial class ParserFunctions {
                                     tokens.ElementAt(index - 1).Span);
                         }
 
-                        return (
-                            new IndexedExpression(
-                                expr, 
-                                idx, 
-                                new Span(
-                                    span.FileId, 
-                                    start: span.Start, 
-                                    end: end)),
-                            error);
+                        expr = new IndexedExpression(
+                            expr, 
+                            idx, 
+                            new Span(
+                                span.FileId, 
+                                start: span.Start, 
+                                end: end));
                     }
 
                     break;
@@ -2298,6 +2460,8 @@ public static partial class ParserFunctions {
                 ///
 
                 default: {
+
+                    cont = false;
 
                     break;
                 }
@@ -2309,26 +2473,26 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Expression, Error?) ParseOperatorForKind(
-        List<Token> tokens,
-        ref int index,
-        ExpressionKind exprKind) {
+    // public static (Expression, Error?) ParseOperatorForKind(
+    //     List<Token> tokens,
+    //     ref int index,
+    //     ExpressionKind exprKind) {
 
-        switch (exprKind) {
+    //     switch (exprKind) {
 
-            case ExpressionKind.ExpressionWithAssignments: 
+    //         case ExpressionKind.ExpressionWithAssignments: 
 
-                return ParseOperatorWithAssignment(tokens, ref index);
+    //             return ParseOperatorWithAssignment(tokens, ref index);
 
-            case ExpressionKind.ExpressionWithoutAssignment:
+    //         case ExpressionKind.ExpressionWithoutAssignment:
 
-                return ParseOperator(tokens, ref index);
+    //             return ParseOperator(tokens, ref index);
 
-            default:
+    //         default:
 
-                throw new Exception();
-        }
-    }
+    //             throw new Exception();
+    //     }
+    // }
 
     public static (Expression, Error?) ParseOperator(
         List<Token> tokens, 
@@ -2344,28 +2508,28 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Add, span), null);
+                return (new OperatorExpression(BinaryOperator.Add, span), null);
             }
 
             case MinusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Subtract, span), null);
+                return (new OperatorExpression(BinaryOperator.Subtract, span), null);
             }
 
             case AsteriskToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Multiply, span), null);
+                return (new OperatorExpression(BinaryOperator.Multiply, span), null);
             }
 
             case ForwardSlashToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Divide, span), null);
+                return (new OperatorExpression(BinaryOperator.Divide, span), null);
             }
 
             case EqualToken _: {
@@ -2375,7 +2539,7 @@ public static partial class ParserFunctions {
                 index += 1;
                 
                 return (
-                    new OperatorExpression(Operator.Assign, span), 
+                    new OperatorExpression(BinaryOperator.Assign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -2388,7 +2552,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(Operator.AddAssign, span), 
+                    new OperatorExpression(BinaryOperator.AddAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -2401,7 +2565,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(Operator.SubtractAssign, span), 
+                    new OperatorExpression(BinaryOperator.SubtractAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -2414,7 +2578,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(Operator.MultiplyAssign, span), 
+                    new OperatorExpression(BinaryOperator.MultiplyAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -2427,7 +2591,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(Operator.DivideAssign, span), 
+                    new OperatorExpression(BinaryOperator.DivideAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -2437,42 +2601,42 @@ public static partial class ParserFunctions {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.Equal, span), null);
+                return (new OperatorExpression(BinaryOperator.Equal, span), null);
             }
             
             case NotEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.NotEqual, span), null);
+                return (new OperatorExpression(BinaryOperator.NotEqual, span), null);
             }
             
             case LessThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.LessThan, span), null);
+                return (new OperatorExpression(BinaryOperator.LessThan, span), null);
             }
             
             case LessThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.LessThanOrEqual, span), null);
+                return (new OperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
             }
             
             case GreaterThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.GreaterThan, span), null);
+                return (new OperatorExpression(BinaryOperator.GreaterThan, span), null);
             }
             
             case GreaterThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.GreaterThanOrEqual, span), null);
+                return (new OperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
             }
 
             ///
@@ -2504,105 +2668,105 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Add, span), null);
+                return (new OperatorExpression(BinaryOperator.Add, span), null);
             }
 
             case MinusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Subtract, span), null);
+                return (new OperatorExpression(BinaryOperator.Subtract, span), null);
             }
 
             case AsteriskToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Multiply, span), null);
+                return (new OperatorExpression(BinaryOperator.Multiply, span), null);
             }
 
             case ForwardSlashToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.Divide, span), null);
+                return (new OperatorExpression(BinaryOperator.Divide, span), null);
             }
 
             case EqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.Assign, span), null);
+                return (new OperatorExpression(BinaryOperator.Assign, span), null);
             }
 
             case PlusEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.AddAssign, span), null);
+                return (new OperatorExpression(BinaryOperator.AddAssign, span), null);
             }
             
             case MinusEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.SubtractAssign, span), null);
+                return (new OperatorExpression(BinaryOperator.SubtractAssign, span), null);
             }
 
             case AsteriskEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.MultiplyAssign, span), null);
+                return (new OperatorExpression(BinaryOperator.MultiplyAssign, span), null);
             }
 
             case ForwardSlashEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(Operator.DivideAssign, span), null);
+                return (new OperatorExpression(BinaryOperator.DivideAssign, span), null);
             }
 
             case DoubleEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.Equal, span), null);
+                return (new OperatorExpression(BinaryOperator.Equal, span), null);
             }
             
             case NotEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.NotEqual, span), null);
+                return (new OperatorExpression(BinaryOperator.NotEqual, span), null);
             }
             
             case LessThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.LessThan, span), null);
+                return (new OperatorExpression(BinaryOperator.LessThan, span), null);
             }
             
             case LessThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.LessThanOrEqual, span), null);
+                return (new OperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
             }
             
             case GreaterThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.GreaterThan, span), null);
+                return (new OperatorExpression(BinaryOperator.GreaterThan, span), null);
             }
             
             case GreaterThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(Operator.GreaterThanOrEqual, span), null);
+                return (new OperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
             }
 
             ///

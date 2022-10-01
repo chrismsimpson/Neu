@@ -559,6 +559,63 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case CheckedUnaryOpExpression unaryOp: {
+
+                output.Append('(');
+
+                switch (unaryOp.Operator) {
+
+                    case UnaryOperator.PreIncrement: {
+
+                        output.Append("++");
+
+                        break;
+                    }
+
+                    case UnaryOperator.PreDecrement: {
+
+                        output.Append("--");
+
+                        break;
+                    }
+
+                    default: {
+
+                        break;
+                    }
+                }
+
+                output.Append(compiler.TranslateExpr(indent, unaryOp.Expression));
+
+                switch (unaryOp.Operator) {
+
+                    case UnaryOperator.PostIncrement: {
+
+                        output.Append("++");
+
+                        break;
+                    }
+
+                    case UnaryOperator.PostDecrement: {
+
+                        output.Append("--");
+
+                        break;
+                    }
+
+                    default: {
+
+                        break;
+                    }
+                }
+                
+                output.Append(')');
+
+                break;
+            }
+
+            ///
+
             case CheckedBinaryOpExpression binOp: {
 
                 output.Append("(");
@@ -567,7 +624,7 @@ public static partial class CodeGenFunctions {
 
                 switch (binOp.Operator) {
 
-                    case Operator.Add: {
+                    case BinaryOperator.Add: {
 
                         output.Append(" + ");
 
@@ -576,7 +633,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.Subtract: {
+                    case BinaryOperator.Subtract: {
 
                         output.Append(" - ");
 
@@ -585,7 +642,7 @@ public static partial class CodeGenFunctions {
                     
                     ///
 
-                    case Operator.Multiply: {
+                    case BinaryOperator.Multiply: {
 
                         output.Append(" * ");
 
@@ -594,7 +651,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.Divide: {
+                    case BinaryOperator.Divide: {
 
                         output.Append(" / ");
 
@@ -603,35 +660,35 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.Assign: {
+                    case BinaryOperator.Assign: {
 
                         output.Append(" = ");
 
                         break;
                     }
                     
-                    case Operator.AddAssign: {
+                    case BinaryOperator.AddAssign: {
 
                         output.Append(" += ");
 
                         break;
                     }
 
-                    case Operator.SubtractAssign: {
+                    case BinaryOperator.SubtractAssign: {
 
                         output.Append(" -= ");
 
                         break;
                     }
 
-                    case Operator.MultiplyAssign: {
+                    case BinaryOperator.MultiplyAssign: {
 
                         output.Append(" *= ");
 
                         break;
                     }
 
-                    case Operator.DivideAssign: {
+                    case BinaryOperator.DivideAssign: {
 
                         output.Append(" /= ");
 
@@ -640,7 +697,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.Equal: {
+                    case BinaryOperator.Equal: {
 
                         output.Append(" == ");
 
@@ -649,7 +706,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.NotEqual: {
+                    case BinaryOperator.NotEqual: {
 
                         output.Append(" != ");
 
@@ -658,7 +715,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.LessThan: {
+                    case BinaryOperator.LessThan: {
 
                         output.Append(" < ");
 
@@ -667,7 +724,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.LessThanOrEqual: {
+                    case BinaryOperator.LessThanOrEqual: {
 
                         output.Append(" <= ");
 
@@ -676,7 +733,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.GreaterThan: {
+                    case BinaryOperator.GreaterThan: {
 
                         output.Append(" > ");
 
@@ -685,7 +742,7 @@ public static partial class CodeGenFunctions {
 
                     ///
 
-                    case Operator.GreaterThanOrEqual: {
+                    case BinaryOperator.GreaterThanOrEqual: {
 
                         output.Append(" >= ");
 
