@@ -24,118 +24,45 @@ public static partial class NeuTypeFunctions {
 
         switch (true) {
 
-            case var _ when 
-                l is BoolType 
-                && r is BoolType:         
-                
+            case var _ when l is BoolType && r is BoolType:                     return true;
+            case var _ when l is StringType && r is StringType:                 return true;
+            case var _ when l is Int8Type && r is Int8Type:                     return true;
+            case var _ when l is Int16Type && r is Int16Type:                   return true;
+            case var _ when l is Int32Type && r is Int32Type:                   return true;
+            case var _ when l is Int64Type && r is Int64Type:                   return true;
+            case var _ when l is UInt8Type && r is UInt8Type:                   return true;
+            case var _ when l is UInt16Type && r is UInt16Type:                 return true;
+            case var _ when l is UInt32Type && r is UInt32Type:                 return true;
+            case var _ when l is UInt64Type && r is UInt64Type:                 return true;
+            case var _ when l is FloatType && r is FloatType:                   return true;
+            case var _ when l is DoubleType && r is DoubleType:                 return true;
+            case var _ when l is VoidType && r is VoidType:                     return true;
+            case var _ when l is VectorType lv && r is VectorType rv:           return Eq(lv.Type, rv.Type);
+
+            case var _ when l is TupleType lt && r is TupleType rt: {
+
+                if (lt.Types.Count != rt.Types.Count) {
+
+                    return false;
+                }
+
+                for (var i = 0; i < lt.Types.Count; i++) {
+
+                    if (!Eq(lt.Types[i], rt.Types[i])) {
+
+                        return false;
+                    }
+                }
+
                 return true;
+            }
 
-            ///
+            case var _ when l is OptionalType lo && r is OptionalType ro:       return Eq(lo.Type, ro.Type);
 
-            case var _ when 
-                l is StringType 
-                && r is StringType:     
-                
-                return true;
+            case var _ when l is StructType ls && r is StructType rs:           return ls.StructId == rs.StructId;
 
-            ///
-            
-            case var _ when 
-                l is Int8Type 
-                && r is Int8Type:         
-                
-                return true;
+            case var _ when l is UnknownType && r is UnknownType:               return true;
 
-            ///
-            
-            case var _ when 
-                l is Int16Type 
-                && r is Int16Type:       
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is Int32Type 
-                && r is Int32Type:       
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is Int64Type 
-                && r is Int64Type:       
-                    
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is UInt8Type 
-                && r is UInt8Type:       
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is UInt16Type 
-                && r is UInt16Type:     
-                
-                return true;
-
-            ///
-                
-            case var _ when 
-                l is UInt32Type 
-                && r is UInt32Type:     
-                
-                return true;
-
-            ///
-            
-            case var _ when
-                 l is UInt64Type 
-                && r is UInt64Type:     
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is FloatType 
-                && r is FloatType:       
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is DoubleType 
-                && r is DoubleType:     
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is VoidType 
-                && r is VoidType:         
-                
-                return true;
-
-            ///
-            
-            case var _ when 
-                l is UnknownType 
-                && r is UnknownType:   
-                    
-                return true;
-
-            ///
-            
             default:                                                
                 
                 return false;
@@ -1472,31 +1399,31 @@ public static partial class TypeCheckerFunctions {
         return (checkedBlock, error);
     }
 
-    public static bool CompareTypes(NeuType a, NeuType b) {
+    // public static bool CompareTypes(NeuType a, NeuType b) {
 
-        switch (true) {
+    //     switch (true) {
 
-            case var _ when a is BoolType && b is BoolType:             return true;
-            case var _ when a is StringType && b is StringType:         return true;
-            case var _ when a is Int8Type && b is Int8Type:             return true;
-            case var _ when a is Int16Type && b is Int16Type:           return true;
-            case var _ when a is Int32Type && b is Int32Type:           return true;
-            case var _ when a is Int64Type && b is Int64Type:           return true;
-            case var _ when a is UInt8Type && b is UInt8Type:           return true;
-            case var _ when a is UInt16Type && b is UInt16Type:         return true;
-            case var _ when a is UInt32Type && b is UInt32Type:         return true;
-            case var _ when a is UInt64Type && b is UInt64Type:         return true;
-            case var _ when a is FloatType && b is FloatType:           return true;
-            case var _ when a is DoubleType && b is DoubleType:         return true;
-            case var _ when a is VoidType && b is VoidType:             return true;
+    //         case var _ when a is BoolType && b is BoolType:             return true;
+    //         case var _ when a is StringType && b is StringType:         return true;
+    //         case var _ when a is Int8Type && b is Int8Type:             return true;
+    //         case var _ when a is Int16Type && b is Int16Type:           return true;
+    //         case var _ when a is Int32Type && b is Int32Type:           return true;
+    //         case var _ when a is Int64Type && b is Int64Type:           return true;
+    //         case var _ when a is UInt8Type && b is UInt8Type:           return true;
+    //         case var _ when a is UInt16Type && b is UInt16Type:         return true;
+    //         case var _ when a is UInt32Type && b is UInt32Type:         return true;
+    //         case var _ when a is UInt64Type && b is UInt64Type:         return true;
+    //         case var _ when a is FloatType && b is FloatType:           return true;
+    //         case var _ when a is DoubleType && b is DoubleType:         return true;
+    //         case var _ when a is VoidType && b is VoidType:             return true;
 
-            // case var _ when a is VectorType va && b is VectorType vb:   return CompareTypes(va.Type, vb.Type);
+    //         case var _ when a is VectorType va && b is VectorType vb:   return CompareTypes(va.Type, vb.Type);
 
-            case var _ when a is UnknownType && b is UnknownType:       return true;
+    //         case var _ when a is UnknownType && b is UnknownType:       return true;
 
-            default:                                                    return false;
-        }
-    }
+    //         default:                                                    return false;
+    //     }
+    // }
 
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
@@ -1830,8 +1757,7 @@ public static partial class TypeCheckerFunctions {
                     }
                     else {
 
-                        // if (innerType != checkedExpr.GetNeuType()) {
-                        if (!CompareTypes(innerType, checkedExpr.GetNeuType())) {
+                        if (!NeuTypeFunctions.Eq(innerType, checkedExpr.GetNeuType())) {
 
                             error = error ?? 
                                 new TypeCheckError(
@@ -1997,7 +1923,43 @@ public static partial class TypeCheckerFunctions {
 
                 NeuType ty = new UnknownType();
 
-                // FIXME: add real name binding to structs so that we can find the proper field
+                switch (checkedExpr.GetNeuType()) {
+
+                    case StructType st: {
+
+                        var structure = file.Structs[ToInt32(st.StructId)];
+
+                        foreach (var member in structure.Members) {
+
+                            if (member.Name == ise.Name) {
+
+                                return (
+                                    new CheckedIndexedStructExpression(
+                                        checkedExpr,
+                                        ise.Name,
+                                        member.Type),
+                                    error);
+                            }
+                        }
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "unknown member of struct",
+                                ise.Span);
+
+                        break;
+                    }
+
+                    default: {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "member access of non-struct value",
+                                ise.Span);
+
+                        break;
+                    }
+                }
 
                 return (
                     new CheckedIndexedStructExpression(checkedExpr, ise.Name, ty),

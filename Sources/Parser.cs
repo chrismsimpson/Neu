@@ -3524,6 +3524,17 @@ public static partial class ParserFunctions {
 
                 ///
 
+                case EolToken _: {
+
+                    // Treat comma as whitespace? Might require them in the future
+                    
+                    index += 1;
+
+                    break;
+                }
+
+                ///
+
                 default: {
 
                     var (expr, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
