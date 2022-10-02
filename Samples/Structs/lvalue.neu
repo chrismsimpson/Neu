@@ -1,0 +1,12 @@
+struct Person {
+    name: String
+    age: Int64
+}
+
+func main() {
+    var p = Person(name: "Jane", age: 100)
+
+    p.age = 99;
+
+    print(p.age)
+}
