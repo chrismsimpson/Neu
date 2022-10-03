@@ -1008,7 +1008,8 @@ public partial class Expression: Statement {
         PreIncrement,
         PostIncrement,
         PreDecrement,
-        PostDecrement
+        PostDecrement,
+        Negate
     }
 
     public enum BinaryOperator {
@@ -2842,9 +2843,13 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+                // var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
-                error = error ?? parseExprErr;
+                // error = error ?? parseExprErr;
+
+                var (_expr, err) = ParseOperand(tokens, ref index);
+
+                error = error ?? err;
 
                 var _span = new Span(
                     fileId: startSpan.FileId,
@@ -2864,9 +2869,13 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+                // var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
-                error = error ?? parseExprErr;
+                // error = error ?? parseExprErr;
+
+                var (_expr, err) = ParseOperand(tokens, ref index);
+
+                error = error ?? err;
 
                 var _span = new Span(
                     fileId: startSpan.FileId,
@@ -2874,6 +2883,28 @@ public static partial class ParserFunctions {
                     end: _expr.GetSpan().End);
 
                 expr = new UnaryOpExpression(_expr, UnaryOperator.PreDecrement, _span);
+
+                break;
+            }
+
+            ///
+
+            case MinusToken _: {
+
+                var startSpan = tokens.ElementAt(index).Span;
+
+                index += 1;
+
+                var (_expr, err) = ParseOperand(tokens, ref index);
+
+                error = error ?? err;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: _expr.GetSpan().End);
+
+                expr = new UnaryOpExpression(_expr, UnaryOperator.Negate, _span);
 
                 break;
             }

@@ -840,6 +840,13 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case UnaryOperator.Negate: {
+
+                        output.Append('-');
+
+                        break;
+                    }
+
                     default: {
 
                         break;

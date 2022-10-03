@@ -2420,6 +2420,11 @@ public static partial class TypeCheckerFunctions {
                                         span);
                                 }
 
+                                case UnaryOperator.Negate: {
+
+                                    return null;
+                                }
+
                                 default: {
 
                                     throw new Exception(); // assume not reached
