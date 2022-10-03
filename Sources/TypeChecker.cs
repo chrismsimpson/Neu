@@ -2767,7 +2767,8 @@ public static partial class TypeCheckerFunctions {
 
         switch (op) {
 
-            case BinaryOperator.LogicalAnd: {
+            case BinaryOperator.LogicalAnd:
+            case BinaryOperator.LogicalOr: {
 
                 ty = new BoolType();
 

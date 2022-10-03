@@ -1216,6 +1216,15 @@ public static partial class CodeGenFunctions {
 
                     ///
 
+                    case BinaryOperator.LogicalOr: {
+
+                        output.Append(" || ");
+
+                        break;
+                    }
+
+                    ///
+
                     default: {
                         
                         throw new Exception("Cannot codegen garbage operator");

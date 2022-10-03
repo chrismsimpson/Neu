@@ -1199,6 +1199,7 @@ public partial class Expression: Statement {
         LessThanOrEqual,
         GreaterThanOrEqual,
         LogicalAnd,
+        LogicalOr,
         Assign,
         AddAssign,
         SubtractAssign,
@@ -1476,6 +1477,13 @@ public static partial class ExpressionFunctions {
                 opExpr.Operator == BinaryOperator.LogicalAnd:
 
                 return 70;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == BinaryOperator.LogicalOr:
+
+                return 69;
 
             ///
 
@@ -2945,8 +2953,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case NameToken nt when nt.Value == "false": {
 
                 index += 1;
@@ -2956,13 +2962,20 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case NameToken nt when nt.Value == "and": {
 
                 index += 1;
 
                 expr = new OperatorExpression(BinaryOperator.LogicalAnd, span);
+
+                break;
+            }
+
+            case NameToken nt when nt.Value == "or": {
+
+                index += 1;
+
+                expr = new OperatorExpression(BinaryOperator.LogicalOr, span);
 
                 break;
             }
@@ -3604,6 +3617,13 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(BinaryOperator.LogicalAnd, span), null);
             }
 
+            case NameToken nt when nt.Value == "or": {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.LogicalOr, span), null);
+            }
+
             case PlusToken _: {
 
                 index += 1;
@@ -3824,6 +3844,13 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (new OperatorExpression(BinaryOperator.LogicalAnd, span), null);
+            }
+
+            case NameToken nt when nt.Value == "or": {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.LogicalOr, span), null);
             }
 
             case EqualToken _: {
