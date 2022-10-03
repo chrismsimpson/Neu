@@ -2136,11 +2136,6 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedRhsErr;
 
-                // var tryPromoteErr = TryPromoteConstantExprToType(
-                //     checkedLhs.GetNeuType(), 
-                //     checkedRhs, 
-                //     e.Span);
-
                 var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
                     checkedLhs.GetNeuType(), 
                     checkedRhs, 
@@ -2153,16 +2148,12 @@ public static partial class TypeCheckerFunctions {
                     checkedRhs = promotedExpr;
                 }
 
-                error = error ?? TypeCheckBinaryOperation(
-                    checkedLhs,
-                    e.Operator,
-                    checkedRhs,
-                    e.Span);
-                
                 // TODO: actually do the binary operator typecheck against safe operations
                 // For now, use a type we know
+                
+                var (ty, chkBinOpErr) = TypeCheckBinaryOperation(checkedLhs, e.Operator, checkedRhs, e.Span);
 
-                var ty = checkedLhs.GetNeuType();
+                error = error ?? chkBinOpErr;
 
                 return (
                     new CheckedBinaryOpExpression(
@@ -2766,13 +2757,22 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
-    public static Error? TypeCheckBinaryOperation(
+    public static (NeuType, Error?) TypeCheckBinaryOperation(
         CheckedExpression lhs,
         BinaryOperator op,
         CheckedExpression rhs,
         Span span) {
 
+        var ty = lhs.GetNeuType();
+
         switch (op) {
+
+            case BinaryOperator.LogicalAnd: {
+
+                ty = new BoolType();
+
+                break;
+            }
 
             case BinaryOperator.Assign:
             case BinaryOperator.AddAssign:
@@ -2785,16 +2785,20 @@ public static partial class TypeCheckerFunctions {
 
                 if (!NeuTypeFunctions.Eq(lhsTy, rhsTy)) {
 
-                    return new TypeCheckError(
-                        $"assignment between incompatible types ({lhsTy} and {rhsTy})",
-                        span);
+                    return (
+                        lhsTy,
+                        new TypeCheckError(
+                            $"assignment between incompatible types ({lhsTy} and {rhsTy})",
+                            span));
                 }
 
                 if (!lhs.IsMutable()) {
 
-                    return new TypeCheckError(
-                        "assignment to immutable variable", 
-                        span);
+                    return (
+                        lhsTy, 
+                        new TypeCheckError(
+                            "assignment to immutable variable", 
+                            span));
                 }
 
                 break;
@@ -2806,7 +2810,7 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
-        return null;
+        return (ty, null);
     }
 
     public static (CheckedFunction?, Error?) ResolveCall(

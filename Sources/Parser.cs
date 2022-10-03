@@ -1198,6 +1198,7 @@ public partial class Expression: Statement {
         GreaterThan,
         LessThanOrEqual,
         GreaterThanOrEqual,
+        LogicalAnd,
         Assign,
         AddAssign,
         SubtractAssign,
@@ -1437,7 +1438,7 @@ public static partial class ExpressionFunctions {
         }
     }
 
-    public static UInt64 Precendence(
+    public static UInt64 Precedence(
         this Expression expr) {
 
         switch (expr) {
@@ -1468,6 +1469,13 @@ public static partial class ExpressionFunctions {
                 || opExpr.Operator == BinaryOperator.NotEqual:
                 
                 return 80;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == BinaryOperator.LogicalAnd:
+
+                return 70;
 
             ///
 
@@ -2804,7 +2812,7 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            var precedence = op.Precendence();
+            var precedence = op.Precedence();
 
             if (index == tokens.Count) {
 
@@ -2831,7 +2839,7 @@ public static partial class ParserFunctions {
 
                 var _op = exprStack.Pop();
 
-                lastPrecedence = _op.Precendence();
+                lastPrecedence = _op.Precedence();
 
                 if (lastPrecedence < precedence) {
 
@@ -2944,6 +2952,17 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 expr = new BooleanExpression(false, span);
+
+                break;
+            }
+
+            ///
+
+            case NameToken nt when nt.Value == "and": {
+
+                index += 1;
+
+                expr = new OperatorExpression(BinaryOperator.LogicalAnd, span);
 
                 break;
             }
@@ -3348,8 +3367,6 @@ public static partial class ParserFunctions {
 
         // Check for postfix operators, while we're at it
 
-        // if (index < tokens.Count) {
-
         var cont = true;
 
         while (cont && index < tokens.Count) {
@@ -3570,27 +3587,6 @@ public static partial class ParserFunctions {
 
     ///
 
-    // public static (Expression, Error?) ParseOperatorForKind(
-    //     List<Token> tokens,
-    //     ref int index,
-    //     ExpressionKind exprKind) {
-
-    //     switch (exprKind) {
-
-    //         case ExpressionKind.ExpressionWithAssignments: 
-
-    //             return ParseOperatorWithAssignment(tokens, ref index);
-
-    //         case ExpressionKind.ExpressionWithoutAssignment:
-
-    //             return ParseOperator(tokens, ref index);
-
-    //         default:
-
-    //             throw new Exception();
-    //     }
-    // }
-
     public static (Expression, Error?) ParseOperator(
         List<Token> tokens, 
         ref int index) {
@@ -3600,6 +3596,13 @@ public static partial class ParserFunctions {
         var span = tokens.ElementAt(index).Span;
 
         switch (tokens.ElementAt(index)) {
+
+            case NameToken nt when nt.Value == "and": {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.LogicalAnd, span), null);
+            }
 
             case PlusToken _: {
 
@@ -3814,6 +3817,13 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (new OperatorExpression(BinaryOperator.Modulo, span), null);
+            }
+
+            case NameToken nt when nt.Value == "and": {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.LogicalAnd, span), null);
             }
 
             case EqualToken _: {
