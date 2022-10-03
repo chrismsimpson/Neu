@@ -2661,6 +2661,13 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
 
+            case UnaryOperator.LogicalNot: {
+
+                return (
+                    new CheckedUnaryOpExpression(expr, UnaryOperator.LogicalNot, exprType),
+                    null);
+            }
+
             case UnaryOperator.Negate: {
 
                 switch (exprType) {

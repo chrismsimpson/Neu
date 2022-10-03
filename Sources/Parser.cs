@@ -1182,7 +1182,8 @@ public partial class Expression: Statement {
         PostDecrement,
         Negate,
         Dereference,
-        RawAddress
+        RawAddress,
+        LogicalNot
     }
 
     public enum BinaryOperator {
@@ -2976,6 +2977,26 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 expr = new OperatorExpression(BinaryOperator.LogicalOr, span);
+
+                break;
+            }
+
+            case NameToken nt when nt.Value == "not": {
+
+                var startSpan = tokens.ElementAt(index).Span;
+
+                index += 1;
+
+                var (_expr, err) = ParseOperand(tokens, ref index);
+
+                error = error ?? err;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: _expr.GetSpan().End);
+
+                expr = new UnaryOpExpression(_expr, UnaryOperator.LogicalNot, _span);
 
                 break;
             }

@@ -1019,6 +1019,13 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case UnaryOperator.LogicalNot: {
+
+                        output.Append('!');
+
+                        break;
+                    }
+
                     default: {
 
                         break;
