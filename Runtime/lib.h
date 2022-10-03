@@ -85,5 +85,19 @@ inline String runtimeHelperNumberToString(Int64 number) {
     return String::number(number);
 }
 
+int __neu_main(Vector<String>);
+
+int main(int argc, char** argv) {
+
+    Vector<String> args;
+
+    for (int i = 0; i < argc; ++i) {
+
+        args.append(argv[i]);
+    }
+
+    return __neu_main(move(args));
+}
+
 static_assert(sizeof(Float) == 4);
 static_assert(sizeof(Double) == 8);

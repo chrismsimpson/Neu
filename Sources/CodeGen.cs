@@ -39,7 +39,7 @@ public static partial class CodeGenFunctions {
 
             var funcOutput = compiler.TranslateFuncPredecl(func, file);
             
-            if (func.Linkage != FunctionLinkage.ImplicitConstructor) {
+            if (func.Linkage != FunctionLinkage.ImplicitConstructor && func.Name != "main") {
 
                 output.Append(funcOutput);
 
@@ -207,9 +207,21 @@ public static partial class CodeGenFunctions {
 
         output.Append(' ');
 
-        output.Append(fun.Name);
+        if (fun.Name == "main") {
+
+            output.Append("__neu_main");
+        }
+        else {
+
+            output.Append(fun.Name);
+        }
 
         output.Append('(');
+
+        if (fun.Name == "main" && !fun.Parameters.Any()) {
+        
+            output.Append("Vector<String>");
+        }
 
         var first = true;
 
@@ -235,9 +247,19 @@ public static partial class CodeGenFunctions {
 
         output.Append(')');
 
+        if (fun.Name == "main") {
+            
+            output.Append("\n{");
+        }
+
         var block = compiler.TranslateBlock(0, fun.Block, file);
 
         output.Append(block);
+
+        if (fun.Name == "main") {
+            
+            output.Append("return 0; }");
+        }
 
         return output.ToString();
     }
