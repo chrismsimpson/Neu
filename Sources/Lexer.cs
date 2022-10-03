@@ -798,7 +798,39 @@ public static partial class LexerFunctions {
 
         Error? error = null;
 
-        if (bytes[index].IsAsciiDigit()) {
+        if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'x') {
+            
+            // Hex number
+            
+            var start = index;
+
+            index += 2;
+
+            while (index < bytes.Length && bytes[index].IsAsciiHexDigit()) {
+
+                index += 1;
+            }
+
+            var str = UTF8.GetString(bytes[(start + 2)..index]);
+
+            Int64 number = 0;
+
+            if (Int64.TryParse(str, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+
+                return (
+                    new NumberToken(number, new Span(fileId, start, index)),
+                    null);
+            }
+            else {
+
+                return (
+                    new UnknownToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "could not parse hex",
+                        new Span(fileId, start, index)));
+            }
+        } 
+        else if (bytes[index].IsAsciiDigit()) {
 
             // Number
 
@@ -948,6 +980,40 @@ public static partial class CharExtensions {
             case '7':
             case '8':
             case '9':
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    public static bool IsAsciiHexDigit(
+        this byte b) {
+
+        switch (ToChar(b)) {
+
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
                 return true;
 
             default:
