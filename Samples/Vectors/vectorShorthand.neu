@@ -1,0 +1,12 @@
+func makeV() -> [String] {
+    return ["foo", "bar"]
+}
+
+func main() {
+    let v: [String] = makeV()
+    var i = 0
+    while i < 2 {
+        print(v[i])
+        ++i
+    }
+}

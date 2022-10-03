@@ -2744,143 +2744,6 @@ public static partial class TypeCheckerFunctions {
             error);
     }
 
-    // public static (NeuType, Error?) TypeCheckTypeName(
-    //     UncheckedType uncheckedType,
-    //     Stack stack) {
-
-    //     NeuType? ty = null;
-
-    //     Error? error = null;
-
-    //     switch (uncheckedType.Name) {
-
-    //         case "Int8":
-
-    //             ty = new Int8Type();
-
-    //             break;
-
-    //         case "Int16":
-
-    //             ty = new Int16Type();
-
-    //             break;
-
-    //         case "Int32":
-
-    //             ty = new Int32Type();
-
-    //             break;
-
-    //         case "Int64":
-
-    //             ty = new Int64Type();
-
-    //             break;
-
-    //         case "UInt8":
-
-    //             ty = new UInt8Type();
-
-    //             break;
-
-    //         case "UInt16":
-
-    //             ty = new UInt16Type();
-
-    //             break;
-
-    //         case "UInt32":
-
-    //             ty = new UInt32Type();
-
-    //             break;
-
-    //         case "UInt64":
-
-    //             ty = new UInt64Type();
-
-    //             break;
-
-    //         case "Float":
-
-    //             ty = new FloatType();
-
-    //             break;
-
-    //         case "Double":
-
-    //             ty = new DoubleType();
-
-    //             break;
-
-    //         case "String":  
-
-    //             ty = new StringType();
-
-    //             break;
-
-    //         case "Bool":
-
-    //             ty = new BoolType();
-
-    //             break;
-
-    //         case "Void":
-
-    //             ty = new VoidType();
-
-    //             break;
-
-    //         case var x when IsNullOrWhiteSpace(x):
-
-    //             ty = new UnknownType();
-
-    //             break;
-
-    //         case var x: {
-
-    //             var structure = stack.FindStruct(x);
-
-    //             switch (structure) {
-
-    //                 case UInt64 structId: {
-
-    //                     ty = new StructType(structId);
-
-    //                     break;
-    //                 }
-
-    //                 default: {
-
-    //                     ty = new UnknownType();
-
-    //                     error = new TypeCheckError(
-    //                         "unknown type",
-    //                         uncheckedType.Span);
-
-    //                     break;
-    //                 }
-    //             }
-    //         }
-
-    //         break;
-    //     }
-
-    //     if (uncheckedType.Optional) {
-
-    //         return (
-    //             new OptionalType(ty),
-    //             error);
-    //     }
-    //     else {
-
-    //         return (
-    //             ty, 
-    //             error);
-    //     }
-    // }
-
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
         Stack stack) {
@@ -2987,6 +2850,17 @@ public static partial class TypeCheckerFunctions {
             case UncheckedEmptyType _: {
 
                 return (new UnknownType(), null);
+            }
+
+            case UncheckedVectorType vt: {
+
+                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack);
+
+                error = error ?? innerTypeErr;
+
+                return (
+                    new VectorType(innerType),
+                    error);
             }
 
             case UncheckedOptionalType opt: {

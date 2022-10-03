@@ -12,7 +12,6 @@
 
 #    include "Weakable.h"
 
-
 template<typename T>
 class [[nodiscard]] WeakPointer {
     

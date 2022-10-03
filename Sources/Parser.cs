@@ -81,31 +81,6 @@ public enum ExpressionKind {
 
 ///
 
-// public partial class UncheckedType {
-
-//     public String Name { get; set; }
-
-//     public bool Optional { get; set; }
-
-//     public Span Span { get; init; }
-
-//     ///
-
-//     public UncheckedType(
-//         String name,
-//         bool optional,
-//         Span span) {
-
-//         this.Name = name;
-//         this.Optional = optional;
-//         this.Span = span;
-//     }
-
-//     public UncheckedType(
-//         Span span)
-//         : this(String.Empty, false, span) { }
-// }
-
 public partial class UncheckedType {
 
     public UncheckedType() { }
@@ -124,6 +99,23 @@ public partial class UncheckedType {
             Span span) {
 
             this.Name = name;
+            this.Span = span;
+        }
+    }
+
+    public partial class UncheckedVectorType: UncheckedType {
+
+        public UncheckedType Type { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public UncheckedVectorType(
+            UncheckedType type,
+            Span span) {
+
+            this.Type = type;
             this.Span = span;
         }
     }
@@ -3930,181 +3922,43 @@ public static partial class ParserFunctions {
 
     ///
 
-    // public static (NeuType, Error?) ParseTypeName(
-    //     List<Token> tokens, 
-    //     ref int index) {
+    public static (UncheckedType, Error?) ParseVectorType(
+        List<Token> tokens,
+        ref int index) {
 
-    //     Trace($"ParseTypeName: {tokens.ElementAt(index)}");
+        // [T] is shorthand for Vector<T>
 
-    //     Error? error = null;
+        if (index + 2 >= tokens.Count) {
 
-    //     NeuType baseType = new VoidType();
+            return (new UncheckedEmptyType(), null);
+        }
 
-    //     switch (tokens.ElementAt(index)) {
+        var start = tokens.ElementAt(index).Span;
 
-    //         case NameToken nt: {
+        if (tokens.ElementAt(index) is LSquareToken) {
 
-    //             switch (nt.Value) {
+            if (tokens.ElementAt(index + 2) is RSquareToken) {
 
-    //                 case "Int8": {
+                if (tokens.ElementAt(index + 1) is NameToken nt) {
 
-    //                     baseType = new Int8Type();
+                    var uncheckedType = new UncheckedVectorType(
+                        new UncheckedNameType(nt.Value, nt.Span),
+                        new Span(
+                            fileId: start.FileId,
+                            start: start.Start,
+                            end: tokens.ElementAt(index + 2).Span.End));
 
-    //                     break;
-    //                 }
+                    index += 2;
 
-    //                 ///
+                    return (uncheckedType, null);                    
+                }
+            }
+        }
 
-    //                 case "Int16": {
+        return (new UncheckedEmptyType(), null);
+    }
 
-    //                     baseType = new Int16Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "Int32": {
-
-    //                     baseType = new Int32Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "Int64": {
-
-    //                     baseType = new Int64Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "UInt8": {
-
-    //                     baseType = new UInt8Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "UInt16": {
-
-    //                     baseType = new UInt16Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "UInt32": {
-
-    //                     baseType = new UInt32Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "UInt64": {
-
-    //                     baseType = new UInt64Type();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "Float": {
-
-    //                     baseType = new FloatType();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "Double": {
-
-    //                     baseType = new DoubleType();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "String": {
-
-    //                     baseType = new StringType();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 case "Bool": {
-
-    //                     baseType = new BoolType();
-
-    //                     break;
-    //                 }
-
-    //                 ///
-
-    //                 default: {
-
-    //                     Trace("ERROR: unknown type");
-
-    //                     baseType = new VoidType();
-
-    //                     error = error ?? 
-    //                         new ParserError(
-    //                             "unknown type", 
-    //                             nt.Span);
-
-    //                     break;
-    //                 }
-    //             }
-            
-    //             break;
-    //         }
-
-    //         ///
-
-    //         default: {
-
-    //             Trace("ERROR: expected type name");
-
-    //             baseType = new VoidType();
-
-    //             error = error ?? 
-    //                 new ParserError(
-    //                     "expected type name", 
-    //                     tokens.ElementAt(index).Span);
-
-    //             break;
-    //         }
-    //     }
-
-    //     if (index + 1 < tokens.Count) {
-
-    //         if (tokens.ElementAt(index + 1) is QuestionToken) {
-
-    //             // T? is shorthand for Optional<T>
-
-    //             index += 1;
-
-    //             return (
-    //                 new OptionalType(baseType),
-    //                 error);
-    //         }
-    //     }
-
-    //     return (baseType, error);
-    // }
+    ///
 
     public static (UncheckedType, Error?) ParseTypeName(
         List<Token> tokens, 
@@ -4117,6 +3971,15 @@ public static partial class ParserFunctions {
         var start = tokens.ElementAt(index).Span;
 
         Trace($"ParseTypeName: {tokens.ElementAt(index)}");
+
+        var (vectorType, parseVectorTypeErr) = ParseVectorType(tokens, ref index);
+
+        error = error ?? parseVectorTypeErr;
+
+        if (vectorType is UncheckedVectorType vt) {
+
+            return (vt, error);
+        }
 
         switch (tokens.ElementAt(index)) {
 
