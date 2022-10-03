@@ -1,0 +1,6 @@
+func foo(a: Bool, b: Bool) {
+}
+
+func main() {
+    foo(true, true)
+}
