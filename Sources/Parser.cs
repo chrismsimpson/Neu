@@ -756,18 +756,17 @@ public partial class Expression: Statement {
         }
     }
 
-    public partial class Int64Expression: Expression {
+    public partial class NumericConstantExpression: Expression {
 
-        public Int64 Value { get; init; }
+        public NumericConstant Value { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
-        public Int64Expression(
-            Int64 value,
-            Span span)
-            : base() {
+        public NumericConstantExpression(
+            NumericConstant value,
+            Span span) {
 
             this.Value = value;
             this.Span = span;
@@ -1086,9 +1085,9 @@ public static partial class ExpressionFunctions {
                 return ce.Span;
             }
 
-            case Int64Expression ie: {
+            case NumericConstantExpression ne: {
 
-                return ie.Span;
+                return ne.Span;
             }
 
             case QuotedStringExpression qse: {
@@ -1202,11 +1201,11 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case var _ when
-                l is Int64Expression intL
-                && r is Int64Expression intR:
+            case var _ when 
+                l is NumericConstantExpression ln
+                && r is NumericConstantExpression rn:
 
-                return intL.Value == intR.Value;
+                return NumericConstantFunctions.Eq(ln.Value, rn.Value);
 
             ///
 
@@ -2885,7 +2884,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new Int64Expression(numTok.Value, span);
+                expr = new NumericConstantExpression(new Int64Constant(numTok.Value), span);
 
                 break;
             }

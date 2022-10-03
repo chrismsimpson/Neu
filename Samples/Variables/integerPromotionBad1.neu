@@ -1,0 +1,3 @@
+func main() {
+    let i: UInt8 = 1000;
+}

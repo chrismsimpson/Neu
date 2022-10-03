@@ -657,11 +657,87 @@ public static partial class CodeGenFunctions {
 
             ///
 
-            case CheckedInt64Expression i: {
+            case CheckedNumericConstantExpression ne: {
 
-                output.Append("static_cast<Int64>(");
-                output.Append($"{i.Value}");
-                output.Append("LL)");
+                switch (ne.Value) {
+
+                    case Int8Constant i8: {
+
+                        output.Append("static_cast<Int8>(");
+                        output.Append(i8.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case Int16Constant i16: {
+
+                        output.Append("static_cast<Int16>(");
+                        output.Append(i16.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case Int32Constant i32: {
+
+                        output.Append("static_cast<Int32>(");
+                        output.Append(i32.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case Int64Constant i64: {
+
+                        output.Append("static_cast<Int64>(");
+                        output.Append(i64.Value.ToString());
+                        output.Append("LL)");
+
+                        break;
+                    }
+
+                    case UInt8Constant u8: {
+
+                        output.Append("static_cast<UInt8>(");
+                        output.Append(u8.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case UInt16Constant u16: {
+
+                        output.Append("static_cast<UInt16>(");
+                        output.Append(u16.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case UInt32Constant u32: {
+
+                        output.Append("static_cast<UInt32>(");
+                        output.Append(u32.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case UInt64Constant u64: {
+
+                        output.Append("static_cast<UInt64>(");
+                        output.Append(u64.Value.ToString());
+                        output.Append("ULL)");
+
+                        break;
+                    }
+
+                    default: { 
+                        
+                        break;
+                    }
+                }
 
                 break;
             }

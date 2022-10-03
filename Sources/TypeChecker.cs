@@ -206,6 +206,71 @@ public partial class UnknownType : NeuType {
         : base() { }
 }
 
+public static partial class NeuTypeFunctions {
+
+    public static bool IsInteger(
+        this NeuType ty) {
+
+        switch (ty) {
+
+            case Int8Type _:        return true;
+            case Int16Type _:       return true;
+            case Int32Type _:       return true;
+            case Int64Type _:       return true;
+            case UInt8Type _:       return true;
+            case UInt16Type _:      return true;
+            case UInt32Type _:      return true;
+            case UInt64Type _:      return true;
+            default:                return false;
+        }
+    }
+
+    public static bool CanFitInteger(
+        this NeuType ty,
+        IntegerConstant value) {
+
+        switch (value) {
+
+            case SignedIntegerConstant si: {
+
+                switch (ty) {
+
+                    case Int8Type _: return si.Value >= sbyte.MinValue && si.Value <= sbyte.MaxValue;
+                    case Int16Type _: return si.Value >= short.MinValue && si.Value <= short.MaxValue;
+                    case Int32Type _: return si.Value >= int.MinValue && si.Value <= int.MaxValue;
+                    case Int64Type _: return true;
+                    case UInt8Type _: return si.Value >= 0 && si.Value <= byte.MaxValue;
+                    case UInt16Type _: return si.Value >= 0 && si.Value <= ushort.MaxValue;
+                    case UInt32Type _: return si.Value >= 0 && si.Value <= uint.MaxValue;
+                    case UInt64Type _: return si.Value >= 0;
+                    default: return false;
+                }
+            }
+
+            case UnsignedIntegerConstant ui: {
+
+                switch (ty) {
+
+                    case Int8Type _: return ui.Value <= ToUInt64(sbyte.MaxValue);
+                    case Int16Type _: return ui.Value <= ToUInt64(short.MaxValue);
+                    case Int32Type _: return ui.Value <= ToUInt64(int.MaxValue);
+                    case Int64Type _: return ui.Value <= ToUInt64(long.MaxValue);
+                    case UInt8Type _: return ui.Value <= ToUInt64(byte.MaxValue);
+                    case UInt16Type _: return ui.Value <= ToUInt64(ushort.MaxValue);
+                    case UInt32Type _: return ui.Value <= ToUInt64(uint.MaxValue);
+                    case UInt64Type _: return true;
+                    default: return false;
+                }
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+    }
+}
+
 ///
 
 public partial class CheckedFile {
@@ -510,6 +575,243 @@ public partial class CheckedStatement {
 
 ///
 
+public partial class IntegerConstant {
+
+    public IntegerConstant() { }
+}
+
+    public partial class SignedIntegerConstant: IntegerConstant {
+
+        public Int64 Value { get; init; }
+
+        ///
+
+        public SignedIntegerConstant(
+            Int64 value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class UnsignedIntegerConstant: IntegerConstant {
+
+        public UInt64 Value { get; init; }
+
+        ///
+
+        public UnsignedIntegerConstant(
+            UInt64 value) {
+
+            this.Value = value;
+        }
+    }
+
+    public static partial class IntegerConstantFunctions {
+
+        public static (NumericConstant?, NeuType) Promote(
+            this IntegerConstant i,
+            NeuType ty) {
+
+            if (!ty.CanFitInteger(i)) {
+
+                return (null, new UnknownType());
+            }
+
+            NumericConstant newConstant = i switch {
+                SignedIntegerConstant si => ty switch {      
+                    Int8Type => new Int8Constant(ToSByte(si.Value)),
+                    Int16Type => new Int16Constant(ToInt16(si.Value)),
+                    Int32Type => new Int32Constant(ToInt32(si.Value)),
+                    Int64Type => new Int64Constant(si.Value),
+                    UInt8Type => new UInt8Constant(ToByte(si.Value)),
+                    UInt16Type => new UInt16Constant(ToUInt16(si.Value)),
+                    UInt32Type => new UInt32Constant(ToUInt32(si.Value)),
+                    UInt64Type => new UInt64Constant(ToUInt64(si.Value)),
+                    _ => throw new Exception("Bogus state in IntegerConstant.promote")
+                },
+
+                UnsignedIntegerConstant ui => ty switch {
+                    Int8Type => new Int8Constant(ToSByte(ui.Value)),
+                    Int16Type => new Int16Constant(ToInt16(ui.Value)),
+                    Int32Type => new Int32Constant(ToInt32(ui.Value)),
+                    Int64Type => new Int64Constant(ToInt64(ui.Value)),
+                    UInt8Type => new UInt8Constant(ToByte(ui.Value)),
+                    UInt16Type => new UInt16Constant(ToUInt16(ui.Value)),
+                    UInt32Type => new UInt32Constant(ToUInt32(ui.Value)),
+                    UInt64Type => new UInt64Constant(ui.Value),
+                    _ => throw new Exception("Bogus state in IntegerConstant.promote")
+                },
+                _ => throw new Exception()
+            };
+
+            return (newConstant, ty);
+        }
+    }
+
+///
+
+public partial class NumericConstant {
+
+    public NumericConstant() { }
+}
+    
+    public partial class Int8Constant: NumericConstant {
+
+        public sbyte Value { get; init; }
+
+        ///
+
+        public Int8Constant(
+            sbyte value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class Int16Constant: NumericConstant {
+
+        public short Value { get; init; }
+
+        ///
+
+        public Int16Constant(
+            short value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class Int32Constant: NumericConstant {
+
+        public int Value { get; init; }
+
+        ///
+
+        public Int32Constant(
+            int value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class Int64Constant: NumericConstant {
+
+        public long Value { get; init; }
+
+        ///
+
+        public Int64Constant(
+            long value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class UInt8Constant: NumericConstant {
+
+        public byte Value { get; init; }
+
+        ///
+
+        public UInt8Constant(
+            byte value) {
+            
+            this.Value = value;
+        }
+    }
+
+    public partial class UInt16Constant: NumericConstant {
+
+        public ushort Value { get; init; }
+
+        ///
+
+        public UInt16Constant(
+            ushort value) {
+            
+            this.Value = value;
+        }
+    }
+
+    public partial class UInt32Constant: NumericConstant {
+
+        public uint Value { get; init; }
+
+        ///
+
+        public UInt32Constant(
+            uint value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class UInt64Constant: NumericConstant {
+
+        public ulong Value { get; init; }
+
+        ///
+
+        public UInt64Constant(
+            ulong value) {
+
+            this.Value = value;
+        }
+    }
+
+public static partial class NumericConstantFunctions {
+
+    public static bool Eq(NumericConstant l, NumericConstant r) {
+
+        switch (true) {
+
+            case var _ when l is Int8Constant li8 && r is Int8Constant ri8:             return li8 == ri8;
+            case var _ when l is Int16Constant li16 && r is Int16Constant ri16:         return li16 == ri16;
+            case var _ when l is Int32Constant li32 && r is Int32Constant ri32:         return li32 == ri32;
+            case var _ when l is Int64Constant li64 && r is Int64Constant ri64:         return li64 == ri64;
+            case var _ when l is UInt8Constant lu8 && r is UInt8Constant ru8:           return lu8 == ru8;
+            case var _ when l is UInt16Constant lu16 && r is UInt16Constant ru16:       return lu16 == ru16;
+            case var _ when l is UInt32Constant lu32 && r is UInt32Constant ru32:       return lu32 == ru32;
+            case var _ when l is UInt64Constant lu64 && r is UInt64Constant ru64:       return lu64 == ru64;
+            default:                                                                    return false;
+        }
+    }
+
+    public static IntegerConstant? IntegerConstant(
+        this NumericConstant n) {
+
+        switch (n) {
+            case Int8Constant i8: return new SignedIntegerConstant(ToInt64(i8.Value));
+            case Int16Constant i16: return new SignedIntegerConstant(ToInt64(i16.Value));
+            case Int32Constant i32: return new SignedIntegerConstant(ToInt64(i32.Value));
+            case Int64Constant i64: return new SignedIntegerConstant(i64.Value);
+            case UInt8Constant u8: return new UnsignedIntegerConstant(ToUInt64(u8.Value));
+            case UInt16Constant u16: return new UnsignedIntegerConstant(ToUInt64(u16.Value));
+            case UInt32Constant u32: return new UnsignedIntegerConstant(ToUInt64(u32.Value));
+            case UInt64Constant u64: return new UnsignedIntegerConstant(u64.Value);
+            default: throw new Exception();
+        }
+    }
+
+    public static NeuType GetNeuType(
+        this NumericConstant n) {
+
+        switch (n) {
+            case Int8Constant i8: return new Int8Type();
+            case Int16Constant i16: return new Int16Type();
+            case Int32Constant i32: return new Int32Type();
+            case Int64Constant i64: return new Int64Type();
+            case UInt8Constant u8: return new UInt8Type();
+            case UInt16Constant u16: return new UInt16Type();
+            case UInt32Constant u32: return new UInt32Type();
+            case UInt64Constant u64: return new UInt64Type();
+            default: throw new Exception();
+        }
+    }
+}
+
+///
+
 public partial class CheckedExpression: CheckedStatement {
 
     public CheckedExpression() { }
@@ -547,16 +849,20 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
-    public partial class CheckedInt64Expression: CheckedExpression {
+    public partial class CheckedNumericConstantExpression: CheckedExpression {
 
-        public Int64 Value { get; init; }
+        public NumericConstant Value { get; init; }
+
+        public NeuType Type { get; init; }
 
         ///
 
-        public CheckedInt64Expression(
-            Int64 value) {
+        public CheckedNumericConstantExpression(
+            NumericConstant value,
+            NeuType type) {
 
             this.Value = value;
+            this.Type = type;
         }
     }
 
@@ -804,9 +1110,9 @@ public static partial class CheckedExpressionFunctions {
                 return e.Type;
             }
             
-            case CheckedInt64Expression _: {
+            case CheckedNumericConstantExpression ne: {
 
-                return new Int64Type();
+                return ne.Type;
             }
 
             case CheckedQuotedStringExpression _: {
@@ -877,6 +1183,17 @@ public static partial class CheckedExpressionFunctions {
             default:
 
                 throw new Exception();
+        }
+    }
+
+    public static IntegerConstant? ToIntegerConstant(
+        this CheckedExpression e) {
+
+        switch (e) {
+
+            case CheckedNumericConstantExpression ne: return ne.Value.IntegerConstant();
+
+            default: return null;
         }
     }
 }
@@ -1399,32 +1716,6 @@ public static partial class TypeCheckerFunctions {
         return (checkedBlock, error);
     }
 
-    // public static bool CompareTypes(NeuType a, NeuType b) {
-
-    //     switch (true) {
-
-    //         case var _ when a is BoolType && b is BoolType:             return true;
-    //         case var _ when a is StringType && b is StringType:         return true;
-    //         case var _ when a is Int8Type && b is Int8Type:             return true;
-    //         case var _ when a is Int16Type && b is Int16Type:           return true;
-    //         case var _ when a is Int32Type && b is Int32Type:           return true;
-    //         case var _ when a is Int64Type && b is Int64Type:           return true;
-    //         case var _ when a is UInt8Type && b is UInt8Type:           return true;
-    //         case var _ when a is UInt16Type && b is UInt16Type:         return true;
-    //         case var _ when a is UInt32Type && b is UInt32Type:         return true;
-    //         case var _ when a is UInt64Type && b is UInt64Type:         return true;
-    //         case var _ when a is FloatType && b is FloatType:           return true;
-    //         case var _ when a is DoubleType && b is DoubleType:         return true;
-    //         case var _ when a is VoidType && b is VoidType:             return true;
-
-    //         case var _ when a is VectorType va && b is VectorType vb:   return CompareTypes(va.Type, vb.Type);
-
-    //         case var _ when a is UnknownType && b is UnknownType:       return true;
-
-    //         default:                                                    return false;
-    //     }
-    // }
-
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
         Stack stack,
@@ -1467,6 +1758,23 @@ public static partial class TypeCheckerFunctions {
                 else {
 
                     error = error ?? chkTypeErr;
+                }
+
+                // var tryPromoteErr = TryPromoteConstantExprToType(
+                //     checkedType, 
+                //     checkedExpr, 
+                //     vds.Expr.GetSpan());
+
+                var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
+                    checkedType, 
+                    checkedExpr, 
+                    vds.Expr.GetSpan());
+
+                error = error ?? tryPromoteErr;
+
+                if (promotedExpr is not null) {
+
+                    checkedExpr = promotedExpr;
                 }
 
                 var checkedVarDecl = new CheckedVarDecl(
@@ -1574,6 +1882,68 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
+    // public static Error? TryPromoteConstantExprToType(
+    //     NeuType lhsType,
+    //     CheckedExpression checkedRhs,
+    //     Span span) {
+
+    //     if (!lhsType.IsInteger()) {
+
+    //         return null;
+    //     }
+
+    //     if (checkedRhs.ToIntegerConstant() is IntegerConstant rhsConstant) {
+
+    //         var (_newConstant, newType) = rhsConstant.Promote(lhsType);
+
+    //         if (_newConstant is NumericConstant newConstant) {
+
+    //             checkedRhs = new CheckedNumericConstantExpression(newConstant, newType);
+    //         }
+    //         else {
+
+    //             return new TypeCheckError(
+    //                 "Integer promotion failed",
+    //                 span);
+    //         }
+    //     }
+
+    //     return null;
+    // }
+
+    public static (CheckedNumericConstantExpression?, Error?) TryPromoteConstantExprToType(
+        NeuType lhsType,
+        CheckedExpression checkedRhs,
+        Span span) {
+
+        if (!lhsType.IsInteger()) {
+
+            return (null, null);
+        }
+
+        if (checkedRhs.ToIntegerConstant() is IntegerConstant rhsConstant) {
+
+            var (_newConstant, newType) = rhsConstant.Promote(lhsType);
+
+            if (_newConstant is NumericConstant newConstant) {
+
+                return (
+                    new CheckedNumericConstantExpression(newConstant, newType), 
+                    null);
+            }
+            else {
+
+                return (
+                    null, 
+                    new TypeCheckError(
+                        "Integer promotion failed",
+                        span));
+            }
+        }
+
+        return (null, null);
+    }
+
     public static (CheckedExpression, Error?) TypeCheckExpression(
         Expression expr,
         Stack stack,
@@ -1592,6 +1962,23 @@ public static partial class TypeCheckerFunctions {
                 var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file);
 
                 error = error ?? checkedRhsErr;
+
+                // var tryPromoteErr = TryPromoteConstantExprToType(
+                //     checkedLhs.GetNeuType(), 
+                //     checkedRhs, 
+                //     e.Span);
+
+                var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
+                    checkedLhs.GetNeuType(), 
+                    checkedRhs, 
+                    e.Span);
+
+                error = error ?? tryPromoteErr;
+
+                if (promotedExpr is not null) {
+
+                    checkedRhs = promotedExpr;
+                }
 
                 error = error ?? TypeCheckBinaryOperation(
                     checkedLhs,
@@ -1700,10 +2087,10 @@ public static partial class TypeCheckerFunctions {
                     error ?? checkedCallErr);
             }
 
-            case Int64Expression e: {
+            case NumericConstantExpression ne: {
 
                 return (
-                    new CheckedInt64Expression(e.Value),
+                    new CheckedNumericConstantExpression(ne.Value, ne.Value.GetNeuType()),
                     null);
             }
 
@@ -2218,6 +2605,23 @@ public static partial class TypeCheckerFunctions {
                                     new TypeCheckError(
                                         "Wrong parameter name in argument label",
                                         call.Args[idx].Item2.GetSpan());
+                            }
+
+                            // var tryPromoteErr = TryPromoteConstantExprToType(
+                            //     callee.Parameters[idx].Variable.Type,
+                            //     checkedArg,
+                            //     call.Args[idx].Item2.GetSpan());
+
+                            var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
+                                callee.Parameters[idx].Variable.Type,
+                                checkedArg,
+                                call.Args[idx].Item2.GetSpan());
+
+                            error = error ?? tryPromoteErr;
+
+                            if (promotedExpr is not null) {
+
+                                checkedArg = promotedExpr;
                             }
 
                             if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx].Variable.Type)) {

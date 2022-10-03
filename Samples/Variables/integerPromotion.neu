@@ -1,0 +1,22 @@
+struct Foo {
+    x: UInt16
+}
+
+func main() {
+    var a: UInt8 = 100
+    a += 100
+
+    var b: UInt16 = 1000
+    b += 1000
+
+    var c: UInt32 = 100000
+    c += 100000
+
+    var f = Foo(x: 123)
+    f.x += 2
+
+    print(a)
+    print(b)
+    print(c)
+    print(f.x)
+}

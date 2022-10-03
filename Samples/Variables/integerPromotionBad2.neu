@@ -1,0 +1,4 @@
+func main() {
+    var i: UInt8 = 0;
+    i += 1000;
+}
