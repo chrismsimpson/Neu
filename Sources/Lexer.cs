@@ -830,6 +830,38 @@ public static partial class LexerFunctions {
                         new Span(fileId, start, index)));
             }
         } 
+        else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'b') {
+            
+            // Binary number
+            
+            var start = index;
+            
+            index += 2;
+            
+            while (index < bytes.Length && (bytes[index] == '0' || bytes[index] == '1')) {
+                
+                index += 1;
+            }
+
+            var str = UTF8.GetString(bytes[(start + 2)..index]);
+
+            try {
+
+                var number = ToInt64(str, 2);
+
+                return (
+                    new NumberToken(number, new Span(fileId, start, index)),
+                    null);
+            }
+            catch {
+                
+                return (
+                    new UnknownToken(new Span(fileId, start, index)), 
+                    new ParserError(
+                        "could not parse binary number", 
+                        new Span(fileId, start, index)));
+            }
+        }
         else if (bytes[index].IsAsciiDigit()) {
 
             // Number
