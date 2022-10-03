@@ -497,14 +497,17 @@ public partial class CheckedStatement {
 
     public partial class CheckedDeferStatement: CheckedStatement {
 
-        public CheckedBlock Block { get; init; }
+        // public CheckedBlock Block { get; init; }
+        public CheckedStatement Statement { get; init; }
 
         ///
 
         public CheckedDeferStatement(
-            CheckedBlock block) {
+            // CheckedBlock block) {
+            CheckedStatement statement) {
 
-            this.Block = block;
+            // this.Block = block;
+            this.Statement = statement;
         }
     }
 
@@ -1670,11 +1673,11 @@ public static partial class TypeCheckerFunctions {
 
             case DeferStatement ds: {
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ds.Block, stack, file, safetyMode);
+                var (checkedStmt, err) = TypeCheckStatement(ds.Statement, stack, file, safetyMode);
 
                 return (
-                    new CheckedDeferStatement(checkedBlock),
-                    blockErr);
+                    new CheckedDeferStatement(checkedStmt),
+                    err);
             }
 
             case UnsafeBlockStatement us: {
@@ -1682,7 +1685,7 @@ public static partial class TypeCheckerFunctions {
                 var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, stack, file, SafetyMode.Unsafe);
 
                 return (
-                    new CheckedDeferStatement(checkedBlock),
+                    new CheckedBlockStatement(checkedBlock),
                     blockErr);
             }
 

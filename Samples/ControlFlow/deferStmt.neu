@@ -1,0 +1,4 @@
+func main() {
+    defer print(" friends!\n")
+    print("Well, hello")
+}

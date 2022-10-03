@@ -524,15 +524,18 @@ public static partial class StatementFunctions {
 
 public partial class DeferStatement: Statement {
 
-    public Block Block { get; init; }
+    // public Block Block { get; init; }
+    public Statement Statement { get; init; }
 
     ///
 
     public DeferStatement(
-        Block block)
+        // Block block)
+        Statement statement)
         : base() { 
 
-        this.Block = block;
+        // this.Block = block;
+        this.Statement = statement;
     }
 }
 
@@ -542,7 +545,8 @@ public static partial class DeferStatementFunctions {
         DeferStatement? l,
         DeferStatement? r) {
 
-        return BlockFunctions.Eq(l?.Block, r?.Block);
+        // return BlockFunctions.Eq(l?.Block, r?.Block);
+        return StatementFunctions.Eq(l?.Statement, r?.Statement);
     }
 }
 
@@ -2241,12 +2245,12 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (block, blockErr) = ParseBlock(tokens, ref index);
+                var (stmt, err) = ParseStatement(tokens, ref index);
 
-                error = error ?? blockErr;
+                error = error ?? err;
 
                 return (
-                    new DeferStatement(block), 
+                    new DeferStatement(stmt), 
                     error);
             }
 

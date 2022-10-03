@@ -508,11 +508,12 @@ public static partial class CodeGenFunctions {
 
             case CheckedDeferStatement defer: {
 
+                // NOTE: We let the preprocessor generate a unique name for the RAII helper.
                 output.Append("#define __SCOPE_GUARD_NAME __scope_guard_ ## __COUNTER__\n");
                 output.Append("ScopeGuard __SCOPE_GUARD_NAME  ([&] \n");
-                output.Append("#undef __SCOPE_GUARD_NAME\n");
-                output.Append(compiler.TranslateBlock(indent, defer.Block, file));
-                output.Append(");\n");
+                output.Append("#undef __SCOPE_GUARD_NAME\n{");
+                output.Append(compiler.TranslateStmt(indent, defer.Statement, file));
+                output.Append("});\n");
 
                 break;
             }
