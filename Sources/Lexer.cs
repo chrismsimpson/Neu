@@ -251,6 +251,12 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class AmpersandToken: Token {
+
+        public AmpersandToken(Span span)
+            : base(span) { }
+    }
+
     public partial class ForwardSlashToken: Token {
 
         public ForwardSlashToken(Span span) 
@@ -577,6 +583,19 @@ public static partial class LexerFunctions {
                     }
 
                     output.Add(new ExclamationToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '&': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new AmpersandToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }

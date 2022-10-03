@@ -374,6 +374,11 @@ public static partial class CodeGenFunctions {
                 return "void";
             }
 
+            case RawPointerType rp: {
+
+                return $"{compiler.TranslateType(rp.Type, file)}*";
+            }
+
             case VectorType vt: {
 
                 return $"Vector<{compiler.TranslateType(vt.Type, file)}>";
@@ -843,6 +848,20 @@ public static partial class CodeGenFunctions {
                     case UnaryOperator.Negate: {
 
                         output.Append('-');
+
+                        break;
+                    }
+
+                    case UnaryOperator.Dereference: {
+
+                        output.Append('*');
+
+                        break;
+                    }
+
+                    case UnaryOperator.RawAddress: {
+
+                        output.Append('&');
 
                         break;
                     }

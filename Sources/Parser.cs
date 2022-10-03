@@ -81,38 +81,139 @@ public enum ExpressionKind {
 
 ///
 
+// public partial class UncheckedType {
+
+//     public String Name { get; set; }
+
+//     public bool Optional { get; set; }
+
+//     public Span Span { get; init; }
+
+//     ///
+
+//     public UncheckedType(
+//         String name,
+//         bool optional,
+//         Span span) {
+
+//         this.Name = name;
+//         this.Optional = optional;
+//         this.Span = span;
+//     }
+
+//     public UncheckedType(
+//         Span span)
+//         : this(String.Empty, false, span) { }
+// }
+
 public partial class UncheckedType {
 
-    public String Name { get; set; }
+    public UncheckedType() { }
+}
 
-    public bool Optional { get; set; }
+    public partial class UncheckedNameType: UncheckedType {
 
-    public Span Span { get; init; }
+        public String Name { get; init; }
 
-    ///
+        public Span Span { get; init; }
 
-    public UncheckedType(
-        String name,
-        bool optional,
-        Span span) {
+        ///
 
-        this.Name = name;
-        this.Optional = optional;
-        this.Span = span;
+        public UncheckedNameType(
+            String name,
+            Span span) {
+
+            this.Name = name;
+            this.Span = span;
+        }
     }
 
-    public UncheckedType(
-        Span span)
-        : this(String.Empty, false, span) { }
-}
+    public partial class UncheckedOptionalType: UncheckedType {
+
+        public UncheckedType Type { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public UncheckedOptionalType(
+            UncheckedType type,
+            Span span) {
+
+            this.Type = type;
+            this.Span = span;
+        }
+    }
+    
+    public partial class UncheckedRawPointerType: UncheckedType {
+
+        public UncheckedType Type { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public UncheckedRawPointerType(
+            UncheckedType type,
+            Span span) {
+
+            this.Type = type;
+            this.Span = span;
+        }
+    }
+
+    public partial class UncheckedEmptyType: UncheckedType {
+
+        public UncheckedEmptyType() { }
+    }
+
 
 public static partial class UncheckedTypeFunctions {
 
-    public static bool Eq(UncheckedType lhs, UncheckedType rhs) {
+    public static bool Eq(UncheckedType l, UncheckedType r) {
 
-        return lhs.Name == rhs.Name
-            && lhs.Optional == rhs.Optional
-            && (lhs.Span.Start == rhs.Span.Start && lhs.Span.End == rhs.Span.End);
+        // return lhs.Name == rhs.Name
+        //     && lhs.Optional == rhs.Optional
+        //     && (lhs.Span.Start == rhs.Span.Start && lhs.Span.End == rhs.Span.End);
+
+        switch (true) {
+
+            case var _ when
+                l is UncheckedNameType ln
+                && r is UncheckedNameType rn: {
+
+                return ln.Name == rn.Name
+                    && SpanFunctions.Eq(ln.Span, rn.Span);
+            }
+
+            case var _ when 
+                l is UncheckedOptionalType lo
+                && r is UncheckedOptionalType ro: {
+
+                return Eq(lo.Type, ro.Type)
+                    && SpanFunctions.Eq(lo.Span, ro.Span);
+            }
+
+            case var _ when 
+                l is UncheckedRawPointerType lp
+                && r is UncheckedRawPointerType rp: {
+
+                return Eq(lp.Type, rp.Type)
+                    && SpanFunctions.Eq(lp.Span, rp.Span);
+            }
+
+            case var _ when 
+                l is UncheckedEmptyType le
+                && r is UncheckedEmptyType re: {
+
+                return true; // ?
+            }
+
+            default: {
+
+                return false;
+            }
+        }
     }
 }
 
@@ -131,7 +232,7 @@ public partial class VarDecl {
     ///
 
     public VarDecl(Span span)
-        : this(String.Empty, new UncheckedType(span), false, span) { }
+        : this(String.Empty, new UncheckedEmptyType(), false, span) { }
 
     public VarDecl(
         String name,
@@ -239,11 +340,7 @@ public partial class Function {
             new List<Parameter>(), 
             new Block(), 
             returnType: 
-                new UncheckedType(
-                    new Span(
-                        fileId: 0, 
-                        start: 0, 
-                        end: 0)),
+                new UncheckedEmptyType(),
             linkage) { }
 
     public Function(
@@ -1009,7 +1106,9 @@ public partial class Expression: Statement {
         PostIncrement,
         PreDecrement,
         PostDecrement,
-        Negate
+        Negate,
+        Dereference,
+        RawAddress
     }
 
     public enum BinaryOperator {
@@ -1604,7 +1703,8 @@ public static partial class ParserFunctions {
                                 
                                 varDecl.Mutable = false;
 
-                                if (IsNullOrWhiteSpace(varDecl.Type.Name)) {
+                                // if (IsNullOrWhiteSpace(varDecl.Type.Name)) {
+                                if (varDecl.Type is UncheckedEmptyType) {
 
                                     Trace("ERROR: parameter missing type");
 
@@ -1800,7 +1900,7 @@ public static partial class ParserFunctions {
 
                                 error = error ?? varDeclErr;
 
-                                if (IsNullOrWhiteSpace(varDecl.Type.Name)) {
+                                if (varDecl.Type is UncheckedEmptyType) {
 
                                     Trace("ERROR: parameter missing type");
 
@@ -1845,7 +1945,7 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
-                    var returnType = new UncheckedType(tokens.ElementAt(index - 1).Span);
+                    UncheckedType returnType = new UncheckedEmptyType();
 
                     Expression? fatArrowExpr = null;
 
@@ -1868,7 +1968,7 @@ public static partial class ParserFunctions {
                                             ref index, 
                                             ExpressionKind.ExpressionWithoutAssignment);
 
-                                        returnType = new UncheckedType(tokens.ElementAt(index).Span);
+                                        returnType = new UncheckedEmptyType();
 
                                         fatArrowExpr = _fatArrowExpr;
 
@@ -2843,10 +2943,6 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                // var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
-
-                // error = error ?? parseExprErr;
-
                 var (_expr, err) = ParseOperand(tokens, ref index);
 
                 error = error ?? err;
@@ -2868,10 +2964,6 @@ public static partial class ParserFunctions {
                 var startSpan = tokens.ElementAt(index).Span;
 
                 index += 1;
-
-                // var (_expr, parseExprErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
-
-                // error = error ?? parseExprErr;
 
                 var (_expr, err) = ParseOperand(tokens, ref index);
 
@@ -2905,6 +2997,86 @@ public static partial class ParserFunctions {
                     end: _expr.GetSpan().End);
 
                 expr = new UnaryOpExpression(_expr, UnaryOperator.Negate, _span);
+
+                break;
+            }
+
+            ///
+
+            case AsteriskToken _: {
+
+                var startSpan = tokens.ElementAt(index).Span;
+
+                index += 1;
+
+                var (_expr, err) = ParseOperand(tokens, ref index);
+
+                error = error ?? err;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: _expr.GetSpan().End);
+
+                expr = new UnaryOpExpression(_expr, UnaryOperator.Dereference, _span);
+
+                break;
+            }
+
+            ///
+
+            case AmpersandToken _: {
+
+                index += 1;
+
+                if (index < tokens.Count) {
+
+                    switch (tokens.ElementAt(index)) {
+
+                        case NameToken nt when
+                            nt.Value == "raw"
+                            && tokens.ElementAt(index).Span.Start == tokens.ElementAt(index - 1).Span.End: {
+
+                            var startSpan = tokens.ElementAt(index).Span;
+
+                            index += 1;
+
+                            var (_expr, err) = ParseOperand(tokens, ref index);
+
+                            error = error ?? err;
+
+                            var _span = new Span(
+                                fileId: startSpan.FileId,
+                                start: startSpan.Start,
+                                end: _expr.GetSpan().End);
+
+                            expr = new UnaryOpExpression(_expr, UnaryOperator.RawAddress, span);
+
+                            break;
+                        }
+
+                        default: {
+
+                            error = error ?? 
+                                new ParserError(
+                                    "ampersand not currently supported",
+                                    tokens.ElementAt(index - 1).Span);
+
+                            expr = new GarbageExpression(tokens.ElementAt(index - 1).Span);
+
+                            break;
+                        }
+                    }
+                }
+                else {
+
+                    error = error ??
+                        new ParserError(
+                            "ampersand not currently supported",
+                            tokens.ElementAt(index - 1).Span);
+
+                    expr = new GarbageExpression(tokens.ElementAt(index - 1).Span);
+                }
 
                 break;
             }
@@ -3641,7 +3813,7 @@ public static partial class ParserFunctions {
                             return (
                                 new VarDecl(
                                     name: nt.Value, 
-                                    type: new UncheckedType(tokens.ElementAt(index - 1).Span),
+                                    type: new UncheckedEmptyType(),
                                     mutable: false,
                                     span: tokens.ElementAt(index - 1).Span),
                                 null);
@@ -3653,7 +3825,7 @@ public static partial class ParserFunctions {
                     return (
                         new VarDecl(
                             name: nt.Value, 
-                            type: new UncheckedType(tokens.ElementAt(index - 1).Span), 
+                            type: new UncheckedEmptyType(), 
                             mutable: false, 
                             span: tokens.ElementAt(index - 1).Span), 
                         null);
@@ -3682,7 +3854,7 @@ public static partial class ParserFunctions {
                     return (
                         new VarDecl(
                             nt.Value, 
-                            type: new UncheckedType(tokens.ElementAt(index - 2).Span),
+                            type: new UncheckedEmptyType(),
                             mutable: false,
                             span: tokens.ElementAt(index - 2).Span), 
                         new ParserError(
@@ -3888,17 +4060,47 @@ public static partial class ParserFunctions {
         List<Token> tokens, 
         ref int index) {
 
-        var uncheckedType = new UncheckedType(tokens.ElementAt(index).Span);
+        UncheckedType uncheckedType = new UncheckedEmptyType();
 
         Error? error = null;
 
-        Trace($"parse_typename: {tokens.ElementAt(index)}");
+        var start = tokens.ElementAt(index).Span;
+
+        Trace($"ParseTypeName: {tokens.ElementAt(index)}");
 
         switch (tokens.ElementAt(index)) {
 
+            // case NameToken nt: {
+
+            //     uncheckedType.Name = nt.Value;
+
+            //     break;
+            // }
+
             case NameToken nt: {
 
-                uncheckedType.Name = nt.Value;
+                if (nt.Value == "raw") {
+
+                    index += 1;
+
+                    if (index < tokens.Count) {
+
+                        var (childType, err) = ParseTypeName(tokens, ref index);
+
+                        error = error ?? err;
+
+                        uncheckedType = new UncheckedRawPointerType(
+                            childType,
+                            new Span(
+                                fileId: start.FileId,
+                                start: start.Start,
+                                end: tokens.ElementAt(index).Span.End));
+                    }
+                }
+                else {
+
+                    uncheckedType = new UncheckedNameType(nt.Value, tokens.ElementAt(index).Span);
+                }
 
                 break;
             }
@@ -3924,7 +4126,12 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                uncheckedType.Optional = true;
+                uncheckedType = new UncheckedOptionalType(
+                    type: uncheckedType,
+                    new Span(
+                        fileId: start.FileId,
+                        start: start.Start,
+                        end: tokens.ElementAt(index).Span.End));
             }
         }
 

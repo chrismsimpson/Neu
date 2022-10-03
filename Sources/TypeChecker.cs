@@ -24,20 +24,20 @@ public static partial class NeuTypeFunctions {
 
         switch (true) {
 
-            case var _ when l is BoolType && r is BoolType:                     return true;
-            case var _ when l is StringType && r is StringType:                 return true;
-            case var _ when l is Int8Type && r is Int8Type:                     return true;
-            case var _ when l is Int16Type && r is Int16Type:                   return true;
-            case var _ when l is Int32Type && r is Int32Type:                   return true;
-            case var _ when l is Int64Type && r is Int64Type:                   return true;
-            case var _ when l is UInt8Type && r is UInt8Type:                   return true;
-            case var _ when l is UInt16Type && r is UInt16Type:                 return true;
-            case var _ when l is UInt32Type && r is UInt32Type:                 return true;
-            case var _ when l is UInt64Type && r is UInt64Type:                 return true;
-            case var _ when l is FloatType && r is FloatType:                   return true;
-            case var _ when l is DoubleType && r is DoubleType:                 return true;
-            case var _ when l is VoidType && r is VoidType:                     return true;
-            case var _ when l is VectorType lv && r is VectorType rv:           return Eq(lv.Type, rv.Type);
+            case var _ when l is BoolType && r is BoolType:                         return true;
+            case var _ when l is StringType && r is StringType:                     return true;
+            case var _ when l is Int8Type && r is Int8Type:                         return true;
+            case var _ when l is Int16Type && r is Int16Type:                       return true;
+            case var _ when l is Int32Type && r is Int32Type:                       return true;
+            case var _ when l is Int64Type && r is Int64Type:                       return true;
+            case var _ when l is UInt8Type && r is UInt8Type:                       return true;
+            case var _ when l is UInt16Type && r is UInt16Type:                     return true;
+            case var _ when l is UInt32Type && r is UInt32Type:                     return true;
+            case var _ when l is UInt64Type && r is UInt64Type:                     return true;
+            case var _ when l is FloatType && r is FloatType:                       return true;
+            case var _ when l is DoubleType && r is DoubleType:                     return true;
+            case var _ when l is VoidType && r is VoidType:                         return true;
+            case var _ when l is VectorType lv && r is VectorType rv:               return Eq(lv.Type, rv.Type);
 
             case var _ when l is TupleType lt && r is TupleType rt: {
 
@@ -57,15 +57,15 @@ public static partial class NeuTypeFunctions {
                 return true;
             }
 
-            case var _ when l is OptionalType lo && r is OptionalType ro:       return Eq(lo.Type, ro.Type);
+            case var _ when l is OptionalType lo && r is OptionalType ro:           return Eq(lo.Type, ro.Type);
 
-            case var _ when l is StructType ls && r is StructType rs:           return ls.StructId == rs.StructId;
+            case var _ when l is StructType ls && r is StructType rs:               return ls.StructId == rs.StructId;
+            
+            case var _ when l is RawPointerType lp && r is RawPointerType rp:       return Eq(lp.Type, rp.Type);
 
-            case var _ when l is UnknownType && r is UnknownType:               return true;
+            case var _ when l is UnknownType && r is UnknownType:                   return true;
 
-            default:                                                
-                
-                return false;
+            default:                                                                return false;
         }
     }
 }
@@ -197,6 +197,19 @@ public partial class StructType : NeuType {
         UInt64 structId) {
 
         this.StructId = structId;
+    }
+}
+
+public partial class RawPointerType: NeuType {
+
+    public NeuType Type { get; init; }
+
+    ///
+
+    public RawPointerType(
+        NeuType type) {
+
+        this.Type = type;
     }
 }
 
@@ -2006,13 +2019,11 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedExprErr;
 
-                error = error ?? TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span);
+                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span);
 
-                var ty = checkedExpr.GetNeuType();
+                error = error ?? chkUnaryOpErr;
 
-                return (
-                    new CheckedUnaryOpExpression(checkedExpr, u.Operator, ty),
-                    error);
+                return (_checkedExpr, error);
             }
 
             case OptionalNoneExpression e: {
@@ -2378,79 +2389,213 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
-    public static Error? TypeCheckUnaryOperation(
+    // public static Error? TypeCheckUnaryOperation(
+    //     CheckedExpression expr,
+    //     UnaryOperator op,
+    //     Span span) {
+
+    //     switch (expr.GetNeuType()) {
+
+    //         case Int8Type:
+    //         case Int16Type:
+    //         case Int32Type:
+    //         case Int64Type:
+    //         case UInt8Type:
+    //         case UInt16Type:
+    //         case UInt32Type:
+    //         case UInt64Type:
+    //         case FloatType:
+    //         case DoubleType: {
+
+    //             switch (expr) {
+
+    //                 case CheckedVarExpression v: {
+
+    //                     if (!v.Variable.Mutable) {
+
+    //                         switch (op) {
+
+    //                             case UnaryOperator.PreIncrement:
+    //                             case UnaryOperator.PostIncrement: {
+
+    //                                 return new TypeCheckError(
+    //                                     "increment on immutable variable",
+    //                                     span);
+    //                             }
+
+    //                             case UnaryOperator.PreDecrement:
+    //                             case UnaryOperator.PostDecrement: {
+
+    //                                 return new TypeCheckError(
+    //                                     "decrement on immutable variable",
+    //                                     span);
+    //                             }
+
+    //                             case UnaryOperator.Negate: {
+
+    //                                 return null;
+    //                             }
+
+    //                             default: {
+
+    //                                 throw new Exception(); // assume not reached
+    //                             }
+    //                         }
+    //                     }
+    //                     else {
+
+    //                         return null;
+    //                     }
+    //                 }
+
+    //                 default: {
+
+    //                     // TODO: we probably want to check if what we're working on can be updated
+
+    //                     return null;
+    //                 }
+    //             }
+    //         }
+
+    //         default: {
+
+    //             return new TypeCheckError(
+    //                 "unary operation on non-numeric value", 
+    //                 span);
+    //         }
+    //     }
+    // }
+
+    public static (CheckedExpression, Error?) TypeCheckUnaryOperation(
         CheckedExpression expr,
         UnaryOperator op,
         Span span) {
+    
+        var exprType = expr.GetNeuType();
 
-        switch (expr.GetNeuType()) {
+        switch (op) {
 
-            case Int8Type:
-            case Int16Type:
-            case Int32Type:
-            case Int64Type:
-            case UInt8Type:
-            case UInt16Type:
-            case UInt32Type:
-            case UInt64Type:
-            case FloatType:
-            case DoubleType: {
+            case UnaryOperator.Dereference: {
 
-                switch (expr) {
+                switch (exprType) {
 
-                    case CheckedVarExpression v: {
+                    case RawPointerType rp: {
 
-                        if (!v.Variable.Mutable) {
+                        return (
+                            new CheckedUnaryOpExpression(expr, op, rp.Type),
+                            null);
+                    }
 
-                            switch (op) {
+                    default: {
 
-                                case UnaryOperator.PreIncrement:
-                                case UnaryOperator.PostIncrement: {
+                        return (
+                            new CheckedUnaryOpExpression(expr, op, new UnknownType()),
+                            new TypeCheckError(
+                                "dereference of a non-pointer value",
+                                span));
+                    }
+                }
+            }
 
-                                    return new TypeCheckError(
-                                        "increment on immutable variable",
-                                        span);
+            case UnaryOperator.RawAddress: {
+
+                return (
+                    new CheckedUnaryOpExpression(expr, op, new RawPointerType(exprType)),
+                    null);
+            }
+
+            case UnaryOperator.Negate: {
+
+                switch (exprType) {
+
+                    case Int8Type _:
+                    case Int16Type _:
+                    case Int32Type _:
+                    case Int64Type _:
+                    case UInt8Type _:
+                    case UInt16Type _:
+                    case UInt32Type _:
+                    case UInt64Type _:
+                    case FloatType _:
+                    case DoubleType _: {
+
+                        return (
+                            new CheckedUnaryOpExpression(expr, UnaryOperator.Negate, exprType),
+                            null);
+                    }
+
+                    default: {
+
+                        return (
+                            new CheckedUnaryOpExpression(expr, UnaryOperator.Negate, exprType),
+                            new TypeCheckError(
+                                "negate on non-numeric value",
+                                span));
+                    }
+                }
+            }
+
+            case UnaryOperator.PostDecrement:
+            case UnaryOperator.PostIncrement:
+            case UnaryOperator.PreDecrement:
+            case UnaryOperator.PreIncrement: {
+
+                switch (exprType) {
+
+                    case Int8Type _:
+                    case Int16Type _:
+                    case Int32Type _:
+                    case Int64Type _:
+                    case UInt8Type _:
+                    case UInt16Type _:
+                    case UInt32Type _:
+                    case UInt64Type _:
+                    case FloatType _:
+                    case DoubleType _: {
+
+                        switch (expr) {
+
+                            case CheckedVarExpression ve: {
+
+                                if (!ve.Variable.Mutable) {
+
+                                    return (
+                                        new CheckedUnaryOpExpression(expr, op, exprType),
+                                        new TypeCheckError(
+                                            "increment on immutable variable",
+                                            span));
                                 }
+                                else {
 
-                                case UnaryOperator.PreDecrement:
-                                case UnaryOperator.PostDecrement: {
-
-                                    return new TypeCheckError(
-                                        "decrement on immutable variable",
-                                        span);
-                                }
-
-                                case UnaryOperator.Negate: {
-
-                                    return null;
-                                }
-
-                                default: {
-
-                                    throw new Exception(); // assume not reached
+                                    return (
+                                        new CheckedUnaryOpExpression(expr, op, exprType),
+                                        null);
                                 }
                             }
-                        }
-                        else {
 
-                            return null;
+                            default: {
+
+                                return (
+                                    new CheckedUnaryOpExpression(expr, op, exprType),
+                                    null);
+                            }
                         }
                     }
 
                     default: {
 
-                        // TODO: we probably want to check if what we're working on can be updated
-
-                        return null;
+                        return (
+                            new CheckedUnaryOpExpression(expr, op, exprType),
+                            new TypeCheckError(
+                                "unary operation on non-numeric value",
+                                span));
                     }
                 }
             }
 
             default: {
 
-                return new TypeCheckError(
-                    "unary operation on non-numeric value", 
-                    span);
+                throw new Exception();
             }
         }
     }
@@ -2655,140 +2800,277 @@ public static partial class TypeCheckerFunctions {
             error);
     }
 
+    // public static (NeuType, Error?) TypeCheckTypeName(
+    //     UncheckedType uncheckedType,
+    //     Stack stack) {
+
+    //     NeuType? ty = null;
+
+    //     Error? error = null;
+
+    //     switch (uncheckedType.Name) {
+
+    //         case "Int8":
+
+    //             ty = new Int8Type();
+
+    //             break;
+
+    //         case "Int16":
+
+    //             ty = new Int16Type();
+
+    //             break;
+
+    //         case "Int32":
+
+    //             ty = new Int32Type();
+
+    //             break;
+
+    //         case "Int64":
+
+    //             ty = new Int64Type();
+
+    //             break;
+
+    //         case "UInt8":
+
+    //             ty = new UInt8Type();
+
+    //             break;
+
+    //         case "UInt16":
+
+    //             ty = new UInt16Type();
+
+    //             break;
+
+    //         case "UInt32":
+
+    //             ty = new UInt32Type();
+
+    //             break;
+
+    //         case "UInt64":
+
+    //             ty = new UInt64Type();
+
+    //             break;
+
+    //         case "Float":
+
+    //             ty = new FloatType();
+
+    //             break;
+
+    //         case "Double":
+
+    //             ty = new DoubleType();
+
+    //             break;
+
+    //         case "String":  
+
+    //             ty = new StringType();
+
+    //             break;
+
+    //         case "Bool":
+
+    //             ty = new BoolType();
+
+    //             break;
+
+    //         case "Void":
+
+    //             ty = new VoidType();
+
+    //             break;
+
+    //         case var x when IsNullOrWhiteSpace(x):
+
+    //             ty = new UnknownType();
+
+    //             break;
+
+    //         case var x: {
+
+    //             var structure = stack.FindStruct(x);
+
+    //             switch (structure) {
+
+    //                 case UInt64 structId: {
+
+    //                     ty = new StructType(structId);
+
+    //                     break;
+    //                 }
+
+    //                 default: {
+
+    //                     ty = new UnknownType();
+
+    //                     error = new TypeCheckError(
+    //                         "unknown type",
+    //                         uncheckedType.Span);
+
+    //                     break;
+    //                 }
+    //             }
+    //         }
+
+    //         break;
+    //     }
+
+    //     if (uncheckedType.Optional) {
+
+    //         return (
+    //             new OptionalType(ty),
+    //             error);
+    //     }
+    //     else {
+
+    //         return (
+    //             ty, 
+    //             error);
+    //     }
+    // }
+
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
         Stack stack) {
 
-        NeuType? ty = null;
-
         Error? error = null;
 
-        switch (uncheckedType.Name) {
+        switch (uncheckedType) {
 
-            case "Int8":
+            case UncheckedNameType nt: {
 
-                ty = new Int8Type();
+                switch (nt.Name) {
 
-                break;
+                    case "Int8": {
 
-            case "Int16":
+                        return (new Int8Type(), null);
+                    }
+                    
+                    case "Int16": {
 
-                ty = new Int16Type();
-
-                break;
-
-            case "Int32":
-
-                ty = new Int32Type();
-
-                break;
-
-            case "Int64":
-
-                ty = new Int64Type();
-
-                break;
-
-            case "UInt8":
-
-                ty = new UInt8Type();
-
-                break;
-
-            case "UInt16":
-
-                ty = new UInt16Type();
-
-                break;
-
-            case "UInt32":
-
-                ty = new UInt32Type();
-
-                break;
-
-            case "UInt64":
-
-                ty = new UInt64Type();
-
-                break;
-
-            case "Float":
-
-                ty = new FloatType();
-
-                break;
-
-            case "Double":
-
-                ty = new DoubleType();
-
-                break;
-
-            case "String":  
-
-                ty = new StringType();
-
-                break;
-
-            case "Bool":
-
-                ty = new BoolType();
-
-                break;
-
-            case "Void":
-
-                ty = new VoidType();
-
-                break;
-
-            case var x when IsNullOrWhiteSpace(x):
-
-                ty = new UnknownType();
-
-                break;
-
-            case var x: {
-
-                var structure = stack.FindStruct(x);
-
-                switch (structure) {
-
-                    case UInt64 structId: {
-
-                        ty = new StructType(structId);
-
-                        break;
+                        return (new Int16Type(), null);
                     }
 
-                    default: {
+                    case "Int32": {
 
-                        ty = new UnknownType();
+                        return (new Int32Type(), null);
+                    }
 
-                        error = new TypeCheckError(
-                            "unknown type",
-                            uncheckedType.Span);
+                    case "Int64": {
 
-                        break;
+                        return (new Int64Type(), null);
+                    }
+
+                    case "UInt8": {
+
+                        return (new UInt8Type(), null);
+                    }
+                    
+                    case "UInt16": {
+
+                        return (new UInt16Type(), null);
+                    }
+
+                    case "UInt32": {
+
+                        return (new UInt32Type(), null);
+                    }
+                    
+                    case "UInt64": {
+
+                        return (new UInt64Type(), null);
+                    }
+
+                    case "Float": {
+
+                        return (new FloatType(), null);
+                    }
+                    
+                    case "Double": {
+
+                        return (new DoubleType(), null);
+                    }
+
+                    case "String": {
+
+                        return (new StringType(), null);
+                    }
+
+                    case "Bool": {
+
+                        return (new BoolType(), null);
+                    }
+
+                    case "Void": {
+
+                        return (new VoidType(), null);
+                    }
+
+                    case var x: {
+
+                        var structure = stack.FindStruct(x);
+
+                        switch (structure) {
+
+                            case ulong structId: {
+
+                                return (new StructType(structId), null);
+                            }
+
+                            default: {
+
+                                // Trace("ERROR: unknown type");
+
+                                return (
+                                    new UnknownType(),
+                                    new TypeCheckError(
+                                        "unknown type",
+                                        nt.Span));
+                            }
+                        }
                     }
                 }
             }
 
-            break;
-        }
+            case UncheckedEmptyType _: {
 
-        if (uncheckedType.Optional) {
+                return (new UnknownType(), null);
+            }
 
-            return (
-                new OptionalType(ty),
-                error);
-        }
-        else {
+            case UncheckedOptionalType opt: {
 
-            return (
-                ty, 
-                error);
+                var (innerType, err) = TypeCheckTypeName(opt.Type, stack);
+
+                error = error ?? err;
+
+                return (
+                    new OptionalType(innerType),
+                    error);
+            }
+
+            case UncheckedRawPointerType rp: {
+
+                var (innerType, err) = TypeCheckTypeName(rp.Type, stack);
+
+                error = error ?? err;
+
+                return (
+                    new RawPointerType(innerType),
+                    error);
+            }
+
+            default: {
+
+                throw new Exception();
+            }
         }
     }
 }
