@@ -279,7 +279,9 @@ public partial class Struct {
     
     public String Name { get; init; }
 
-    public List<VarDecl> Members { get; init; }
+    public List<VarDecl> Fields { get; init; }
+
+    public List<Function> Methods { get; init; }
 
     public Span Span { get; init; }
 
@@ -287,11 +289,13 @@ public partial class Struct {
 
     public Struct(
         String name,
-        List<VarDecl> members,
+        List<VarDecl> fields,
+        List<Function> methods,
         Span span) {
 
         this.Name = name;
-        this.Members = members;
+        this.Fields = fields;
+        this.Methods = methods;
         this.Span = span;
     }
 }
@@ -864,24 +868,6 @@ public partial class Expression: Statement {
         }
     }
 
-    public partial class CallExpression: Expression {
-
-        public Call Call { get; init; }
-
-        public Span Span { get; init; }
-
-        ///
-
-        public CallExpression(
-            Call call,
-            Span span)
-            : base() {
-
-            this.Call = call;
-            this.Span = span;
-        }
-    }
-
     public partial class NumericConstantExpression: Expression {
 
         public NumericConstant Value { get; init; }
@@ -1078,6 +1064,45 @@ public partial class Expression: Statement {
         }
     }
 
+    public partial class CallExpression: Expression {
+
+        public Call Call { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public CallExpression(
+            Call call,
+            Span span)
+            : base() {
+
+            this.Call = call;
+            this.Span = span;
+        }
+    }
+
+    public partial class MethodCallExpression: Expression {
+        
+        public Expression Expression { get; init; }
+        
+        public Call Call { get; init; }
+        
+        public Span Span { get; init; }
+
+        ///
+
+        public MethodCallExpression(
+            Expression expression, 
+            Call call, 
+            Span span) {
+
+            this.Expression = expression;
+            this.Call = call;
+            this.Span = span;
+        }
+    }
+
     public partial class ForcedUnwrapExpression: Expression {
 
         public Expression Expression { get; init; }
@@ -1209,11 +1234,6 @@ public static partial class ExpressionFunctions {
                 return be.Span;
             }
 
-            case CallExpression ce: {
-
-                return ce.Span;
-            }
-
             case NumericConstantExpression ne: {
 
                 return ne.Span;
@@ -1247,6 +1267,16 @@ public static partial class ExpressionFunctions {
             case IndexedStructExpression ise: {
 
                 return ise.Span;
+            }
+
+            case CallExpression ce: {
+
+                return ce.Span;
+            }
+
+            case MethodCallExpression mce: {
+
+                return mce.Span;
             }
 
             case UnaryOpExpression uoe: {
@@ -1653,6 +1683,8 @@ public static partial class ParserFunctions {
 
         if (index < tokens.Count) {
 
+            // we're expecting the name of the struct
+
             switch (tokens.ElementAt(index)) {
 
                 case NameToken nt: {
@@ -1695,6 +1727,8 @@ public static partial class ParserFunctions {
 
                     var fields = new List<VarDecl>();
 
+                    var methods = new List<Function>();
+
                     var contFields = true;
 
                     while (contFields && index < tokens.Count) {
@@ -1720,9 +1754,20 @@ public static partial class ParserFunctions {
                                 break;
                             }
 
+                            case NameToken nt2 when nt2.Value == "func": {
+
+                                var (funcDecl, err) = ParseFunction(tokens, ref index, FunctionLinkage.Internal);
+
+                                error = error ?? err;
+
+                                methods.Add(funcDecl);
+
+                                break;
+                            }
+
                             case NameToken _: {
 
-                                // Now lets parse a parameter
+                                // Lets parse a parameter
 
                                 var (varDecl, parseVarDeclErr) = ParseVariableDeclaration(tokens, ref index);
                                 
@@ -1744,6 +1789,18 @@ public static partial class ParserFunctions {
                                 }
 
                                 fields.Add(varDecl);
+
+                                break;
+                            }
+
+                            case EofToken _: {
+
+                                Trace($"ERROR: expected field, found: {tokens.ElementAt(index)}");
+
+                                error = error ?? 
+                                    new ParserError(
+                                        "expected field",
+                                        tokens.ElementAt(index).Span);
 
                                 break;
                             }
@@ -1775,7 +1832,8 @@ public static partial class ParserFunctions {
                     return (
                         new Struct(
                             name: nt.Value,
-                            members: fields,
+                            fields: fields,
+                            methods: methods,
                             span: tokens.ElementAt(index - 1).Span),
                         error
                     );
@@ -1793,7 +1851,8 @@ public static partial class ParserFunctions {
                     return (
                         new Struct(
                             name: String.Empty,
-                            members: new List<VarDecl>(),
+                            fields: new List<VarDecl>(),
+                            methods: new List<Function>(),
                             span: tokens.ElementAt(index).Span),
                         error);
                 }
@@ -1811,7 +1870,8 @@ public static partial class ParserFunctions {
             return (
                 new Struct(
                     name: String.Empty, 
-                    members: new List<VarDecl>(),
+                    fields: new List<VarDecl>(),
+                    methods: new List<Function>(),
                     span: tokens.ElementAt(index).Span),
                 error);
         }
@@ -1920,6 +1980,21 @@ public static partial class ParserFunctions {
                             }
 
                             ///
+
+                            case NameToken nt when nt.Value == "this": {
+
+                                index += 1;
+
+                                parameters.Add(
+                                    new Parameter(
+                                        requiresLabel: false,
+                                        variable: new Variable(
+                                            name: "this",
+                                            ty: new UncheckedEmptyType(),
+                                            mutable: false)));
+
+                                break;
+                            }
 
                             case NameToken _: {
 
@@ -3251,12 +3326,48 @@ public static partial class ParserFunctions {
 
                                 index += 1;
 
-                                var _span = new Span(
-                                    fileId: expr.GetSpan().FileId,
-                                    start: expr.GetSpan().Start,
-                                    end: tokens.ElementAt(index).Span.End);
+                                if (index < tokens.Count) {
 
-                                expr = new IndexedStructExpression(expr, name.Value, _span);
+                                    if (tokens.ElementAt(index) is LParenToken) {
+
+                                        index -= 1;
+
+                                        var (method, err) = ParseCall(tokens, ref index);
+                                        
+                                        error = error ?? err;
+
+                                        var _span = new Span(
+                                            fileId: expr.GetSpan().FileId,
+                                            start: expr.GetSpan().Start,
+                                            end: tokens.ElementAt(index).Span.End);
+
+                                        expr = new MethodCallExpression(expr, method, _span);
+                                    }
+                                    else {
+    
+                                        var _span = new Span(
+                                            fileId: expr.GetSpan().FileId,
+                                            start: expr.GetSpan().Start,
+                                            end: tokens.ElementAt(index).Span.End);
+
+                                        expr = new IndexedStructExpression(
+                                            expr,
+                                            name.Value,
+                                            _span);
+                                    }
+                                }
+                                else {
+
+                                    var _span = new Span(
+                                        fileId: expr.GetSpan().FileId,
+                                        start: expr.GetSpan().Start,
+                                        end: tokens.ElementAt(index).Span.End);
+
+                                    expr = new IndexedStructExpression(
+                                        expr,
+                                        name.Value,
+                                        _span);
+                                }
 
                                 break;
                             }

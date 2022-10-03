@@ -355,16 +355,38 @@ public partial class CheckedStruct {
 
     public String Name { get; init; }
 
-    public List<CheckedVarDecl> Members { get; set; }
+    public List<CheckedVarDecl> Fields { get; set; }
+
+    public List<CheckedFunction> Methods { get; init; }
 
     ///
 
     public CheckedStruct(
         String name,
-        List<CheckedVarDecl> members) {
+        List<CheckedVarDecl> fields,
+        List<CheckedFunction> methods) {
 
         this.Name = name;
-        this.Members = members;
+        this.Fields = fields;
+        this.Methods = methods;
+    }
+}
+
+public static partial class CheckedStructFunctions {
+
+    public static CheckedFunction? GetMethod(
+        this CheckedStruct structure,
+        String name) {
+
+        foreach (var func in structure.Methods) {
+
+            if (func.Name == name) {
+
+                return func;
+            }
+        }
+
+        return null;
     }
 }
 
@@ -854,23 +876,6 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
-    public partial class CheckedCallExpression: CheckedExpression {
-
-        public CheckedCall Call { get; init; }
-        
-        public NeuType Type { get; init; }
-
-        ///
-
-        public CheckedCallExpression(
-            CheckedCall call,
-            NeuType type) {
-
-            this.Call = call;
-            this.Type = type;
-        }
-    }
-
     public partial class CheckedNumericConstantExpression: CheckedExpression {
 
         public NumericConstant Value { get; init; }
@@ -1046,6 +1051,46 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
+
+    public partial class CheckedCallExpression: CheckedExpression {
+
+        public CheckedCall Call { get; init; }
+        
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedCallExpression(
+            CheckedCall call,
+            NeuType type) {
+
+            this.Call = call;
+            this.Type = type;
+        }
+    }
+
+    public partial class CheckedMethodCallExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+
+        public CheckedCall Call { get; init; }
+
+        public NeuType Type { get; init; }
+
+        ///
+
+        public CheckedMethodCallExpression(
+            CheckedExpression expression,
+            CheckedCall call,
+            NeuType type) {
+
+            this.Expression = expression;
+            this.Call = call;
+            this.Type = type;
+        }
+    }
+
+
     public partial class CheckedVarExpression: CheckedExpression {
         
         public CheckedVariable Variable { get; init; }
@@ -1152,11 +1197,6 @@ public static partial class CheckedExpressionFunctions {
                 return e.Type;
             }
 
-            case CheckedVarExpression ve: {
-
-                return ve.Variable.Type;
-            }
-
             case CheckedVectorExpression vecExpr: {
 
                 return vecExpr.Type;
@@ -1180,6 +1220,16 @@ public static partial class CheckedExpressionFunctions {
             case CheckedIndexedStructExpression ise: {
 
                 return ise.Type;
+            }
+
+            case CheckedMethodCallExpression mce: {
+
+                return mce.Type;
+            }
+
+            case CheckedVarExpression ve: {
+
+                return ve.Variable.Type;
             }
 
             case CheckedOptionalNoneExpression ckdOptNoneExpr: {
@@ -1403,16 +1453,13 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        foreach (var structure in parsedFile.Structs) {
-
+        for (var structId = 0; structId < parsedFile.Structs.Count; structId++) {
+            
             // Ensure we know the types ahead of time, so they can be recursive
-        
-            TypeCheckStructPredecl(structure, stack, file);
-        }
 
-        foreach (var structure in parsedFile.Structs) {
+            var structure = parsedFile.Structs.ElementAt(structId);
 
-            error = error ?? TypeCheckStruct(structure, stack, file);
+            TypeCheckStructPredecl(structure, ToUInt64(structId), stack, file);
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -1420,6 +1467,13 @@ public static partial class TypeCheckerFunctions {
             // Ensure we know the function ahead of time, so they can be recursive
             
             error = error ?? TypeCheckFuncPredecl(fun, stack, file);
+        }
+
+        for (var structId = 0; structId < parsedFile.Structs.Count; structId++) {
+
+            var structure = parsedFile.Structs.ElementAt(structId);
+
+            error = error ?? TypeCheckStruct(structure, ToUInt64(structId), stack, file);
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -1430,30 +1484,84 @@ public static partial class TypeCheckerFunctions {
         return (file, error);
     }
 
-    public static void TypeCheckStructPredecl(Struct structure, Stack stack, CheckedFile file) {
+    public static void TypeCheckStructPredecl(
+        Struct structure,
+        ulong structId,
+        Stack stack, 
+        CheckedFile file) {
+
+        Error? error = null;
+
+        var methods = new List<CheckedFunction>();
+
+        foreach (var func in structure.Methods) {
+
+            var checkedFunction = new CheckedFunction(
+                name: func.Name,
+                parameters: new List<CheckedParameter>(),
+                returnType: new UnknownType(),
+                block: new CheckedBlock(),
+                linkage: func.Linkage);
+
+            foreach (var param in func.Parameters) {
+
+                if (param.Variable.Name == "this") {
+
+                    var checkedVariable = new CheckedVariable(
+                        name: param.Variable.Name,
+                        type: new StructType(structId),
+                        mutable: param.Variable.Mutable);
+
+                    checkedFunction.Parameters.Add(
+                        new CheckedParameter(
+                            requiresLabel: param.RequiresLabel,
+                            variable: checkedVariable));
+                }
+                else {
+
+                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack);
+
+                    error = error ?? err;
+
+                    var checkedVariable = new CheckedVariable(
+                        name: param.Variable.Name,
+                        type: paramType,
+                        mutable: param.Variable.Mutable);
+
+                    checkedFunction.Parameters.Add(
+                        new CheckedParameter(
+                            requiresLabel: param.RequiresLabel,
+                            variable: checkedVariable));
+                }
+            }
+
+            methods.Add(checkedFunction);
+        }
 
         file.Structs.Add(
             new CheckedStruct(
                 name: structure.Name,
-                members: new List<CheckedVarDecl>()));
+                fields: new List<CheckedVarDecl>(),
+                methods: methods));
     }
 
     public static Error? TypeCheckStruct(
         Struct structure,
+        ulong structId,
         Stack stack,
         CheckedFile file) {
 
         Error? error = null;
 
-        var members = new List<CheckedVarDecl>();
+        var fields = new List<CheckedVarDecl>();
 
-        foreach (var uncheckedMember in structure.Members) {
+        foreach (var uncheckedMember in structure.Fields) {
 
             var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack);
 
             error = error ?? checkedMemberTypeErr;
 
-            members.Add(
+            fields.Add(
                 new CheckedVarDecl(
                     name: uncheckedMember.Name,
                     type: checkedMemberType, 
@@ -1463,16 +1571,25 @@ public static partial class TypeCheckerFunctions {
 
         var constructorParams = new List<CheckedParameter>();
 
-        foreach (var member in members) {
+        foreach (var field in fields) {
 
             constructorParams.Add(
                 new CheckedParameter(
                     requiresLabel: true,
                     variable: 
                         new CheckedVariable(
-                            name: member.Name,
-                            type: member.Type,
-                            mutable: member.Mutable)));
+                            name: field.Name,
+                            type: field.Type,
+                            mutable: field.Mutable)));
+        }
+
+        var checkedStruct = file.Structs.ElementAt(ToInt32(structId));
+
+        checkedStruct.Fields = fields;
+
+        foreach (var func in structure.Methods) {
+
+            error = error ?? TypeCheckMethod(func, stack, file, structId);
         }
 
         var (_, _structId) = file
@@ -1488,13 +1605,7 @@ public static partial class TypeCheckerFunctions {
 
         file.Functions.Add(checkedConstructor);
 
-        var (checkedStruct, structId) = file
-            .GetStruct(structure.Name) ??
-            throw new Exception("Internal error: we previously defined the struct but it's now missing");
-
-        checkedStruct.Members = members;
-
-        switch (stack.AddStruct(structure.Name, structId, structure.Span).Error) {
+        switch (stack.AddStruct(structure.Name, _structId, structure.Span).Error) {
 
             case Error e: {
 
@@ -1624,6 +1735,74 @@ public static partial class TypeCheckerFunctions {
         checkedFunction.ReturnType = returnType;
 
         return error;
+    }
+
+    public static Error? TypeCheckMethod(
+        Function func,
+        Stack stack,
+        CheckedFile file,
+        ulong structId) { 
+
+        Error? error = null;
+
+        stack.PushFrame();
+
+        var structure = file.Structs.ElementAt(ToInt32(structId));
+
+        var checkedFunction = structure
+            .GetMethod(func.Name) 
+            ?? throw new Exception("Internal error: we just pushed the checked function, but it's not present");
+
+        foreach (var param in checkedFunction.Parameters) {
+
+            if (stack.AddVar(param.Variable, func.NameSpan) is Error e) {
+
+                error = error ?? e;
+            }
+        }
+
+        var (block, chkBlockErr) = TypeCheckBlock(func.Block, stack, file, SafetyMode.Safe);
+
+        error = error ?? chkBlockErr;
+
+        stack.PopFrame();
+
+        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+
+        error = error ?? chkRetTypeErr;
+
+        // If the return type is unknown, and the function starts with a return statement,
+        // we infer the return type from its expression.
+
+        NeuType? returnType = null;
+
+        if (funcReturnType is UnknownType) {
+
+            if (block.Stmts.FirstOrDefault() is CheckedReturnStatement rs) {
+
+                returnType = rs.Expr.GetNeuType();
+            }
+            else {
+
+                returnType = new VoidType();
+            }
+        }
+        else {
+
+            returnType = funcReturnType;
+        }
+
+        structure = file.Structs.ElementAt(ToInt32(structId));
+
+        checkedFunction = structure
+            .GetMethod(func.Name) 
+            ?? throw new Exception("Internal error: we just pushed the checked function, but it's not present");
+
+        checkedFunction.Block = block;
+
+        checkedFunction.ReturnType = returnType;
+
+        return error;       
     }
 
     public static (CheckedBlock, Error?) TypeCheckBlock(
@@ -2261,7 +2440,7 @@ public static partial class TypeCheckerFunctions {
 
                         var structure = file.Structs[ToInt32(st.StructId)];
 
-                        foreach (var member in structure.Members) {
+                        foreach (var member in structure.Fields) {
 
                             if (member.Name == ise.Name) {
 
@@ -2276,7 +2455,7 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ?? 
                             new TypeCheckError(
-                                "unknown member of struct",
+                                $"unknown member of struct: {structure.Name}.{ise.Name}",
                                 ise.Span);
 
                         break;
@@ -2296,6 +2475,41 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedIndexedStructExpression(checkedExpr, ise.Name, ty),
                     error);
+            }
+
+            case MethodCallExpression mce: {
+
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(mce.Expression, stack, file, safetyMode);
+
+                error = error ?? chkExprErr;
+
+                switch (checkedExpr.GetNeuType()) {
+
+                    case StructType st: {
+
+                        var (checkedCall, chkMethodCallErr) = TypeCheckMethodCall(mce.Call, stack, mce.Span, file, st.StructId, safetyMode);
+
+                        error = error ?? chkMethodCallErr;
+
+                        var ty = checkedCall.Type;
+
+                        return (
+                            new CheckedMethodCallExpression(checkedExpr, checkedCall, ty),
+                            error);
+                    }
+
+                    default: {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "",
+                                mce.Expression.GetSpan());
+
+                        return (
+                            new CheckedGarbageExpression(),
+                            error);
+                    }
+                }
             }
 
             case OperatorExpression e: {
@@ -2605,14 +2819,14 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedFunction?, Error?) ResolveCall(
         Call call,
         Span span,
-        CheckedFile file) {
+        List<CheckedFunction> functions) {
 
         CheckedFunction? callee = null;
         Error? error = null;
 
         // FIXME: Support function overloading
 
-        foreach (var f in file.Functions) {
+        foreach (var f in functions) {
 
             if (f.Name == call.Name) {
 
@@ -2625,7 +2839,7 @@ public static partial class TypeCheckerFunctions {
         if (callee == null) {
 
             error = new TypeCheckError(
-                "call to unknown function",
+                $"call to unknown function: {call.Name}",
                 span);
         }
 
@@ -2669,7 +2883,7 @@ public static partial class TypeCheckerFunctions {
 
             default: {
 
-                var (callee, resolveErr) = ResolveCall(call, span, file);
+                var (callee, resolveErr) = ResolveCall(call, span, file.Functions);
 
                 error = error ?? resolveErr;
 
@@ -2744,6 +2958,90 @@ public static partial class TypeCheckerFunctions {
                 call.Name, 
                 checkedArgs, 
                 returnType),
+            error);
+    }
+
+    public static (CheckedCall, Error?) TypeCheckMethodCall(
+        Call call,
+        Stack stack,
+        Span span,
+        CheckedFile file,
+        ulong structId,
+        SafetyMode safetyMode) {
+
+        var checkedArgs = new List<(String, CheckedExpression)>();
+
+        Error? error = null;
+
+        NeuType returnType = new UnknownType();
+
+        var (_callee, resolveCallErr) = ResolveCall(call, span, file.Structs[ToInt32(structId)].Methods);
+
+        error = error ?? resolveCallErr;
+
+        if (_callee is CheckedFunction callee) {
+
+            returnType = callee.ReturnType;
+
+            // Check that we have the right number of arguments.
+
+            if (callee.Parameters.Count != (call.Args.Count + 1)) {
+                
+                error = error ??
+                    new TypeCheckError(
+                        "wrong number of arguments",
+                        span);
+            }
+            else {
+
+                var idx = 0;
+
+                // The first index should be the 'this'
+
+                while (idx < call.Args.Count) {
+
+                    var (checkedArg, chkExprErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
+
+                    error = error ?? chkExprErr;
+
+                    if (callee.Parameters[idx + 1].RequiresLabel
+                        && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Wrong parameter name in argument label",
+                                call.Args[idx].Item2.GetSpan());
+                    }
+
+                    var (_checkedArg, promoteErr) = TryPromoteConstantExprToType(
+                        callee.Parameters[idx + 1].Variable.Type, 
+                        checkedArg, 
+                        call.Args[idx].Item2.GetSpan());
+
+                    error = error ?? promoteErr;
+
+                    checkedArg = _checkedArg ?? checkedArg;
+
+                    if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx + 1].Variable.Type)) {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "Parameter type mismatch",
+                                call.Args[idx].Item2.GetSpan());
+                    }
+
+                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+
+                    idx += 1;
+                }
+            }
+        }
+
+        return (
+            new CheckedCall(
+                name: call.Name,
+                args: checkedArgs,
+                type: returnType),
             error);
     }
 

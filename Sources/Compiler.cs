@@ -91,7 +91,7 @@ public partial class Compiler {
 
         this.CheckedFiles.Add((filename, checkedFile));
 
-        return new ErrorOr<String>(this.Translate(checkedFile));
+        return new ErrorOr<String>(this.CodeGen(checkedFile));
     }
     
     public ErrorOrVoid Compile(

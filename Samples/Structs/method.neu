@@ -1,0 +1,12 @@
+struct Rectangle {
+    width: Int64
+    height: Int64
+
+    func area(this) => this.width * this.height
+}
+
+func main() {
+    var rect = Rectangle(width: 4, height: 8)
+
+    print(rect.area())
+}

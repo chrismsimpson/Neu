@@ -306,6 +306,40 @@ public partial class Token {
             : base(span) { }
     }
 
+public static partial class TokenFunctions {
+
+    public static bool Eq(
+        Token l, Token r) {
+
+        switch (true) {
+
+            case var _ when
+                l is QuotedStringToken lq
+                && r is QuotedStringToken rq:
+                return lq.Value == rq.Value 
+                    && SpanFunctions.Eq(lq.Span, rq.Span);
+
+            case var _ when
+                l is NumberToken ln
+                && r is NumberToken rn:
+                return ln.Value == rn.Value 
+                    && SpanFunctions.Eq(ln.Span, rn.Span);
+
+            case var _ when
+                l is NameToken ln
+                && r is NameToken rn:
+                return ln.Value == rn.Value
+                    && SpanFunctions.Eq(ln.Span, rn.Span);
+
+            case var _ when l.GetType() == r.GetType():
+                return SpanFunctions.Eq(l.Span, r.Span);
+
+            default: 
+                return false;
+        }
+    }
+}
+
     ///
 
 
