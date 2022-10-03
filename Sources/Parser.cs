@@ -1906,7 +1906,7 @@ public static partial class ParserFunctions {
 
                             ///
 
-                            case NameToken nt when nt.Value == "_": {
+                            case NameToken nt when nt.Value == "anon": {
 
                                 currentParamRequiresLabel = false;
 

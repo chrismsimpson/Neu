@@ -1,10 +1,10 @@
 func foo(a: Bool, b: Bool) {
 }
 
-func bar(_ a: Bool, b: Bool) {
+func bar(anon a: Bool, b: Bool) {
 }
 
-func baz(_ a: Bool, _ b: Bool) {
+func baz(anon a: Bool, anon b: Bool) {
 }
 
 func main() {
