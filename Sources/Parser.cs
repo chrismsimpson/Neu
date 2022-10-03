@@ -437,6 +437,14 @@ public static partial class StatementFunctions {
 
             ///
 
+            case var _ when
+                l is UnsafeBlockStatement lu
+                && r is UnsafeBlockStatement ru:
+
+                return UnsafeBlockStatementFunctions.Eq(lu, ru);
+
+            ///
+
             case var _ when 
                 l is VarDeclStatement vdsL
                 && r is VarDeclStatement vdsR:
@@ -541,6 +549,31 @@ public static partial class DeferStatementFunctions {
     public static bool Eq(
         DeferStatement? l,
         DeferStatement? r) {
+
+        return BlockFunctions.Eq(l?.Block, r?.Block);
+    }
+}
+
+///
+
+public partial class UnsafeBlockStatement: Statement {
+
+    public Block Block { get; init; }
+
+    ///
+
+    public UnsafeBlockStatement(
+        Block block) {
+
+        this.Block = block;
+    }
+}
+
+public static partial class UnsafeBlockStatementFunctions {
+
+    public static bool Eq(
+        UnsafeBlockStatement? l,
+        UnsafeBlockStatement? r) {
 
         return BlockFunctions.Eq(l?.Block, r?.Block);
     }
@@ -2222,6 +2255,23 @@ public static partial class ParserFunctions {
 
                 return (
                     new DeferStatement(block), 
+                    error);
+            }
+
+            ///
+
+            case NameToken nt when nt.Value == "unsafe": {
+
+                Trace("parsing unsafe");
+
+                index += 1;
+
+                var (block, blockErr) = ParseBlock(tokens, ref index);
+
+                error = error ?? blockErr;
+
+                return (
+                    new UnsafeBlockStatement(block),
                     error);
             }
 

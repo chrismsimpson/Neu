@@ -30,6 +30,7 @@
 #include "IterationDecision.h"
 #include "Iterator.h"
 #include "Math.h"
+#include "Memory.h"
 #include "NonCopyable.h"
 #include "NonNullOwnPointer.h"
 #include "NonNullRefPointer.h"

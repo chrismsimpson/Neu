@@ -1,6 +1,12 @@
 
 namespace Neu;
 
+public enum SafetyMode {
+
+    Safe,
+    Unsafe
+}
+
 public partial class NeuType {
 
     public NeuType() { }
@@ -1386,26 +1392,6 @@ public static partial class TypeCheckerFunctions {
         return TypeCheckFileHelper(file, stack);
     }
 
-    // public static (CheckedFile, Error?) TypeCheckFileHelper(
-    //     ParsedFile file,
-    //     Stack stack) {
-
-    //     var output = new CheckedFile();
-
-    //     Error? error = null;
-
-    //     foreach (var fun in file.Functions) {
-
-    //         var (checkedFun, funErr) = TypeCheckFunction(fun, stack, file);
-
-    //         error = error ?? funErr;
-
-    //         output.CheckedFunctions.Add(checkedFun);
-    //     }
-
-    //     return (output, error);
-    // }
-
     public static (CheckedFile, Error?) TypeCheckFileHelper(
         ParsedFile parsedFile,
         Stack stack) {
@@ -1559,73 +1545,6 @@ public static partial class TypeCheckerFunctions {
         return error;
     }
 
-    // public static (CheckedFunction, Error?) TypeCheckFunction(
-    //     Function fun,
-    //     Stack stack,
-    //     ParsedFile file) {
-
-    //     Error? error = null;
-
-    //     stack.PushFrame();
-
-    //     foreach (var p in fun.Parameters) {
-            
-    //         if (stack.AddVar(p.Variable, fun.NameSpan) is Error e) {
-
-    //             error = error ?? e;
-    //         }
-    //     }
-
-    //     var (block, blockErr) = TypeCheckBlock(fun.Block, stack, file);
-
-    //     error = error ?? blockErr;
-
-    //     stack.PopFrame();
-
-    //     NeuType? returnType = null;
-
-    //     switch (fun.ReturnType) {
-
-    //         case UnknownType _: {
-
-    //             switch (block.Stmts.FirstOrDefault()) {
-
-    //                 case CheckedReturnStatement rs: {
-
-    //                     returnType = rs.Expr.GetNeuType();
-
-    //                     break;
-    //                 }
-
-    //                 default: {
-
-    //                     returnType = new UnknownType();
-
-    //                     break;
-    //                 }
-    //             }
-
-    //             break;
-    //         }
-
-    //         default: {
-                
-    //             returnType = fun.ReturnType;
-
-    //             break;
-    //         }
-    //     }
-
-    //     var output = new CheckedFunction(
-    //         name: fun.Name,
-    //         returnType: returnType,
-    //         parameters: fun.Parameters,
-    //         block,
-    //         linkage: fun.Linkage);
-
-    //     return (output, error);
-    // }
-
     public static Error? TypeCheckFunc(
         Function func,
         Stack stack,
@@ -1647,7 +1566,7 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
-        var (block, typeCheckBlockErr) = TypeCheckBlock(func.Block, stack, file);
+        var (block, typeCheckBlockErr) = TypeCheckBlock(func.Block, stack, file, SafetyMode.Safe);
 
         error = error ?? typeCheckBlockErr;
 
@@ -1707,7 +1626,8 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedBlock, Error?) TypeCheckBlock(
         Block block,
         Stack stack,
-        CheckedFile file) {
+        CheckedFile file,
+        SafetyMode safetyMode) {
 
         Error? error = null;
 
@@ -1717,7 +1637,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var stmt in block.Statements) {
 
-            var (checkedStmt, err) = TypeCheckStatement(stmt, stack, file);
+            var (checkedStmt, err) = TypeCheckStatement(stmt, stack, file, safetyMode);
 
             error = error ?? err;
 
@@ -1732,7 +1652,8 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
         Stack stack,
-        CheckedFile file) {
+        CheckedFile file,
+        SafetyMode safetyMode) {
 
         Error? error = null;
 
@@ -1740,7 +1661,7 @@ public static partial class TypeCheckerFunctions {
 
             case Expression e: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack, file);
+                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack, file, safetyMode);
 
                 return (
                     checkedExpr,
@@ -1749,7 +1670,16 @@ public static partial class TypeCheckerFunctions {
 
             case DeferStatement ds: {
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ds.Block, stack, file);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ds.Block, stack, file, safetyMode);
+
+                return (
+                    new CheckedDeferStatement(checkedBlock),
+                    blockErr);
+            }
+
+            case UnsafeBlockStatement us: {
+
+                var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, stack, file, SafetyMode.Unsafe);
 
                 return (
                     new CheckedDeferStatement(checkedBlock),
@@ -1758,7 +1688,7 @@ public static partial class TypeCheckerFunctions {
 
             case VarDeclStatement vds: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack, file);
+                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack, file, safetyMode);
 
                 error = error ?? exprErr;
 
@@ -1820,11 +1750,11 @@ public static partial class TypeCheckerFunctions {
 
             case IfStatement ifStmt: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack, file);
+                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack, file, safetyMode);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack, file);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack, file, safetyMode);
                 
                 error = error ?? blockErr;
 
@@ -1832,7 +1762,7 @@ public static partial class TypeCheckerFunctions {
 
                 if (ifStmt.Trailing is Statement elseStmt) {
 
-                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, stack, file);
+                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, stack, file, safetyMode);
 
                     error = error ?? checkedElseStmtErr;
 
@@ -1850,11 +1780,11 @@ public static partial class TypeCheckerFunctions {
 
             case WhileStatement ws: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack, file);
+                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack, file, safetyMode);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack, file);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack, file, safetyMode);
                 
                 error = error ?? blockErr;
 
@@ -1865,7 +1795,7 @@ public static partial class TypeCheckerFunctions {
 
             case ReturnStatement rs: {
 
-                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack, file);
+                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack, file, safetyMode);
 
                 return (
                     new CheckedReturnStatement(output), 
@@ -1874,7 +1804,7 @@ public static partial class TypeCheckerFunctions {
 
             case BlockStatement bs: {
 
-                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, stack, file);
+                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, stack, file, safetyMode);
 
                 return (
                     new CheckedBlockStatement(checkedBlock),
@@ -1960,7 +1890,8 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedExpression, Error?) TypeCheckExpression(
         Expression expr,
         Stack stack,
-        CheckedFile file) {
+        CheckedFile file,
+        SafetyMode safetyMode) {
 
         Error? error = null;
 
@@ -1968,11 +1899,11 @@ public static partial class TypeCheckerFunctions {
 
             case BinaryOpExpression e: {
 
-                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack, file);
+                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack, file, safetyMode);
 
                 error = error ?? checkedLhsErr;
 
-                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file);
+                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file, safetyMode);
 
                 error = error ?? checkedRhsErr;
 
@@ -2015,11 +1946,11 @@ public static partial class TypeCheckerFunctions {
 
             case UnaryOpExpression u: {
 
-                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, stack, file);
+                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, stack, file, safetyMode);
 
                 error = error ?? checkedExprErr;
 
-                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span);
+                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span, safetyMode);
 
                 error = error ?? chkUnaryOpErr;
 
@@ -2036,7 +1967,7 @@ public static partial class TypeCheckerFunctions {
 
             case OptionalSomeExpression e: {
 
-                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file);
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file, safetyMode);
 
                 error = error ?? ckdExprError;
 
@@ -2049,7 +1980,7 @@ public static partial class TypeCheckerFunctions {
 
             case ForcedUnwrapExpression e: {
 
-                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file);
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file, safetyMode);
 
                 NeuType type = new UnknownType();
 
@@ -2089,7 +2020,7 @@ public static partial class TypeCheckerFunctions {
 
             case CallExpression e: {
 
-                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, e.Span, file);
+                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, e.Span, file, safetyMode);
 
                 var ty = checkedCall.Type;
 
@@ -2145,7 +2076,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var v in ve.Expressions) {
 
-                    var (checkedExpr, err) = TypeCheckExpression(v, stack, file);
+                    var (checkedExpr, err) = TypeCheckExpression(v, stack, file, safetyMode);
 
                     error = error ?? err;
 
@@ -2184,7 +2115,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var item in te.Expressions) {
 
-                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, stack, file);
+                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, stack, file, safetyMode);
 
                     error = error ?? typeCheckItemExprErr;
 
@@ -2202,11 +2133,11 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedExpression ie: {
 
-                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, stack, file);
+                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, stack, file, safetyMode);
                 
                 error = error ?? typeCheckExprErr;
 
-                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, stack, file);
+                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, stack, file, safetyMode);
             
                 error = error ?? typeCheckIdxErr;
 
@@ -2264,7 +2195,7 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedTupleExpression ite: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, stack, file);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, stack, file, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2315,7 +2246,7 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedStructExpression ise: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, stack, file);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, stack, file, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2469,7 +2400,8 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedExpression, Error?) TypeCheckUnaryOperation(
         CheckedExpression expr,
         UnaryOperator op,
-        Span span) {
+        Span span,
+        SafetyMode safetyMode) {
     
         var exprType = expr.GetNeuType();
 
@@ -2481,9 +2413,20 @@ public static partial class TypeCheckerFunctions {
 
                     case RawPointerType rp: {
 
-                        return (
-                            new CheckedUnaryOpExpression(expr, op, rp.Type),
-                            null);
+                        if (safetyMode == SafetyMode.Unsafe) {
+
+                            return (
+                                new CheckedUnaryOpExpression(expr, op, rp.Type),
+                                null);
+                        }
+                        else {
+
+                            return (
+                                new CheckedUnaryOpExpression(expr, op, rp.Type),
+                                new TypeCheckError(
+                                    "dereference of raw pointer outside of unsafe block",
+                                    span));
+                        }
                     }
 
                     default: {
@@ -2690,7 +2633,8 @@ public static partial class TypeCheckerFunctions {
         Call call, 
         Stack stack,
         Span span,
-        CheckedFile file) {
+        CheckedFile file,
+        SafetyMode safetyMode) {
 
         var checkedArgs = new List<(String, CheckedExpression)>();
 
@@ -2706,7 +2650,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var arg in call.Args) {
 
-                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file);
+                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file, safetyMode);
 
                     error = error ?? checkedArgErr;
 
@@ -2744,7 +2688,7 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
-                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file);
+                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
 
                             error = error ?? checkedArgErr;
 

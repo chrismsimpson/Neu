@@ -1,4 +1,9 @@
-
+/*
+ * Copyright (c) 2018-2020, Andreas Kling <awesomekling@gmail.com>
+ * Copyright (c) 2020, Fei Wu <f.eiwu@yahoo.com>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #include "CharacterTypes.h"
 #include "MemMem.h"

@@ -1,8 +1,17 @@
+/*
+ * Copyright (c) 2021, Max Wipfli <mail@maxwipfli.ch>
+ * Copyright (c) 2022, the SerenityOS developers.
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #pragma once
 
 #include "Array.h"
 #include "Types.h"
+
+// NOTE: For a quick reference for most of this, see https://www.cplusplus.com/reference/cctype/ and https://infra.spec.whatwg.org/#code-points.
+// NOTE: To avoid ambiguity when including this header, all methods contains names should contain "ascii" or "unicode".
 
 constexpr bool isAscii(UInt32 codePoint) {
 

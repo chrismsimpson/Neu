@@ -1,9 +1,13 @@
+/*
+ * Copyright (c) 2020, Benoit Lormeau <blormeau@outlook.com>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #include "Assertions.h"
 #include "CharacterTypes.h"
 #include "GenericLexer.h"
 #include "StringBuilder.h"
-
 
 #ifndef OS
 #    include "String.h"

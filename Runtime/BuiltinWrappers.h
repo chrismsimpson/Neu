@@ -1,8 +1,12 @@
+/*
+ * Copyright (c) 2021, Nick Johnson <sylvyrfysh@gmail.com>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #pragma once
 
 #include "Concepts.h"
-
 
 template<Unsigned IntType>
 inline constexpr int popCount(IntType value) {

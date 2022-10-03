@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2022, Leon Albrecht <leon2002.la@gmail.com>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #pragma once
 

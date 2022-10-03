@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021, Andreas Kling <kling@serenityos.org>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #pragma once
 
@@ -6,7 +11,7 @@
 
 #define TRY(expression)                                 \
     ({                                                  \
-        auto _temporaryResult = (expression);          \
+        auto _temporaryResult = (expression);           \
         if (_temporaryResult.isError()) {               \
             return _temporaryResult.releaseError();     \
         }                                               \

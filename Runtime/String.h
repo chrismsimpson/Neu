@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2018-2020, Andreas Kling <kling@serenityos.org>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #pragma once
 
@@ -9,6 +14,26 @@
 #include "StringImpl.h"
 #include "StringUtils.h"
 #include "Traits.h"
+
+// String is a convenience wrapper around StringImpl, suitable for passing
+// around as a value type. It's basically the same as passing around a
+// RefPointer<StringImpl>, with a bit of syntactic sugar.
+//
+// Note that StringImpl is an immutable object that cannot shrink or grow.
+// Its allocation size is snugly tailored to the specific string it contains.
+// Copying a String is very efficient, since the internal StringImpl is
+// retainable and so copying only requires modifying the ref count.
+//
+// There are three main ways to construct a new String:
+//
+//     s = String("some literal");
+//
+//     s = String::formatted("{} little piggies", m_piggies);
+//
+//     StringBuilder builder;
+//     builder.append("abc");
+//     builder.append("123");
+//     s = builder.to_string();
 
 class String {
 

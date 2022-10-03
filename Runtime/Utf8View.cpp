@@ -1,4 +1,9 @@
-
+/*
+ * Copyright (c) 2019-2020, Sergey Bugaev <bugaevc@serenityos.org>
+ * Copyright (c) 2021, Max Wipfli <mail@maxwipfli.ch>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 #include "Assertions.h"
 #include "CharacterTypes.h"
