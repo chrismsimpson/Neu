@@ -195,12 +195,12 @@ public partial class OptionalType : NeuType {
 
 public partial class StructType : NeuType {
 
-    public UInt64 StructId { get; init; }
+    public Int32 StructId { get; init; }
 
     ///
 
     public StructType(
-        UInt64 structId) {
+        Int32 structId) {
 
         this.StructId = structId;
     }
@@ -316,17 +316,34 @@ public partial class CheckedFile {
 
 public static partial class CheckedFileFunctions {
 
-    public static (CheckedStruct, UInt64)? GetStruct(
+    public static Int32? FindStruct(
+        this CheckedFile file,
+        String name) {
+
+        for (Int32 idx = 0; idx < file.Structs.Count; idx++) {
+
+            var structure = file.Structs[idx];
+
+            if (structure.Name == name) {
+
+                return idx;
+            }
+        }
+
+        return null;
+    }
+
+    public static (CheckedStruct, Int32)? GetStruct(
         this CheckedFile checkedFile,
         String name) {
         
-        for (var idx = 0; idx < checkedFile.Structs.Count; idx++) {
+        for (Int32 idx = 0; idx < checkedFile.Structs.Count; idx++) {
 
             var structure = checkedFile.Structs[idx];
 
             if (structure.Name == name) {
 
-                return (structure, ToUInt64(idx));
+                return (structure, idx);
             }
         }
 
@@ -359,16 +376,24 @@ public partial class CheckedStruct {
 
     public List<CheckedFunction> Methods { get; init; }
 
+    public DefinitionLinkage DefinitionLinkage { get; init; }
+
+    public DefinitionType DefinitionType { get; init; }
+
     ///
 
     public CheckedStruct(
         String name,
         List<CheckedVarDecl> fields,
-        List<CheckedFunction> methods) {
+        List<CheckedFunction> methods,
+        DefinitionLinkage definitionLinkage,
+        DefinitionType definitionType) {
 
         this.Name = name;
         this.Fields = fields;
         this.Methods = methods;
+        this.DefinitionLinkage = definitionLinkage;
+        this.DefinitionType = definitionType;
     }
 }
 
@@ -1013,7 +1038,7 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedExpression Expression { get; init; }
 
-        public UInt64 Index { get; init; }
+        public Int64 Index { get; init; }
 
         public NeuType Type { get; init; }
 
@@ -1021,7 +1046,7 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedIndexedTupleExpression(
             CheckedExpression expression,
-            UInt64 index,
+            Int64 index,
             NeuType type) {
 
             this.Expression = expression;
@@ -1268,6 +1293,21 @@ public static partial class CheckedExpressionFunctions {
             default: return null;
         }
     }
+
+    public static bool IsMutable(
+        this CheckedExpression e) {
+
+        switch (e) {
+
+            case CheckedVarExpression ve: return ve.Variable.Mutable;
+
+            case CheckedIndexedStructExpression ise: return ise.Expression.IsMutable();
+
+            case CheckedIndexedExpression ie: return ie.Expression.IsMutable();
+
+            default: return false;
+        }
+    }
 }
 
 ///
@@ -1369,7 +1409,7 @@ public static partial class StackFunctions {
     public static ErrorOrVoid AddStruct(
         this Stack s, 
         String name,
-        UInt64 structId,
+        Int32 structId,
         Span span) {
 
         if (s.Frames.LastOrDefault() is StackFrame frame) {
@@ -1388,7 +1428,7 @@ public static partial class StackFunctions {
         return new ErrorOrVoid();
     }
 
-    public static UInt64? FindStruct(
+    public static Int32? FindStruct(
         this Stack s,
         String structure) {
 
@@ -1415,18 +1455,18 @@ public partial class StackFrame {
     
     public List<CheckedVariable> Vars { get; init; }
 
-    public List<(String, UInt64)> Structs { get; init; }
+    public List<(String, Int32)> Structs { get; init; }
 
     ///
 
     public StackFrame() 
         : this(
             new List<CheckedVariable>(),
-            new List<(String, UInt64)>()) { }
+            new List<(String, Int32)>()) { }
 
     public StackFrame(
         List<CheckedVariable> vars,
-        List<(String, UInt64)> structs) {
+        List<(String, Int32)> structs) {
 
         this.Vars = vars;
         this.Structs = structs;
@@ -1453,13 +1493,13 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        for (var structId = 0; structId < parsedFile.Structs.Count; structId++) {
+        for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
             
             // Ensure we know the types ahead of time, so they can be recursive
 
             var structure = parsedFile.Structs.ElementAt(structId);
 
-            TypeCheckStructPredecl(structure, ToUInt64(structId), stack, file);
+            TypeCheckStructPredecl(structure, structId, stack, file);
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -1469,11 +1509,11 @@ public static partial class TypeCheckerFunctions {
             error = error ?? TypeCheckFuncPredecl(fun, stack, file);
         }
 
-        for (var structId = 0; structId < parsedFile.Structs.Count; structId++) {
+        for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
 
             var structure = parsedFile.Structs.ElementAt(structId);
 
-            error = error ?? TypeCheckStruct(structure, ToUInt64(structId), stack, file);
+            error = error ?? TypeCheckStruct(structure, structId, stack, file);
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -1484,9 +1524,9 @@ public static partial class TypeCheckerFunctions {
         return (file, error);
     }
 
-    public static void TypeCheckStructPredecl(
+    public static Error? TypeCheckStructPredecl(
         Struct structure,
-        ulong structId,
+        Int32 structId,
         Stack stack, 
         CheckedFile file) {
 
@@ -1542,12 +1582,16 @@ public static partial class TypeCheckerFunctions {
             new CheckedStruct(
                 name: structure.Name,
                 fields: new List<CheckedVarDecl>(),
-                methods: methods));
+                methods: methods,
+                definitionLinkage: structure.DefinitionLinkage,
+                definitionType: structure.DefinitionType));
+
+        return error;
     }
 
     public static Error? TypeCheckStruct(
         Struct structure,
-        ulong structId,
+        Int32 structId,
         Stack stack,
         CheckedFile file) {
 
@@ -1583,7 +1627,7 @@ public static partial class TypeCheckerFunctions {
                             mutable: field.Mutable)));
         }
 
-        var checkedStruct = file.Structs.ElementAt(ToInt32(structId));
+        var checkedStruct = file.Structs.ElementAt(structId);
 
         checkedStruct.Fields = fields;
 
@@ -1596,14 +1640,17 @@ public static partial class TypeCheckerFunctions {
             .GetStruct(structure.Name)
             ?? throw new Exception("Internal error: we previously defined the struct but it's now missing");
 
-        var checkedConstructor = new CheckedFunction(
-            name: structure.Name,
-            block: new CheckedBlock(),
-            linkage: FunctionLinkage.ImplicitConstructor,
-            parameters: constructorParams,
-            returnType: new StructType(_structId));
+        if (structure.DefinitionLinkage != DefinitionLinkage.External) {
 
-        file.Functions.Add(checkedConstructor);
+            var checkedConstructor = new CheckedFunction(
+                name: structure.Name,
+                block: new CheckedBlock(),
+                linkage: FunctionLinkage.ImplicitConstructor,
+                parameters: constructorParams,
+                returnType: new StructType(_structId));
+
+            file.Functions.Add(checkedConstructor);
+        }
 
         switch (stack.AddStruct(structure.Name, _structId, structure.Span).Error) {
 
@@ -1741,13 +1788,13 @@ public static partial class TypeCheckerFunctions {
         Function func,
         Stack stack,
         CheckedFile file,
-        ulong structId) { 
+        Int32 structId) { 
 
         Error? error = null;
 
         stack.PushFrame();
 
-        var structure = file.Structs.ElementAt(ToInt32(structId));
+        var structure = file.Structs.ElementAt(structId);
 
         var checkedFunction = structure
             .GetMethod(func.Name) 
@@ -2438,7 +2485,7 @@ public static partial class TypeCheckerFunctions {
 
                     case StructType st: {
 
-                        var structure = file.Structs[ToInt32(st.StructId)];
+                        var structure = file.Structs[st.StructId];
 
                         foreach (var member in structure.Fields) {
 
@@ -2498,11 +2545,47 @@ public static partial class TypeCheckerFunctions {
                             error);
                     }
 
+                    case StringType _: {
+
+                        var stringStruct = file.FindStruct("String");
+
+                        switch (stringStruct) {
+
+                            case Int32 structId: {
+
+                                var (checkedCall, err) = TypeCheckMethodCall(mce.Call, stack, mce.Span, file, structId, safetyMode);
+
+                                error = error ?? err;
+
+                                var ty = checkedCall.Type;
+
+                                return (
+                                    new CheckedMethodCallExpression(
+                                        checkedExpr,
+                                        checkedCall,
+                                        ty),
+                                    error);
+                            }
+
+                            default: {
+
+                                error = error ??
+                                    new TypeCheckError(
+                                        "no methods available on value",
+                                        mce.Span);
+
+                                return (
+                                    new CheckedGarbageExpression(),
+                                    error);
+                            }
+                        }
+                    }
+
                     default: {
 
                         error = error ?? 
                             new TypeCheckError(
-                                "",
+                                "no methods available on value",
                                 mce.Expression.GetSpan());
 
                         return (
@@ -2536,83 +2619,6 @@ public static partial class TypeCheckerFunctions {
             }
         }
     }
-
-    // public static Error? TypeCheckUnaryOperation(
-    //     CheckedExpression expr,
-    //     UnaryOperator op,
-    //     Span span) {
-
-    //     switch (expr.GetNeuType()) {
-
-    //         case Int8Type:
-    //         case Int16Type:
-    //         case Int32Type:
-    //         case Int64Type:
-    //         case UInt8Type:
-    //         case UInt16Type:
-    //         case UInt32Type:
-    //         case UInt64Type:
-    //         case FloatType:
-    //         case DoubleType: {
-
-    //             switch (expr) {
-
-    //                 case CheckedVarExpression v: {
-
-    //                     if (!v.Variable.Mutable) {
-
-    //                         switch (op) {
-
-    //                             case UnaryOperator.PreIncrement:
-    //                             case UnaryOperator.PostIncrement: {
-
-    //                                 return new TypeCheckError(
-    //                                     "increment on immutable variable",
-    //                                     span);
-    //                             }
-
-    //                             case UnaryOperator.PreDecrement:
-    //                             case UnaryOperator.PostDecrement: {
-
-    //                                 return new TypeCheckError(
-    //                                     "decrement on immutable variable",
-    //                                     span);
-    //                             }
-
-    //                             case UnaryOperator.Negate: {
-
-    //                                 return null;
-    //                             }
-
-    //                             default: {
-
-    //                                 throw new Exception(); // assume not reached
-    //                             }
-    //                         }
-    //                     }
-    //                     else {
-
-    //                         return null;
-    //                     }
-    //                 }
-
-    //                 default: {
-
-    //                     // TODO: we probably want to check if what we're working on can be updated
-
-    //                     return null;
-    //                 }
-    //             }
-    //         }
-
-    //         default: {
-
-    //             return new TypeCheckError(
-    //                 "unary operation on non-numeric value", 
-    //                 span);
-    //         }
-    //     }
-    // }
 
     public static (CheckedExpression, Error?) TypeCheckUnaryOperation(
         CheckedExpression expr,
@@ -2784,24 +2790,11 @@ public static partial class TypeCheckerFunctions {
                         span);
                 }
 
-                switch (lhs) {
+                if (!lhs.IsMutable()) {
 
-                    case CheckedVarExpression v: {
-
-                        if (!v.Variable.Mutable) {
-
-                            return new TypeCheckError(
-                                "assignment to immutable variable", 
-                                span);
-                        }
-
-                        break;
-                    }
-                    
-                    default: {
-
-                        break;
-                    }
+                    return new TypeCheckError(
+                        "assignment to immutable variable", 
+                        span);
                 }
 
                 break;
@@ -2966,7 +2959,7 @@ public static partial class TypeCheckerFunctions {
         Stack stack,
         Span span,
         CheckedFile file,
-        ulong structId,
+        Int32 structId,
         SafetyMode safetyMode) {
 
         var checkedArgs = new List<(String, CheckedExpression)>();
@@ -2975,7 +2968,7 @@ public static partial class TypeCheckerFunctions {
 
         NeuType returnType = new UnknownType();
 
-        var (_callee, resolveCallErr) = ResolveCall(call, span, file.Structs[ToInt32(structId)].Methods);
+        var (_callee, resolveCallErr) = ResolveCall(call, span, file.Structs[structId].Methods);
 
         error = error ?? resolveCallErr;
 
@@ -3128,7 +3121,7 @@ public static partial class TypeCheckerFunctions {
 
                         switch (structure) {
 
-                            case ulong structId: {
+                            case Int32 structId: {
 
                                 return (new StructType(structId), null);
                             }

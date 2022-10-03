@@ -80,7 +80,30 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         CheckedStruct structure) {
 
-        return $"struct {structure.Name};";
+        if (structure.DefinitionLinkage == DefinitionLinkage.External) {
+
+            return String.Empty;
+        }
+        else {
+
+            switch (structure.DefinitionType) {
+
+                case DefinitionType.Class: {
+
+                    return $"class {structure.Name};";
+                }
+
+                case DefinitionType.Struct: {
+
+                    return $"struct {structure.Name};";
+                }
+
+                default: {
+
+                    throw new Exception();
+                }
+            }
+        }
     }
 
     public static String CodeGenStruct(
@@ -88,7 +111,42 @@ public static partial class CodeGenFunctions {
         CheckedStruct structure,
         CheckedFile file) {
 
-        var output = new StringBuilder($"struct {structure.Name} {{\n");
+        // var output = new StringBuilder($"struct {structure.Name} {{\n");
+
+        if (structure.DefinitionLinkage == DefinitionLinkage.External) {
+
+            return String.Empty;
+        }
+
+        var output = new StringBuilder();
+
+        switch (structure.DefinitionType) {
+
+            case DefinitionType.Class: {
+
+                output.Append($"class {structure.Name} {{\n");
+                
+                // As we should test the visibility before codegen, we take a simple
+                // approach to codegen
+                
+                output.Append("  public:\n");
+
+                break;
+            }
+
+            case DefinitionType.Struct: {
+
+                output.Append($"struct {structure.Name} {{\n");
+                output.Append("  public:\n");
+
+                break;
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
 
         foreach (var member in structure.Fields) {
 
@@ -232,9 +290,13 @@ public static partial class CodeGenFunctions {
 
         var first = true;
 
+        var constFunc = false;
+
         foreach (var p in fun.Parameters) {
 
             if (p.Variable.Name == "this") {
+
+                constFunc = !p.Variable.Mutable;
 
                 continue;
             }
@@ -258,6 +320,11 @@ public static partial class CodeGenFunctions {
         }
 
         output.Append(')');
+
+        if (constFunc) {
+
+            output.Append(" const");
+        }
 
         if (fun.Name == "main") {
             
@@ -450,7 +517,7 @@ public static partial class CodeGenFunctions {
 
             case StructType st: {
 
-                return file.Structs[ToInt32(st.StructId)].Name;
+                return file.Structs[st.StructId].Name;
             }
 
             case UnknownType _: {

@@ -285,18 +285,26 @@ public partial class Struct {
 
     public Span Span { get; init; }
 
+    public DefinitionLinkage DefinitionLinkage { get; init; }
+
+    public DefinitionType DefinitionType { get; init; } 
+
     ///
 
     public Struct(
         String name,
         List<VarDecl> fields,
         List<Function> methods,
-        Span span) {
+        Span span,
+        DefinitionLinkage definitionLinkage,
+        DefinitionType definitionType) {
 
         this.Name = name;
         this.Fields = fields;
         this.Methods = methods;
         this.Span = span;
+        this.DefinitionLinkage = definitionLinkage;
+        this.DefinitionType = definitionType;
     }
 }
 
@@ -307,6 +315,18 @@ public enum FunctionLinkage {
     Internal,
     External,
     ImplicitConstructor
+}
+
+public enum DefinitionLinkage {
+
+    Internal,
+    External
+}
+
+public enum DefinitionType {
+
+    Class,
+    Struct
 }
 
 public partial class Function {
@@ -1026,7 +1046,7 @@ public partial class Expression: Statement {
 
         public Expression Expression { get; init; }
 
-        public UInt64 Index { get; init; }
+        public Int64 Index { get; init; }
 
         public Span Span { get; init; }
 
@@ -1034,7 +1054,7 @@ public partial class Expression: Statement {
 
         public IndexedTupleExpression(
             Expression expression,
-            UInt64 index,
+            Int64 index,
             Span span) {
 
             this.Expression = expression;
@@ -1538,12 +1558,33 @@ public static partial class ParserFunctions {
 
                         case "struct": {
 
-                            var (structure, parseStructErr) = ParseStruct(tokens, ref index);
+                            var (structure, err) = ParseStruct(
+                                tokens, 
+                                ref index,
+                                DefinitionLinkage.Internal,
+                                DefinitionType.Struct);
 
-                            error = error ?? parseStructErr;
+                            error = error ?? err;
 
                             parsedFile.Structs.Add(structure);
 
+                            break;
+                        }
+
+                        ///
+
+                        case "class": {
+
+                            var (structure, err) = ParseStruct(
+                                tokens,
+                                ref index,
+                                DefinitionLinkage.Internal,
+                                DefinitionType.Class);
+
+                            err = error ?? err;
+
+                            parsedFile.Structs.Add(structure);
+                            
                             break;
                         }
 
@@ -1571,6 +1612,44 @@ public static partial class ParserFunctions {
                                                 error = error ?? err;
 
                                                 parsedFile.Functions.Add(fun);
+
+                                                break;
+                                            }
+
+                                            ///
+
+                                            case "struct": {
+
+                                                index += 1;
+
+                                                var (structure, err) = ParseStruct(
+                                                    tokens,
+                                                    ref index,
+                                                    DefinitionLinkage.External,
+                                                    DefinitionType.Struct);
+
+                                                error = error ?? err;
+
+                                                parsedFile.Structs.Add(structure);
+
+                                                break;
+                                            }
+
+                                            ///
+
+                                            case "class": {
+
+                                                index += 1;
+
+                                                var (structure, err) = ParseStruct(
+                                                    tokens,
+                                                    ref index,
+                                                    DefinitionLinkage.External,
+                                                    DefinitionType.Class);
+
+                                                error = error ?? err;
+
+                                                parsedFile.Structs.Add(structure);
 
                                                 break;
                                             }
@@ -1673,7 +1752,11 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Struct, Error?) ParseStruct(List<Token> tokens, ref int index) {
+    public static (Struct, Error?) ParseStruct(
+        List<Token> tokens, 
+        ref int index,
+        DefinitionLinkage definitionLinkage,
+        DefinitionType definitionType) {
 
         Trace($"ParseStruct: {tokens.ElementAt(index)}");
 
@@ -1793,17 +1876,19 @@ public static partial class ParserFunctions {
                                 break;
                             }
 
-                            case EofToken _: {
+                            // case EofToken _: {
 
-                                Trace($"ERROR: expected field, found: {tokens.ElementAt(index)}");
+                            //     Trace($"ERROR: expected field, found: {tokens.ElementAt(index)}");
 
-                                error = error ?? 
-                                    new ParserError(
-                                        "expected field",
-                                        tokens.ElementAt(index).Span);
+                            //     error = error ?? 
+                            //         new ParserError(
+                            //             "expected field",
+                            //             tokens.ElementAt(index).Span);
 
-                                break;
-                            }
+                            //     contFields = false;
+
+                            //     break;
+                            // }
 
                             default: {
 
@@ -1813,6 +1898,8 @@ public static partial class ParserFunctions {
                                     new ParserError(
                                         "expected field",
                                         tokens.ElementAt(index).Span);
+
+                                contFields = false;
 
                                 break;
                             }
@@ -1834,7 +1921,9 @@ public static partial class ParserFunctions {
                             name: nt.Value,
                             fields: fields,
                             methods: methods,
-                            span: tokens.ElementAt(index - 1).Span),
+                            span: tokens.ElementAt(index - 1).Span,
+                            definitionLinkage,
+                            definitionType),
                         error
                     );
                 }
@@ -1853,7 +1942,9 @@ public static partial class ParserFunctions {
                             name: String.Empty,
                             fields: new List<VarDecl>(),
                             methods: new List<Function>(),
-                            span: tokens.ElementAt(index).Span),
+                            span: tokens.ElementAt(index).Span,
+                            definitionLinkage,
+                            definitionType),
                         error);
                 }
             }
@@ -1872,7 +1963,9 @@ public static partial class ParserFunctions {
                     name: String.Empty, 
                     fields: new List<VarDecl>(),
                     methods: new List<Function>(),
-                    span: tokens.ElementAt(index).Span),
+                    span: tokens.ElementAt(index).Span,
+                    definitionLinkage,
+                    definitionType),
                 error);
         }
     }
@@ -1940,6 +2033,8 @@ public static partial class ParserFunctions {
 
                     var currentParamRequiresLabel = true;
 
+                    var currentParamIsMutable = false;
+
                     var cont = true;
 
                     while (index < tokens.Count && cont) {
@@ -1981,6 +2076,16 @@ public static partial class ParserFunctions {
 
                             ///
 
+                            case NameToken nt when nt.Value == "var": {
+
+                                currentParamIsMutable = true;
+
+                                index += 1;
+
+                                break;
+                            }
+                            ///
+
                             case NameToken nt when nt.Value == "this": {
 
                                 index += 1;
@@ -1991,7 +2096,7 @@ public static partial class ParserFunctions {
                                         variable: new Variable(
                                             name: "this",
                                             ty: new UncheckedEmptyType(),
-                                            mutable: false)));
+                                            mutable: currentParamIsMutable)));
 
                                 break;
                             }
@@ -3317,7 +3422,7 @@ public static partial class ParserFunctions {
                                     start: expr.GetSpan().Start,
                                     end: tokens.ElementAt(index).Span.End);
 
-                                expr = new IndexedTupleExpression(expr, ToUInt32(number.Value), _span);
+                                expr = new IndexedTupleExpression(expr, number.Value, _span);
 
                                 break;
                             }

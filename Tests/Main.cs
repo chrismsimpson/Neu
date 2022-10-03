@@ -20,6 +20,7 @@ public static partial class Program {
         TestTuples();
         TestStructs();
         TestPointers();
+        TestClasses();
     }
 
     public static ErrorOrVoid TestSamples(
@@ -279,5 +280,10 @@ public static partial class Program {
     public static ErrorOrVoid TestPointers() {
 
         return TestSamples("./Samples/Pointers");
+    }
+
+    public static ErrorOrVoid TestClasses() {
+
+        return TestSamples("./Samples/Classes");
     }
 }

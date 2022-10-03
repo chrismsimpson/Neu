@@ -1,0 +1,12 @@
+extern class String {
+    
+    func toLowercase(this) -> String { }
+}
+
+func main() {
+
+    let name = "Chris";
+
+    print(name.toLowercase())
+}
+
