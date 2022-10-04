@@ -162,6 +162,8 @@ extern class String {
     func characters(this) -> raw Char { }
     func toLowercase(this) -> String { }
     func toUppercase(this) -> String { }
+    func isEmpty(this) -> Bool { }
+    func length(this) -> Int64 { }
 }
 
 extern class Vector {
