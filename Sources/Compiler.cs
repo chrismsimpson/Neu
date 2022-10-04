@@ -9,19 +9,43 @@ public partial class Compiler {
 
     ///
 
-    public Compiler()
-        : this(
-            new List<(String, byte[])>(), 
-            new List<(String, CheckedFile)>()) {
-    }
+    // public Compiler()
+    //     : this(
+    //         new List<(String, byte[])>(), 
+    //         new List<(String, CheckedFile)>()) {
+    // }
 
-    public Compiler(
-        List<(String, byte[])> rawFiles,
-        List<(String, CheckedFile)> checkedFiles) {
+    public Compiler() {
+
+        var prelude = Compiler.Prelude();
+
+        var rawFiles = new List<(String, byte[])>();
+
+        var checkedFiles = new List<(String, CheckedFile)>();
+
+        // Not sure where to put prelude, but we're hoping its parsing is infallible
+
+        rawFiles.Add(("<prelude>", prelude));
+
+        // Compile the prelude
+
+        var (lexed, _) = LexerFunctions.Lex(rawFiles.Count - 1, rawFiles[rawFiles.Count - 1].Item2);
+        var (file, _) = ParserFunctions.ParseFile(lexed);
+        var (chkdFile, _) = TypeCheckerFunctions.TypeCheckFile(file, new CheckedFile());
+
+        checkedFiles.Add(("<prelude>", chkdFile));
 
         this.RawFiles = rawFiles;
         this.CheckedFiles = checkedFiles;
     }
+
+    // public Compiler(
+    //     List<(String, byte[])> rawFiles,
+    //     List<(String, CheckedFile)> checkedFiles) {
+
+    //     this.RawFiles = rawFiles;
+    //     this.CheckedFiles = checkedFiles;
+    // }
 }
 
 ///
@@ -72,7 +96,7 @@ public partial class Compiler {
 
         ///
 
-        var (checkedFile, checkErr) = TypeCheckerFunctions.TypeCheckFile(parsedFile);
+        var (checkedFile, checkErr) = TypeCheckerFunctions.TypeCheckFile(parsedFile, this.CheckedFiles[0].Item2);
 
         switch (checkErr) {
 
@@ -126,5 +150,24 @@ public partial class Compiler {
     public byte[] GetFileContents(FileId fileId) {
 
         return this.RawFiles[fileId].Item2;
+    }
+
+    ///
+
+    public static byte[] Prelude() {
+
+        return UTF8.GetBytes(@"
+extern class String {
+    func split(this, anon c: Char) -> [String] { }
+    func characters(this) -> raw Char { }
+    func toLowercase(this) -> String { }
+    func toUppercase(this) -> String { }
+}
+
+extern class Vector {
+    func size(this) -> Int64 { }
+}
+
+");
     }
 }

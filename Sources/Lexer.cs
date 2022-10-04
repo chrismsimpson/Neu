@@ -49,6 +49,21 @@ public partial class Token {
     }
 }
 
+    public partial class SingleQuotedStringToken: Token {
+
+        public String Value { get; init; }
+
+        ///
+
+        public SingleQuotedStringToken(
+            String value,
+            Span span)
+            : base(span) {
+
+            this.Value = value;
+        }
+    }
+
     public partial class QuotedStringToken: Token {
 
         public String Value { get; init; }
@@ -926,9 +941,55 @@ public static partial class LexerFunctions {
                         new Span(fileId, start, index)));
             }
         }
+        else if (ToChar(bytes[index]) == '\'') {
+
+            // Character
+
+            var start = index;
+
+            index += 1;
+
+            var escaped = false;
+
+            while (index < bytes.Length && (escaped || bytes[index] != '\'')) {
+
+                if (!escaped && bytes[index] == '\\') {
+
+                    escaped = true;
+                }
+                else {
+
+                    escaped = false;
+                }
+
+                index += 1;
+            }
+
+            if (index == bytes.Length || bytes[index] != '\'') {
+
+                error = error ?? 
+                    new ParserError(
+                        "expected single quote", 
+                        new Span(fileId, index, index));
+            }
+
+            // Everything but the quotes
+
+            var str = UTF8.GetString(bytes[(start + 1)..index]);
+
+            index += 1;
+
+            var end = index;
+
+            return (
+                new SingleQuotedStringToken(
+                    str, 
+                    new Span(fileId, start, end)),
+                error);
+        }
         else if (ToChar(bytes[index]) == '"') {
 
-            // Quoted String
+            // Quoted string
 
             var start = index;
 

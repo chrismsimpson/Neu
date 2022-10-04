@@ -927,6 +927,23 @@ public partial class Expression: Statement {
         }
     }
 
+    public partial class CharacterLiteralExpression: Expression {
+
+        public Char Char { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public CharacterLiteralExpression(
+            Char c,
+            Span span) {
+
+            this.Char = c;
+            this.Span = span;
+        }
+    }
+
     public partial class VectorExpression: Expression {
 
         public List<Expression> Expressions { get; init; }
@@ -1271,6 +1288,11 @@ public static partial class ExpressionFunctions {
                 return qse.Span;
             }
 
+            case CharacterLiteralExpression cle: {
+
+                return cle.Span;
+            }
+
             case VectorExpression ve: {
 
                 return ve.Span;
@@ -1400,6 +1422,14 @@ public static partial class ExpressionFunctions {
                 && r is QuotedStringExpression strR:
 
                 return Equals(strL.Value, strR.Value);
+
+            ///
+
+            case var _ when 
+                l is CharacterLiteralExpression lc
+                && r is CharacterLiteralExpression rc:
+
+                return Equals(lc.Char, rc.Char);
             
             ///
 
@@ -3005,8 +3035,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case NameToken nt: {
 
                 if (index + 1 < tokens.Count) {
@@ -3089,8 +3117,6 @@ public static partial class ParserFunctions {
 
                 break;
             }
-
-            ///
 
             case LParenToken _: {
 
@@ -3205,8 +3231,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case LSquareToken _: {
 
                 var (_expr, exprErr) = ParseVector(tokens, ref index);
@@ -3217,8 +3241,6 @@ public static partial class ParserFunctions {
 
                 break;
             }
-
-            ///
 
             case PlusPlusToken _: {
                 
@@ -3240,8 +3262,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case MinusMinusToken _: {
 
                 var startSpan = tokens.ElementAt(index).Span;
@@ -3261,8 +3281,6 @@ public static partial class ParserFunctions {
 
                 break;
             }
-
-            ///
 
             case MinusToken _: {
 
@@ -3284,8 +3302,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case AsteriskToken _: {
 
                 var startSpan = tokens.ElementAt(index).Span;
@@ -3305,8 +3321,6 @@ public static partial class ParserFunctions {
 
                 break;
             }
-
-            ///
 
             case AmpersandToken _: {
 
@@ -3364,8 +3378,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case NumberToken numTok: {
 
                 index += 1;
@@ -3375,13 +3387,27 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             case QuotedStringToken qs: {
 
                 index += 1;
 
                 expr = new QuotedStringExpression(qs.Value, span);
+
+                break;
+            }
+
+            case SingleQuotedStringToken ct: {
+
+                index += 1;
+
+                if (ct.Value.FirstOrDefault() is Char c) {
+
+                    expr = new CharacterLiteralExpression(c, span);
+                }
+                else {
+
+                    expr = new GarbageExpression(span);
+                }
 
                 break;
             }

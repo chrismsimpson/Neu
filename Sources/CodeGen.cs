@@ -765,6 +765,17 @@ public static partial class CodeGenFunctions {
 
             ///
 
+            case CheckedCharacterConstantExpression cce: {
+
+                output.Append('\'');
+                output.Append(cce.Char);
+                output.Append('\'');
+
+                break;
+            }
+
+            ///
+
             case CheckedNumericConstantExpression ne: {
 
                 switch (ne.Value) {

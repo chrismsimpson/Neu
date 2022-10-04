@@ -955,6 +955,19 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
+    public partial class CheckedCharacterConstantExpression: CheckedExpression {
+
+        public Char Char { get; init; }
+
+        ///
+
+        public CheckedCharacterConstantExpression(
+            Char c) {
+
+            this.Char = c;
+        }
+    }
+
     public partial class CheckedUnaryOpExpression: CheckedExpression {
 
         public CheckedExpression Expression { get; init; }
@@ -1236,6 +1249,11 @@ public static partial class CheckedExpressionFunctions {
                 return new StringType();   
             }
 
+            case CheckedCharacterConstantExpression _: {
+
+                return new CharType();
+            }
+
             case CheckedUnaryOpExpression u: {
 
                 return u.Type;
@@ -1510,20 +1528,37 @@ public partial class StackFrame {
 public static partial class TypeCheckerFunctions {
 
     public static (CheckedFile, Error?) TypeCheckFile(
-        ParsedFile file) {
+        ParsedFile file,
+        CheckedFile prelude) {
 
         var stack = new Stack();
 
-        return TypeCheckFileHelper(file, stack);
+        return TypeCheckFileHelper(file, stack, prelude);
     }
 
     public static (CheckedFile, Error?) TypeCheckFileHelper(
         ParsedFile parsedFile,
-        Stack stack) {
+        Stack stack,
+        CheckedFile prelude) {
 
         var file = new CheckedFile();
 
         Error? error = null;
+
+        foreach (var structure in prelude.Structs) {
+            
+            file.Structs.Add(structure);
+
+            var _ = stack.AddStruct(
+                structure.Name, 
+                file.Structs.Count - 1,
+                new Span(0, 0, 0));
+        }
+
+        foreach (var func in prelude.Functions) {
+
+            file.Functions.Add(func);
+        }
 
         for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
             
@@ -1531,7 +1566,11 @@ public static partial class TypeCheckerFunctions {
 
             var structure = parsedFile.Structs.ElementAt(structId);
 
-            TypeCheckStructPredecl(structure, structId, stack, file);
+            TypeCheckStructPredecl(
+                structure, 
+                structId + prelude.Structs.Count,
+                stack, 
+                file);
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -1545,7 +1584,11 @@ public static partial class TypeCheckerFunctions {
 
             var structure = parsedFile.Structs.ElementAt(structId);
 
-            error = error ?? TypeCheckStruct(structure, structId, stack, file);
+            error = error ?? TypeCheckStruct(
+                structure, 
+                structId + prelude.Structs.Count,
+                stack, 
+                file);
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -2282,6 +2325,13 @@ public static partial class TypeCheckerFunctions {
 
                 return (
                     new CheckedQuotedStringExpression(e.Value),
+                    null);
+            }
+
+            case CharacterLiteralExpression cle: {
+
+                return (
+                    new CheckedCharacterConstantExpression(cle.Char),
                     null);
             }
 
@@ -3062,7 +3112,9 @@ public static partial class TypeCheckerFunctions {
 
                     var paramCount = callee.Parameters.Count;
 
-                    if (callee.Parameters.FirstOrDefault()?.Variable.Name == "this") {
+                    var thisFirstArgument = callee.Parameters.FirstOrDefault()?.Variable.Name == "this";
+
+                    if (thisFirstArgument) {
 
                         paramCount -= 1;
                     }
@@ -3084,7 +3136,7 @@ public static partial class TypeCheckerFunctions {
                             error = error ?? checkedArgErr;
 
                             if (callee.Parameters[idx].RequiresLabel
-                                && call.Args[idx].Item1 != callee.Parameters[idx].Variable.Name) {
+                                && call.Args[idx].Item1 != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name) {
 
                                 error = error ?? 
                                     new TypeCheckError(
@@ -3098,7 +3150,7 @@ public static partial class TypeCheckerFunctions {
                             //     call.Args[idx].Item2.GetSpan());
 
                             var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
-                                callee.Parameters[idx].Variable.Type,
+                                callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type,
                                 checkedArg,
                                 call.Args[idx].Item2.GetSpan());
 
@@ -3109,7 +3161,7 @@ public static partial class TypeCheckerFunctions {
                                 checkedArg = promotedExpr;
                             }
 
-                            if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx].Variable.Type)) {
+                            if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type)) {
 
                                 error = error ?? new TypeCheckError(
                                     "Parameter type mismatch",
