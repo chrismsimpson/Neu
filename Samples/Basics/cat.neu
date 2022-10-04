@@ -4,6 +4,7 @@ extern struct FILE { }
 extern func fopen(anon str: raw Char, anon mode: raw Char) -> raw FILE
 extern func fgetc(anon file: var raw FILE) -> Int
 extern func fclose(anon file: var raw FILE) -> Int
+extern func feof(anon file: var raw FILE) -> Int
 extern func putchar(anon ch: Int) -> Int
 
 func main(args: [String]) {
@@ -22,7 +23,7 @@ func main(args: [String]) {
     defer fclose(file)
 
     var c = fgetc(file)
-    while c != -1 {
+    while not feof(file) {
         putchar(c)
         c = fgetc(file)
     }

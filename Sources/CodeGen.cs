@@ -346,10 +346,6 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        // output.Append(compiler.CodeGenType(func.ReturnType, file));
-
-        // output.Append("::");
-
         output.Append(func.Name);
         
         output.Append('(');
