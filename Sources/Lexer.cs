@@ -260,6 +260,18 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class LeftShiftToken: Token {
+
+        public LeftShiftToken(Span span) 
+            : base(span) { }
+    }
+
+    public partial class RightShiftToken: Token {
+
+        public RightShiftToken(Span span)
+            : base(span) { } 
+    }
+
     public partial class AsteriskToken: Token {
 
         public AsteriskToken(Span span) 
@@ -269,6 +281,24 @@ public partial class Token {
     public partial class AmpersandToken: Token {
 
         public AmpersandToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class PipeToken: Token {
+
+        public PipeToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class CaretToken: Token {
+
+        public CaretToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class TildeToken: Token {
+
+        public TildeToken(Span span)
             : base(span) { }
     }
 
@@ -579,6 +609,14 @@ public static partial class LexerFunctions {
 
                             continue;
                         }
+                        else if (ToChar(bytes[index]) == '>') {
+
+                            index += 1;
+
+                            output.Add(new RightShiftToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
                     }
 
                     output.Add(new GreaterThanToken(new Span(fileId, start, start + 1)));
@@ -601,6 +639,14 @@ public static partial class LexerFunctions {
                             index += 1;
 
                             output.Add(new LessThanOrEqualToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
+                        else if (ToChar(bytes[index]) == '<') {
+
+                            index += 1;
+
+                            output.Add(new LeftShiftToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
@@ -645,6 +691,45 @@ public static partial class LexerFunctions {
                     index += 1;
 
                     output.Add(new AmpersandToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '|': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new PipeToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '^': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new CaretToken(new Span(fileId, start, start + 1)));
+
+                    break;
+                }
+
+                ///
+
+                case '~': {
+
+                    var start = index;
+
+                    index += 1;
+
+                    output.Add(new TildeToken(new Span(fileId, start, start + 1)));
 
                     break;
                 }

@@ -1204,7 +1204,8 @@ public partial class Expression: Statement {
         Negate,
         Dereference,
         RawAddress,
-        LogicalNot
+        LogicalNot,
+        BitwiseNot
     }
 
     public enum BinaryOperator {
@@ -1222,6 +1223,11 @@ public partial class Expression: Statement {
         GreaterThanOrEqual,
         LogicalAnd,
         LogicalOr,
+        BitwiseAnd,
+        BitwiseOr,
+        BitwiseXor,
+        BitwiseLeftShift,
+        BitwiseRightShift,
         Assign,
         AddAssign,
         SubtractAssign,
@@ -1496,6 +1502,14 @@ public static partial class ExpressionFunctions {
 
             ///
 
+            case OperatorExpression opExpr when
+                opExpr.Operator == BinaryOperator.BitwiseLeftShift
+                || opExpr.Operator == BinaryOperator.BitwiseRightShift: 
+                
+                return 85;
+
+            ///
+
             case OperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.LessThan
                 || opExpr.Operator == BinaryOperator.LessThanOrEqual
@@ -1505,6 +1519,27 @@ public static partial class ExpressionFunctions {
                 || opExpr.Operator == BinaryOperator.NotEqual:
                 
                 return 80;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == BinaryOperator.BitwiseAnd:
+
+                return 73;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == BinaryOperator.BitwiseXor:
+
+                return 72;
+
+            ///
+
+            case OperatorExpression opExpr when 
+                opExpr.Operator == BinaryOperator.BitwiseOr:
+
+                return 72;
 
             ///
 
@@ -3302,6 +3337,26 @@ public static partial class ParserFunctions {
                 break;
             }
 
+            case TildeToken _: {
+
+                var startSpan = tokens.ElementAt(index).Span;
+
+                index += 1;
+
+                var (_expr, err) = ParseOperand(tokens, ref index);
+
+                error = error ?? err;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: _expr.GetSpan().End);
+
+                expr = new UnaryOpExpression(_expr, UnaryOperator.BitwiseNot, _span);
+
+                break;
+            }
+
             case AsteriskToken _: {
 
                 var startSpan = tokens.ElementAt(index).Span;
@@ -4076,6 +4131,41 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
             }
 
+            case AmpersandToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseAnd, span), null);
+            }
+
+            case PipeToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseOr, span), null);
+            }
+
+            case CaretToken _: {
+    
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseXor, span), null);
+            }
+
+            case LeftShiftToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
+            }
+
+            case RightShiftToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
+            }
+
             ///
 
             default: {
@@ -4148,6 +4238,41 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (new OperatorExpression(BinaryOperator.LogicalOr, span), null);
+            }
+
+            case AmpersandToken _: {
+
+                index += 1;
+            
+                return (new OperatorExpression(BinaryOperator.BitwiseAnd, span), null);
+            }
+
+            case PipeToken _: {
+
+                index += 1;
+            
+                return (new OperatorExpression(BinaryOperator.BitwiseOr, span), null);
+            }
+
+            case CaretToken _: {
+
+                index += 1;
+            
+                return (new OperatorExpression(BinaryOperator.BitwiseXor, span), null);
+            }
+
+            case LeftShiftToken _: {
+
+                index += 1;
+            
+                return (new OperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
+            }
+
+            case RightShiftToken _: {
+
+                index += 1;
+            
+                return (new OperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
             }
 
             case EqualToken _: {

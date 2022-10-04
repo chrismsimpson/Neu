@@ -2783,6 +2783,11 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
 
+            case UnaryOperator.BitwiseNot: {
+
+                return (new CheckedUnaryOpExpression(expr, UnaryOperator.BitwiseNot, exprType), null);
+            }
+
             case UnaryOperator.Negate: {
 
                 switch (exprType) {

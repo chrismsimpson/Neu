@@ -733,8 +733,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedOptionalSomeExpression o: {
 
                 output.Append('(');
@@ -753,8 +751,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedQuotedStringExpression qs: {
             
                 output.Append("String(\"");        
@@ -764,8 +760,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedCharacterConstantExpression cce: {
 
                 output.Append('\'');
@@ -774,8 +768,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             case CheckedNumericConstantExpression ne: {
 
@@ -862,16 +854,12 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedVarExpression v: {
 
                 output.Append(v.Variable.Name);
 
                 break;
             }
-
-            ///
 
             case CheckedBooleanExpression b: {
 
@@ -886,8 +874,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             case CheckedCallExpression ce: {
 
@@ -968,8 +954,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedMethodCallExpression mce: {
 
                 output.Append('(');
@@ -1019,8 +1003,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedUnaryOpExpression unaryOp: {
 
                 output.Append('(');
@@ -1069,6 +1051,13 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case UnaryOperator.BitwiseNot: {
+
+                        output.Append('~');
+
+                        break;
+                    }
+
                     default: {
 
                         break;
@@ -1104,8 +1093,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedBinaryOpExpression binOp: {
 
                 output.Append("(");
@@ -1121,16 +1108,12 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.Subtract: {
 
                         output.Append(" - ");
 
                         break;
                     }
-                    
-                    ///
 
                     case BinaryOperator.Multiply: {
 
@@ -1139,8 +1122,6 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.Modulo: {
 
                         output.Append(" % ");
@@ -1148,16 +1129,12 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.Divide: {
 
                         output.Append(" / ");
 
                         break;
                     }
-
-                    ///
 
                     case BinaryOperator.Assign: {
 
@@ -1201,16 +1178,12 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.Equal: {
 
                         output.Append(" == ");
 
                         break;
                     }
-
-                    ///
 
                     case BinaryOperator.NotEqual: {
 
@@ -1219,16 +1192,12 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.LessThan: {
 
                         output.Append(" < ");
 
                         break;
                     }
-
-                    ///
 
                     case BinaryOperator.LessThanOrEqual: {
 
@@ -1237,16 +1206,12 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.GreaterThan: {
 
                         output.Append(" > ");
 
                         break;
                     }
-
-                    ///
 
                     case BinaryOperator.GreaterThanOrEqual: {
 
@@ -1255,16 +1220,12 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
-
                     case BinaryOperator.LogicalAnd: {
 
                         output.Append(" && ");
 
                         break;
                     }
-
-                    ///
 
                     case BinaryOperator.LogicalOr: {
 
@@ -1273,7 +1234,40 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    ///
+                    case BinaryOperator.BitwiseAnd: {
+
+                        output.Append(" & ");
+
+                        break;
+                    }
+
+                    case BinaryOperator.BitwiseOr: {
+                        
+                        output.Append(" | ");
+
+                        break;
+                    }
+
+                    case BinaryOperator.BitwiseXor: {
+
+                        output.Append(" ^ ");
+
+                        break;
+                    }
+
+                    case BinaryOperator.BitwiseLeftShift: {
+
+                        output.Append(" << ");
+
+                        break;
+                    }
+
+                    case BinaryOperator.BitwiseRightShift: {
+
+                        output.Append(" >> ");
+
+                        break;
+                    }
 
                     default: {
                         
