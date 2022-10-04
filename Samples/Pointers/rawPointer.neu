@@ -3,6 +3,6 @@ func main() {
     let y = &raw x
 
     unsafe {
-        print(*y)
+        printLine(*y)
     }
 }

@@ -11,6 +11,6 @@ func main() {
 
     arr[1].name = "foobar";
 
-    print(arr[0].name)
-    print(arr[1].name)
+    printLine(arr[0].name)
+    printLine(arr[1].name)
 }

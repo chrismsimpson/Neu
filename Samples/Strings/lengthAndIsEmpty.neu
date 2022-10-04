@@ -1,8 +1,8 @@
 func main() {
     let x = "Well, hello friends"
 
-    print(x.length())
-    print(x.isEmpty())
+    printLine(x.length())
+    printLine(x.isEmpty())
 
-    print("".isEmpty())
+    printLine("".isEmpty())
 }

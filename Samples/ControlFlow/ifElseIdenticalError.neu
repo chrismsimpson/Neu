@@ -1,8 +1,8 @@
 func main() {
     if true {
-        print("hello")
+        printLine("hello")
     }
     else {
-        print("hello")
+        printLine("hello")
     }
 }

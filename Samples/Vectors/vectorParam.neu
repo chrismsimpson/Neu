@@ -1,5 +1,5 @@
 func getFirst(anon v: [String]) => v[0]
 
 func main() {
-    print(getFirst(["one", "two"]))
+    printLine(getFirst(["one", "two"]))
 }

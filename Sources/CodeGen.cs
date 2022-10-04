@@ -897,7 +897,7 @@ public static partial class CodeGenFunctions {
 
                 switch (ce.Call.Name) {
 
-                    case "print": {
+                    case "printLine": {
 
                         output.Append("outLine(\"{}\", ");
                         

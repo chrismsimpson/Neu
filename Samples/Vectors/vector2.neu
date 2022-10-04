@@ -2,5 +2,5 @@ func main() {
     let x = [1, 2, 3]
 
     let y = 2
-    print(x[y])
+    printLine(x[y])
 }

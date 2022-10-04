@@ -2,5 +2,5 @@ extern func runtimeHelperNumberToString(number: Int64) -> String
 
 func main() {
     let s = runtimeHelperNumberToString(number: 5 + 10)
-    print("Five plus ten = " + s)
+    printLine("Five plus ten = " + s)
 }

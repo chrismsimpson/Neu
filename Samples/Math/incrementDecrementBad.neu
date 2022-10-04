@@ -1,5 +1,5 @@
 func main() {
     let x = 10
 
-    print(++x)
+    printLine(++x)
 }

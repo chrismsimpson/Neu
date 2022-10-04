@@ -33,6 +33,7 @@ public static partial class NeuTypeFunctions {
             case var _ when l is BoolType && r is BoolType:                         return true;
             case var _ when l is StringType && r is StringType:                     return true;
             case var _ when l is CharType && r is CharType:                         return true;
+            case var _ when l is IntType && r is IntType:                           return true;
             case var _ when l is Int8Type && r is Int8Type:                         return true;
             case var _ when l is Int16Type && r is Int16Type:                       return true;
             case var _ when l is Int32Type && r is Int32Type:                       return true;
@@ -3082,7 +3083,7 @@ public static partial class TypeCheckerFunctions {
 
         switch (call.Name) {
 
-            case "print": {
+            case "printLine": {
 
                 // FIXME: This is a hack since print() is hard-coded into codegen at the moment
 

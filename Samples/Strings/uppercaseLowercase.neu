@@ -2,7 +2,7 @@ func main() {
 
     let name = "Chris";
 
-    print(name.toLowercase())
-    print(name.toUppercase())
+    printLine(name.toLowercase())
+    printLine(name.toUppercase())
 }
 

@@ -2,9 +2,9 @@ func main() {
     let x: Int64 = 80;
 
     if (x == 100) {
-        print("true")
+        printLine("true")
     } 
     else {
-        print("not 100")
+        printLine("not 100")
     }
 }

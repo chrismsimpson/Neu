@@ -1,6 +1,6 @@
 func greet(msg: String, msg2: String) {
-    print(msg)
-    print(msg2)
+    printLine(msg)
+    printLine(msg2)
 }
 
 func main() {

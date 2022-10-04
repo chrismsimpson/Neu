@@ -2,16 +2,16 @@ func main() {
     var i = 1
     while i <= 20 {
         if i % 15 == 0 {
-            print("FizzBuzz")
+            printLine("FizzBuzz")
         } 
         else if i % 3 == 0 {
-            print("Fizz")
+            printLine("Fizz")
         } 
         else if i % 5 == 0 {
-            print("Buzz")
+            printLine("Buzz")
         } 
         else {
-            print(i)
+            printLine(i)
         }
         ++i
     }

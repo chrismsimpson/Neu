@@ -1,5 +1,5 @@
 func greet() {
-    print("hello foo")
+    printLine("hello foo")
 }
 
 func main() {

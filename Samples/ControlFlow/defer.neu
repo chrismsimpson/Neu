@@ -1,6 +1,6 @@
 func main() {
     defer {
-        print(" foo\n")
+        printLine(" foo\n")
     }
-    print("hello")
+    printLine("hello")
 }

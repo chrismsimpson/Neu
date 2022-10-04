@@ -8,5 +8,5 @@ func main() {
 
     p.age = 99;
 
-    print(p.age)
+    printLine(p.age)
 }

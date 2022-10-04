@@ -1,5 +1,5 @@
 func main() {
     let x = ("a", 2, true);
 
-    print(x.1)
+    printLine(x.1)
 }

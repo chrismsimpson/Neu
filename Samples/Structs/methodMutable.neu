@@ -15,5 +15,5 @@ func main() {
 
     rect.grow()
 
-    print(rect.area())
+    printLine(rect.area())
 }

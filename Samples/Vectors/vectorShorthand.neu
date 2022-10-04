@@ -6,7 +6,7 @@ func main() {
     let v: [String] = makeV()
     var i = 0
     while i < 2 {
-        print(v[i])
+        printLine(v[i])
         ++i
     }
 }

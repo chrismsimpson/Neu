@@ -9,6 +9,6 @@ func main() {
         Person(name: "Björn", age: 200)
     ]
 
-    print(arr[0].name)
-    print(arr[1].name)
+    printLine(arr[0].name)
+    printLine(arr[1].name)
 }

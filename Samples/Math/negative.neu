@@ -1,3 +1,3 @@
 func main() {
-    print(-10 + 7)
+    printLine(-10 + 7)
 }

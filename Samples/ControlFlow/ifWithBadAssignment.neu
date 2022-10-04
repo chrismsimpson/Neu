@@ -2,6 +2,6 @@ func main() {
     var x = 100;
 
     if (x = 99) {
-        print("true")
+        printLine("true")
     }
 }

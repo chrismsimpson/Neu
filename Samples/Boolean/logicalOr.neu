@@ -1,11 +1,11 @@
 func main() {
     let i = 4
     if i == 5 or 6 > 7 {
-        print("FAIL")
+        printLine("FAIL")
     }
     let a = true
     let b = false
     if a or b {
-        print("OK")
+        printLine("OK")
     }
 }
