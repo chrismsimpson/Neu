@@ -1,0 +1,19 @@
+struct Foo {
+    x: Int64
+}
+
+func setX(foo: var Foo, x: Int64) {
+    foo.x = x
+}
+
+func main() {
+    let foo = Foo(x: 5)
+    printLine(foo.x)
+
+    setX(foo: foo, x: 10)
+    printLine(foo.x)
+
+    var bar = foo
+    bar.x = 15
+    printLine(foo.x)
+}
