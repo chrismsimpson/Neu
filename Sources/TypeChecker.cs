@@ -3083,9 +3083,10 @@ public static partial class TypeCheckerFunctions {
 
         switch (call.Name) {
 
-            case "printLine": {
+            case "printLine":
+            case "warnLine": {
 
-                // FIXME: This is a hack since print() is hard-coded into codegen at the moment
+                // FIXME: This is a hack since printLine() and warnLine() are hard-coded into codegen at the moment
 
                 foreach (var arg in call.Args) {
 

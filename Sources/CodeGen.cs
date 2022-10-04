@@ -911,6 +911,20 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case "warnLine": {
+
+                        output.Append("warnLine(\"{}\", ");
+                        
+                        foreach (var param in ce.Call.Args) {
+
+                            output.Append(compiler.CodeGenExpr(indent, param.Item2, file));
+                        }
+                        
+                        output.Append(")");
+
+                        break;
+                    }
+
                     ///
 
                     default: {

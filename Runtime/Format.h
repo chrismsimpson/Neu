@@ -743,7 +743,7 @@ void warn(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... para
 }
 
 template<typename... Parameters>
-void warnLine(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) { outln(stderr, move(fmtstr), parameters...); }
+void warnLine(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) { outLine(stderr, move(fmtstr), parameters...); }
 
 inline void warnLine() { outLine(stderr); }
 
