@@ -95,6 +95,12 @@ public partial class CharType: NeuType {
         : base() { }
 }
 
+public partial class IntType: NeuType {
+
+    public IntType()
+        : base() { }
+}
+
 public partial class Int8Type : NeuType {
 
     public Int8Type() 
@@ -1634,7 +1640,7 @@ public static partial class TypeCheckerFunctions {
                 }
                 else {
 
-                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, null, stack);
+                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack, file, structId);
 
                     error = error ?? err;
 
@@ -1681,7 +1687,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var uncheckedMember in structure.Fields) {
 
-            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, null, stack);
+            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack, file, structId);
 
             error = error ?? checkedMemberTypeErr;
 
@@ -1751,7 +1757,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var param in func.Parameters) {
 
-            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, null, stack);
+            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack, file, null);
 
             error = error ?? typeCheckNameErr;
 
@@ -1798,7 +1804,7 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
-        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, null, stack);
+        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack, file, null);
 
         error = error ?? typeCheckReturnTypeErr;
 
@@ -1879,7 +1885,7 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
-        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, structId, stack);
+        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack, file, structId);
 
         error = error ?? chkRetTypeErr;
 
@@ -1986,7 +1992,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, null, stack);
+                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack, file, null);
 
                 if (checkedType is UnknownType && checkedExpr.GetNeuType() is not UnknownType) {
 
@@ -3277,8 +3283,11 @@ public static partial class TypeCheckerFunctions {
 
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
-        Int32? possibleSelfStructId,
-        Stack stack) {
+        // Int32? possibleSelfStructId,
+        Stack stack,
+        CheckedFile file,
+        Int32? structId
+        ) {
 
         Error? error = null;
 
@@ -3343,6 +3352,11 @@ public static partial class TypeCheckerFunctions {
                         return (new CharType(), null);
                     }
 
+                    case "Int": {
+
+                        return (new IntType(), null);
+                    }
+
                     case "String": {
 
                         return (new StringType(), null);
@@ -3360,16 +3374,18 @@ public static partial class TypeCheckerFunctions {
 
                     case var x: {
 
-                        var structure = stack.FindStruct(x);
+                        var stackStruct = stack.FindStruct(x);
+                        
+                        var fileStruct = file.FindStruct(x);
 
-                        switch (structure) {
+                        switch (stackStruct ?? fileStruct) {
 
-                            case Int32 structId: {
+                            case Int32 _structId: {
 
-                                return (new StructType(structId), null);
+                                return (new StructType(_structId), null);
                             }
 
-                            case var _ when possibleSelfStructId is Int32 sid: {
+                            case var _ when structId is Int32 sid: {
 
                                 return (new StructType(sid), null);
                             }
@@ -3396,7 +3412,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedVectorType vt: {
 
-                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, null, stack);
+                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack, file, structId);
 
                 error = error ?? innerTypeErr;
 
@@ -3407,7 +3423,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedOptionalType opt: {
 
-                var (innerType, err) = TypeCheckTypeName(opt.Type, null, stack);
+                var (innerType, err) = TypeCheckTypeName(opt.Type, stack, file, structId);
 
                 error = error ?? err;
 
@@ -3418,7 +3434,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedRawPointerType rp: {
 
-                var (innerType, err) = TypeCheckTypeName(rp.Type, null, stack);
+                var (innerType, err) = TypeCheckTypeName(rp.Type, stack, file, structId);
 
                 error = error ?? err;
 

@@ -1,0 +1,30 @@
+
+extern struct FILE { }
+
+extern func puts(anon str: raw Char) -> Int
+extern func fopen(anon str: raw Char, anon mode: raw Char) -> raw FILE
+extern func fgetc(anon file: var raw FILE) -> Int32
+extern func fclose(anon file: var raw FILE) -> Int
+extern func putchar(anon var ch: Int32) -> Int
+
+extern class String {
+    func toLowercase(this) -> String { }
+    func toUppercase(this) -> String { }
+    func characters(this) -> raw Char { }
+}
+
+func main(args: [String]) {
+    let filename = args[1]
+
+    var file = fopen(filename.characters(), "r".characters())
+
+    defer {
+        fclose(file)
+    }
+
+    var c = fgetc(file)
+    while c != -1 {
+        putchar(c)
+        c = fgetc(file)
+    }
+}

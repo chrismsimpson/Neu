@@ -4429,6 +4429,28 @@ public static partial class ParserFunctions {
             
                 if (index < tokens.Count) {
 
+                    var mutable = false;
+
+                    if (index + 1 < tokens.Count) {
+
+                        switch (tokens.ElementAt(index)) {
+
+                            case NameToken nt2 when nt2.Value == "var": {
+
+                                index += 1;
+
+                                mutable = true;
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+                    
                     var (varType, typeErr) = ParseTypeName(tokens, ref index);
 
                     error = error ?? typeErr;
@@ -4436,7 +4458,7 @@ public static partial class ParserFunctions {
                     var result = new VarDecl(
                         name: varName, 
                         type: varType, 
-                        mutable: false,
+                        mutable: mutable,
                         span: tokens.ElementAt(index - 3).Span);
 
                     index += 1;

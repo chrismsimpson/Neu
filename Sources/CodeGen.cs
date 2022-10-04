@@ -421,6 +421,11 @@ public static partial class CodeGenFunctions {
                 return "char";
             }
 
+            case IntType _: {
+
+                return "int";
+            }
+
             case Int8Type _: {
 
                 return "Int8";

@@ -9,21 +9,21 @@ public static partial class Program {
 
         ///
 
-        // TestScratchpad();
+        TestScratchpad();
 
-        TestBasics();
-        TestControlFlow();
-        TestFunctions();
-        TestMath();
-        TestVariables();
-        TestStrings();
-        TestVectors();
-        TestOptional();
-        TestTuples();
-        TestStructs();
-        TestPointers();
-        TestClasses();
-        TestBoolean();
+        // TestBasics();
+        // TestControlFlow();
+        // TestFunctions();
+        // TestMath();
+        // TestVariables();
+        // TestStrings();
+        // TestVectors();
+        // TestOptional();
+        // TestTuples();
+        // TestStructs();
+        // TestPointers();
+        // TestClasses();
+        // TestBoolean();
     }
 
     public static ErrorOrVoid TestSamples(
