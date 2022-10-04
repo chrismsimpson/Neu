@@ -9,6 +9,8 @@ public static partial class Program {
 
         ///
 
+        // TestScratchpad();
+
         TestBasics();
         TestControlFlow();
         TestFunctions();
@@ -227,6 +229,11 @@ public static partial class Program {
     }
 
     ///
+
+    public static ErrorOrVoid TestScratchpad() {
+
+        return TestSamples("./Samples/Scratchpad");
+    }
 
     public static ErrorOrVoid TestBasics() {
 

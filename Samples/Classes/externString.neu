@@ -1,6 +1,7 @@
 extern class String {
     
     func toLowercase(this) -> String { }
+    func toUppercase(this) -> String { }
 }
 
 func main() {
@@ -8,5 +9,6 @@ func main() {
     let name = "Chris";
 
     print(name.toLowercase())
+    print(name.toUppercase())
 }
 

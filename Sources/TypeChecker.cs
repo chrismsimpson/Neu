@@ -32,6 +32,7 @@ public static partial class NeuTypeFunctions {
 
             case var _ when l is BoolType && r is BoolType:                         return true;
             case var _ when l is StringType && r is StringType:                     return true;
+            case var _ when l is CharType && r is CharType:                         return true;
             case var _ when l is Int8Type && r is Int8Type:                         return true;
             case var _ when l is Int16Type && r is Int16Type:                       return true;
             case var _ when l is Int32Type && r is Int32Type:                       return true;
@@ -85,6 +86,12 @@ public partial class BoolType : NeuType {
 public partial class StringType : NeuType {
 
     public StringType() 
+        : base() { }
+}
+
+public partial class CharType: NeuType {
+
+    public CharType()
         : base() { }
 }
 
@@ -462,6 +469,23 @@ public partial class CheckedFunction {
         this.Parameters = parameters;
         this.Block = block;
         this.Linkage = linkage;
+    }
+}
+
+public static partial class CheckedFunctionFunctions {
+
+    public static bool IsStatic(
+        this CheckedFunction func) {
+
+        foreach (var p in func.Parameters) {
+
+            if (p.Variable.Name == "this") {
+
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
@@ -1313,6 +1337,8 @@ public static partial class CheckedExpressionFunctions {
 ///
 
 public partial class CheckedCall {
+
+    public List<String> Namespace { get; init; }
     
     public String Name { get; init; }
     
@@ -1320,16 +1346,22 @@ public partial class CheckedCall {
     
     public NeuType Type { get; init; }
 
+    public DefinitionType? CalleeDefinitionType { get; init; }
+
     ///
 
     public CheckedCall(
+        List<String> ns,
         String name,
         List<(String, CheckedExpression)> args,
-        NeuType type) {
+        NeuType type,
+        DefinitionType? calleeDefinitionType) {
 
+        this.Namespace = ns;
         this.Name = name;
         this.Args = args;
         this.Type = type;
+        this.CalleeDefinitionType = calleeDefinitionType;
     }
 }
 
@@ -1559,7 +1591,7 @@ public static partial class TypeCheckerFunctions {
                 }
                 else {
 
-                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack);
+                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, null, stack);
 
                     error = error ?? err;
 
@@ -1586,6 +1618,11 @@ public static partial class TypeCheckerFunctions {
                 definitionLinkage: structure.DefinitionLinkage,
                 definitionType: structure.DefinitionType));
 
+        if (stack.AddStruct(structure.Name, structId, structure.Span).Error is Error e) {
+
+            error = error ?? e;
+        }
+
         return error;
     }
 
@@ -1601,7 +1638,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var uncheckedMember in structure.Fields) {
 
-            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack);
+            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, null, stack);
 
             error = error ?? checkedMemberTypeErr;
 
@@ -1631,42 +1668,27 @@ public static partial class TypeCheckerFunctions {
 
         checkedStruct.Fields = fields;
 
-        foreach (var func in structure.Methods) {
-
-            error = error ?? TypeCheckMethod(func, stack, file, structId);
-        }
-
-        var (_, _structId) = file
-            .GetStruct(structure.Name)
+        var (_checkedStruct, _structId) = file
+            .GetStruct(structure.Name) 
             ?? throw new Exception("Internal error: we previously defined the struct but it's now missing");
 
-        if (structure.DefinitionLinkage != DefinitionLinkage.External) {
+        var checkedConstructor = new CheckedFunction(
+            name: structure.Name,
+            block: new CheckedBlock(),
+            linkage: FunctionLinkage.ImplicitConstructor,
+            parameters: constructorParams,
+            returnType: new StructType(_structId));
 
-            var checkedConstructor = new CheckedFunction(
-                name: structure.Name,
-                block: new CheckedBlock(),
-                linkage: FunctionLinkage.ImplicitConstructor,
-                parameters: constructorParams,
-                returnType: new StructType(_structId));
+        
+        _checkedStruct.Methods.Add(checkedConstructor);
 
-            file.Functions.Add(checkedConstructor);
+        file.Functions.Add(checkedConstructor);
+
+        foreach (var func in structure.Methods) {
+
+            error = error ?? TypeCheckMethod(func, stack, file, _structId);
         }
-
-        switch (stack.AddStruct(structure.Name, _structId, structure.Span).Error) {
-
-            case Error e: {
-
-                error = error ?? e;
-
-                break;
-            }
-
-            default: {
-
-                break;
-            }
-        }
-
+        
         return error;
     }
 
@@ -1686,7 +1708,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var param in func.Parameters) {
 
-            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack);
+            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, null, stack);
 
             error = error ?? typeCheckNameErr;
 
@@ -1733,7 +1755,7 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
-        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, null, stack);
 
         error = error ?? typeCheckReturnTypeErr;
 
@@ -1814,7 +1836,7 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
-        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, structId, stack);
 
         error = error ?? chkRetTypeErr;
 
@@ -1921,7 +1943,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack);
+                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, null, stack);
 
                 if (checkedType is UnknownType && checkedExpr.GetNeuType() is not UnknownType) {
 
@@ -2572,6 +2594,42 @@ public static partial class TypeCheckerFunctions {
                         }
                     }
 
+                    case VectorType _: {
+
+                        var vectorStruct = file.FindStruct("Vector");
+
+                        switch (vectorStruct) {
+
+                            case Int32 structId: {
+
+                                var (checkedCall, chkMethCallErr) = TypeCheckMethodCall(mce.Call, stack, mce.Span, file, structId, safetyMode);
+
+                                error = error ?? chkMethCallErr;
+
+                                var ty = checkedCall.Type;
+
+                                return (
+                                    new CheckedMethodCallExpression(
+                                        checkedExpr,
+                                        checkedCall,
+                                        ty),
+                                    error);
+                            }
+
+                            default: {
+
+                                error = error ??
+                                    new TypeCheckError(
+                                        "no methods available on value",
+                                        mce.Expression.GetSpan());
+
+                                return (
+                                    new CheckedGarbageExpression(),
+                                    error);
+                            }
+                        }
+                    }
+
                     default: {
 
                         error = error ?? 
@@ -2821,34 +2879,134 @@ public static partial class TypeCheckerFunctions {
         return (ty, null);
     }
 
-    public static (CheckedFunction?, Error?) ResolveCall(
+    public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
         Call call,
         Span span,
-        List<CheckedFunction> functions) {
+        Stack stack,
+        List<CheckedFunction> functions,
+        CheckedFile file) {
 
         CheckedFunction? callee = null;
+
+        DefinitionType? definitionType = null;
+        
         Error? error = null;
 
-        // FIXME: Support function overloading
+        if (call.Namespace.FirstOrDefault() is String ns) {
 
-        foreach (var f in functions) {
+            if (file.FindStruct(ns) is Int32 structId) {
 
-            if (f.Name == call.Name) {
+                var structure = file.Structs[structId];
 
-                callee = f;
+                definitionType = structure.DefinitionType;
 
-                break;
+                foreach (var func in structure.Methods) {
+
+                    if (func.Name == call.Name) {
+
+                        callee = func;
+
+                        break;
+                    }
+                }
+
+                return (callee, definitionType, error);
+            }
+            else {
+
+                var v = stack.FindVar(ns);
+
+                if (v?.Type is StructType st) {
+
+                    var structure = file.Structs[st.StructId];
+
+                    definitionType = structure.DefinitionType;
+
+                    foreach (var func in structure.Methods) {
+
+                        if (func.Name == call.Name) {
+
+                            callee = func;
+
+                            break;
+                        }
+                    }
+
+                    return (callee, definitionType, error);
+                }
+                else if (v is CheckedVariable cv
+                    && cv.Type is StringType
+                    && file.FindStruct("String") is int stringStructId) {
+
+                    var structure = file.Structs[stringStructId];
+
+                    definitionType = DefinitionType.Struct; // probably has to be more contextual
+
+                    foreach (var func in structure.Methods) {
+
+                        if (func.Name == call.Name) {
+
+                            callee = func;
+
+                            break;
+                        }
+                    }
+
+                    return (callee, definitionType, error);
+                }
+                else if (v is CheckedVariable cv2
+                    && file.FindStruct("Vector") is int vectorStructId) {
+
+                    var structure = file.Structs[vectorStructId];
+
+                    definitionType = DefinitionType.Struct; // probably has to be more contextual
+
+                    foreach (var func in structure.Methods) {
+
+                        if (func.Name == call.Name) {
+
+                            callee = func;
+
+                            break;
+                        }
+                    }
+
+                    return (callee, definitionType, error);
+                }
+                else {
+
+                    error = error ?? 
+                        new TypeCheckError(
+                            $"unknown namespace or class: {ns}",
+                            span);
+
+                    return (callee, definitionType, error);
+                }
             }
         }
+        else {
 
-        if (callee == null) {
+            // FIXME: Support function overloading.
 
-            error = new TypeCheckError(
-                $"call to unknown function: {call.Name}",
-                span);
+            foreach (var func in functions) {
+
+                if (func.Name == call.Name) {
+
+                    callee = func;
+
+                    break;
+                }
+            }
+
+            if (callee == null) {
+
+                error = error ?? new TypeCheckError(
+                    $"call to unknown function: {call.Name}",
+                    span);
+            }
+
+            return (callee, definitionType, error);
         }
-
-        return (callee, error);
     }
 
     public static (CheckedCall, Error?) TypeCheckCall(
@@ -2861,6 +3019,8 @@ public static partial class TypeCheckerFunctions {
         var checkedArgs = new List<(String, CheckedExpression)>();
 
         Error? error = null;
+
+        DefinitionType? calleDefType = null;
 
         NeuType returnType = new UnknownType();
 
@@ -2888,9 +3048,11 @@ public static partial class TypeCheckerFunctions {
 
             default: {
 
-                var (callee, resolveErr) = ResolveCall(call, span, file.Functions);
+                var (callee, _calleDefType, resolveErr) = ResolveCall(call, span, stack, file.Functions, file);
 
                 error = error ?? resolveErr;
+
+                calleDefType = _calleDefType;
 
                 if (callee != null) {
 
@@ -2898,7 +3060,14 @@ public static partial class TypeCheckerFunctions {
 
                     // Check that we have the right number of arguments
 
-                    if (callee.Parameters.Count != call.Args.Count) {
+                    var paramCount = callee.Parameters.Count;
+
+                    if (callee.Parameters.FirstOrDefault()?.Variable.Name == "this") {
+
+                        paramCount -= 1;
+                    }
+
+                    if (paramCount != call.Args.Count) {
 
                         error = error ?? new ParserError(
                             "wrong number of arguments", 
@@ -2960,9 +3129,11 @@ public static partial class TypeCheckerFunctions {
 
         return (
             new CheckedCall(
+                ns: call.Namespace,
                 call.Name, 
                 checkedArgs, 
-                returnType),
+                returnType,
+                calleDefType),
             error);
     }
 
@@ -2980,7 +3151,7 @@ public static partial class TypeCheckerFunctions {
 
         NeuType returnType = new UnknownType();
 
-        var (_callee, resolveCallErr) = ResolveCall(call, span, file.Structs[structId].Methods);
+        var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, stack, file.Structs[structId].Methods, file);
 
         error = error ?? resolveCallErr;
 
@@ -3044,14 +3215,17 @@ public static partial class TypeCheckerFunctions {
 
         return (
             new CheckedCall(
+                ns: new List<String>(),
                 name: call.Name,
                 args: checkedArgs,
-                type: returnType),
+                type: returnType,
+                calleeDefType),
             error);
     }
 
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
+        Int32? possibleSelfStructId,
         Stack stack) {
 
         Error? error = null;
@@ -3112,6 +3286,11 @@ public static partial class TypeCheckerFunctions {
                         return (new DoubleType(), null);
                     }
 
+                    case "Char": {
+
+                        return (new CharType(), null);
+                    }
+
                     case "String": {
 
                         return (new StringType(), null);
@@ -3138,6 +3317,11 @@ public static partial class TypeCheckerFunctions {
                                 return (new StructType(structId), null);
                             }
 
+                            case var _ when possibleSelfStructId is Int32 sid: {
+
+                                return (new StructType(sid), null);
+                            }
+
                             default: {
 
                                 // Trace("ERROR: unknown type");
@@ -3160,7 +3344,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedVectorType vt: {
 
-                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack);
+                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, null, stack);
 
                 error = error ?? innerTypeErr;
 
@@ -3171,7 +3355,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedOptionalType opt: {
 
-                var (innerType, err) = TypeCheckTypeName(opt.Type, stack);
+                var (innerType, err) = TypeCheckTypeName(opt.Type, null, stack);
 
                 error = error ?? err;
 
@@ -3182,7 +3366,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedRawPointerType rp: {
 
-                var (innerType, err) = TypeCheckTypeName(rp.Type, stack);
+                var (innerType, err) = TypeCheckTypeName(rp.Type, null, stack);
 
                 error = error ?? err;
 

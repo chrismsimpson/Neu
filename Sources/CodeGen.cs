@@ -57,11 +57,13 @@ public static partial class CodeGenFunctions {
             }
             else if (func.Linkage == FunctionLinkage.ImplicitConstructor) {
 
-                var funcOutput = compiler.CodeGenConstructor(func, file);
+                // var funcOutput = compiler.CodeGenConstructor(func, file);
 
-                output.Append(funcOutput);
+                // output.Append(funcOutput);
 
-                output.Append("\n");
+                // output.Append("\n");
+
+                continue;
             }
             else {
                 
@@ -148,51 +150,42 @@ public static partial class CodeGenFunctions {
             }
         }
 
-        foreach (var member in structure.Fields) {
+        foreach (var field in structure.Fields) {
 
             output.Append(new String(' ', INDENT_SIZE));
 
-            output.Append(compiler.CodeGenType(member.Type, file));
+            output.Append(compiler.CodeGenType(field.Type, file));
             
             output.Append(' ');
             
-            output.Append(member.Name);
+            output.Append(field.Name);
             
             output.Append(";\n");
         }
 
-        // Put together our own constructor
-        // eg) Person(String name, i64 age);
+        foreach (var func in structure.Methods) {
 
-        output.Append(new String(' ', INDENT_SIZE));
-        output.Append(structure.Name);
-        output.Append('(');
+            if (func.Linkage == FunctionLinkage.ImplicitConstructor) {
 
-        var first = true;
+                var funcOutput = compiler.CodeGenConstructor(func, file);
 
-        foreach (var member in structure.Fields) {
-
-            if (!first) {
-
-                output.Append(", ");
+                output.Append(new String(' ', INDENT_SIZE));
+                output.Append(funcOutput);
+                output.Append('\n');
             }
             else {
 
-                first = false;
+                output.Append(new String(' ', INDENT_SIZE));
+
+                if (func.IsStatic()) {
+
+                    output.Append("static ");
+                }
+
+                var methodOutput = compiler.CodeGenFunc(func, file);
+
+                output.Append(methodOutput);
             }
-            
-            output.Append(compiler.CodeGenType(member.Type, file));
-            output.Append(' ');
-            output.Append(member.Name);
-        }
-
-        output.Append(");\n");
-
-        foreach (var func in structure.Methods) {
-            
-            var methodOutput = compiler.CodeGenFunc(func, file);
-            
-            output.Append(methodOutput);
         }
 
         output.Append("};");
@@ -328,16 +321,19 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main") {
             
-            output.Append("\n{");
+            output.Append("\n");
+            output.Append("{\n");
+            output.Append(new String(' ', INDENT_SIZE));
         }
 
-        var block = compiler.CodeGenBlock(0, fun.Block, file);
+        var block = compiler.CodeGenBlock(INDENT_SIZE, fun.Block, file);
 
         output.Append(block);
 
         if (fun.Name == "main") {
             
-            output.Append("return 0; }");
+            output.Append(new String(' ', INDENT_SIZE));
+            output.Append("return 0;\n}");
         }
 
         return output.ToString();
@@ -350,9 +346,9 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append(compiler.CodeGenType(func.ReturnType, file));
+        // output.Append(compiler.CodeGenType(func.ReturnType, file));
 
-        output.Append("::");
+        // output.Append("::");
 
         output.Append(func.Name);
         
@@ -418,6 +414,11 @@ public static partial class CodeGenFunctions {
             case StringType _: {
 
                 return "String";
+            }
+
+            case CharType _: {
+
+                return "char";
             }
 
             case Int8Type _: {
@@ -880,7 +881,7 @@ public static partial class CodeGenFunctions {
 
                 switch (ce.Call.Name) {
 
-                    case "print":
+                    case "print": {
 
                         output.Append("outLine(\"{}\", ");
                         
@@ -892,10 +893,25 @@ public static partial class CodeGenFunctions {
                         output.Append(")");
 
                         break;
+                    }
 
                     ///
 
-                    default:
+                    default: {
+
+                        foreach (var ns in ce.Call.Namespace) {
+
+                            output.Append(ns);
+
+                            if (ce.Call.CalleeDefinitionType == DefinitionType.Struct) {
+
+                                output.Append(".");
+                            }
+                            else {
+
+                                output.Append("::");
+                            }
+                        }
 
                         output.Append(ce.Call.Name);
 
@@ -920,6 +936,7 @@ public static partial class CodeGenFunctions {
                         output.Append(")");
 
                         break;
+                    }
                 }
 
                 break;

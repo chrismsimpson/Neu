@@ -16,6 +16,8 @@ public static partial class TraceFunctions {
 
 public partial class Call {
 
+    public List<String> Namespace { get; set; }
+
     public String Name { get; set; }
 
     public List<(String, Expression)> Args { get; init; }
@@ -23,12 +25,14 @@ public partial class Call {
     ///
 
     public Call()
-        : this(String.Empty, new List<(string, Expression)>()) { }
+        : this(new List<String>(), String.Empty, new List<(string, Expression)>()) { }
 
     public Call(
+        List<String> ns,
         String name,
         List<(String, Expression)> args) {
 
+        this.Namespace = ns;
         this.Name = name;
         this.Args = args;
     }
@@ -3456,51 +3460,300 @@ public static partial class ParserFunctions {
 
                 ///
 
+                // case PeriodToken _: {
+
+                //     index += 1;
+
+                //     if (index < tokens.Count) {
+
+                //         switch (tokens.ElementAt(index)) {
+
+                //             case NumberToken number: {
+
+                //                 index += 1;
+
+                //                 var _span = new Span(
+                //                     fileId: expr.GetSpan().FileId,
+                //                     start: expr.GetSpan().Start,
+                //                     end: tokens.ElementAt(index).Span.End);
+
+                //                 expr = new IndexedTupleExpression(expr, number.Value, _span);
+
+                //                 break;
+                //             }
+
+                //             case NameToken name: {
+
+                //                 index += 1;
+
+                //                 if (index < tokens.Count) {
+
+                //                     if (tokens.ElementAt(index) is LParenToken) {
+
+                //                         index -= 1;
+
+                //                         var (method, err) = ParseCall(tokens, ref index);
+                                        
+                //                         error = error ?? err;
+
+                //                         var _span = new Span(
+                //                             fileId: expr.GetSpan().FileId,
+                //                             start: expr.GetSpan().Start,
+                //                             end: tokens.ElementAt(index).Span.End);
+
+                //                         expr = new MethodCallExpression(expr, method, _span);
+                //                     }
+                //                     else {
+    
+                //                         var _span = new Span(
+                //                             fileId: expr.GetSpan().FileId,
+                //                             start: expr.GetSpan().Start,
+                //                             end: tokens.ElementAt(index).Span.End);
+
+                //                         expr = new IndexedStructExpression(
+                //                             expr,
+                //                             name.Value,
+                //                             _span);
+                //                     }
+                //                 }
+                //                 else {
+
+                //                     var _span = new Span(
+                //                         fileId: expr.GetSpan().FileId,
+                //                         start: expr.GetSpan().Start,
+                //                         end: tokens.ElementAt(index).Span.End);
+
+                //                     expr = new IndexedStructExpression(
+                //                         expr,
+                //                         name.Value,
+                //                         _span);
+                //                 }
+
+                //                 break;
+                //             }
+
+                //             default: {
+
+                //                 index += 1;
+
+                //                 error = error ??
+                //                     new ParserError(
+                //                         "Unsupported index",
+                //                         tokens.ElementAt(index).Span);
+
+                //                 break;
+                //             }
+                //         }
+                //     }
+
+                //     break;
+                // }
+
                 case PeriodToken _: {
 
                     index += 1;
 
-                    if (index < tokens.Count) {
+                    if (expr is VarExpression ve) {
 
-                        switch (tokens.ElementAt(index)) {
+                        // attempt namespace lookup
 
-                            case NumberToken number: {
+                        var ns = new List<String>();
 
-                                index += 1;
+                        ns.Add(ve.Value);
 
-                                var _span = new Span(
-                                    fileId: expr.GetSpan().FileId,
-                                    start: expr.GetSpan().Start,
-                                    end: tokens.ElementAt(index).Span.End);
+                        if (index >= tokens.Count) {
 
-                                expr = new IndexedTupleExpression(expr, number.Value, _span);
+                            error = error ?? 
+                                new ParserError(
+                                    "Incomplete static method call",
+                                    tokens.ElementAt(index).Span);
+                        }
 
-                                break;
-                            }
+                        var contNS = true;
 
-                            case NameToken name: {
+                        while (contNS && index < tokens.Count) {
 
-                                index += 1;
+                            switch (tokens.ElementAt(index)) {
 
-                                if (index < tokens.Count) {
+                                case NameToken nsNameToken: {
 
-                                    if (tokens.ElementAt(index) is LParenToken) {
+                                    index += 1;
 
-                                        index -= 1;
+                                    if (index < tokens.Count) {
 
-                                        var (method, err) = ParseCall(tokens, ref index);
-                                        
-                                        error = error ?? err;
+                                        if (tokens.ElementAt(index) is LParenToken) {
 
-                                        var _span = new Span(
-                                            fileId: expr.GetSpan().FileId,
-                                            start: expr.GetSpan().Start,
-                                            end: tokens.ElementAt(index).Span.End);
+                                            index -= 1;
 
-                                        expr = new MethodCallExpression(expr, method, _span);
+                                            var (method, parseCallErr) = ParseCall(tokens, ref index);
+
+                                            error = error ?? parseCallErr;
+
+                                            method.Namespace = ns;
+
+                                            var _span = new Span(
+                                                fileId: expr.GetSpan().FileId,
+                                                start: expr.GetSpan().Start,
+                                                end: tokens.ElementAt(index).Span.End);
+
+                                            expr = new CallExpression(method, _span);
+
+                                            contNS = false;
+                                        }
+                                        else if (tokens.ElementAt(index) is PeriodToken) {
+
+                                            switch (tokens.ElementAt(index - 1)) {
+
+                                                case NameToken nsNameToken2: {
+
+                                                    ns.Add(nsNameToken2.Value);
+
+                                                    break;
+                                                }
+
+                                                default: {
+
+                                                    error = error ??
+                                                        new ParserError(
+                                                            "expected namespace",
+                                                            tokens.ElementAt(index - 1).Span);
+
+                                                    break;
+                                                }
+                                            }
+
+                                            index += 1;
+                                        }
+                                        else {
+
+                                            // index += 1;
+
+                                            // error = error ?? 
+                                            //     new ParserError(
+                                            //         "Unsupported static method call",
+                                            //         tokens.ElementAt(index).Span);
+
+                                            // contNS = false;
+
+                                            var _span = new Span(
+                                                fileId: expr.GetSpan().FileId,
+                                                start: expr.GetSpan().Start,
+                                                end: tokens[index].Span.End);
+
+                                            expr = new IndexedStructExpression(
+                                                expr,
+                                                nsNameToken.Value,
+                                                _span);
+
+                                            contNS = false;
+                                        }
                                     }
                                     else {
-    
+                                        
+                                        error = error ??
+                                            new ParserError(
+                                                "Unsupported static method call",
+                                                tokens.ElementAt(index).Span);
+
+                                        contNS = false;
+                                    }
+
+                                    break;
+                                }
+
+                                case NumberToken numberToken: {
+
+                                    index += 1;
+
+                                    var _span = new Span(
+                                        fileId: expr.GetSpan().FileId,
+                                        start: expr.GetSpan().Start,
+                                        end: tokens[index].Span.End);
+
+                                    expr = new IndexedTupleExpression(
+                                        expr,
+                                        numberToken.Value,
+                                        _span);
+
+                                    contNS = false;
+
+                                    break;
+                                }
+
+                                default: {
+
+                                    index += 1;
+
+                                    error = error ??
+                                        new ParserError(
+                                            "Unsupported static method call",
+                                            tokens.ElementAt(index).Span);
+
+                                    contNS = false;
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else {
+
+                        // otherwise assume normal dot operation
+
+                        if (index < tokens.Count) {
+
+                            switch (tokens.ElementAt(index)) {
+
+                                case NumberToken number: {
+
+                                    index += 1;
+
+                                    var _span = new Span(
+                                        fileId: expr.GetSpan().FileId,
+                                        start: expr.GetSpan().Start,
+                                        end: tokens.ElementAt(index).Span.End);
+
+                                    expr = new IndexedTupleExpression(expr, number.Value, _span);
+
+                                    break;
+                                }
+
+                                case NameToken name: {
+
+                                    index += 1;
+
+                                    if (index < tokens.Count) {
+
+                                        if (tokens.ElementAt(index) is LParenToken) {
+
+                                            index -= 1;
+
+                                            var (method, err) = ParseCall(tokens, ref index);
+                                            
+                                            error = error ?? err;
+
+                                            var _span = new Span(
+                                                fileId: expr.GetSpan().FileId,
+                                                start: expr.GetSpan().Start,
+                                                end: tokens.ElementAt(index).Span.End);
+
+                                            expr = new MethodCallExpression(expr, method, _span);
+                                        }
+                                        else {
+        
+                                            var _span = new Span(
+                                                fileId: expr.GetSpan().FileId,
+                                                start: expr.GetSpan().Start,
+                                                end: tokens.ElementAt(index).Span.End);
+
+                                            expr = new IndexedStructExpression(
+                                                expr,
+                                                name.Value,
+                                                _span);
+                                        }
+                                    }
+                                    else {
+
                                         var _span = new Span(
                                             fileId: expr.GetSpan().FileId,
                                             start: expr.GetSpan().Start,
@@ -3511,34 +3764,31 @@ public static partial class ParserFunctions {
                                             name.Value,
                                             _span);
                                     }
-                                }
-                                else {
 
-                                    var _span = new Span(
-                                        fileId: expr.GetSpan().FileId,
-                                        start: expr.GetSpan().Start,
-                                        end: tokens.ElementAt(index).Span.End);
-
-                                    expr = new IndexedStructExpression(
-                                        expr,
-                                        name.Value,
-                                        _span);
+                                    break;
                                 }
 
-                                break;
+                                default: {
+
+                                    index += 1;
+
+                                    error = error ??
+                                        new ParserError(
+                                            "Unsupported dot operation",
+                                            tokens.ElementAt(index).Span);
+
+                                    break;
+                                }
                             }
+                        }
+                        else {
 
-                            default: {
+                            index += 1;
 
-                                index += 1;
-
-                                error = error ??
-                                    new ParserError(
-                                        "Unsupported index",
-                                        tokens.ElementAt(index).Span);
-
-                                break;
-                            }
+                            error = error ?? 
+                                new ParserError(
+                                    "Incomplete dot operation",
+                                    tokens.ElementAt(index).Span);
                         }
                     }
 
@@ -4248,7 +4498,7 @@ public static partial class ParserFunctions {
 
         var start = tokens.ElementAt(index).Span;
 
-        Trace($"ParseTypeName: {tokens.ElementAt(index)}");
+        Trace($"ParseTypeName: {(tokens.ElementAt(index) as NameToken)?.Value}");
 
         var (vectorType, parseVectorTypeErr) = ParseVectorType(tokens, ref index);
 
