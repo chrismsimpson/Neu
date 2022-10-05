@@ -2665,7 +2665,7 @@ public static partial class TypeCheckerFunctions {
 
                     case VectorType _: {
 
-                        var vectorStruct = file.FindStruct("Vector");
+                        var vectorStruct = file.FindStruct("RefVector");
 
                         switch (vectorStruct) {
 
@@ -3029,7 +3029,7 @@ public static partial class TypeCheckerFunctions {
                     return (callee, definitionType, error);
                 }
                 else if (v is CheckedVariable cv2
-                    && file.FindStruct("Vector") is int vectorStructId) {
+                    && file.FindStruct("RefVector") is int vectorStructId) {
 
                     var structure = file.Structs[vectorStructId];
 

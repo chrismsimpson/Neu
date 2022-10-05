@@ -40,6 +40,7 @@
 #include "Platform.h"
 #include "RefCounted.h"
 #include "RefPointer.h"
+#include "RefVector.h"
 #include "Result.h"
 #include "ReverseIterator.h"
 #include "ScopeGuard.h"
@@ -85,11 +86,11 @@ inline String runtimeHelperNumberToString(Int64 number) {
     return String::number(number);
 }
 
-int __neu_main(Vector<String>);
+int __neu_main(RefVector<String>);
 
 int main(int argc, char** argv) {
 
-    Vector<String> args;
+    RefVector<String> args;
 
     for (int i = 0; i < argc; ++i) {
 

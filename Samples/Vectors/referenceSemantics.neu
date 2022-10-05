@@ -1,0 +1,14 @@
+func changeValue(vector: var [String]) {
+    vector[1] = "bar"
+}
+
+func main() {
+    var v = ["foo", "foo"]
+    changeValue(vector: v)
+
+    var i = 0
+    while i < v.size() {
+        printLine(v[i])
+        ++i
+    }
+}

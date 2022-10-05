@@ -287,7 +287,7 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main" && !fun.Parameters.Any()) {
         
-            output.Append("Vector<String>");
+            output.Append("RefVector<String>");
         }
 
         var first = true;
@@ -498,7 +498,7 @@ public static partial class CodeGenFunctions {
 
             case VectorType vt: {
 
-                return $"Vector<{compiler.CodeGenType(vt.Type, file)}>";
+                return $"RefVector<{compiler.CodeGenType(vt.Type, file)}>";
             }
 
             case TupleType tt: {
@@ -1300,9 +1300,9 @@ public static partial class CodeGenFunctions {
 
             case CheckedVectorExpression ve: {
 
-                // (Vector({1, 2, 3}))
+                // (RefVector({1, 2, 3}))
 
-                output.Append("(Vector({");
+                output.Append("(RefVector({");
 
                 var first = true;
 

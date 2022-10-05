@@ -166,7 +166,7 @@ extern class String {
     func length(this) -> Int64 { }
 }
 
-extern class Vector {
+extern class RefVector {
     func size(this) -> Int64 { }
 }
 
