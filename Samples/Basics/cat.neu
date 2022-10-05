@@ -1,11 +1,11 @@
 
 extern struct FILE { }
 
-extern func fopen(anon str: raw Char, anon mode: raw Char) -> raw FILE
-extern func fgetc(anon file: var raw FILE) -> Int
-extern func fclose(anon file: var raw FILE) -> Int
-extern func feof(anon file: var raw FILE) -> Int
-extern func putchar(anon ch: Int) -> Int
+extern func fopen(anon str: raw CChar, anon mode: raw CChar) -> raw FILE
+extern func fgetc(anon file: var raw FILE) -> CInt
+extern func fclose(anon file: var raw FILE) -> CInt
+extern func feof(anon file: var raw FILE) -> CInt
+extern func putchar(anon ch: CInt) -> CInt
 
 func main(args: [String]) {
 

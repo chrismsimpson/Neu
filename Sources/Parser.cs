@@ -3677,7 +3677,20 @@ public static partial class ParserFunctions {
                                                 start: expr.GetSpan().Start,
                                                 end: tokens.ElementAt(index).Span.End);
 
-                                            expr = new CallExpression(method, _span);
+                                            // expr = new CallExpression(method, _span);
+
+                                            if (method.Namespace.LastOrDefault() is String n
+                                                && !IsNullOrWhiteSpace(n)
+                                                && Char.IsUpper(n[0])) {
+
+                                                expr = new CallExpression(method, _span);
+                                            }
+                                            else {
+
+                                                // Maybe clear namespace too?
+
+                                                expr = new MethodCallExpression(expr, method, span);
+                                            }
 
                                             contNS = false;
                                         }

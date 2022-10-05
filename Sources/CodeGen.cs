@@ -17,9 +17,11 @@ public static partial class CodeGenFunctions {
 
             var structOutput = compiler.CodeGenStructPredecl(structure);
 
-            output.Append(structOutput);
+            if (!IsNullOrWhiteSpace(structOutput)) {
 
-            output.Append('\n');
+                output.Append(structOutput);
+                output.Append('\n');
+            }
         }
         
         output.Append('\n');
@@ -28,9 +30,11 @@ public static partial class CodeGenFunctions {
 
             var structOutput = compiler.CodeGenStruct(structure, file);
 
-            output.Append(structOutput);
-            
-            output.Append('\n');
+            if (!IsNullOrWhiteSpace(structOutput)) {
+
+                output.Append(structOutput);
+                output.Append('\n');
+            }
         }
 
         output.Append('\n');
@@ -233,6 +237,11 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
 
+            if (!p.Variable.Mutable) {
+
+                output.Append("const ");
+            }
+
             var ty = compiler.CodeGenType(p.Variable.Type, file);
 
             output.Append(ty);
@@ -302,7 +311,12 @@ public static partial class CodeGenFunctions {
 
                 first = false;
             }
-                
+            
+            if (!p.Variable.Mutable) {
+
+                output.Append("const ");
+            }
+
             var ty = compiler.CodeGenType(p.Variable.Type, file);
 
             output.Append(ty);
@@ -412,12 +426,12 @@ public static partial class CodeGenFunctions {
                 return "String";
             }
 
-            case CharType _: {
+            case CCharType _: {
 
                 return "char";
             }
 
-            case IntType _: {
+            case CIntType _: {
 
                 return "int";
             }

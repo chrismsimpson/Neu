@@ -32,8 +32,6 @@ public static partial class NeuTypeFunctions {
 
             case var _ when l is BoolType && r is BoolType:                         return true;
             case var _ when l is StringType && r is StringType:                     return true;
-            case var _ when l is CharType && r is CharType:                         return true;
-            case var _ when l is IntType && r is IntType:                           return true;
             case var _ when l is Int8Type && r is Int8Type:                         return true;
             case var _ when l is Int16Type && r is Int16Type:                       return true;
             case var _ when l is Int32Type && r is Int32Type:                       return true;
@@ -73,6 +71,11 @@ public static partial class NeuTypeFunctions {
 
             case var _ when l is UnknownType && r is UnknownType:                   return true;
 
+            // C interop
+
+            case var _ when l is CCharType && r is CCharType:                       return true;
+            case var _ when l is CIntType && r is CIntType:                         return true;
+
             default:                                                                return false;
         }
     }
@@ -87,18 +90,6 @@ public partial class BoolType : NeuType {
 public partial class StringType : NeuType {
 
     public StringType() 
-        : base() { }
-}
-
-public partial class CharType: NeuType {
-
-    public CharType()
-        : base() { }
-}
-
-public partial class IntType: NeuType {
-
-    public IntType()
         : base() { }
 }
 
@@ -236,6 +227,20 @@ public partial class RawPointerType: NeuType {
 public partial class UnknownType : NeuType {
 
     public UnknownType()
+        : base() { }
+}
+
+// C interop
+
+public partial class CCharType: NeuType {
+
+    public CCharType()
+        : base() { }
+}
+
+public partial class CIntType: NeuType {
+
+    public CIntType()
         : base() { }
 }
 
@@ -1258,7 +1263,7 @@ public static partial class CheckedExpressionFunctions {
 
             case CheckedCharacterConstantExpression _: {
 
-                return new CharType();
+                return new CCharType(); // use the C one for now
             }
 
             case CheckedUnaryOpExpression u: {
@@ -1397,7 +1402,8 @@ public partial class Stack {
     ///
 
     public Stack()
-        : this(new List<StackFrame>()) { }
+        // : this(new List<StackFrame>()) { }
+        : this(new List<StackFrame>(new [] { new StackFrame() })) { }
 
     public Stack(
         List<StackFrame> frames) {
@@ -1641,7 +1647,8 @@ public static partial class TypeCheckerFunctions {
                 }
                 else {
 
-                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack, file, structId);
+                    // var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack, file, structId);
+                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack);
 
                     error = error ?? err;
 
@@ -1688,7 +1695,8 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var uncheckedMember in structure.Fields) {
 
-            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack, file, structId);
+            // var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack, file, structId);
+            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack);
 
             error = error ?? checkedMemberTypeErr;
 
@@ -1758,7 +1766,8 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var param in func.Parameters) {
 
-            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack, file, null);
+            // var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack, file, null);
+            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack);
 
             error = error ?? typeCheckNameErr;
 
@@ -1805,7 +1814,8 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
-        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack, file, null);
+        // var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack, file, null);
+        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
 
         error = error ?? typeCheckReturnTypeErr;
 
@@ -1886,7 +1896,8 @@ public static partial class TypeCheckerFunctions {
 
         stack.PopFrame();
 
-        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack, file, structId);
+        // var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack, file, structId);
+        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
 
         error = error ?? chkRetTypeErr;
 
@@ -1993,7 +2004,8 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? exprErr;
 
-                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack, file, null);
+                // var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack, file, null);
+                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack);
 
                 if (checkedType is UnknownType && checkedExpr.GetNeuType() is not UnknownType) {
 
@@ -3144,23 +3156,84 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
+                            // var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
+
+                            // error = error ?? checkedArgErr;
+
+                            // if (call.Args[idx].Item2 is VarExpression ve) {
+
+                            //     if (ve.Value != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name
+                            //         && callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].RequiresLabel
+                            //         && call.Args[idx].Item1 != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name) {
+
+                            //         error = error ??
+                            //             new TypeCheckError(
+                            //                 "Wrong parameter name in argument label".to_string(),
+                            //                 call.Args[idx].Item2.GetSpan());
+                            //     }
+                            // }
+                            // else if (callee.Parameters[idx].RequiresLabel
+                            //     && call.Args[idx].Item1 != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name) {
+
+                            //     error = error ?? 
+                            //         new TypeCheckError(
+                            //             "Wrong parameter name in argument label",
+                            //             call.Args[idx].Item2.GetSpan());
+                            // }
+
+                            // // var tryPromoteErr = TryPromoteConstantExprToType(
+                            // //     callee.Parameters[idx].Variable.Type,
+                            // //     checkedArg,
+                            // //     call.Args[idx].Item2.GetSpan());
+
+                            // var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
+                            //     callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type,
+                            //     checkedArg,
+                            //     call.Args[idx].Item2.GetSpan());
+
+                            // error = error ?? tryPromoteErr;
+
+                            // if (promotedExpr is not null) {
+
+                            //     checkedArg = promotedExpr;
+                            // }
+
+                            // if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type)) {
+
+                            //     error = error ?? new TypeCheckError(
+                            //         "Parameter type mismatch",
+                            //         call.Args[idx].Item2.GetSpan());
+                            // }
+
+                            // checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+
+                            // idx += 1;
+
+
                             var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
 
                             error = error ?? checkedArgErr;
 
-                            if (callee.Parameters[idx].RequiresLabel
-                                && call.Args[idx].Item1 != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name) {
+                            if (call.Args[idx].Item2 is VarExpression ve) {
+
+                                if (ve.Value != callee.Parameters[idx].Variable.Name
+                                    && callee.Parameters[idx].RequiresLabel
+                                    && call.Args[idx].Item1 != callee.Parameters[idx].Variable.Name) {
+
+                                    error = error ?? 
+                                        new TypeCheckError(
+                                            "Wrong parameter name in argument label",
+                                            call.Args[idx].Item2.GetSpan());
+                                }
+                            }
+                            else if (callee.Parameters[idx].RequiresLabel
+                                && call.Args[idx].Item1 != callee.Parameters[idx].Variable.Name) {
 
                                 error = error ?? 
                                     new TypeCheckError(
                                         "Wrong parameter name in argument label",
                                         call.Args[idx].Item2.GetSpan());
                             }
-
-                            // var tryPromoteErr = TryPromoteConstantExprToType(
-                            //     callee.Parameters[idx].Variable.Type,
-                            //     checkedArg,
-                            //     call.Args[idx].Item2.GetSpan());
 
                             var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
                                 callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type,
@@ -3174,11 +3247,12 @@ public static partial class TypeCheckerFunctions {
                                 checkedArg = promotedExpr;
                             }
 
-                            if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type)) {
+                            if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx].Variable.Type)) {
 
-                                error = error ?? new TypeCheckError(
-                                    "Parameter type mismatch",
-                                    call.Args[idx].Item2.GetSpan());
+                                error = error ??
+                                    new TypeCheckError(
+                                        "Parameter type mismatch",
+                                        call.Args[idx].Item2.GetSpan());
                             }
 
                             checkedArgs.Add((call.Args[idx].Item1, checkedArg));
@@ -3245,7 +3319,19 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? chkExprErr;
 
-                    if (callee.Parameters[idx + 1].RequiresLabel
+                    if (call.Args[idx].Item2 is VarExpression ve) {
+
+                        if (ve.Value != callee.Parameters[idx + 1].Variable.Name
+                            && callee.Parameters[idx + 1].RequiresLabel
+                            && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "Wrong parameter name in argument label",
+                                    call.Args[idx].Item2.GetSpan());
+                        }
+                    }
+                    else if (callee.Parameters[idx + 1].RequiresLabel
                         && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
 
                         error = error ??
@@ -3291,9 +3377,10 @@ public static partial class TypeCheckerFunctions {
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
         // Int32? possibleSelfStructId,
-        Stack stack,
-        CheckedFile file,
-        Int32? structId
+        Stack stack
+        // ,
+        // CheckedFile file,
+        // Int32? structId
         ) {
 
         Error? error = null;
@@ -3354,14 +3441,14 @@ public static partial class TypeCheckerFunctions {
                         return (new DoubleType(), null);
                     }
 
-                    case "Char": {
+                    case "CChar": {
 
-                        return (new CharType(), null);
+                        return (new CCharType(), null);
                     }
 
-                    case "Int": {
+                    case "CInt": {
 
-                        return (new IntType(), null);
+                        return (new CIntType(), null);
                     }
 
                     case "String": {
@@ -3383,19 +3470,20 @@ public static partial class TypeCheckerFunctions {
 
                         var stackStruct = stack.FindStruct(x);
                         
-                        var fileStruct = file.FindStruct(x);
+                        // var fileStruct = file.FindStruct(x);
 
-                        switch (stackStruct ?? fileStruct) {
+                        // switch (stackStruct ?? fileStruct) {
+                        switch (stackStruct) {
 
                             case Int32 _structId: {
 
                                 return (new StructType(_structId), null);
                             }
 
-                            case var _ when structId is Int32 sid: {
+                            // case var _ when structId is Int32 sid: {
 
-                                return (new StructType(sid), null);
-                            }
+                            //     return (new StructType(sid), null);
+                            // }
 
                             default: {
 
@@ -3419,7 +3507,8 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedVectorType vt: {
 
-                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack, file, structId);
+                // var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack, file, structId);
+                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack);
 
                 error = error ?? innerTypeErr;
 
@@ -3430,7 +3519,8 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedOptionalType opt: {
 
-                var (innerType, err) = TypeCheckTypeName(opt.Type, stack, file, structId);
+                // var (innerType, err) = TypeCheckTypeName(opt.Type, stack, file, structId);
+                var (innerType, err) = TypeCheckTypeName(opt.Type, stack);
 
                 error = error ?? err;
 
@@ -3441,7 +3531,8 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedRawPointerType rp: {
 
-                var (innerType, err) = TypeCheckTypeName(rp.Type, stack, file, structId);
+                // var (innerType, err) = TypeCheckTypeName(rp.Type, stack, file, structId);
+                var (innerType, err) = TypeCheckTypeName(rp.Type, stack);
 
                 error = error ?? err;
 

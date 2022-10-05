@@ -158,8 +158,8 @@ public partial class Compiler {
 
         return UTF8.GetBytes(@"
 extern class String {
-    func split(this, anon c: Char) -> [String] { }
-    func characters(this) -> raw Char { }
+    func split(this, anon c: CChar) -> [String] { }
+    func characters(this) -> raw CChar { }
     func toLowercase(this) -> String { }
     func toUppercase(this) -> String { }
     func isEmpty(this) -> Bool { }

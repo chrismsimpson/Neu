@@ -383,6 +383,23 @@ public static partial class TokenFunctions {
                 return false;
         }
     }
+
+    public static int LineNumber(
+        this List<Token> tokens,
+        int index) {
+
+        var lines = 0;
+
+        for (var i = 0; i <= index; i++) {
+
+            if (tokens[i] is EolToken) {
+
+                lines += 1;
+            }
+        }
+
+        return lines;
+    }
 }
 
     ///
