@@ -55,6 +55,7 @@
 #include "Traits.h"
 #include "Try.h"
 #include "Tuple.h"
+#include "TypeCasts.h"
 #include "TypedTransfer.h"
 #include "Types.h"
 #include "UnicodeUtils.h"
