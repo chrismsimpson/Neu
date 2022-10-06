@@ -311,7 +311,7 @@ public static partial class NeuTypeFunctions {
 
 ///
 
-public partial class CheckedFile {
+public partial class Project {
 
     public List<CheckedFunction> Functions { get; init; }
 
@@ -319,12 +319,12 @@ public partial class CheckedFile {
 
     ///
 
-    public CheckedFile()
+    public Project()
         : this(
             new List<CheckedFunction>(),
             new List<CheckedStruct>()) { }
 
-    public CheckedFile(
+    public Project(
         List<CheckedFunction> functions,
         List<CheckedStruct> structs) {
 
@@ -333,27 +333,27 @@ public partial class CheckedFile {
     }
 }
 
-public static partial class CheckedFileFunctions {
+public static partial class ProjectFileFunctions {
 
-    public static Int32? FindStruct(
-        this CheckedFile file,
-        String name) {
+    // public static Int32? FindStruct(
+    //     this Project file,
+    //     String name) {
 
-        for (Int32 idx = 0; idx < file.Structs.Count; idx++) {
+    //     for (Int32 idx = 0; idx < file.Structs.Count; idx++) {
 
-            var structure = file.Structs[idx];
+    //         var structure = file.Structs[idx];
 
-            if (structure.Name == name) {
+    //         if (structure.Name == name) {
 
-                return idx;
-            }
-        }
+    //             return idx;
+    //         }
+    //     }
 
-        return null;
-    }
+    //     return null;
+    // }
 
     public static (CheckedStruct, Int32)? GetStruct(
-        this CheckedFile checkedFile,
+        this Project checkedFile,
         String name) {
         
         for (Int32 idx = 0; idx < checkedFile.Structs.Count; idx++) {
@@ -370,7 +370,7 @@ public static partial class CheckedFileFunctions {
     }
 
     public static CheckedFunction? GetFunc(
-        this CheckedFile checkedFile,
+        this Project checkedFile,
         String name) {
 
         foreach (var func in checkedFile.Functions) {
@@ -1410,7 +1410,7 @@ public partial class ScopeStack {
 
 ///
 
-public static partial class StackFunctions {
+public static partial class ScopeStackFunctions {
 
     public static void PushFrame(
         this ScopeStack s) {
@@ -1493,7 +1493,9 @@ public static partial class StackFunctions {
         this ScopeStack s,
         String structure) {
 
-        foreach (var frame in s.Frames) {
+        for (var f = s.Frames.Count - 1; f >= 0; f--) {
+
+            var frame = s.Frames[f];
 
             foreach (var st in frame.Structs) {
 
@@ -1508,6 +1510,51 @@ public static partial class StackFunctions {
 
         return null;
     }
+
+    public static ErrorOrVoid AddFunc(
+        this ScopeStack s,
+        String name,
+        int funcId,
+        Span span) {
+
+        if (s.Frames.LastOrDefault() is Scope scope) {
+
+            foreach (var (existingFunc, _) in scope.Funcs) {
+
+                if (name == existingFunc) {
+
+                    return new ErrorOrVoid(
+                        new TypeCheckError(
+                            $"redefinition of {name}",
+                            span));
+                }
+            }
+
+            scope.Funcs.Add((name, funcId));
+        }
+
+        return new ErrorOrVoid();
+    }
+
+    public static Int32? FindFunc(
+        this ScopeStack s,
+        String funcName) {
+
+        for (var f = s.Frames.Count - 1; f >= 0; f--) {
+
+            var frame = s.Frames[f];
+
+            foreach (var func in frame.Funcs) {
+
+                if (func.Item1 == funcName) {
+
+                    return func.Item2;
+                }
+            }
+        }
+
+        return null;
+    }
 }
 
 ///
@@ -1518,19 +1565,24 @@ public partial class Scope {
 
     public List<(String, Int32)> Structs { get; init; }
 
+    public List<(String, Int32)> Funcs { get; init; }
+
     ///
 
     public Scope() 
         : this(
             new List<CheckedVariable>(),
+            new List<(String, Int32)>(),
             new List<(String, Int32)>()) { }
 
     public Scope(
         List<CheckedVariable> vars,
-        List<(String, Int32)> structs) {
+        List<(String, Int32)> structs,
+        List<(String, Int32)> funcs) {
 
         this.Vars = vars;
         this.Structs = structs;
+        this.Funcs = funcs;
     }
 }
 
@@ -1538,21 +1590,21 @@ public partial class Scope {
 
 public static partial class TypeCheckerFunctions {
 
-    public static (CheckedFile, Error?) TypeCheckFile(
+    public static (Project, Error?) TypeCheckFile(
         ParsedFile file,
-        CheckedFile prelude) {
+        Project prelude) {
 
         var stack = new ScopeStack();
 
         return TypeCheckFileHelper(file, stack, prelude);
     }
 
-    public static (CheckedFile, Error?) TypeCheckFileHelper(
+    public static (Project, Error?) TypeCheckFileHelper(
         ParsedFile parsedFile,
         ScopeStack stack,
-        CheckedFile prelude) {
+        Project prelude) {
 
-        var file = new CheckedFile();
+        var file = new Project();
 
         Error? error = null;
 
@@ -1569,6 +1621,11 @@ public static partial class TypeCheckerFunctions {
         foreach (var func in prelude.Functions) {
 
             file.Functions.Add(func);
+
+            if (stack.AddFunc(func.Name, file.Functions.Count - 1, new Span(0, 0, 0)).Error is Error e) {
+
+                error = error ?? e;    
+            }
         }
 
         for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
@@ -1614,7 +1671,7 @@ public static partial class TypeCheckerFunctions {
         Struct structure,
         Int32 structId,
         ScopeStack stack, 
-        CheckedFile file) {
+        Project file) {
 
         Error? error = null;
 
@@ -1685,7 +1742,7 @@ public static partial class TypeCheckerFunctions {
         Struct structure,
         Int32 structId,
         ScopeStack stack,
-        CheckedFile file) {
+        Project file) {
 
         Error? error = null;
 
@@ -1750,7 +1807,7 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckFuncPredecl(
         Function func,
         ScopeStack stack,
-        CheckedFile file) {
+        Project file) {
 
         Error? error = null;
 
@@ -1778,7 +1835,14 @@ public static partial class TypeCheckerFunctions {
                     variable: checkedVariable));
         }
 
+        var funcId = file.Functions.Count;
+
         file.Functions.Add(checkedFunction);
+
+        if (stack.AddFunc(func.Name, funcId, func.NameSpan).Error is Error e) {
+
+            error = error ?? e;
+        }
 
         return error;
     }
@@ -1786,7 +1850,7 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckFunc(
         Function func,
         ScopeStack stack,
-        CheckedFile file) {
+        Project file) {
 
         Error? error = null;
 
@@ -1865,7 +1929,7 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckMethod(
         Function func,
         ScopeStack stack,
-        CheckedFile file,
+        Project file,
         Int32 structId) { 
 
         Error? error = null;
@@ -1934,7 +1998,7 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedBlock, Error?) TypeCheckBlock(
         Block block,
         ScopeStack stack,
-        CheckedFile file,
+        Project file,
         SafetyMode safetyMode) {
 
         Error? error = null;
@@ -1960,7 +2024,7 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
         ScopeStack stack,
-        CheckedFile file,
+        Project project,
         SafetyMode safetyMode) {
 
         Error? error = null;
@@ -1969,7 +2033,7 @@ public static partial class TypeCheckerFunctions {
 
             case Expression e: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack, file, safetyMode);
+                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack, project, safetyMode);
 
                 return (
                     checkedExpr,
@@ -1978,7 +2042,7 @@ public static partial class TypeCheckerFunctions {
 
             case DeferStatement ds: {
 
-                var (checkedStmt, err) = TypeCheckStatement(ds.Statement, stack, file, safetyMode);
+                var (checkedStmt, err) = TypeCheckStatement(ds.Statement, stack, project, safetyMode);
 
                 return (
                     new CheckedDeferStatement(checkedStmt),
@@ -1987,7 +2051,7 @@ public static partial class TypeCheckerFunctions {
 
             case UnsafeBlockStatement us: {
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, stack, file, SafetyMode.Unsafe);
+                var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, stack, project, SafetyMode.Unsafe);
 
                 return (
                     new CheckedBlockStatement(checkedBlock),
@@ -1996,11 +2060,10 @@ public static partial class TypeCheckerFunctions {
 
             case VarDeclStatement vds: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack, file, safetyMode);
+                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack, project, safetyMode);
 
                 error = error ?? exprErr;
 
-                // var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack, file, null);
                 var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack);
 
                 if (checkedType is UnknownType && checkedExpr.GetNeuType() is not UnknownType) {
@@ -2054,11 +2117,11 @@ public static partial class TypeCheckerFunctions {
 
             case IfStatement ifStmt: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack, file, safetyMode);
+                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack, project, safetyMode);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack, file, safetyMode);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack, project, safetyMode);
                 
                 error = error ?? blockErr;
 
@@ -2066,7 +2129,7 @@ public static partial class TypeCheckerFunctions {
 
                 if (ifStmt.Trailing is Statement elseStmt) {
 
-                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, stack, file, safetyMode);
+                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, stack, project, safetyMode);
 
                     error = error ?? checkedElseStmtErr;
 
@@ -2084,11 +2147,11 @@ public static partial class TypeCheckerFunctions {
 
             case WhileStatement ws: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack, file, safetyMode);
+                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack, project, safetyMode);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack, file, safetyMode);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack, project, safetyMode);
                 
                 error = error ?? blockErr;
 
@@ -2099,7 +2162,7 @@ public static partial class TypeCheckerFunctions {
 
             case ReturnStatement rs: {
 
-                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack, file, safetyMode);
+                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack, project, safetyMode);
 
                 return (
                     new CheckedReturnStatement(output), 
@@ -2108,7 +2171,7 @@ public static partial class TypeCheckerFunctions {
 
             case BlockStatement bs: {
 
-                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, stack, file, safetyMode);
+                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, stack, project, safetyMode);
 
                 return (
                     new CheckedBlockStatement(checkedBlock),
@@ -2165,7 +2228,7 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedExpression, Error?) TypeCheckExpression(
         Expression expr,
         ScopeStack stack,
-        CheckedFile file,
+        Project project,
         SafetyMode safetyMode) {
 
         Error? error = null;
@@ -2174,11 +2237,11 @@ public static partial class TypeCheckerFunctions {
 
             case BinaryOpExpression e: {
 
-                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack, file, safetyMode);
+                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack, project, safetyMode);
 
                 error = error ?? checkedLhsErr;
 
-                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, file, safetyMode);
+                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, project, safetyMode);
 
                 error = error ?? checkedRhsErr;
 
@@ -2212,7 +2275,7 @@ public static partial class TypeCheckerFunctions {
 
             case UnaryOpExpression u: {
 
-                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, stack, file, safetyMode);
+                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, stack, project, safetyMode);
 
                 error = error ?? checkedExprErr;
 
@@ -2233,7 +2296,7 @@ public static partial class TypeCheckerFunctions {
 
             case OptionalSomeExpression e: {
 
-                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file, safetyMode);
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, project, safetyMode);
 
                 error = error ?? ckdExprError;
 
@@ -2246,7 +2309,7 @@ public static partial class TypeCheckerFunctions {
 
             case ForcedUnwrapExpression e: {
 
-                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, file, safetyMode);
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, project, safetyMode);
 
                 NeuType type = new UnknownType();
 
@@ -2286,7 +2349,7 @@ public static partial class TypeCheckerFunctions {
 
             case CallExpression e: {
 
-                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, e.Span, file, safetyMode);
+                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, e.Span, project, safetyMode);
 
                 var ty = checkedCall.Type;
 
@@ -2349,7 +2412,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var v in ve.Expressions) {
 
-                    var (checkedExpr, err) = TypeCheckExpression(v, stack, file, safetyMode);
+                    var (checkedExpr, err) = TypeCheckExpression(v, stack, project, safetyMode);
 
                     error = error ?? err;
 
@@ -2388,7 +2451,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var item in te.Expressions) {
 
-                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, stack, file, safetyMode);
+                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, stack, project, safetyMode);
 
                     error = error ?? typeCheckItemExprErr;
 
@@ -2406,11 +2469,11 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedExpression ie: {
 
-                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, stack, file, safetyMode);
+                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, stack, project, safetyMode);
                 
                 error = error ?? typeCheckExprErr;
 
-                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, stack, file, safetyMode);
+                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, stack, project, safetyMode);
             
                 error = error ?? typeCheckIdxErr;
 
@@ -2469,7 +2532,7 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedTupleExpression ite: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, stack, file, safetyMode);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, stack, project, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2520,7 +2583,7 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedStructExpression ise: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, stack, file, safetyMode);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, stack, project, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2530,7 +2593,7 @@ public static partial class TypeCheckerFunctions {
 
                     case StructType st: {
 
-                        var structure = file.Structs[st.StructId];
+                        var structure = project.Structs[st.StructId];
 
                         foreach (var member in structure.Fields) {
 
@@ -2571,7 +2634,7 @@ public static partial class TypeCheckerFunctions {
 
             case MethodCallExpression mce: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(mce.Expression, stack, file, safetyMode);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(mce.Expression, stack, project, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2579,7 +2642,7 @@ public static partial class TypeCheckerFunctions {
 
                     case StructType st: {
 
-                        var (checkedCall, chkMethodCallErr) = TypeCheckMethodCall(mce.Call, stack, mce.Span, file, st.StructId, safetyMode);
+                        var (checkedCall, chkMethodCallErr) = TypeCheckMethodCall(mce.Call, stack, mce.Span, project, st.StructId, safetyMode);
 
                         error = error ?? chkMethodCallErr;
 
@@ -2592,13 +2655,18 @@ public static partial class TypeCheckerFunctions {
 
                     case StringType _: {
 
-                        var stringStruct = file.FindStruct("String");
+                        var stringStruct = stack.FindStruct("String");
 
                         switch (stringStruct) {
 
                             case Int32 structId: {
 
-                                var (checkedCall, err) = TypeCheckMethodCall(mce.Call, stack, mce.Span, file, structId, safetyMode);
+                                var (checkedCall, err) = TypeCheckMethodCall(
+                                    mce.Call, stack, 
+                                    mce.Span, 
+                                    project, 
+                                    structId, 
+                                    safetyMode);
 
                                 error = error ?? err;
 
@@ -2628,13 +2696,19 @@ public static partial class TypeCheckerFunctions {
 
                     case VectorType _: {
 
-                        var vectorStruct = file.FindStruct("RefVector");
+                        var vectorStruct = stack.FindStruct("RefVector");
 
                         switch (vectorStruct) {
 
                             case Int32 structId: {
 
-                                var (checkedCall, chkMethCallErr) = TypeCheckMethodCall(mce.Call, stack, mce.Span, file, structId, safetyMode);
+                                var (checkedCall, chkMethCallErr) = TypeCheckMethodCall(
+                                    mce.Call, 
+                                    stack, 
+                                    mce.Span, 
+                                    project, 
+                                    structId, 
+                                    safetyMode);
 
                                 error = error ?? chkMethCallErr;
 
@@ -2918,9 +2992,9 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
         Call call,
         Span span,
-        ScopeStack stack,
         List<CheckedFunction> functions,
-        CheckedFile file) {
+        ScopeStack stack,
+        Project file) {
 
         CheckedFunction? callee = null;
 
@@ -2930,7 +3004,10 @@ public static partial class TypeCheckerFunctions {
 
         if (call.Namespace.FirstOrDefault() is String ns) {
 
-            if (file.FindStruct(ns) is Int32 structId) {
+            // For now, assume class is our namespace
+            // In the future, we'll have real namespaces
+
+            if (stack.FindStruct(ns) is Int32 structId) {
 
                 var structure = file.Structs[structId];
 
@@ -2972,7 +3049,7 @@ public static partial class TypeCheckerFunctions {
                 }
                 else if (v is CheckedVariable cv
                     && cv.Type is StringType
-                    && file.FindStruct("String") is int stringStructId) {
+                    && stack.FindStruct("String") is int stringStructId) {
 
                     var structure = file.Structs[stringStructId];
 
@@ -2991,7 +3068,7 @@ public static partial class TypeCheckerFunctions {
                     return (callee, definitionType, error);
                 }
                 else if (v is CheckedVariable cv2
-                    && file.FindStruct("RefVector") is int vectorStructId) {
+                    && stack.FindStruct("RefVector") is int vectorStructId) {
 
                     var structure = file.Structs[vectorStructId];
 
@@ -3049,7 +3126,7 @@ public static partial class TypeCheckerFunctions {
         Call call, 
         ScopeStack stack,
         Span span,
-        CheckedFile file,
+        Project project,
         SafetyMode safetyMode) {
 
         var checkedArgs = new List<(String, CheckedExpression)>();
@@ -3069,7 +3146,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var arg in call.Args) {
 
-                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, file, safetyMode);
+                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, project, safetyMode);
 
                     error = error ?? checkedArgErr;
 
@@ -3085,7 +3162,7 @@ public static partial class TypeCheckerFunctions {
 
             default: {
 
-                var (callee, _calleDefType, resolveErr) = ResolveCall(call, span, stack, file.Functions, file);
+                var (callee, _calleDefType, resolveErr) = ResolveCall(call, span, project.Functions, stack, project);
 
                 error = error ?? resolveErr;
 
@@ -3097,16 +3174,16 @@ public static partial class TypeCheckerFunctions {
 
                     // Check that we have the right number of arguments
 
-                    var paramCount = callee.Parameters.Count;
+                    // var paramCount = callee.Parameters.Count;
 
-                    var thisFirstArgument = callee.Parameters.FirstOrDefault()?.Variable.Name == "this";
+                    // var thisFirstArgument = callee.Parameters.FirstOrDefault()?.Variable.Name == "this";
 
-                    if (thisFirstArgument) {
+                    // if (thisFirstArgument) {
 
-                        paramCount -= 1;
-                    }
+                    //     paramCount -= 1;
+                    // }
 
-                    if (paramCount != call.Args.Count) {
+                    if (callee.Parameters.Count != call.Args.Count) {
 
                         error = error ?? new ParserError(
                             "wrong number of arguments", 
@@ -3118,7 +3195,7 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
-                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
+                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, project, safetyMode);
 
                             error = error ?? checkedArgErr;
 
@@ -3144,7 +3221,8 @@ public static partial class TypeCheckerFunctions {
                             }
 
                             var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
-                                callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type,
+                                // callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type,
+                                callee.Parameters[idx].Variable.Type,
                                 checkedArg,
                                 call.Args[idx].Item2.GetSpan());
 
@@ -3188,7 +3266,7 @@ public static partial class TypeCheckerFunctions {
         Call call,
         ScopeStack stack,
         Span span,
-        CheckedFile file,
+        Project file,
         Int32 structId,
         SafetyMode safetyMode) {
 
@@ -3198,7 +3276,7 @@ public static partial class TypeCheckerFunctions {
 
         NeuType returnType = new UnknownType();
 
-        var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, stack, file.Structs[structId].Methods, file);
+        var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, file.Structs[structId].Methods, stack, file);
 
         error = error ?? resolveCallErr;
 

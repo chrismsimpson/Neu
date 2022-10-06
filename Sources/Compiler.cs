@@ -5,15 +5,9 @@ public partial class Compiler {
 
     public List<(String, byte[])> RawFiles { get; init; }
 
-    public List<(String, CheckedFile)> CheckedFiles { get; init; }
+    public List<(String, Project)> CheckedFiles { get; init; }
 
     ///
-
-    // public Compiler()
-    //     : this(
-    //         new List<(String, byte[])>(), 
-    //         new List<(String, CheckedFile)>()) {
-    // }
 
     public Compiler() {
 
@@ -21,7 +15,7 @@ public partial class Compiler {
 
         var rawFiles = new List<(String, byte[])>();
 
-        var checkedFiles = new List<(String, CheckedFile)>();
+        var checkedFiles = new List<(String, Project)>();
 
         // Not sure where to put prelude, but we're hoping its parsing is infallible
 
@@ -31,21 +25,13 @@ public partial class Compiler {
 
         var (lexed, _) = LexerFunctions.Lex(rawFiles.Count - 1, rawFiles[rawFiles.Count - 1].Item2);
         var (file, _) = ParserFunctions.ParseFile(lexed);
-        var (chkdFile, _) = TypeCheckerFunctions.TypeCheckFile(file, new CheckedFile());
+        var (chkdFile, _) = TypeCheckerFunctions.TypeCheckFile(file, new Project());
 
         checkedFiles.Add(("<prelude>", chkdFile));
 
         this.RawFiles = rawFiles;
         this.CheckedFiles = checkedFiles;
     }
-
-    // public Compiler(
-    //     List<(String, byte[])> rawFiles,
-    //     List<(String, CheckedFile)> checkedFiles) {
-
-    //     this.RawFiles = rawFiles;
-    //     this.CheckedFiles = checkedFiles;
-    // }
 }
 
 ///

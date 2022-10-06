@@ -7,7 +7,7 @@ public static partial class CodeGenFunctions {
 
     public static String CodeGen(
         this Compiler compiler,
-        CheckedFile file) {
+        Project file) {
 
         var output = new StringBuilder();
 
@@ -109,7 +109,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenStruct(
         this Compiler compiler,
         CheckedStruct structure,
-        CheckedFile file) {
+        Project file) {
 
         if (structure.DefinitionLinkage == DefinitionLinkage.External) {
 
@@ -192,7 +192,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenFuncPredecl(
         this Compiler compiler,
         CheckedFunction fun,
-        CheckedFile file) {
+        Project file) {
         
         var output = new StringBuilder();
 
@@ -251,7 +251,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenFunc(
         this Compiler compiler,
         CheckedFunction fun,
-        CheckedFile file) {
+        Project file) {
 
         var output = new StringBuilder();
 
@@ -348,7 +348,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenConstructor(
         this Compiler compiler,
         CheckedFunction func,
-        CheckedFile file) {
+        Project file) {
 
         var output = new StringBuilder();
 
@@ -404,7 +404,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenType(
         this Compiler compiler,
         NeuType ty,
-        CheckedFile file) {
+        Project file) {
 
         switch (ty) {
 
@@ -546,7 +546,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedBlock block,
-        CheckedFile file) {
+        Project file) {
 
         var output = new StringBuilder();
 
@@ -570,7 +570,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedStatement stmt,
-        CheckedFile file) {
+        Project file) {
 
         var output = new StringBuilder();
 
@@ -726,7 +726,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedExpression expr,
-        CheckedFile file) {
+        Project file) {
 
         var output = new StringBuilder();
 
