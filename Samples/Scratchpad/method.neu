@@ -1,0 +1,16 @@
+class Person {
+    name: String
+    age: Int64
+
+    func birthday(var this) {
+        ++this.age
+    }
+}
+
+func main() {
+    var p = Person(name: "Bob", age: 1000)
+
+    p.birthday()
+
+    printLine(p.age)
+}

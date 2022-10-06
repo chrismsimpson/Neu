@@ -1392,18 +1392,17 @@ public partial class CheckedCall {
     }
 }
 
-public partial class Stack {
+public partial class ScopeStack {
     
-    public List<StackFrame> Frames { get; init; }
+    public List<Scope> Frames { get; init; }
 
     ///
 
-    public Stack()
-        // : this(new List<StackFrame>()) { }
-        : this(new List<StackFrame>(new [] { new StackFrame() })) { }
+    public ScopeStack()
+        : this(new List<Scope>(new [] { new Scope() })) { }
 
-    public Stack(
-        List<StackFrame> frames) {
+    public ScopeStack(
+        List<Scope> frames) {
 
         this.Frames = frames;
     }
@@ -1414,23 +1413,23 @@ public partial class Stack {
 public static partial class StackFunctions {
 
     public static void PushFrame(
-        this Stack s) {
+        this ScopeStack s) {
 
-        s.Frames.Add(new StackFrame());
+        s.Frames.Add(new Scope());
     }    
 
     public static void PopFrame(
-        this Stack s) {
+        this ScopeStack s) {
 
         s.Frames.Pop();
     }
 
     public static Error? AddVar(
-        this Stack s, 
+        this ScopeStack s, 
         CheckedVariable v, 
         Span span) {
 
-        if (s.Frames.Last() is StackFrame frame) {
+        if (s.Frames.Last() is Scope frame) {
 
             foreach (var existingVar in frame.Vars) {
 
@@ -1448,7 +1447,9 @@ public static partial class StackFunctions {
         return null;
     }
 
-    public static CheckedVariable? FindVar(this Stack s, String varName) {
+    public static CheckedVariable? FindVar(
+        this ScopeStack s, 
+        String varName) {
 
         for (var i = s.Frames.Count - 1; i >= 0; --i) {
 
@@ -1467,14 +1468,14 @@ public static partial class StackFunctions {
     }
 
     public static ErrorOrVoid AddStruct(
-        this Stack s, 
+        this ScopeStack s, 
         String name,
         Int32 structId,
         Span span) {
 
-        if (s.Frames.LastOrDefault() is StackFrame frame) {
+        if (s.Frames.LastOrDefault() is Scope scope) {
 
-            foreach (var (existingStruct, existingStructId) in frame.Structs) {
+            foreach (var (existingStruct, existingStructId) in scope.Structs) {
 
                 if (name == existingStruct) {
 
@@ -1482,14 +1483,14 @@ public static partial class StackFunctions {
                 }
             }
 
-            frame.Structs.Add((name, structId));
+            scope.Structs.Add((name, structId));
         }
 
         return new ErrorOrVoid();
     }
 
     public static Int32? FindStruct(
-        this Stack s,
+        this ScopeStack s,
         String structure) {
 
         foreach (var frame in s.Frames) {
@@ -1511,7 +1512,7 @@ public static partial class StackFunctions {
 
 ///
 
-public partial class StackFrame {
+public partial class Scope {
     
     public List<CheckedVariable> Vars { get; init; }
 
@@ -1519,12 +1520,12 @@ public partial class StackFrame {
 
     ///
 
-    public StackFrame() 
+    public Scope() 
         : this(
             new List<CheckedVariable>(),
             new List<(String, Int32)>()) { }
 
-    public StackFrame(
+    public Scope(
         List<CheckedVariable> vars,
         List<(String, Int32)> structs) {
 
@@ -1541,14 +1542,14 @@ public static partial class TypeCheckerFunctions {
         ParsedFile file,
         CheckedFile prelude) {
 
-        var stack = new Stack();
+        var stack = new ScopeStack();
 
         return TypeCheckFileHelper(file, stack, prelude);
     }
 
     public static (CheckedFile, Error?) TypeCheckFileHelper(
         ParsedFile parsedFile,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile prelude) {
 
         var file = new CheckedFile();
@@ -1612,7 +1613,7 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckStructPredecl(
         Struct structure,
         Int32 structId,
-        Stack stack, 
+        ScopeStack stack, 
         CheckedFile file) {
 
         Error? error = null;
@@ -1683,7 +1684,7 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckStruct(
         Struct structure,
         Int32 structId,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file) {
 
         Error? error = null;
@@ -1692,7 +1693,6 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var uncheckedMember in structure.Fields) {
 
-            // var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack, file, structId);
             var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack);
 
             error = error ?? checkedMemberTypeErr;
@@ -1749,7 +1749,7 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckFuncPredecl(
         Function func,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file) {
 
         Error? error = null;
@@ -1763,7 +1763,6 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var param in func.Parameters) {
 
-            // var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack, file, null);
             var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack);
 
             error = error ?? typeCheckNameErr;
@@ -1786,7 +1785,7 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckFunc(
         Function func,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file) {
 
         Error? error = null;
@@ -1865,7 +1864,7 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckMethod(
         Function func,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file,
         Int32 structId) { 
 
@@ -1934,7 +1933,7 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedBlock, Error?) TypeCheckBlock(
         Block block,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file,
         SafetyMode safetyMode) {
 
@@ -1960,7 +1959,7 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file,
         SafetyMode safetyMode) {
 
@@ -2012,11 +2011,6 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? chkTypeErr;
                 }
-
-                // var tryPromoteErr = TryPromoteConstantExprToType(
-                //     checkedType, 
-                //     checkedExpr, 
-                //     vds.Expr.GetSpan());
 
                 var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
                     checkedType, 
@@ -2135,35 +2129,6 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
-    // public static Error? TryPromoteConstantExprToType(
-    //     NeuType lhsType,
-    //     CheckedExpression checkedRhs,
-    //     Span span) {
-
-    //     if (!lhsType.IsInteger()) {
-
-    //         return null;
-    //     }
-
-    //     if (checkedRhs.ToIntegerConstant() is IntegerConstant rhsConstant) {
-
-    //         var (_newConstant, newType) = rhsConstant.Promote(lhsType);
-
-    //         if (_newConstant is NumericConstant newConstant) {
-
-    //             checkedRhs = new CheckedNumericConstantExpression(newConstant, newType);
-    //         }
-    //         else {
-
-    //             return new TypeCheckError(
-    //                 "Integer promotion failed",
-    //                 span);
-    //         }
-    //     }
-
-    //     return null;
-    // }
-
     public static (CheckedNumericConstantExpression?, Error?) TryPromoteConstantExprToType(
         NeuType lhsType,
         CheckedExpression checkedRhs,
@@ -2199,7 +2164,7 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedExpression, Error?) TypeCheckExpression(
         Expression expr,
-        Stack stack,
+        ScopeStack stack,
         CheckedFile file,
         SafetyMode safetyMode) {
 
@@ -2740,7 +2705,7 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression expr,
         UnaryOperator op,
         Span span,
-        Stack stack,
+        ScopeStack stack,
         SafetyMode safetyMode) {
     
         var exprType = expr.GetNeuType();
@@ -2859,32 +2824,19 @@ public static partial class TypeCheckerFunctions {
                     case FloatType _:
                     case DoubleType _: {
 
-                        switch (expr) {
+                        if (!expr.IsMutable()) {
 
-                            case CheckedVarExpression ve: {
+                            return (
+                                new CheckedUnaryOpExpression(expr, op, exprType),
+                                new TypeCheckError(
+                                    "increment/decrement of immutable variable",
+                                    span));
+                        }
+                        else {
 
-                                if (!ve.Variable.Mutable) {
-
-                                    return (
-                                        new CheckedUnaryOpExpression(expr, op, exprType),
-                                        new TypeCheckError(
-                                            "increment on immutable variable",
-                                            span));
-                                }
-                                else {
-
-                                    return (
-                                        new CheckedUnaryOpExpression(expr, op, exprType),
-                                        null);
-                                }
-                            }
-
-                            default: {
-
-                                return (
-                                    new CheckedUnaryOpExpression(expr, op, exprType),
-                                    null);
-                            }
+                            return (
+                                new CheckedUnaryOpExpression(expr, op, exprType),
+                                null);
                         }
                     }
 
@@ -2966,7 +2918,7 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
         Call call,
         Span span,
-        Stack stack,
+        ScopeStack stack,
         List<CheckedFunction> functions,
         CheckedFile file) {
 
@@ -3095,7 +3047,7 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedCall, Error?) TypeCheckCall(
         Call call, 
-        Stack stack,
+        ScopeStack stack,
         Span span,
         CheckedFile file,
         SafetyMode safetyMode) {
@@ -3166,60 +3118,6 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
-                            // var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
-
-                            // error = error ?? checkedArgErr;
-
-                            // if (call.Args[idx].Item2 is VarExpression ve) {
-
-                            //     if (ve.Value != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name
-                            //         && callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].RequiresLabel
-                            //         && call.Args[idx].Item1 != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name) {
-
-                            //         error = error ??
-                            //             new TypeCheckError(
-                            //                 "Wrong parameter name in argument label".to_string(),
-                            //                 call.Args[idx].Item2.GetSpan());
-                            //     }
-                            // }
-                            // else if (callee.Parameters[idx].RequiresLabel
-                            //     && call.Args[idx].Item1 != callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Name) {
-
-                            //     error = error ?? 
-                            //         new TypeCheckError(
-                            //             "Wrong parameter name in argument label",
-                            //             call.Args[idx].Item2.GetSpan());
-                            // }
-
-                            // // var tryPromoteErr = TryPromoteConstantExprToType(
-                            // //     callee.Parameters[idx].Variable.Type,
-                            // //     checkedArg,
-                            // //     call.Args[idx].Item2.GetSpan());
-
-                            // var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
-                            //     callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type,
-                            //     checkedArg,
-                            //     call.Args[idx].Item2.GetSpan());
-
-                            // error = error ?? tryPromoteErr;
-
-                            // if (promotedExpr is not null) {
-
-                            //     checkedArg = promotedExpr;
-                            // }
-
-                            // if (!NeuTypeFunctions.Eq(checkedArg.GetNeuType(), callee.Parameters[idx + (thisFirstArgument ? 1 : 0)].Variable.Type)) {
-
-                            //     error = error ?? new TypeCheckError(
-                            //         "Parameter type mismatch",
-                            //         call.Args[idx].Item2.GetSpan());
-                            // }
-
-                            // checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-
-                            // idx += 1;
-
-
                             var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
 
                             error = error ?? checkedArgErr;
@@ -3288,7 +3186,7 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedCall, Error?) TypeCheckMethodCall(
         Call call,
-        Stack stack,
+        ScopeStack stack,
         Span span,
         CheckedFile file,
         Int32 structId,
@@ -3386,12 +3284,7 @@ public static partial class TypeCheckerFunctions {
 
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
-        // Int32? possibleSelfStructId,
-        Stack stack
-        // ,
-        // CheckedFile file,
-        // Int32? structId
-        ) {
+        ScopeStack stack) {
 
         Error? error = null;
 
@@ -3480,20 +3373,12 @@ public static partial class TypeCheckerFunctions {
 
                         var stackStruct = stack.FindStruct(x);
                         
-                        // var fileStruct = file.FindStruct(x);
-
-                        // switch (stackStruct ?? fileStruct) {
                         switch (stackStruct) {
 
                             case Int32 _structId: {
 
                                 return (new StructType(_structId), null);
                             }
-
-                            // case var _ when structId is Int32 sid: {
-
-                            //     return (new StructType(sid), null);
-                            // }
 
                             default: {
 
@@ -3517,7 +3402,6 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedVectorType vt: {
 
-                // var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack, file, structId);
                 var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack);
 
                 error = error ?? innerTypeErr;
@@ -3529,7 +3413,6 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedOptionalType opt: {
 
-                // var (innerType, err) = TypeCheckTypeName(opt.Type, stack, file, structId);
                 var (innerType, err) = TypeCheckTypeName(opt.Type, stack);
 
                 error = error ?? err;
@@ -3541,7 +3424,6 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedRawPointerType rp: {
 
-                // var (innerType, err) = TypeCheckTypeName(rp.Type, stack, file, structId);
                 var (innerType, err) = TypeCheckTypeName(rp.Type, stack);
 
                 error = error ?? err;
