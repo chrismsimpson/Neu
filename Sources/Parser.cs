@@ -168,10 +168,6 @@ public static partial class UncheckedTypeFunctions {
 
     public static bool Eq(UncheckedType l, UncheckedType r) {
 
-        // return lhs.Name == rhs.Name
-        //     && lhs.Optional == rhs.Optional
-        //     && (lhs.Span.Start == rhs.Span.Start && lhs.Span.End == rhs.Span.End);
-
         switch (true) {
 
             case var _ when
@@ -1195,47 +1191,6 @@ public partial class Expression: Statement {
 
     // Not standalone
 
-    public enum UnaryOperator {
-
-        PreIncrement,
-        PostIncrement,
-        PreDecrement,
-        PostDecrement,
-        Negate,
-        Dereference,
-        RawAddress,
-        LogicalNot,
-        BitwiseNot
-    }
-
-    public enum BinaryOperator {
-
-        Add,
-        Subtract,
-        Multiply,
-        Divide,
-        Modulo,
-        Equal,
-        NotEqual,
-        LessThan,
-        GreaterThan,
-        LessThanOrEqual,
-        GreaterThanOrEqual,
-        LogicalAnd,
-        LogicalOr,
-        BitwiseAnd,
-        BitwiseOr,
-        BitwiseXor,
-        BitwiseLeftShift,
-        BitwiseRightShift,
-        Assign,
-        AddAssign,
-        SubtractAssign,
-        MultiplyAssign,
-        DivideAssign,
-        ModuloAssign
-    }
-
     public partial class OperatorExpression: Expression {
 
         public BinaryOperator Operator { get; init; }
@@ -1574,6 +1529,181 @@ public static partial class ExpressionFunctions {
                 return 0;
         }
     }
+}
+
+public partial class TypeCast {
+
+    public UncheckedType Type { get; init; }
+
+    ///
+
+    public TypeCast(
+        UncheckedType type) {
+
+        this.Type = type;
+    }
+}
+
+    public partial class FallibleTypeCast: TypeCast {
+
+        public FallibleTypeCast(UncheckedType type)
+            : base(type) { }
+    }
+
+    public partial class InfallibleTypeCast: TypeCast {
+
+        public InfallibleTypeCast(UncheckedType type)
+            : base(type) { }
+    }
+
+    public partial class SaturatingTypeCast: TypeCast {
+
+        public SaturatingTypeCast(UncheckedType type)
+            : base(type) { }
+    }
+    
+    public partial class TruncatingTypeCast: TypeCast {
+
+        public TruncatingTypeCast(UncheckedType type)
+            : base(type) { }
+    }
+
+public static partial class TypeCastFunctions {
+
+    public static UncheckedType GetUncheckedType(
+        this TypeCast typeCast) {
+
+        switch (typeCast) {
+
+            case FallibleTypeCast f: {
+
+                return f.Type;
+            }
+
+            case InfallibleTypeCast i: {
+
+                return i.Type;
+            }
+
+            case SaturatingTypeCast s: {
+
+                return s.Type;
+            }
+
+            case TruncatingTypeCast t: {
+
+                return t.Type;
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+    }
+}
+
+// public enum UnaryOperator {
+
+//     PreIncrement,
+//     PostIncrement,
+//     PreDecrement,
+//     PostDecrement,
+//     Negate,
+//     Dereference,
+//     RawAddress,
+//     LogicalNot,
+//     BitwiseNot
+// }
+
+public partial class UnaryOperator {
+
+    public UnaryOperator() { }
+}
+
+    public partial class PreIncrementUnaryOperator: UnaryOperator {
+
+        public PreIncrementUnaryOperator() { }
+    }
+
+    public partial class PostIncrementUnaryOperator: UnaryOperator {
+
+        public PostIncrementUnaryOperator() { }
+    }
+
+    public partial class PreDecrementUnaryOperator: UnaryOperator {
+
+        public PreDecrementUnaryOperator() { }
+    }
+
+    public partial class PostDecrementUnaryOperator: UnaryOperator {
+
+        public PostDecrementUnaryOperator() { }
+    }
+
+    public partial class NegateUnaryOperator: UnaryOperator {
+
+        public NegateUnaryOperator() { }
+    }
+
+    public partial class DereferenceUnaryOperator: UnaryOperator {
+
+        public DereferenceUnaryOperator() { }
+    }
+
+    public partial class RawAddressUnaryOperator: UnaryOperator {
+
+        public RawAddressUnaryOperator() { }
+    }
+
+    public partial class LogicalNotUnaryOperator: UnaryOperator {
+
+        public LogicalNotUnaryOperator() { }
+    }
+
+    public partial class BitwiseNotUnaryOperator: UnaryOperator {
+
+        public BitwiseNotUnaryOperator() { }
+    }
+
+    public partial class TypeCastUnaryOperator: UnaryOperator {
+
+        public TypeCast TypeCast { get; init; }
+
+        ///
+
+        public TypeCastUnaryOperator(TypeCast typeCast) {
+
+            this.TypeCast = typeCast;
+        }
+    }
+
+public enum BinaryOperator {
+
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    Equal,
+    NotEqual,
+    LessThan,
+    GreaterThan,
+    LessThanOrEqual,
+    GreaterThanOrEqual,
+    LogicalAnd,
+    LogicalOr,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    BitwiseLeftShift,
+    BitwiseRightShift,
+    Assign,
+    AddAssign,
+    SubtractAssign,
+    MultiplyAssign,
+    DivideAssign,
+    ModuloAssign
 }
 
 ///
@@ -3065,7 +3195,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, UnaryOperator.LogicalNot, _span);
+                expr = new UnaryOpExpression(_expr, new LogicalNotUnaryOperator(), _span);
 
                 break;
             }
@@ -3292,7 +3422,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, UnaryOperator.PreIncrement, _span);
+                expr = new UnaryOpExpression(_expr, new PreIncrementUnaryOperator(), _span);
 
                 break;
             }
@@ -3312,7 +3442,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, UnaryOperator.PreDecrement, _span);
+                expr = new UnaryOpExpression(_expr, new PreDecrementUnaryOperator(), _span);
 
                 break;
             }
@@ -3332,7 +3462,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, UnaryOperator.Negate, _span);
+                expr = new UnaryOpExpression(_expr, new NegateUnaryOperator(), _span);
 
                 break;
             }
@@ -3352,7 +3482,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, UnaryOperator.BitwiseNot, _span);
+                expr = new UnaryOpExpression(_expr, new BitwiseNotUnaryOperator(), _span);
 
                 break;
             }
@@ -3372,7 +3502,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, UnaryOperator.Dereference, _span);
+                expr = new UnaryOpExpression(_expr, new DereferenceUnaryOperator(), _span);
 
                 break;
             }
@@ -3402,7 +3532,7 @@ public static partial class ParserFunctions {
                                 start: startSpan.Start,
                                 end: _expr.GetSpan().End);
 
-                            expr = new UnaryOpExpression(_expr, UnaryOperator.RawAddress, span);
+                            expr = new UnaryOpExpression(_expr, new RawAddressUnaryOperator(), span);
 
                             break;
                         }
@@ -3503,8 +3633,6 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
-
                 case PlusPlusToken _: {
 
                     var endSpan = tokens.ElementAt(index).Span;
@@ -3516,12 +3644,97 @@ public static partial class ParserFunctions {
                         start: expr.GetSpan().Start,
                         end: endSpan.End);
 
-                    expr = new UnaryOpExpression(expr, UnaryOperator.PostIncrement, _span);
+                    expr = new UnaryOpExpression(expr, new PostIncrementUnaryOperator(), _span);
 
                     break;
                 }
 
-                ///
+                case NameToken nt when nt.Value == "as": {
+
+                    var endSpan = tokens.ElementAt(index + 1).Span;
+
+                    index += 1;
+
+                    var _span = new Span(
+                        fileId: expr.GetSpan().FileId,
+                        start: expr.GetSpan().Start,
+                        end: endSpan.End);
+
+                    TypeCast cast;
+
+                    switch (tokens.ElementAt(index)) {
+
+                        case ExclamationToken _: {
+
+                            index += 1;
+
+                            var (typename, err) = ParseTypeName(tokens, ref index);
+
+                            error = error ?? err;
+
+                            cast = new InfallibleTypeCast(typename);
+
+                            break;
+                        }
+
+                        case QuestionToken _: {
+
+                            index += 1;
+
+                            var (typename, err) = ParseTypeName(tokens, ref index);
+                            
+                            error = error ?? err;
+                        
+                            cast = new FallibleTypeCast(typename);
+
+                            break;
+                        }
+
+                        case NameToken nt2 when nt2.Value == "truncated": {
+
+                            index += 1;
+
+                            var (typename, err) = ParseTypeName(tokens, ref index);
+
+                            error = error ?? err;
+
+                            cast = new TruncatingTypeCast(typename);
+
+                            break;
+                        }
+
+                        case NameToken nt2 when nt2.Value == "saturated": {
+
+                            index += 1;
+
+                            var (typename, err) = ParseTypeName(tokens, ref index);
+
+                            error = error ?? err;
+
+                            cast = new SaturatingTypeCast(typename);
+
+                            break;
+                        }
+
+                        default: {
+
+                            error = error ?? 
+                                new ParserError(
+                                    "Invalid cast syntax",
+                                    _span);
+
+                            cast = new TruncatingTypeCast(new UncheckedEmptyType());
+
+                            break;
+                        }
+                    }
+
+                    index += 1;
+
+                    expr = new UnaryOpExpression(expr, new TypeCastUnaryOperator(cast), _span);
+
+                    break;
+                }
 
                 case MinusMinusToken _: {
 
@@ -3534,101 +3747,10 @@ public static partial class ParserFunctions {
                         start: expr.GetSpan().Start,
                         end: endSpan.End);
 
-                    expr = new UnaryOpExpression(expr, UnaryOperator.PostDecrement, _span);
+                    expr = new UnaryOpExpression(expr, new PostDecrementUnaryOperator(), _span);
 
                     break;
                 }
-
-                ///
-
-                // case PeriodToken _: {
-
-                //     index += 1;
-
-                //     if (index < tokens.Count) {
-
-                //         switch (tokens.ElementAt(index)) {
-
-                //             case NumberToken number: {
-
-                //                 index += 1;
-
-                //                 var _span = new Span(
-                //                     fileId: expr.GetSpan().FileId,
-                //                     start: expr.GetSpan().Start,
-                //                     end: tokens.ElementAt(index).Span.End);
-
-                //                 expr = new IndexedTupleExpression(expr, number.Value, _span);
-
-                //                 break;
-                //             }
-
-                //             case NameToken name: {
-
-                //                 index += 1;
-
-                //                 if (index < tokens.Count) {
-
-                //                     if (tokens.ElementAt(index) is LParenToken) {
-
-                //                         index -= 1;
-
-                //                         var (method, err) = ParseCall(tokens, ref index);
-                                        
-                //                         error = error ?? err;
-
-                //                         var _span = new Span(
-                //                             fileId: expr.GetSpan().FileId,
-                //                             start: expr.GetSpan().Start,
-                //                             end: tokens.ElementAt(index).Span.End);
-
-                //                         expr = new MethodCallExpression(expr, method, _span);
-                //                     }
-                //                     else {
-    
-                //                         var _span = new Span(
-                //                             fileId: expr.GetSpan().FileId,
-                //                             start: expr.GetSpan().Start,
-                //                             end: tokens.ElementAt(index).Span.End);
-
-                //                         expr = new IndexedStructExpression(
-                //                             expr,
-                //                             name.Value,
-                //                             _span);
-                //                     }
-                //                 }
-                //                 else {
-
-                //                     var _span = new Span(
-                //                         fileId: expr.GetSpan().FileId,
-                //                         start: expr.GetSpan().Start,
-                //                         end: tokens.ElementAt(index).Span.End);
-
-                //                     expr = new IndexedStructExpression(
-                //                         expr,
-                //                         name.Value,
-                //                         _span);
-                //                 }
-
-                //                 break;
-                //             }
-
-                //             default: {
-
-                //                 index += 1;
-
-                //                 error = error ??
-                //                     new ParserError(
-                //                         "Unsupported index",
-                //                         tokens.ElementAt(index).Span);
-
-                //                 break;
-                //             }
-                //         }
-                //     }
-
-                //     break;
-                // }
 
                 case PeriodToken _: {
 
@@ -3889,8 +4011,6 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
-
                 case LSquareToken _: {
 
                     index += 1;
@@ -3948,8 +4068,6 @@ public static partial class ParserFunctions {
 
                     break;
                 }
-
-                ///
 
                 default: {
 

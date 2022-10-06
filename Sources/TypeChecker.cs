@@ -580,16 +580,13 @@ public partial class CheckedStatement {
 
     public partial class CheckedDeferStatement: CheckedStatement {
 
-        // public CheckedBlock Block { get; init; }
         public CheckedStatement Statement { get; init; }
 
         ///
 
         public CheckedDeferStatement(
-            // CheckedBlock block) {
             CheckedStatement statement) {
 
-            // this.Block = block;
             this.Statement = statement;
         }
     }
@@ -2254,7 +2251,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedExprErr;
 
-                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span, safetyMode);
+                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span, stack, safetyMode);
 
                 error = error ?? chkUnaryOpErr;
 
@@ -2460,7 +2457,8 @@ public static partial class TypeCheckerFunctions {
 
                         switch (checkedIdx.GetNeuType()) {
 
-                            case Int64Type _: {
+                            case var t when t.IsInteger(): {
+                            // case Int64Type _: {
 
                                 ty = vt.Type;
 
@@ -2742,13 +2740,25 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression expr,
         UnaryOperator op,
         Span span,
+        Stack stack,
         SafetyMode safetyMode) {
     
         var exprType = expr.GetNeuType();
 
         switch (op) {
+            
+            case TypeCastUnaryOperator tc: {
 
-            case UnaryOperator.Dereference: {
+                var uncheckedType = tc.TypeCast.GetUncheckedType();
+
+                var (ty, err) = TypeCheckTypeName(uncheckedType, stack);
+
+                return (
+                    new CheckedUnaryOpExpression(expr, op, ty),
+                    err);
+            }
+
+            case DereferenceUnaryOperator _: {
 
                 switch (exprType) {
 
@@ -2781,26 +2791,26 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case UnaryOperator.RawAddress: {
+            case RawAddressUnaryOperator _: {
 
                 return (
                     new CheckedUnaryOpExpression(expr, op, new RawPointerType(exprType)),
                     null);
             }
 
-            case UnaryOperator.LogicalNot: {
+            case LogicalNotUnaryOperator _: {
 
                 return (
-                    new CheckedUnaryOpExpression(expr, UnaryOperator.LogicalNot, exprType),
+                    new CheckedUnaryOpExpression(expr, new LogicalNotUnaryOperator(), exprType),
                     null);
             }
 
-            case UnaryOperator.BitwiseNot: {
+            case BitwiseNotUnaryOperator _: {
 
-                return (new CheckedUnaryOpExpression(expr, UnaryOperator.BitwiseNot, exprType), null);
+                return (new CheckedUnaryOpExpression(expr, new BitwiseNotUnaryOperator(), exprType), null);
             }
 
-            case UnaryOperator.Negate: {
+            case NegateUnaryOperator _: {
 
                 switch (exprType) {
 
@@ -2816,14 +2826,14 @@ public static partial class TypeCheckerFunctions {
                     case DoubleType _: {
 
                         return (
-                            new CheckedUnaryOpExpression(expr, UnaryOperator.Negate, exprType),
+                            new CheckedUnaryOpExpression(expr, new NegateUnaryOperator(), exprType),
                             null);
                     }
 
                     default: {
 
                         return (
-                            new CheckedUnaryOpExpression(expr, UnaryOperator.Negate, exprType),
+                            new CheckedUnaryOpExpression(expr, new NegateUnaryOperator(), exprType),
                             new TypeCheckError(
                                 "negate on non-numeric value",
                                 span));
@@ -2831,10 +2841,10 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case UnaryOperator.PostDecrement:
-            case UnaryOperator.PostIncrement:
-            case UnaryOperator.PreDecrement:
-            case UnaryOperator.PreIncrement: {
+            case PostDecrementUnaryOperator _:
+            case PostIncrementUnaryOperator _:
+            case PreDecrementUnaryOperator _:
+            case PreIncrementUnaryOperator _: {
 
                 switch (exprType) {
 

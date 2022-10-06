@@ -1,5 +1,0 @@
-func main() {
-    let result = "foo bar".split(' ')
-
-    printLine(result[1])
-}

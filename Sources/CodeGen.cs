@@ -61,12 +61,6 @@ public static partial class CodeGenFunctions {
             }
             else if (func.Linkage == FunctionLinkage.ImplicitConstructor) {
 
-                // var funcOutput = compiler.CodeGenConstructor(func, file);
-
-                // output.Append(funcOutput);
-
-                // output.Append("\n");
-
                 continue;
             }
             else {
@@ -116,8 +110,6 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         CheckedStruct structure,
         CheckedFile file) {
-
-        // var output = new StringBuilder($"struct {structure.Name} {{\n");
 
         if (structure.DefinitionLinkage == DefinitionLinkage.External) {
 
@@ -1023,51 +1015,124 @@ public static partial class CodeGenFunctions {
 
                 switch (unaryOp.Operator) {
 
-                    case UnaryOperator.PreIncrement: {
+                    case PreIncrementUnaryOperator _: {
 
                         output.Append("++");
 
                         break;
                     }
 
-                    case UnaryOperator.PreDecrement: {
+                    case PreDecrementUnaryOperator _: {
 
                         output.Append("--");
 
                         break;
                     }
 
-                    case UnaryOperator.Negate: {
+                    case NegateUnaryOperator _: {
 
                         output.Append('-');
 
                         break;
                     }
 
-                    case UnaryOperator.Dereference: {
+                    case DereferenceUnaryOperator _: {
 
                         output.Append('*');
 
                         break;
                     }
 
-                    case UnaryOperator.RawAddress: {
+                    case RawAddressUnaryOperator _: {
 
                         output.Append('&');
 
                         break;
                     }
 
-                    case UnaryOperator.LogicalNot: {
+                    case LogicalNotUnaryOperator _: {
 
                         output.Append('!');
 
                         break;
                     }
 
-                    case UnaryOperator.BitwiseNot: {
+                    case BitwiseNotUnaryOperator _: {
 
                         output.Append('~');
+
+                        break;
+                    }
+
+                    case TypeCastUnaryOperator tc: {
+
+                        switch (tc.TypeCast) {
+
+                            case FallibleTypeCast _: {
+
+                                if (unaryOp.Type.IsInteger()) {
+
+                                    output.Append("fallibleIntegerCast");
+                                }
+                                else {
+
+                                    output.Append("dynamic_cast");
+                                }
+
+                                break;
+                            }
+
+                            case InfallibleTypeCast _: {
+
+                                if (unaryOp.Type.IsInteger()) {
+
+                                    output.Append("infallibleIntegerCast");
+                                }
+                                else {
+
+                                    output.Append("dynamic_cast");
+                                }
+
+                                break;
+                            }
+
+                            case SaturatingTypeCast _: {
+
+                                if (unaryOp.Type.IsInteger()) {
+
+                                    output.Append("saturatingIntegerCast");
+                                }
+                                else {
+
+                                    output.Append("dynamic_cast");
+                                }
+
+                                break;
+                            }
+
+                            case TruncatingTypeCast _: {
+
+                                if (unaryOp.Type.IsInteger()) {
+
+                                    output.Append("truncatingIntegerCast");
+                                }
+                                else {
+
+                                    output.Append("dynamic_cast");
+                                }
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+
+                        output.Append('<');
+                        output.Append(compiler.CodeGenType(unaryOp.Type, file));
+                        output.Append(">(");
 
                         break;
                     }
@@ -1082,16 +1147,23 @@ public static partial class CodeGenFunctions {
 
                 switch (unaryOp.Operator) {
 
-                    case UnaryOperator.PostIncrement: {
+                    case PostIncrementUnaryOperator _: {
 
                         output.Append("++");
 
                         break;
                     }
 
-                    case UnaryOperator.PostDecrement: {
+                    case PostDecrementUnaryOperator _: {
 
                         output.Append("--");
+
+                        break;
+                    }
+
+                    case TypeCastUnaryOperator _: {
+
+                        output.Append(')');
 
                         break;
                     }
@@ -1296,8 +1368,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedVectorExpression ve: {
 
                 // (RefVector({1, 2, 3}))
@@ -1325,8 +1395,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedTupleExpression te: {
 
                 // (Tuple{1, 2, 3})
@@ -1353,8 +1421,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedIndexedExpression ie: {
 
                 output.Append("((");
@@ -1370,8 +1436,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedIndexedTupleExpression ite: {
 
                 // x.get<1>()
@@ -1382,8 +1446,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             case CheckedIndexedStructExpression ise: {
 
@@ -1414,8 +1476,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
             
             case CheckedGarbageExpression _: {
 
@@ -1424,8 +1484,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             default: {
 
