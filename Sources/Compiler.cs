@@ -5,32 +5,32 @@ public partial class Compiler {
 
     public List<(String, byte[])> RawFiles { get; init; }
 
-    public List<(String, Project)> CheckedFiles { get; init; }
-
     ///
 
     public Compiler() {
 
+        this.RawFiles = new List<(String, byte[])>();
+    }
+
+    public void IncludePrelude(
+        Project project,
+        ScopeStack stack) {
+
         var prelude = Compiler.Prelude();
-
-        var rawFiles = new List<(String, byte[])>();
-
-        var checkedFiles = new List<(String, Project)>();
 
         // Not sure where to put prelude, but we're hoping its parsing is infallible
 
-        rawFiles.Add(("<prelude>", prelude));
+        this.RawFiles.Add(("<prelude>", prelude));
 
         // Compile the prelude
 
-        var (lexed, _) = LexerFunctions.Lex(rawFiles.Count - 1, rawFiles[rawFiles.Count - 1].Item2);
+        var (lexed, _) = LexerFunctions.Lex(
+            this.RawFiles.Count - 1, 
+            this.RawFiles[this.RawFiles.Count - 1].Item2);
+
         var (file, _) = ParserFunctions.ParseFile(lexed);
-        var (chkdFile, _) = TypeCheckerFunctions.TypeCheckFile(file, new Project());
 
-        checkedFiles.Add(("<prelude>", chkdFile));
-
-        this.RawFiles = rawFiles;
-        this.CheckedFiles = checkedFiles;
+        TypeCheckerFunctions.TypeCheckFile(file, stack, project);
     }
 }
 
@@ -39,6 +39,12 @@ public partial class Compiler {
 public partial class Compiler {
 
     public ErrorOr<String> ConvertToCPP(String filename) {
+
+        var project = new Project();
+
+        var stack = new ScopeStack();
+
+        this.IncludePrelude(project, stack);
 
         var contents = ReadAllBytes(filename);
         
@@ -82,7 +88,7 @@ public partial class Compiler {
 
         ///
 
-        var (checkedFile, checkErr) = TypeCheckerFunctions.TypeCheckFile(parsedFile, this.CheckedFiles[0].Item2);
+        var checkErr = TypeCheckerFunctions.TypeCheckFile(parsedFile, stack, project);
 
         switch (checkErr) {
 
@@ -97,11 +103,12 @@ public partial class Compiler {
             }
         }
 
-        // TODO: do something with this
-
-        this.CheckedFiles.Add((filename, checkedFile));
-
-        return new ErrorOr<String>(this.CodeGen(checkedFile));
+        return new ErrorOr<String>(this.CodeGen(
+            project, 
+            stack
+                .Frames
+                .FirstOrDefault() 
+                ?? throw new Exception("internal error: missing global scope")));
     }
     
     public ErrorOrVoid Compile(
@@ -110,8 +117,6 @@ public partial class Compiler {
         var cppStringOrError = this.ConvertToCPP(filename);
 
         if (cppStringOrError.Error != null) {
-
-            // throw new Exception();
 
             return new ErrorOrVoid(cppStringOrError.Error);
         }

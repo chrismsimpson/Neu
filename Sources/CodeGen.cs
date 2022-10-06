@@ -7,13 +7,16 @@ public static partial class CodeGenFunctions {
 
     public static String CodeGen(
         this Compiler compiler,
-        Project file) {
+        Project project,
+        Scope scope) {
 
         var output = new StringBuilder();
 
         output.Append("#include \"../../../Runtime/lib.h\"\n");
 
-        foreach (var structure in file.Structs) {
+        foreach (var (_, structId) in scope.Structs) {
+
+            var structure = project.Structs[structId];
 
             var structOutput = compiler.CodeGenStructPredecl(structure);
 
@@ -26,9 +29,11 @@ public static partial class CodeGenFunctions {
         
         output.Append('\n');
 
-        foreach (var structure in file.Structs) {
+        foreach (var (_, structId) in scope.Structs) {
 
-            var structOutput = compiler.CodeGenStruct(structure, file);
+            var structure = project.Structs[structId];
+
+            var structOutput = compiler.CodeGenStruct(structure, project);
 
             if (!IsNullOrWhiteSpace(structOutput)) {
 
@@ -39,9 +44,11 @@ public static partial class CodeGenFunctions {
 
         output.Append('\n');
 
-        foreach (var func in file.Functions) {
+        foreach (var (_, funcId) in scope.Funcs) {
 
-            var funcOutput = compiler.CodeGenFuncPredecl(func, file);
+            var func = project.Functions[funcId];
+
+            var funcOutput = compiler.CodeGenFuncPredecl(func, project);
             
             if (func.Linkage != FunctionLinkage.ImplicitConstructor && func.Name != "main") {
 
@@ -53,7 +60,9 @@ public static partial class CodeGenFunctions {
 
         output.Append('\n');
 
-        foreach (var func in file.Functions) {
+        foreach (var (_, funcId) in scope.Funcs) {
+
+            var func = project.Functions[funcId];
 
             if (func.Linkage == FunctionLinkage.External) {
 
@@ -65,7 +74,7 @@ public static partial class CodeGenFunctions {
             }
             else {
                 
-                var funOutput = compiler.CodeGenFunc(func, file);
+                var funOutput = compiler.CodeGenFunc(func, project);
 
                 output.Append(funOutput);
 
@@ -109,7 +118,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenStruct(
         this Compiler compiler,
         CheckedStruct structure,
-        Project file) {
+        Project project) {
 
         if (structure.DefinitionLinkage == DefinitionLinkage.External) {
 
@@ -150,7 +159,7 @@ public static partial class CodeGenFunctions {
 
             output.Append(new String(' ', INDENT_SIZE));
 
-            output.Append(compiler.CodeGenType(field.Type, file));
+            output.Append(compiler.CodeGenType(field.Type, project));
             
             output.Append(' ');
             
@@ -159,11 +168,13 @@ public static partial class CodeGenFunctions {
             output.Append(";\n");
         }
 
-        foreach (var func in structure.Methods) {
+        foreach (var (_, funcId) in structure.Scope.Funcs) {
+
+            var func = project.Functions[funcId];
 
             if (func.Linkage == FunctionLinkage.ImplicitConstructor) {
 
-                var funcOutput = compiler.CodeGenConstructor(func, file);
+                var funcOutput = compiler.CodeGenConstructor(func, project);
 
                 output.Append(new String(' ', INDENT_SIZE));
                 output.Append(funcOutput);
@@ -178,7 +189,7 @@ public static partial class CodeGenFunctions {
                     output.Append("static ");
                 }
 
-                var methodOutput = compiler.CodeGenFunc(func, file);
+                var methodOutput = compiler.CodeGenFunc(func, project);
 
                 output.Append(methodOutput);
             }
@@ -192,7 +203,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenFuncPredecl(
         this Compiler compiler,
         CheckedFunction fun,
-        Project file) {
+        Project project) {
         
         var output = new StringBuilder();
 
@@ -207,7 +218,7 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            output.Append(compiler.CodeGenType(fun.ReturnType, file));
+            output.Append(compiler.CodeGenType(fun.ReturnType, project));
         }
 
         output.Append(' ');
@@ -234,7 +245,7 @@ public static partial class CodeGenFunctions {
                 output.Append("const ");
             }
 
-            var ty = compiler.CodeGenType(p.Variable.Type, file);
+            var ty = compiler.CodeGenType(p.Variable.Type, project);
 
             output.Append(ty);
 
@@ -251,7 +262,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenFunc(
         this Compiler compiler,
         CheckedFunction fun,
-        Project file) {
+        Project project) {
 
         var output = new StringBuilder();
 
@@ -261,7 +272,7 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            output.Append(compiler.CodeGenType(fun.ReturnType, file));
+            output.Append(compiler.CodeGenType(fun.ReturnType, project));
         }
 
         output.Append(' ');
@@ -309,7 +320,7 @@ public static partial class CodeGenFunctions {
                 output.Append("const ");
             }
 
-            var ty = compiler.CodeGenType(p.Variable.Type, file);
+            var ty = compiler.CodeGenType(p.Variable.Type, project);
 
             output.Append(ty);
 
@@ -332,7 +343,7 @@ public static partial class CodeGenFunctions {
             output.Append(new String(' ', INDENT_SIZE));
         }
 
-        var block = compiler.CodeGenBlock(INDENT_SIZE, fun.Block, file);
+        var block = compiler.CodeGenBlock(INDENT_SIZE, fun.Block, project);
 
         output.Append(block);
 
@@ -348,7 +359,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenConstructor(
         this Compiler compiler,
         CheckedFunction func,
-        Project file) {
+        Project project) {
 
         var output = new StringBuilder();
 
@@ -369,7 +380,7 @@ public static partial class CodeGenFunctions {
                 first = false;
             }
 
-            var ty = compiler.CodeGenType(p.Variable.Type, file);
+            var ty = compiler.CodeGenType(p.Variable.Type, project);
             output.Append(ty);
             output.Append(" a_");
             output.Append(p.Variable.Name);
@@ -404,7 +415,7 @@ public static partial class CodeGenFunctions {
     public static String CodeGenType(
         this Compiler compiler,
         NeuType ty,
-        Project file) {
+        Project project) {
 
         switch (ty) {
 
@@ -485,12 +496,12 @@ public static partial class CodeGenFunctions {
 
             case RawPointerType rp: {
 
-                return $"{compiler.CodeGenType(rp.Type, file)}*";
+                return $"{compiler.CodeGenType(rp.Type, project)}*";
             }
 
             case VectorType vt: {
 
-                return $"RefVector<{compiler.CodeGenType(vt.Type, file)}>";
+                return $"RefVector<{compiler.CodeGenType(vt.Type, project)}>";
             }
 
             case TupleType tt: {
@@ -510,7 +521,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.CodeGenType(t, file));
+                    output.Append(compiler.CodeGenType(t, project));
                 }
 
                 output.Append('>');
@@ -520,12 +531,12 @@ public static partial class CodeGenFunctions {
 
             case OptionalType ot: {
 
-                return $"Optional<{compiler.CodeGenType(ot.Type, file)}>";
+                return $"Optional<{compiler.CodeGenType(ot.Type, project)}>";
             }
 
             case StructType st: {
 
-                return file.Structs[st.StructId].Name;
+                return project.Structs[st.StructId].Name;
             }
 
             case UnknownType _: {
@@ -546,7 +557,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedBlock block,
-        Project file) {
+        Project project) {
 
         var output = new StringBuilder();
 
@@ -554,7 +565,7 @@ public static partial class CodeGenFunctions {
 
         foreach (var stmt in block.Stmts) {
 
-            var stmtStr = compiler.CodeGenStatement(indent + INDENT_SIZE, stmt, file);
+            var stmtStr = compiler.CodeGenStatement(indent + INDENT_SIZE, stmt, project);
 
             output.Append(stmtStr);
         }
@@ -570,7 +581,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedStatement stmt,
-        Project file) {
+        Project project) {
 
         var output = new StringBuilder();
 
@@ -582,7 +593,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedExpression expr: {
 
-                var exprStr = compiler.CodeGenExpr(indent, expr, file);
+                var exprStr = compiler.CodeGenExpr(indent, expr, project);
 
                 output.Append(exprStr);
 
@@ -599,7 +610,7 @@ public static partial class CodeGenFunctions {
                 output.Append("#define __SCOPE_GUARD_NAME __scope_guard_ ## __COUNTER__\n");
                 output.Append("ScopeGuard __SCOPE_GUARD_NAME  ([&] \n");
                 output.Append("#undef __SCOPE_GUARD_NAME\n{");
-                output.Append(compiler.CodeGenStatement(indent, defer.Statement, file));
+                output.Append(compiler.CodeGenStatement(indent, defer.Statement, project));
                 output.Append("});\n");
 
                 break;
@@ -609,7 +620,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedReturnStatement rs: {
 
-                var exprStr = compiler.CodeGenExpr(indent, rs.Expr, file);
+                var exprStr = compiler.CodeGenExpr(indent, rs.Expr, project);
 
                 output.Append("return (");
                 
@@ -624,7 +635,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedIfStatement ifStmt: {
 
-                var exprStr = compiler.CodeGenExpr(indent, ifStmt.Expr, file);
+                var exprStr = compiler.CodeGenExpr(indent, ifStmt.Expr, project);
 
                 output.Append("if (");
                 
@@ -632,7 +643,7 @@ public static partial class CodeGenFunctions {
                 
                 output.Append(") ");
 
-                var blockStr = compiler.CodeGenBlock(indent, ifStmt.Block, file);
+                var blockStr = compiler.CodeGenBlock(indent, ifStmt.Block, project);
                 
                 output.Append(blockStr);
 
@@ -642,7 +653,7 @@ public static partial class CodeGenFunctions {
 
                     output.Append("else ");
 
-                    var elseStr = compiler.CodeGenStatement(indent, e, file);
+                    var elseStr = compiler.CodeGenStatement(indent, e, project);
 
                     output.Append(elseStr);
                 }
@@ -654,7 +665,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedWhileStatement whileStmt: {
 
-                var exprStr = compiler.CodeGenExpr(indent, whileStmt.Expression, file);
+                var exprStr = compiler.CodeGenExpr(indent, whileStmt.Expression, project);
 
                 output.Append("while (");
                 
@@ -662,7 +673,7 @@ public static partial class CodeGenFunctions {
                 
                 output.Append(") ");
 
-                var blockStr = compiler.CodeGenBlock(indent, whileStmt.Block, file);
+                var blockStr = compiler.CodeGenBlock(indent, whileStmt.Block, project);
                 
                 output.Append(blockStr);
 
@@ -678,11 +689,11 @@ public static partial class CodeGenFunctions {
                     output.Append("const ");
                 }
 
-                output.Append(compiler.CodeGenType(vd.VarDecl.Type, file));
+                output.Append(compiler.CodeGenType(vd.VarDecl.Type, project));
                 output.Append(" ");
                 output.Append(vd.VarDecl.Name);
                 output.Append(" = ");
-                output.Append(compiler.CodeGenExpr(indent, vd.Expr, file));
+                output.Append(compiler.CodeGenExpr(indent, vd.Expr, project));
                 output.Append(";\n");
 
                 break;
@@ -692,7 +703,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedBlockStatement chBlockStmt: {
 
-                var blockStr = compiler.CodeGenBlock(indent, chBlockStmt.Block, file);
+                var blockStr = compiler.CodeGenBlock(indent, chBlockStmt.Block, project);
 
                 output.Append(blockStr);
 
@@ -726,7 +737,7 @@ public static partial class CodeGenFunctions {
         this Compiler compiler,
         int indent,
         CheckedExpression expr,
-        Project file) {
+        Project project) {
 
         var output = new StringBuilder();
 
@@ -742,7 +753,7 @@ public static partial class CodeGenFunctions {
             case CheckedOptionalSomeExpression o: {
 
                 output.Append('(');
-                output.Append(compiler.CodeGenExpr(indent, o.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, o.Expression, project));
                 output.Append(')');
 
                 break;
@@ -751,7 +762,7 @@ public static partial class CodeGenFunctions {
             case CheckedForceUnwrapExpression f: {
 
                 output.Append('(');
-                output.Append(compiler.CodeGenExpr(indent, f.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, f.Expression, project));
                 output.Append(".value())");
 
                 break;
@@ -891,7 +902,7 @@ public static partial class CodeGenFunctions {
                         
                         foreach (var param in ce.Call.Args) {
 
-                            output.Append(compiler.CodeGenExpr(indent, param.Item2, file));
+                            output.Append(compiler.CodeGenExpr(indent, param.Item2, project));
                         }
                         
                         output.Append(")");
@@ -905,7 +916,7 @@ public static partial class CodeGenFunctions {
                         
                         foreach (var param in ce.Call.Args) {
 
-                            output.Append(compiler.CodeGenExpr(indent, param.Item2, file));
+                            output.Append(compiler.CodeGenExpr(indent, param.Item2, project));
                         }
                         
                         output.Append(")");
@@ -948,7 +959,7 @@ public static partial class CodeGenFunctions {
                                 first = false;
                             }
 
-                            output.Append(compiler.CodeGenExpr(indent, parameter.Item2, file));
+                            output.Append(compiler.CodeGenExpr(indent, parameter.Item2, project));
                         }
 
                         output.Append(")");
@@ -965,7 +976,7 @@ public static partial class CodeGenFunctions {
                 output.Append('(');
 
                 output.Append('(');
-                output.Append(compiler.CodeGenExpr(indent, mce.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, mce.Expression, project));
                 output.Append(")");
 
                 switch (mce.Expression) {
@@ -1001,7 +1012,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.CodeGenExpr(indent, param.Item2, file));
+                    output.Append(compiler.CodeGenExpr(indent, param.Item2, project));
                 }
 
                 output.Append("))");
@@ -1131,7 +1142,7 @@ public static partial class CodeGenFunctions {
                         }
 
                         output.Append('<');
-                        output.Append(compiler.CodeGenType(unaryOp.Type, file));
+                        output.Append(compiler.CodeGenType(unaryOp.Type, project));
                         output.Append(">(");
 
                         break;
@@ -1143,7 +1154,7 @@ public static partial class CodeGenFunctions {
                     }
                 }
 
-                output.Append(compiler.CodeGenExpr(indent, unaryOp.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, unaryOp.Expression, project));
 
                 switch (unaryOp.Operator) {
 
@@ -1183,7 +1194,7 @@ public static partial class CodeGenFunctions {
 
                 output.Append("(");
 
-                output.Append(compiler.CodeGenExpr(indent, binOp.Lhs, file));
+                output.Append(compiler.CodeGenExpr(indent, binOp.Lhs, project));
 
                 switch (binOp.Operator) {
 
@@ -1361,7 +1372,7 @@ public static partial class CodeGenFunctions {
                     }
                 }
 
-                output.Append(compiler.CodeGenExpr(indent, binOp.Rhs, file));
+                output.Append(compiler.CodeGenExpr(indent, binOp.Rhs, project));
 
                 output.Append(")");
 
@@ -1387,7 +1398,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.CodeGenExpr(indent, val, file));
+                    output.Append(compiler.CodeGenExpr(indent, val, project));
                 }
 
                 output.Append("}))");
@@ -1413,7 +1424,7 @@ public static partial class CodeGenFunctions {
                         first = false;
                     }
 
-                    output.Append(compiler.CodeGenExpr(indent, val, file));
+                    output.Append(compiler.CodeGenExpr(indent, val, project));
                 }
 
                 output.Append("})");
@@ -1425,11 +1436,11 @@ public static partial class CodeGenFunctions {
 
                 output.Append("((");
             
-                output.Append(compiler.CodeGenExpr(indent, ie.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, ie.Expression, project));
             
                 output.Append(")[");
             
-                output.Append(compiler.CodeGenExpr(indent, ie.Index, file));
+                output.Append(compiler.CodeGenExpr(indent, ie.Index, project));
             
                 output.Append("])");
 
@@ -1441,7 +1452,7 @@ public static partial class CodeGenFunctions {
                 // x.get<1>()
                 
                 output.Append("((");
-                output.Append(compiler.CodeGenExpr(indent, ite.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, ite.Expression, project));
                 output.Append($").get<{ite.Index}>())");
 
                 break;
@@ -1452,7 +1463,7 @@ public static partial class CodeGenFunctions {
                 // x.someName
                 
                 output.Append("((");
-                output.Append(compiler.CodeGenExpr(indent, ise.Expression, file));
+                output.Append(compiler.CodeGenExpr(indent, ise.Expression, project));
                 output.Append(')');
 
                 switch (ise.Expression) {

@@ -7,6 +7,8 @@
 
 12/05/22: e723cd66ea65496debecc9a6c679f12a1efcd6db hex literals
 
+14/05/22: 34d9663d036209aaa0cbf6d44e8f3a924f24e699 ns part 1
+
 
 
 

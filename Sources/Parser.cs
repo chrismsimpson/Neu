@@ -548,17 +548,14 @@ public static partial class StatementFunctions {
 
 public partial class DeferStatement: Statement {
 
-    // public Block Block { get; init; }
     public Statement Statement { get; init; }
 
     ///
 
     public DeferStatement(
-        // Block block)
         Statement statement)
         : base() { 
 
-        // this.Block = block;
         this.Statement = statement;
     }
 }
@@ -569,7 +566,6 @@ public static partial class DeferStatementFunctions {
         DeferStatement? l,
         DeferStatement? r) {
 
-        // return BlockFunctions.Eq(l?.Block, r?.Block);
         return StatementFunctions.Eq(l?.Statement, r?.Statement);
     }
 }
@@ -1602,19 +1598,6 @@ public static partial class TypeCastFunctions {
         }
     }
 }
-
-// public enum UnaryOperator {
-
-//     PreIncrement,
-//     PostIncrement,
-//     PreDecrement,
-//     PostDecrement,
-//     Negate,
-//     Dereference,
-//     RawAddress,
-//     LogicalNot,
-//     BitwiseNot
-// }
 
 public partial class UnaryOperator {
 
