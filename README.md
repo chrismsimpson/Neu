@@ -15,3 +15,5 @@ You `var` (mutable) or `let` (immutable) things.
 Instances are denoted with `(this, ...`, mutable instances with `(var this, ...`. May be subject to change.
 
 `func` is the keyword specifier for functions.
+
+C's `char` and `int` are mapped to `CChar` and `CInt`, respectively.
