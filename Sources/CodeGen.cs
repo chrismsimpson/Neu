@@ -168,7 +168,10 @@ public static partial class CodeGenFunctions {
             output.Append(";\n");
         }
 
-        foreach (var (_, funcId) in structure.Scope.Funcs) {
+        var scope = project.Scopes[structure.ScopeId];
+
+        // foreach (var (_, funcId) in structure.Scope.Funcs) {
+        foreach (var (_, funcId) in scope.Funcs) {
 
             var func = project.Functions[funcId];
 

@@ -317,19 +317,192 @@ public partial class Project {
 
     public List<CheckedStruct> Structs { get; init; }
 
+    public List<Scope> Scopes { get; init; }
+
     ///
 
-    public Project()
-        : this(
-            new List<CheckedFunction>(),
-            new List<CheckedStruct>()) { }
+    public Project() {
 
-    public Project(
-        List<CheckedFunction> functions,
-        List<CheckedStruct> structs) {
+        // Top-level (project-global) scope has no parent scope
+        // and is the parent scope of all file scopes
+        // var projectGlobalScope = new Scope()
 
-        this.Functions = functions;
-        this.Structs = structs;
+        var projectGlobalScope = new Scope(null);
+
+        this.Functions = new List<CheckedFunction>();
+        this.Structs = new List<CheckedStruct>();
+        this.Scopes = new List<Scope>(new [] { projectGlobalScope });
+    }
+
+    // public Project(
+    //     List<CheckedFunction> functions,
+    //     List<CheckedStruct> structs,
+    //     List<Scope> scopes) {
+
+    //     this.Functions = functions;
+    //     this.Structs = structs;
+    //     this.Scopes = scopes;
+    // }
+}
+
+public static partial class ProjectFunctions {
+
+    public static Int32 CreateScope(
+        this Project project,
+        Int32 parentId) {
+
+        project.Scopes.Add(new Scope(parentId));
+
+        return project.Scopes.Count - 1;
+    }
+
+    public static ErrorOrVoid AddVarToScope(
+        this Project project,
+        Int32 scopeId,
+        CheckedVariable var,
+        Span span) {
+
+        var scope = project.Scopes[scopeId];
+
+        foreach (var existingVar in scope.Vars) {
+
+            if (var.Name == existingVar.Name) {
+
+                return new ErrorOrVoid(
+                    new TypeCheckError(
+                        $"redefinition of {var.Name}",
+                        span));
+            }
+        }
+
+        scope.Vars.Add(var);
+
+        return new ErrorOrVoid();
+    }
+
+    public static CheckedVariable? FindVarInScope(
+        this Project project,
+        Int32 scopeId,
+        String var) {
+
+        Int32? currentId = scopeId;
+
+        while (currentId != null) {
+
+            var scope = project.Scopes[currentId.Value];
+
+            foreach (var v in scope.Vars) {
+
+                if (v.Name == var) {
+
+                    return v;
+                }
+            }
+
+            currentId = scope.Parent;
+        }
+
+        return null;
+    }
+
+    public static ErrorOrVoid AddStructToScope(
+        this Project project,
+        Int32 scopeId,
+        String name,
+        Int32 structId,
+        Span span) {
+
+        var scope = project.Scopes[scopeId];
+
+        foreach (var (existingStruct, _) in scope.Structs) {
+
+            if (name == existingStruct) {
+
+                return new ErrorOrVoid(
+                    new TypeCheckError(
+                        $"redefinition of {name}",
+                        span));
+            }
+        }
+
+        scope.Structs.Add((name, structId));
+
+        return new ErrorOrVoid();
+    }
+
+    public static Int32? FindStructInScope(
+        this Project project,
+        Int32 scopeId,
+        String structure) {
+
+        Int32? currentId = scopeId;
+
+        while (currentId != null) {
+
+            var scope = project.Scopes[currentId.Value];
+
+            foreach (var s in scope.Structs) {
+
+                if (s.Item1 == structure) {
+
+                    return s.Item2;
+                }
+            }
+
+            currentId = scope.Parent;
+        }
+
+        return null;
+    }
+
+    public static ErrorOrVoid AddFuncToScope(
+        this Project project,
+        Int32 scopeId,
+        String name,
+        Int32 funcId,
+        Span span) {
+
+        var scope = project.Scopes[scopeId];
+
+        foreach (var (existingFunc, _) in scope.Funcs) {
+
+            if (name == existingFunc) {
+
+                return new ErrorOrVoid(
+                    new TypeCheckError(
+                        $"redefinition of {name}",
+                        span));
+            }
+        }
+
+        scope.Funcs.Add((name, funcId));
+
+        return new ErrorOrVoid();
+    }
+
+    public static Int32? FindFuncInScope(
+        this Project project,
+        Int32 scopeId,
+        String funcName) {
+
+        Int32? currentId = scopeId;
+
+        while (currentId != null) {
+
+            var scope = project.Scopes[currentId.Value];
+
+            foreach (var s in scope.Funcs) {
+
+                if (s.Item1 == funcName) {
+
+                    return s.Item2;
+                }
+            }
+
+            currentId = scope.Parent;
+        }
+
+        return null;
     }
 }
 
@@ -341,7 +514,9 @@ public partial class CheckedStruct {
 
     public List<CheckedVarDecl> Fields { get; set; }
 
-    public Scope Scope { get; init; }
+    // public Scope Scope { get; init; }
+
+    public Int32 ScopeId { get; init; }
 
     public DefinitionLinkage DefinitionLinkage { get; init; }
 
@@ -352,13 +527,15 @@ public partial class CheckedStruct {
     public CheckedStruct(
         String name,
         List<CheckedVarDecl> fields,
-        Scope scope,
+        // Scope scope,
+        Int32 scopeId,
         DefinitionLinkage definitionLinkage,
         DefinitionType definitionType) {
 
         this.Name = name;
         this.Fields = fields;
-        this.Scope = scope;
+        // this.Scope = scope;
+        this.ScopeId = scopeId;
         this.DefinitionLinkage = definitionLinkage;
         this.DefinitionType = definitionType;
     }
@@ -1326,170 +1503,170 @@ public partial class CheckedCall {
     }
 }
 
-public partial class ScopeStack {
+// public partial class ScopeStack {
     
-    public List<Scope> Frames { get; init; }
+//     public List<Scope> Frames { get; init; }
 
-    ///
+//     ///
 
-    public ScopeStack()
-        : this(new List<Scope>(new [] { new Scope() })) { }
+//     public ScopeStack()
+//         : this(new List<Scope>(new [] { new Scope() })) { }
 
-    public ScopeStack(
-        List<Scope> frames) {
+//     public ScopeStack(
+//         List<Scope> frames) {
 
-        this.Frames = frames;
-    }
-}
+//         this.Frames = frames;
+//     }
+// }
 
 ///
 
-public static partial class ScopeStackFunctions {
+// public static partial class ScopeStackFunctions {
 
-    public static void PushFrame(
-        this ScopeStack s) {
+//     public static void PushFrame(
+//         this ScopeStack s) {
 
-        s.Frames.Add(new Scope());
-    }    
+//         s.Frames.Add(new Scope());
+//     }    
 
-    public static void PopFrame(
-        this ScopeStack s) {
+//     public static void PopFrame(
+//         this ScopeStack s) {
 
-        s.Frames.Pop();
-    }
+//         s.Frames.Pop();
+//     }
 
-    public static Error? AddVar(
-        this ScopeStack s, 
-        CheckedVariable v, 
-        Span span) {
+//     public static Error? AddVar(
+//         this ScopeStack s, 
+//         CheckedVariable v, 
+//         Span span) {
 
-        if (s.Frames.Last() is Scope frame) {
+//         if (s.Frames.Last() is Scope frame) {
 
-            foreach (var existingVar in frame.Vars) {
+//             foreach (var existingVar in frame.Vars) {
 
-                if (v.Name == existingVar.Name) {
+//                 if (v.Name == existingVar.Name) {
 
-                    return new TypeCheckError(
-                        $"redefinition of {v.Name}",
-                        span);
-                }
-            }
+//                     return new TypeCheckError(
+//                         $"redefinition of {v.Name}",
+//                         span);
+//                 }
+//             }
 
-            frame.Vars.Add(v);
-        }
+//             frame.Vars.Add(v);
+//         }
 
-        return null;
-    }
+//         return null;
+//     }
 
-    public static CheckedVariable? FindVar(
-        this ScopeStack s, 
-        String varName) {
+//     public static CheckedVariable? FindVar(
+//         this ScopeStack s, 
+//         String varName) {
 
-        for (var i = s.Frames.Count - 1; i >= 0; --i) {
+//         for (var i = s.Frames.Count - 1; i >= 0; --i) {
 
-            var frame = s.Frames.ElementAt(i);
+//             var frame = s.Frames.ElementAt(i);
 
-            foreach (var v in frame.Vars) {
+//             foreach (var v in frame.Vars) {
 
-                if (v.Name == varName) {
+//                 if (v.Name == varName) {
 
-                    return v;
-                }
-            }
-        }
+//                     return v;
+//                 }
+//             }
+//         }
 
-        return null;
-    }
+//         return null;
+//     }
 
-    public static ErrorOrVoid AddStruct(
-        this ScopeStack s, 
-        String name,
-        Int32 structId,
-        Span span) {
+//     public static ErrorOrVoid AddStruct(
+//         this ScopeStack s, 
+//         String name,
+//         Int32 structId,
+//         Span span) {
 
-        if (s.Frames.LastOrDefault() is Scope scope) {
+//         if (s.Frames.LastOrDefault() is Scope scope) {
 
-            foreach (var (existingStruct, existingStructId) in scope.Structs) {
+//             foreach (var (existingStruct, existingStructId) in scope.Structs) {
 
-                if (name == existingStruct) {
+//                 if (name == existingStruct) {
 
-                    return new ErrorOrVoid(new TypeCheckError($"redefinition of {name}", span));
-                }
-            }
+//                     return new ErrorOrVoid(new TypeCheckError($"redefinition of {name}", span));
+//                 }
+//             }
 
-            scope.Structs.Add((name, structId));
-        }
+//             scope.Structs.Add((name, structId));
+//         }
 
-        return new ErrorOrVoid();
-    }
+//         return new ErrorOrVoid();
+//     }
 
-    public static Int32? FindStruct(
-        this ScopeStack s,
-        String structure) {
+//     public static Int32? FindStruct(
+//         this ScopeStack s,
+//         String structure) {
 
-        for (var f = s.Frames.Count - 1; f >= 0; f--) {
+//         for (var f = s.Frames.Count - 1; f >= 0; f--) {
 
-            var frame = s.Frames[f];
+//             var frame = s.Frames[f];
 
-            foreach (var st in frame.Structs) {
+//             foreach (var st in frame.Structs) {
 
-                if (st.Item1 == structure) {
+//                 if (st.Item1 == structure) {
 
-                    return st.Item2;
-                }
-            }
-        }
+//                     return st.Item2;
+//                 }
+//             }
+//         }
 
-        ///
+//         ///
 
-        return null;
-    }
+//         return null;
+//     }
 
-    public static ErrorOrVoid AddFunc(
-        this ScopeStack s,
-        String name,
-        int funcId,
-        Span span) {
+//     public static ErrorOrVoid AddFunc(
+//         this ScopeStack s,
+//         String name,
+//         int funcId,
+//         Span span) {
 
-        if (s.Frames.LastOrDefault() is Scope scope) {
+//         if (s.Frames.LastOrDefault() is Scope scope) {
 
-            foreach (var (existingFunc, _) in scope.Funcs) {
+//             foreach (var (existingFunc, _) in scope.Funcs) {
 
-                if (name == existingFunc) {
+//                 if (name == existingFunc) {
 
-                    return new ErrorOrVoid(
-                        new TypeCheckError(
-                            $"redefinition of {name}",
-                            span));
-                }
-            }
+//                     return new ErrorOrVoid(
+//                         new TypeCheckError(
+//                             $"redefinition of {name}",
+//                             span));
+//                 }
+//             }
 
-            scope.Funcs.Add((name, funcId));
-        }
+//             scope.Funcs.Add((name, funcId));
+//         }
 
-        return new ErrorOrVoid();
-    }
+//         return new ErrorOrVoid();
+//     }
 
-    public static Int32? FindFunc(
-        this ScopeStack s,
-        String funcName) {
+//     public static Int32? FindFunc(
+//         this ScopeStack s,
+//         String funcName) {
 
-        for (var f = s.Frames.Count - 1; f >= 0; f--) {
+//         for (var f = s.Frames.Count - 1; f >= 0; f--) {
 
-            var frame = s.Frames[f];
+//             var frame = s.Frames[f];
 
-            foreach (var func in frame.Funcs) {
+//             foreach (var func in frame.Funcs) {
 
-                if (func.Item1 == funcName) {
+//                 if (func.Item1 == funcName) {
 
-                    return func.Item2;
-                }
-            }
-        }
+//                     return func.Item2;
+//                 }
+//             }
+//         }
 
-        return null;
-    }
-}
+//         return null;
+//     }
+// }
 
 ///
 
@@ -1501,50 +1678,56 @@ public partial class Scope {
 
     public List<(String, Int32)> Funcs { get; init; }
 
+    public Int32? Parent { get; init; }
+
     ///
 
-    public Scope() 
+    public Scope(
+        Int32? parent) 
         : this(
             new List<CheckedVariable>(),
             new List<(String, Int32)>(),
-            new List<(String, Int32)>()) { }
+            new List<(String, Int32)>(),
+            parent) { }
 
     public Scope(
         List<CheckedVariable> vars,
         List<(String, Int32)> structs,
-        List<(String, Int32)> funcs) {
+        List<(String, Int32)> funcs,
+        Int32? parent) {
 
         this.Vars = vars;
         this.Structs = structs;
         this.Funcs = funcs;
+        this.Parent = parent;
     }
 }
 
-public static partial class ScopeFunctions {
+// public static partial class ScopeFunctions {
 
-    public static Int32? FindFunc(
-        this Scope s,
-        String name) {
+//     public static Int32? FindFunc(
+//         this Scope s,
+//         String name) {
 
-        foreach (var f in s.Funcs) {
+//         foreach (var f in s.Funcs) {
 
-            if (f.Item1 == name) {
+//             if (f.Item1 == name) {
 
-                return f.Item2;
-            }
-        }
+//                 return f.Item2;
+//             }
+//         }
 
-        return null;
-    }
+//         return null;
+//     }
 
-    public static void AddFunc(
-        this Scope s,
-        String name,
-        Int32 funcId) {
+//     public static void AddFunc(
+//         this Scope s,
+//         String name,
+//         Int32 funcId) {
         
-        s.Funcs.Add((name, funcId));
-    }
-}
+//         s.Funcs.Add((name, funcId));
+//     }
+// }
 
 ///
 
@@ -1552,7 +1735,8 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckFile(
         ParsedFile parsedFile,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 scopeId,
         Project project) {
 
         Error? error = null;
@@ -1565,14 +1749,14 @@ public static partial class TypeCheckerFunctions {
 
             var structure = parsedFile.Structs.ElementAt(structId);
 
-            TypeCheckStructPredecl(structure, structId + projectStructLength, stack, project);
+            TypeCheckStructPredecl(structure, structId + projectStructLength, scopeId, project);
         }
 
         foreach (var fun in parsedFile.Functions) {
             
             // Ensure we know the function ahead of time, so they can be recursive
             
-            error = error ?? TypeCheckFuncPredecl(fun, stack, project);
+            error = error ?? TypeCheckFuncPredecl(fun, scopeId, project);
         }
 
         for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
@@ -1582,13 +1766,13 @@ public static partial class TypeCheckerFunctions {
             error = error ?? TypeCheckStruct(
                 structure, 
                 structId + projectStructLength,
-                stack, 
+                scopeId, 
                 project);
         }
 
         foreach (var fun in parsedFile.Functions) {
 
-            error = error ?? TypeCheckFunc(fun, stack, project);
+            error = error ?? TypeCheckFunc(fun, scopeId, project);
         }
 
         return error;
@@ -1597,12 +1781,14 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckStructPredecl(
         Struct structure,
         Int32 structId,
-        ScopeStack stack, 
+        // ScopeStack stack, 
+        Int32 parentScopeId,
         Project project) {
 
         Error? error = null;
 
-        var scope = new Scope();
+        // var scope = new Scope();
+        var structScopeId = project.CreateScope(parentScopeId);
 
         foreach (var func in structure.Methods) {
 
@@ -1629,7 +1815,7 @@ public static partial class TypeCheckerFunctions {
                 }
                 else {
 
-                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, stack);
+                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, structScopeId, project);
 
                     error = error ?? err;
 
@@ -1647,20 +1833,31 @@ public static partial class TypeCheckerFunctions {
 
             project.Functions.Add(checkedFunction);
 
-            scope.AddFunc(func.Name, project.Functions.Count - 1);
+            // scope.AddFunc(func.Name, project.Functions.Count - 1);
+
+            if (project.AddFuncToScope(structScopeId, func.Name, project.Functions.Count - 1, structure.Span).Error is Error e1) {
+
+                error = error ?? e1;
+            }
         }
 
         project.Structs.Add(
             new CheckedStruct(
                 name: structure.Name,
                 fields: new List<CheckedVarDecl>(),
-                scope,
+                // scope,
+                scopeId: structScopeId,
                 definitionLinkage: structure.DefinitionLinkage,
                 definitionType: structure.DefinitionType));
 
-        if (stack.AddStruct(structure.Name, structId, structure.Span).Error is Error e) {
+        // if (stack.AddStruct(structure.Name, structId, structure.Span).Error is Error e) {
 
-            error = error ?? e;
+        //     error = error ?? e;
+        // }
+
+        if (project.AddStructToScope(parentScopeId, structure.Name, structId, structure.Span).Error is Error e2) {
+
+            error = error ?? e2;
         }
 
         return error;
@@ -1669,7 +1866,8 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckStruct(
         Struct structure,
         Int32 structId,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 parentScopeId,
         Project project) {
 
         Error? error = null;
@@ -1678,7 +1876,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var uncheckedMember in structure.Fields) {
 
-            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, stack);
+            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, parentScopeId, project);
 
             error = error ?? checkedMemberTypeErr;
 
@@ -1719,21 +1917,37 @@ public static partial class TypeCheckerFunctions {
 
         project.Functions.Add(checkedConstructor);
 
-        if (stack.AddFunc(structure.Name, project.Functions.Count - 1, structure.Span).Error is Error e) {
+        var checkedStructScopeId = checkedStruct.ScopeId;
 
-            error = error ?? e;
+        // Add constructor to the struct's scope
+
+        // if (stack.AddFunc(structure.Name, project.Functions.Count - 1, structure.Span).Error is Error e) {
+
+        //     error = error ?? e;
+        // }
+
+        if (project.AddFuncToScope(checkedStructScopeId, structure.Name, project.Functions.Count - 1, structure.Span).Error is Error e1) {
+
+            error = error ?? e1;
         }
 
-        checkedStruct = project.Structs[structId];
+        // checkedStruct = project.Structs[structId];
 
-        checkedStruct
-            .Scope
-            .Funcs
-            .Add((structure.Name, project.Functions.Count - 1));
+        // checkedStruct
+        //     .Scope
+        //     .Funcs
+        //     .Add((structure.Name, project.Functions.Count - 1));
+
+        // Add helper function for constructor to the parent scope
+
+        if (project.AddFuncToScope(parentScopeId, structure.Name, project.Functions.Count - 1, structure.Span).Error is Error e2) {
+
+            error = error ?? e2;
+        }
         
         foreach (var func in structure.Methods) {
 
-            error = error ?? TypeCheckMethod(func, stack, project, structId);
+            error = error ?? TypeCheckMethod(func, checkedStructScopeId, project, structId);
         }
         
         return error;
@@ -1741,7 +1955,8 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckFuncPredecl(
         Function func,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 parentScopeId,
         Project project) {
 
         Error? error = null;
@@ -1755,7 +1970,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var param in func.Parameters) {
 
-            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, stack);
+            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, parentScopeId, project);
 
             error = error ?? typeCheckNameErr;
 
@@ -1774,9 +1989,14 @@ public static partial class TypeCheckerFunctions {
 
         project.Functions.Add(checkedFunction);
 
-        if (stack.AddFunc(func.Name, funcId, func.NameSpan).Error is Error e) {
+        // if (stack.AddFunc(func.Name, funcId, func.NameSpan).Error is Error e) {
 
-            error = error ?? e;
+        //     error = error ?? e;
+        // }
+
+        if (project.AddFuncToScope(parentScopeId, func.Name, funcId, func.NameSpan).Error is Error e1) {
+
+            error = error ?? e1;
         }
 
         return error;
@@ -1784,34 +2004,55 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckFunc(
         Function func,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 parentScopeId,
         Project project) {
 
         Error? error = null;
 
-        stack.PushFrame();
+        // stack.PushFrame();
 
-        var funcId = stack
-            .FindFunc(func.Name) 
+        var functionScopeId = project.CreateScope(parentScopeId);
+
+        // var funcId = stack
+        //     .FindFunc(func.Name) 
+        //     ?? throw new Exception("Internal error: missing previously defined function");
+
+        var funcId = project
+            .FindFuncInScope(parentScopeId, func.Name) 
             ?? throw new Exception("Internal error: missing previously defined function");
 
         var checkedFunction = project.Functions[funcId];
 
+        var paramVars = new List<CheckedVariable>();
+
         foreach (var param in checkedFunction.Parameters) {
 
-            if (stack.AddVar(param.Variable, func.NameSpan) is Error e) {
+            // if (stack.AddVar(param.Variable, func.NameSpan) is Error e) {
 
-                error = error ?? e;
+            //     error = error ?? e;
+            // }
+
+            paramVars.Add(param.Variable);
+        }
+
+        foreach (var var in paramVars) {
+
+            if (project.AddVarToScope(functionScopeId, var, func.NameSpan).Error is Error e1) {
+
+                error = error ?? e1;
             }
         }
 
-        var (block, typeCheckBlockErr) = TypeCheckBlock(func.Block, stack, project, SafetyMode.Safe);
+        var (block, typeCheckBlockErr) = TypeCheckBlock(func.Block, functionScopeId, project, SafetyMode.Safe);
 
         error = error ?? typeCheckBlockErr;
 
-        stack.PopFrame();
+        // stack.PopFrame();
 
-        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+        // var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+
+        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, parentScopeId, project);
 
         error = error ?? typeCheckReturnTypeErr;
 
@@ -1863,38 +2104,64 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckMethod(
         Function func,
-        ScopeStack stack,
+        // ScopeStack stack
+        Int32 parentScopeId,
         Project project,
         Int32 structId) { 
 
         Error? error = null;
 
-        stack.PushFrame();
+        // stack.PushFrame();
+
+        var funcScopeId = project.CreateScope(parentScopeId);
 
         var structure = project.Structs[structId];
 
-        var methodId = structure
-            .Scope
-            .FindFunc(func.Name) 
+        var structureScopeId = structure.ScopeId;
+
+        // var methodId = structure
+        //     .Scope
+        //     .FindFunc(func.Name) 
+        //     ?? throw new Exception("Internal error: we just pushed the checked function, but it's not present");
+
+        var methodId = project
+            .FindFuncInScope(structureScopeId, func.Name)
             ?? throw new Exception("Internal error: we just pushed the checked function, but it's not present");
 
         var checkedFunction = project.Functions[methodId];
 
+        var paramVars = new List<CheckedVariable>();
+
+        // foreach (var param in checkedFunction.Parameters) {
+
+        //     if (stack.AddVar(param.Variable, func.NameSpan) is Error e) {
+
+        //         error = error ?? e;
+        //     }
+        // }
+
         foreach (var param in checkedFunction.Parameters) {
 
-            if (stack.AddVar(param.Variable, func.NameSpan) is Error e) {
+            paramVars.Add(param.Variable);
+        }
 
-                error = error ?? e;
+        foreach (var variable in paramVars) {
+
+            if (project.AddVarToScope(funcScopeId, variable, func.NameSpan).Error is Error e1) {
+
+                error = error ?? e1;
             }
         }
 
-        var (block, chkBlockErr) = TypeCheckBlock(func.Block, stack, project, SafetyMode.Safe);
+        var (block, chkBlockErr) = TypeCheckBlock(func.Block, funcScopeId, project, SafetyMode.Safe);
 
         error = error ?? chkBlockErr;
 
-        stack.PopFrame();
+        // stack.PopFrame();
 
-        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+        // var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, stack);
+        
+        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, parentScopeId, project);
 
         error = error ?? chkRetTypeErr;
 
@@ -1930,7 +2197,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedBlock, Error?) TypeCheckBlock(
         Block block,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 parentScopeId,
         Project project,
         SafetyMode safetyMode) {
 
@@ -1938,25 +2206,28 @@ public static partial class TypeCheckerFunctions {
 
         var checkedBlock = new CheckedBlock();
 
-        stack.PushFrame();
+        // stack.PushFrame();
+
+        var blockScopeId = project.CreateScope(parentScopeId);
 
         foreach (var stmt in block.Statements) {
 
-            var (checkedStmt, err) = TypeCheckStatement(stmt, stack, project, safetyMode);
+            var (checkedStmt, err) = TypeCheckStatement(stmt, blockScopeId, project, safetyMode);
 
             error = error ?? err;
 
             checkedBlock.Stmts.Add(checkedStmt);
         }
 
-        stack.PopFrame();
+        // stack.PopFrame();
 
         return (checkedBlock, error);
     }
 
     public static (CheckedStatement, Error?) TypeCheckStatement(
         Statement stmt,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 scopeId,
         Project project,
         SafetyMode safetyMode) {
 
@@ -1966,7 +2237,7 @@ public static partial class TypeCheckerFunctions {
 
             case Expression e: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(e, stack, project, safetyMode);
+                var (checkedExpr, exprErr) = TypeCheckExpression(e, scopeId, project, safetyMode);
 
                 return (
                     checkedExpr,
@@ -1975,7 +2246,7 @@ public static partial class TypeCheckerFunctions {
 
             case DeferStatement ds: {
 
-                var (checkedStmt, err) = TypeCheckStatement(ds.Statement, stack, project, safetyMode);
+                var (checkedStmt, err) = TypeCheckStatement(ds.Statement, scopeId, project, safetyMode);
 
                 return (
                     new CheckedDeferStatement(checkedStmt),
@@ -1984,7 +2255,7 @@ public static partial class TypeCheckerFunctions {
 
             case UnsafeBlockStatement us: {
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, stack, project, SafetyMode.Unsafe);
+                var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, scopeId, project, SafetyMode.Unsafe);
 
                 return (
                     new CheckedBlockStatement(checkedBlock),
@@ -1993,11 +2264,11 @@ public static partial class TypeCheckerFunctions {
 
             case VarDeclStatement vds: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, stack, project, safetyMode);
+                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, scopeId, project, safetyMode);
 
                 error = error ?? exprErr;
 
-                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, stack);
+                var (checkedType, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, scopeId, project);
 
                 if (checkedType is UnknownType && checkedExpr.GetNeuType() is not UnknownType) {
 
@@ -2026,19 +2297,13 @@ public static partial class TypeCheckerFunctions {
                     span: vds.Decl.Span,
                     mutable: vds.Decl.Mutable);
 
-                // Taking this out for now until we have better number type support
-                // else if (!NeuTypeFunctions.Eq(vds.Decl.Type, checkedExpr.GetNeuType())) {
-                //     error = error ?? new TypeCheckError(
-                //         "mismatch between declaration and initializer",
-                //         vds.Expr.GetSpan());
-                // }
-
-                if (stack.AddVar(
+                if (project.AddVarToScope(
+                    scopeId,
                     new CheckedVariable(
                         name: checkedVarDecl.Name, 
                         type: checkedVarDecl.Type, 
                         mutable: checkedVarDecl.Mutable),
-                    checkedVarDecl.Span) is Error e) {
+                    checkedVarDecl.Span).Error is Error e) {
 
                     error = error ?? e;
                 }
@@ -2050,11 +2315,11 @@ public static partial class TypeCheckerFunctions {
 
             case IfStatement ifStmt: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, stack, project, safetyMode);
+                var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, scopeId, project, safetyMode);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, stack, project, safetyMode);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, scopeId, project, safetyMode);
                 
                 error = error ?? blockErr;
 
@@ -2062,7 +2327,7 @@ public static partial class TypeCheckerFunctions {
 
                 if (ifStmt.Trailing is Statement elseStmt) {
 
-                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, stack, project, safetyMode);
+                    var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, scopeId, project, safetyMode);
 
                     error = error ?? checkedElseStmtErr;
 
@@ -2080,11 +2345,11 @@ public static partial class TypeCheckerFunctions {
 
             case WhileStatement ws: {
 
-                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, stack, project, safetyMode);
+                var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, scopeId, project, safetyMode);
                 
                 error = error ?? exprErr;
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, stack, project, safetyMode);
+                var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, scopeId, project, safetyMode);
                 
                 error = error ?? blockErr;
 
@@ -2095,7 +2360,7 @@ public static partial class TypeCheckerFunctions {
 
             case ReturnStatement rs: {
 
-                var (output, outputErr) = TypeCheckExpression(rs.Expr, stack, project, safetyMode);
+                var (output, outputErr) = TypeCheckExpression(rs.Expr, scopeId, project, safetyMode);
 
                 return (
                     new CheckedReturnStatement(output), 
@@ -2104,7 +2369,7 @@ public static partial class TypeCheckerFunctions {
 
             case BlockStatement bs: {
 
-                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, stack, project, safetyMode);
+                var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, scopeId, project, safetyMode);
 
                 return (
                     new CheckedBlockStatement(checkedBlock),
@@ -2160,7 +2425,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedExpression, Error?) TypeCheckExpression(
         Expression expr,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 scopeId,
         Project project,
         SafetyMode safetyMode) {
 
@@ -2170,11 +2436,11 @@ public static partial class TypeCheckerFunctions {
 
             case BinaryOpExpression e: {
 
-                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, stack, project, safetyMode);
+                var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, scopeId, project, safetyMode);
 
                 error = error ?? checkedLhsErr;
 
-                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, stack, project, safetyMode);
+                var (checkedRhs, checkedRhsErr) = TypeCheckExpression(e.Rhs, scopeId, project, safetyMode);
 
                 error = error ?? checkedRhsErr;
 
@@ -2208,11 +2474,11 @@ public static partial class TypeCheckerFunctions {
 
             case UnaryOpExpression u: {
 
-                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, stack, project, safetyMode);
+                var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, scopeId, project, safetyMode);
 
                 error = error ?? checkedExprErr;
 
-                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span, stack, safetyMode);
+                var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(checkedExpr, u.Operator, u.Span, scopeId, project, safetyMode);
 
                 error = error ?? chkUnaryOpErr;
 
@@ -2229,7 +2495,7 @@ public static partial class TypeCheckerFunctions {
 
             case OptionalSomeExpression e: {
 
-                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, project, safetyMode);
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, scopeId, project, safetyMode);
 
                 error = error ?? ckdExprError;
 
@@ -2242,7 +2508,7 @@ public static partial class TypeCheckerFunctions {
 
             case ForcedUnwrapExpression e: {
 
-                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, stack, project, safetyMode);
+                var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, scopeId, project, safetyMode);
 
                 NeuType type = new UnknownType();
 
@@ -2282,7 +2548,7 @@ public static partial class TypeCheckerFunctions {
 
             case CallExpression e: {
 
-                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, stack, e.Span, project, safetyMode);
+                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, scopeId, e.Span, project, safetyMode);
 
                 var ty = checkedCall.Type;
 
@@ -2314,7 +2580,7 @@ public static partial class TypeCheckerFunctions {
 
             case VarExpression e: {
 
-                if (stack.FindVar(e.Value) is CheckedVariable v) {
+                if (project.FindVarInScope(scopeId, e.Value) is CheckedVariable v) {
 
                     return (
                         new CheckedVarExpression(v),
@@ -2345,7 +2611,7 @@ public static partial class TypeCheckerFunctions {
 
                 if (ve.FillSize is Expression fillSize) {
 
-                    var (chkFillSizeExpr, chkFillSizeErr) = TypeCheckExpression(fillSize, stack, project, safetyMode);
+                    var (chkFillSizeExpr, chkFillSizeErr) = TypeCheckExpression(fillSize, scopeId, project, safetyMode);
 
                     checkedFillSizeExpr = chkFillSizeExpr;
 
@@ -2356,7 +2622,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var v in ve.Expressions) {
 
-                    var (checkedExpr, err) = TypeCheckExpression(v, stack, project, safetyMode);
+                    var (checkedExpr, err) = TypeCheckExpression(v, scopeId, project, safetyMode);
 
                     error = error ?? err;
 
@@ -2396,7 +2662,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var item in te.Expressions) {
 
-                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, stack, project, safetyMode);
+                    var (checkedItemExpr, typeCheckItemExprErr) = TypeCheckExpression(item, scopeId, project, safetyMode);
 
                     error = error ?? typeCheckItemExprErr;
 
@@ -2414,11 +2680,11 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedExpression ie: {
 
-                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, stack, project, safetyMode);
+                var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, scopeId, project, safetyMode);
                 
                 error = error ?? typeCheckExprErr;
 
-                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, stack, project, safetyMode);
+                var (checkedIdx, typeCheckIdxErr) = TypeCheckExpression(ie.Index, scopeId, project, safetyMode);
             
                 error = error ?? typeCheckIdxErr;
 
@@ -2477,7 +2743,7 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedTupleExpression ite: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, stack, project, safetyMode);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, scopeId, project, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2528,7 +2794,7 @@ public static partial class TypeCheckerFunctions {
 
             case IndexedStructExpression ise: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, stack, project, safetyMode);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, scopeId, project, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2579,7 +2845,7 @@ public static partial class TypeCheckerFunctions {
 
             case MethodCallExpression mce: {
 
-                var (checkedExpr, chkExprErr) = TypeCheckExpression(mce.Expression, stack, project, safetyMode);
+                var (checkedExpr, chkExprErr) = TypeCheckExpression(mce.Expression, scopeId, project, safetyMode);
 
                 error = error ?? chkExprErr;
 
@@ -2587,7 +2853,7 @@ public static partial class TypeCheckerFunctions {
 
                     case StructType st: {
 
-                        var (checkedCall, chkMethodCallErr) = TypeCheckMethodCall(mce.Call, stack, mce.Span, project, st.StructId, safetyMode);
+                        var (checkedCall, chkMethodCallErr) = TypeCheckMethodCall(mce.Call, scopeId, mce.Span, project, st.StructId, safetyMode);
 
                         error = error ?? chkMethodCallErr;
 
@@ -2600,14 +2866,19 @@ public static partial class TypeCheckerFunctions {
 
                     case StringType _: {
 
-                        var stringStruct = stack.FindStruct("String");
+                        // Special-case the built-in so we don't accidentally find the user's definition
+
+                        // var stringStruct = stack.FindStruct("String");
+
+                        var stringStruct = project.FindStructInScope(0, "String");
 
                         switch (stringStruct) {
 
                             case Int32 structId: {
 
                                 var (checkedCall, err) = TypeCheckMethodCall(
-                                    mce.Call, stack, 
+                                    mce.Call, 
+                                    0, 
                                     mce.Span, 
                                     project, 
                                     structId, 
@@ -2641,7 +2912,11 @@ public static partial class TypeCheckerFunctions {
 
                     case VectorType _: {
 
-                        var vectorStruct = stack.FindStruct("RefVector");
+                        // Special-case the built-in so we don't accidentally find the user's definition
+
+                        // var vectorStruct = stack.FindStruct("RefVector");
+                        
+                        var vectorStruct = project.FindStructInScope(0, "RefVector");
 
                         switch (vectorStruct) {
 
@@ -2649,7 +2924,7 @@ public static partial class TypeCheckerFunctions {
 
                                 var (checkedCall, chkMethCallErr) = TypeCheckMethodCall(
                                     mce.Call, 
-                                    stack, 
+                                    0, 
                                     mce.Span, 
                                     project, 
                                     structId, 
@@ -2724,7 +2999,9 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression expr,
         UnaryOperator op,
         Span span,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 scopeId,
+        Project project,
         SafetyMode safetyMode) {
     
         var exprType = expr.GetNeuType();
@@ -2735,7 +3012,7 @@ public static partial class TypeCheckerFunctions {
 
                 var uncheckedType = tc.TypeCast.GetUncheckedType();
 
-                var (ty, err) = TypeCheckTypeName(uncheckedType, stack);
+                var (ty, err) = TypeCheckTypeName(uncheckedType, scopeId, project);
 
                 return (
                     new CheckedUnaryOpExpression(expr, op, ty),
@@ -2939,11 +3216,133 @@ public static partial class TypeCheckerFunctions {
         return (ty, null);
     }
 
+    // public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
+    //     Call call,
+    //     Span span,
+    //     // Scope scope,
+    //     // ScopeStack stack,
+    //     Int32 scopeId,
+    //     Project project) {
+
+    //     CheckedFunction? callee = null;
+
+    //     DefinitionType? definitionType = null;
+        
+    //     Error? error = null;
+
+    //     if (call.Namespace.FirstOrDefault() is String ns) {
+
+    //         // For now, assume class is our namespace
+    //         // In the future, we'll have real namespaces
+
+    //         // if (stack.FindStruct(ns) is Int32 structId) {
+    //         if (project.FindStructInScope(scopeId, ns) is Int32 structId) {
+
+    //             var structure = project.Structs[structId];
+
+    //             definitionType = structure.DefinitionType;
+
+    //             // if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
+    //             if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId) {
+
+    //                 callee = project.Functions[funcId];
+    //             }
+
+    //             return (callee, definitionType, error);
+    //         }
+    //         else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId2) {
+
+    //             throw new Exception();
+    //         }
+    //         else {
+
+    //             // var v = stack.FindVar(ns);
+
+    //             var v = project.FindVarInScope(scopeId, ns);
+
+    //             if (v?.Type is StructType st) {
+
+    //                 var structure = project.Structs[st.StructId];
+
+    //                 definitionType = structure.DefinitionType;
+
+    //                 // if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
+    //                 if (project.FindStructInScope(structure.ScopeId, call.Name) is Int32 funcId) {
+
+    //                     callee = project.Functions[funcId];
+    //                 }
+
+    //                 return (callee, definitionType, error);
+    //             }
+    //             else if (v is CheckedVariable cv
+    //                 && cv.Type is StringType
+    //                 // && stack.FindStruct("String") is int stringStructId) {
+    //                 && project.FindStructInScope(scopeId, "String") is int stringStructId) {
+
+    //                 var structure = project.Structs[stringStructId];
+
+    //                 definitionType = DefinitionType.Struct; // probably has to be more contextual
+
+    //                 // if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
+    //                 if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId) {
+
+    //                     callee = project.Functions[funcId];
+    //                 }
+
+    //                 return (callee, definitionType, error);
+    //             }
+    //             else if (v is CheckedVariable cv2
+    //                 // && stack.FindStruct("RefVector") is int vectorStructId) {
+    //                 && project.FindStructInScope(scopeId, "RefVector") is int vectorStructId) {
+
+    //                 var structure = project.Structs[vectorStructId];
+
+    //                 definitionType = DefinitionType.Struct; // probably has to be more contextual
+
+    //                 // if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
+    //                 if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId) {
+
+    //                     callee = project.Functions[funcId];
+    //                 }
+
+    //                 return (callee, definitionType, error);
+    //             }
+    //             else {
+
+    //                 error = error ?? 
+    //                     new TypeCheckError(
+    //                         $"unknown namespace or class: {ns}",
+    //                         span);
+
+    //                 return (callee, definitionType, error);
+    //             }
+    //         }
+    //     }
+    //     else {
+
+    //         // FIXME: Support function overloading.
+
+    //         // if (scope.FindFunc(call.Name) is Int32 funcId) {
+    //         if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId) {
+
+    //             callee = project.Functions[funcId];
+    //         }
+
+    //         if (callee == null) {
+
+    //             error = error ?? new TypeCheckError(
+    //                 $"call to unknown function: {call.Name}",
+    //                 span);
+    //         }
+
+    //         return (callee, definitionType, error);
+    //     }
+    // }
+
     public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
         Call call,
         Span span,
-        Scope scope,
-        ScopeStack stack,
+        Int32 scopeId,
         Project project) {
 
         CheckedFunction? callee = null;
@@ -2957,88 +3356,52 @@ public static partial class TypeCheckerFunctions {
             // For now, assume class is our namespace
             // In the future, we'll have real namespaces
 
-            if (stack.FindStruct(ns) is Int32 structId) {
+            if (project.FindStructInScope(scopeId, ns) is Int32 structId) {
 
                 var structure = project.Structs[structId];
 
                 definitionType = structure.DefinitionType;
 
-                if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
+                if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId1) {
 
-                    callee = project.Functions[funcId];
+                    callee = project.Functions[funcId1];
                 }
+
+                return (callee, definitionType, error);
+            }
+            else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId2) {
+
+                callee = project.Functions[funcId2];
+
+                definitionType = DefinitionType.Struct;
 
                 return (callee, definitionType, error);
             }
             else {
 
-                var v = stack.FindVar(ns);
+                error = error ?? 
+                    new TypeCheckError(
+                        $"unknown namespace or class: {ns}",
+                        span);
 
-                if (v?.Type is StructType st) {
-
-                    var structure = project.Structs[st.StructId];
-
-                    definitionType = structure.DefinitionType;
-
-                    if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
-
-                        callee = project.Functions[funcId];
-                    }
-
-                    return (callee, definitionType, error);
-                }
-                else if (v is CheckedVariable cv
-                    && cv.Type is StringType
-                    && stack.FindStruct("String") is int stringStructId) {
-
-                    var structure = project.Structs[stringStructId];
-
-                    definitionType = DefinitionType.Struct; // probably has to be more contextual
-
-                    if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
-
-                        callee = project.Functions[funcId];
-                    }
-
-                    return (callee, definitionType, error);
-                }
-                else if (v is CheckedVariable cv2
-                    && stack.FindStruct("RefVector") is int vectorStructId) {
-
-                    var structure = project.Structs[vectorStructId];
-
-                    definitionType = DefinitionType.Struct; // probably has to be more contextual
-
-                    if (structure.Scope.FindFunc(call.Name) is Int32 funcId) {
-
-                        callee = project.Functions[funcId];
-                    }
-
-                    return (callee, definitionType, error);
-                }
-                else {
-
-                    error = error ?? 
-                        new TypeCheckError(
-                            $"unknown namespace or class: {ns}",
-                            span);
-
-                    return (callee, definitionType, error);
-                }
+                return (callee, definitionType, error);
             }
         }
         else {
 
-            if (scope.FindFunc(call.Name) is Int32 funcId) {
+            // FIXME: Support function overloading.
 
-                callee = project.Functions[funcId];
+            if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId3) {
+
+                callee = project.Functions[funcId3];
             }
-
+            
             if (callee == null) {
 
-                error = error ?? new TypeCheckError(
-                    $"call to unknown function: {call.Name}",
-                    span);
+                error = error ?? 
+                    new TypeCheckError(
+                        $"call to unknown function: {call.Name}", 
+                        span);
             }
 
             return (callee, definitionType, error);
@@ -3047,7 +3410,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedCall, Error?) TypeCheckCall(
         Call call, 
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 scopeId,
         Span span,
         Project project,
         SafetyMode safetyMode) {
@@ -3069,7 +3433,7 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var arg in call.Args) {
 
-                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, stack, project, safetyMode);
+                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, scopeId, project, safetyMode);
 
                     error = error ?? checkedArgErr;
 
@@ -3088,8 +3452,8 @@ public static partial class TypeCheckerFunctions {
                 var (callee, _calleDefType, resolveErr) = ResolveCall(
                     call, 
                     span,
-                    stack.Frames.FirstOrDefault() ?? throw new Exception("internal erorr: missing global scope"),
-                    stack, 
+                    // stack.Frames.FirstOrDefault() ?? throw new Exception("internal erorr: missing global scope"),
+                    scopeId, 
                     project);
 
                 error = error ?? resolveErr;
@@ -3114,7 +3478,7 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
-                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, stack, project, safetyMode);
+                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, scopeId, project, safetyMode);
 
                             error = error ?? checkedArgErr;
 
@@ -3182,7 +3546,8 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedCall, Error?) TypeCheckMethodCall(
         Call call,
-        ScopeStack stack,
+        // ScopeStack stack,
+        Int32 scopeId,
         Span span,
         Project file,
         Int32 structId,
@@ -3194,7 +3559,7 @@ public static partial class TypeCheckerFunctions {
 
         NeuType returnType = new UnknownType();
 
-        var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, file.Structs[structId].Scope, stack, file);
+        var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, file.Structs[structId].ScopeId, file);
 
         error = error ?? resolveCallErr;
 
@@ -3219,7 +3584,7 @@ public static partial class TypeCheckerFunctions {
 
                 while (idx < call.Args.Count) {
 
-                    var (checkedArg, chkExprErr) = TypeCheckExpression(call.Args[idx].Item2, stack, file, safetyMode);
+                    var (checkedArg, chkExprErr) = TypeCheckExpression(call.Args[idx].Item2, scopeId, file, safetyMode);
 
                     error = error ?? chkExprErr;
 
@@ -3280,7 +3645,9 @@ public static partial class TypeCheckerFunctions {
 
     public static (NeuType, Error?) TypeCheckTypeName(
         UncheckedType uncheckedType,
-        ScopeStack stack) {
+        // ScopeStack stack) {
+        Int32 scopeId,
+        Project project) {
 
         Error? error = null;
 
@@ -3367,7 +3734,8 @@ public static partial class TypeCheckerFunctions {
 
                     case var x: {
 
-                        var stackStruct = stack.FindStruct(x);
+                        // var stackStruct = stack.FindStruct(x);
+                        var stackStruct = project.FindStructInScope(scopeId, x);
                         
                         switch (stackStruct) {
 
@@ -3398,7 +3766,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedVectorType vt: {
 
-                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, stack);
+                var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, scopeId, project);
 
                 error = error ?? innerTypeErr;
 
@@ -3409,7 +3777,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedOptionalType opt: {
 
-                var (innerType, err) = TypeCheckTypeName(opt.Type, stack);
+                var (innerType, err) = TypeCheckTypeName(opt.Type, scopeId, project);
 
                 error = error ?? err;
 
@@ -3420,7 +3788,7 @@ public static partial class TypeCheckerFunctions {
 
             case UncheckedRawPointerType rp: {
 
-                var (innerType, err) = TypeCheckTypeName(rp.Type, stack);
+                var (innerType, err) = TypeCheckTypeName(rp.Type, scopeId, project);
 
                 error = error ?? err;
 

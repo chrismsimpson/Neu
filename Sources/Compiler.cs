@@ -13,8 +13,10 @@ public partial class Compiler {
     }
 
     public void IncludePrelude(
-        Project project,
-        ScopeStack stack) {
+        Project project
+        // ,
+        // ScopeStack stack
+        ) {
 
         var prelude = Compiler.Prelude();
 
@@ -30,7 +32,9 @@ public partial class Compiler {
 
         var (file, _) = ParserFunctions.ParseFile(lexed);
 
-        TypeCheckerFunctions.TypeCheckFile(file, stack, project);
+        // Scope ID 0 is the global project-level scope that all files can see
+
+        TypeCheckerFunctions.TypeCheckFile(file, 0, project);
     }
 }
 
@@ -42,9 +46,10 @@ public partial class Compiler {
 
         var project = new Project();
 
-        var stack = new ScopeStack();
+        // var stack = new ScopeStack();
 
-        this.IncludePrelude(project, stack);
+        // this.IncludePrelude(project, stack);
+        this.IncludePrelude(project);
 
         var contents = ReadAllBytes(filename);
         
@@ -88,7 +93,13 @@ public partial class Compiler {
 
         ///
 
-        var checkErr = TypeCheckerFunctions.TypeCheckFile(parsedFile, stack, project);
+        var scope = new Scope(0);
+
+        project.Scopes.Add(scope);
+
+        var fileScopeId = project.Scopes.Count - 1;
+
+        var checkErr = TypeCheckerFunctions.TypeCheckFile(parsedFile, fileScopeId, project);
 
         switch (checkErr) {
 
@@ -103,12 +114,18 @@ public partial class Compiler {
             }
         }
 
+        // Hardwire to first file for now
+
+        // return new ErrorOr<String>(this.CodeGen(
+        //     project, 
+        //     stack
+        //         .Frames
+        //         .FirstOrDefault() 
+        //         ?? throw new Exception("internal error: missing global scope")));
+
         return new ErrorOr<String>(this.CodeGen(
             project, 
-            stack
-                .Frames
-                .FirstOrDefault() 
-                ?? throw new Exception("internal error: missing global scope")));
+            project.Scopes[fileScopeId]));
     }
     
     public ErrorOrVoid Compile(
