@@ -1,16 +1,17 @@
 # Neu
 
-An experimental programming language
+An experimental programming language, designed to maximise brevity, ergonomics and productivity.
 
 Very much inspired by https://github.com/serenityOS/jakt, with modifications:
 
-Types and namespaces are `PascalCase`, instances are `camelCase`. This intentionally mimics Swift. The runtime has no namespace (as opposed to say `AK::`), therefore a lot of stuff is hidden in `Detail::`.
+`::` is nowhere in the language, there is only `.` (nowhere in Neu itself, it obviously maps to this in C++). This is acheived with types and namespaces observing `PascalCase` and instance names observing `camelCase`. This intentionally mimics Swift. The runtime has no namespace (as opposed to say `AK::`), therefore a lot of stuff is hidden in `Detail::`.
+
+Core type and instance names are a bit more explicit. E.g. `RawPointer`, `NonNullRefPointer` and `pointer()`. Primitives mimic Swift and C# (e.g. `UInt32` as opposed to `i32`).
 
 There is no `mut`, there is only `var`.
 
 You `var` (mutable) or `let` (immutable) things.
 
-`::` is nowhere in the language, there is only `.`. This is enforced with `Uppercase` to specify namespaces and/or type names, `lowercase` is for instance names.
+Instances are denoted with `(this, ...`, mutable instances with `(var this, ...`. May be subject to change.
 
-Instances are denoted with `(this, ...`, mutable instances with `(var this, ...`.
-
+`func` is the keyword specifier for functions.
