@@ -940,15 +940,19 @@ public partial class Expression: Statement {
 
         public List<Expression> Expressions { get; init; }
 
+        public Expression? FillSize { get; init; }
+
         public Span Span { get; init; }
 
         ///
 
         public VectorExpression(
             List<Expression> expressions,
+            Expression? fillSize,
             Span span) {
 
             this.Expressions = expressions;
+            this.FillSize = fillSize;
             this.Span = span;
         }
     }
@@ -4533,6 +4537,10 @@ public static partial class ParserFunctions {
 
         ///
 
+        Expression? fillSizeExpr = null;
+
+        ///
+
         var cont = true;
 
         while (cont && index < tokens.Count) {
@@ -4548,8 +4556,6 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
-
                 case CommaToken _: {
 
                     // Treat comma as whitespace? Might require them in the future
@@ -4558,8 +4564,6 @@ public static partial class ParserFunctions {
 
                     break;
                 }
-
-                ///
 
                 case EolToken _: {
 
@@ -4570,7 +4574,31 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
+                case SemicolonToken _: {
+
+                    if (output.Count == 1) {
+
+                        index += 1;
+
+                        var (expr, err) = ParseExpression(
+                            tokens, 
+                            ref index, 
+                            ExpressionKind.ExpressionWithoutAssignment);
+
+                        error = error ?? err;
+
+                        fillSizeExpr = expr;
+                    }
+                    else {
+
+                        error = error ??
+                            new ParserError(
+                                "Can't fill a Vector with more than one expression",
+                                tokens.ElementAt(index).Span);
+                    }
+
+                    break;
+                }
 
                 default: {
 
@@ -4605,6 +4633,7 @@ public static partial class ParserFunctions {
         return (
             new VectorExpression(
                 expressions: output,
+                fillSizeExpr,
                 new Span(
                     fileId: tokens.ElementAt(start).Span.FileId,
                     start: tokens.ElementAt(start).Span.Start,

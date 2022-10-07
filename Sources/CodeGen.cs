@@ -1381,27 +1381,40 @@ public static partial class CodeGenFunctions {
 
             case CheckedVectorExpression ve: {
 
-                // (RefVector({1, 2, 3}))
+                if (ve.FillSize is CheckedExpression fillSize) {
 
-                output.Append("(RefVector({");
+                    output.Append("(RefVector<");
+                    output.Append(compiler.CodeGenType(ve.Expressions.First().GetNeuType(), project));
+                    output.Append(">::filled(");
+                    output.Append(compiler.CodeGenExpr(indent, fillSize, project));
+                    output.Append(", ");
+                    output.Append(compiler.CodeGenExpr(indent, ve.Expressions.First(), project));
+                    output.Append("))");
+                }
+                else {
 
-                var first = true;
+                    // (RefVector({1, 2, 3}))
 
-                foreach (var val in ve.Expressions) {
-                    
-                    if (!first) {
+                    output.Append("(RefVector({");
+
+                    var first = true;
+
+                    foreach (var val in ve.Expressions) {
                         
-                        output.Append(", ");
-                    } 
-                    else {
-                        
-                        first = false;
+                        if (!first) {
+                            
+                            output.Append(", ");
+                        } 
+                        else {
+                            
+                            first = false;
+                        }
+
+                        output.Append(compiler.CodeGenExpr(indent, val, project));
                     }
 
-                    output.Append(compiler.CodeGenExpr(indent, val, project));
+                    output.Append("}))");
                 }
-
-                output.Append("}))");
 
                 break;
             }

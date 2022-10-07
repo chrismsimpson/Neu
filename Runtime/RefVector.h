@@ -246,6 +246,20 @@ public:
         }
     }
 
+    static RefVector filled(size_t size, T value) {
+
+        RefVector vector;
+        
+        vector.ensureCapacity(size);
+        
+        for (size_t i = 0; i < size; ++i) {
+            
+            vector.append(value);
+        }
+        
+        return vector;
+    }
+
     RefVector(Vector<T> const& vec) {
 
         ensureCapacity(vec.size());

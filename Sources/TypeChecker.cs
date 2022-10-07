@@ -973,6 +973,8 @@ public partial class CheckedExpression: CheckedStatement {
     public partial class CheckedVectorExpression: CheckedExpression {
 
         public List<CheckedExpression> Expressions { get; init; }
+
+        public CheckedExpression? FillSize { get; init; }
         
         public NeuType Type { get; init; }
 
@@ -980,10 +982,12 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedVectorExpression(
             List<CheckedExpression> expressions,
+            CheckedExpression? fillSize,
             NeuType type) 
             : base() {
 
             this.Expressions = expressions;
+            this.FillSize = fillSize;
             this.Type = type;
         }
     }
@@ -2337,6 +2341,17 @@ public static partial class TypeCheckerFunctions {
 
                 var output = new List<CheckedExpression>();
 
+                CheckedExpression? checkedFillSizeExpr = null;
+
+                if (ve.FillSize is Expression fillSize) {
+
+                    var (chkFillSizeExpr, chkFillSizeErr) = TypeCheckExpression(fillSize, stack, project, safetyMode);
+
+                    checkedFillSizeExpr = chkFillSizeExpr;
+
+                    error = error ?? chkFillSizeErr;
+                }
+
                 ///
 
                 foreach (var v in ve.Expressions) {
@@ -2368,6 +2383,7 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedVectorExpression(
                         expressions: output,
+                        checkedFillSizeExpr,
                         new VectorType(innerType)),
                     error);
             }
