@@ -1,0 +1,25 @@
+func bubbleSort(values: var [Int64]) {
+    var i = 0
+    while i < values.size() - 1 {
+        var j = 0
+        while j < values.size() - i - 1 {
+            if values[j] > values[j + 1] {
+                let tmp = values[j]
+                values[j] = values[j + 1]
+                values[j + 1] = tmp
+            }
+            ++j
+        }
+        ++i
+    }
+}
+
+func main() {
+    var v = [25, 13, 8, 1, 9, 22, 50, 2]
+    bubbleSort(values: v)
+    var i = 0
+    while i < v.size() {
+        printLine(v[i])
+        ++i
+    }
+}
