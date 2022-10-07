@@ -317,19 +317,31 @@ public partial class Project {
 
     public List<CheckedStruct> Structs { get; init; }
 
+    public List<Scope> Scopes { get; init; }
+
     ///
 
     public Project()
         : this(
             new List<CheckedFunction>(),
-            new List<CheckedStruct>()) { }
+            new List<CheckedStruct>()) {
+
+        // Top-level (project-global) scope has no parent scope
+        // and is the parent scope of all file scopes
+        // var projectGlobalScope = new Scope()
+
+        var 
+
+    }
 
     public Project(
         List<CheckedFunction> functions,
-        List<CheckedStruct> structs) {
+        List<CheckedStruct> structs,
+        List<Scope> scopes) {
 
         this.Functions = functions;
         this.Structs = structs;
+        this.Scopes = scopes;
     }
 }
 
@@ -1501,50 +1513,56 @@ public partial class Scope {
 
     public List<(String, Int32)> Funcs { get; init; }
 
+    public Int32? Parent { get; init; }
+
     ///
 
-    public Scope() 
+    public Scope(
+        Int32? parent) 
         : this(
             new List<CheckedVariable>(),
             new List<(String, Int32)>(),
-            new List<(String, Int32)>()) { }
+            new List<(String, Int32)>(),
+            parent) { }
 
     public Scope(
         List<CheckedVariable> vars,
         List<(String, Int32)> structs,
-        List<(String, Int32)> funcs) {
+        List<(String, Int32)> funcs,
+        Int32? parent) {
 
         this.Vars = vars;
         this.Structs = structs;
         this.Funcs = funcs;
+        this.Parent = parent;
     }
 }
 
-public static partial class ScopeFunctions {
+// public static partial class ScopeFunctions {
 
-    public static Int32? FindFunc(
-        this Scope s,
-        String name) {
+//     public static Int32? FindFunc(
+//         this Scope s,
+//         String name) {
 
-        foreach (var f in s.Funcs) {
+//         foreach (var f in s.Funcs) {
 
-            if (f.Item1 == name) {
+//             if (f.Item1 == name) {
 
-                return f.Item2;
-            }
-        }
+//                 return f.Item2;
+//             }
+//         }
 
-        return null;
-    }
+//         return null;
+//     }
 
-    public static void AddFunc(
-        this Scope s,
-        String name,
-        Int32 funcId) {
+//     public static void AddFunc(
+//         this Scope s,
+//         String name,
+//         Int32 funcId) {
         
-        s.Funcs.Add((name, funcId));
-    }
-}
+//         s.Funcs.Add((name, funcId));
+//     }
+// }
 
 ///
 
