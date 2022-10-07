@@ -266,10 +266,22 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class LeftShiftEqualToken: Token {
+
+        public LeftShiftEqualToken(Span span)
+            : base(span) { }
+    }
+
     public partial class RightShiftToken: Token {
 
         public RightShiftToken(Span span)
             : base(span) { } 
+    }
+
+    public partial class RightShiftEqualToken: Token {
+
+        public RightShiftEqualToken(Span span)
+            : base(span) { }
     }
 
     public partial class AsteriskToken: Token {
@@ -284,15 +296,33 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class AmpersandEqualToken: Token {
+
+        public AmpersandEqualToken(Span span)
+            : base(span) { } 
+    }
+
     public partial class PipeToken: Token {
 
         public PipeToken(Span span)
             : base(span) { }
     }
 
+    public partial class PipeEqualToken: Token {
+
+        public PipeEqualToken(Span span)
+            : base(span) { }
+    }
+
     public partial class CaretToken: Token {
 
         public CaretToken(Span span)
+            : base(span) { }
+    }
+    
+    public partial class CaretEqualToken: Token {
+
+        public CaretEqualToken(Span span)
             : base(span) { }
     }
 
@@ -630,8 +660,18 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new RightShiftToken(new Span(fileId, start, start + 2)));
+                            if (index < bytes.Length
+                                && ToChar(bytes[index]) == '=') {
 
+                                index += 1;
+
+                                output.Add(new RightShiftEqualToken(new Span(fileId, start, start + 3)));
+                            }
+                            else {
+
+                                output.Add(new RightShiftToken(new Span(fileId, start, start + 2)));
+                            }
+                        
                             continue;
                         }
                     }
@@ -663,7 +703,17 @@ public static partial class LexerFunctions {
 
                             index += 1;
 
-                            output.Add(new LeftShiftToken(new Span(fileId, start, start + 2)));
+                            if (index < bytes.Length
+                                && ToChar(bytes[index]) == '=') {
+
+                                index += 1;
+
+                                output.Add(new LeftShiftEqualToken(new Span(fileId, start, start + 3)));
+                            }
+                            else {
+
+                                output.Add(new LeftShiftToken(new Span(fileId, start, start + 2)));
+                            }
 
                             continue;
                         }
@@ -707,6 +757,16 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
+                    if (index < bytes.Length
+                        && ToChar(bytes[index]) == '=') {
+
+                        index += 1;
+
+                        output.Add(new AmpersandEqualToken(new Span(fileId, start, start + 2)));
+
+                        continue;
+                    }
+
                     output.Add(new AmpersandToken(new Span(fileId, start, start + 1)));
 
                     break;
@@ -720,6 +780,16 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
+                    if (index < bytes.Length
+                        && ToChar(bytes[index]) == '=') {
+
+                        index += 1;
+
+                        output.Add(new PipeEqualToken(new Span(fileId, start, start + 2)));
+
+                        continue;
+                    }
+
                     output.Add(new PipeToken(new Span(fileId, start, start + 1)));
 
                     break;
@@ -732,6 +802,16 @@ public static partial class LexerFunctions {
                     var start = index;
 
                     index += 1;
+
+                    if (index < bytes.Length
+                        && ToChar(bytes[index]) == '=') {
+
+                        index += 1;
+
+                        output.Add(new CaretEqualToken(new Span(fileId, start, start + 2)));
+
+                        continue;
+                    }
 
                     output.Add(new CaretToken(new Span(fileId, start, start + 1)));
 

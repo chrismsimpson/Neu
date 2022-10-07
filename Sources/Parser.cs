@@ -1514,6 +1514,11 @@ public static partial class ExpressionFunctions {
 
             case OperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.Assign
+                || opExpr.Operator == BinaryOperator.BitwiseAndAssign
+                || opExpr.Operator == BinaryOperator.BitwiseOrAssign
+                || opExpr.Operator == BinaryOperator.BitwiseXorAssign
+                || opExpr.Operator == BinaryOperator.BitwiseLeftShiftAssign
+                || opExpr.Operator == BinaryOperator.BitwiseRightShiftAssign
                 || opExpr.Operator == BinaryOperator.AddAssign
                 || opExpr.Operator == BinaryOperator.SubtractAssign
                 || opExpr.Operator == BinaryOperator.MultiplyAssign
@@ -1690,7 +1695,12 @@ public enum BinaryOperator {
     SubtractAssign,
     MultiplyAssign,
     DivideAssign,
-    ModuloAssign
+    ModuloAssign,
+    BitwiseAndAssign,
+    BitwiseOrAssign,
+    BitwiseXorAssign,
+    BitwiseLeftShiftAssign,
+    BitwiseRightShiftAssign
 }
 
 ///
@@ -4142,6 +4152,71 @@ public static partial class ParserFunctions {
                         span));
             }
 
+            case LeftShiftEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case RightShiftEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case AmpersandEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.BitwiseAndAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case PipeEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.BitwiseOrAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
+            case CaretEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.BitwiseXorAssign, span), 
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
             case PlusEqualToken _: {
 
                 Trace("ERROR: assignment not allowed in this position");
@@ -4398,6 +4473,41 @@ public static partial class ParserFunctions {
                 index += 1;
                 
                 return (new OperatorExpression(BinaryOperator.Assign, span), null);
+            }
+
+            case LeftShiftEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), null);
+            }
+
+            case RightShiftEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), null);
+            }
+
+            case AmpersandEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseAndAssign, span), null);
+            }
+
+            case PipeEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseOrAssign, span), null);
+            }
+
+            case CaretEqualToken _: {
+
+                index += 1;
+
+                return (new OperatorExpression(BinaryOperator.BitwiseXorAssign, span), null);
             }
 
             case PlusEqualToken _: {

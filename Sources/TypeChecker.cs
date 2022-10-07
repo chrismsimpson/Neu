@@ -2899,7 +2899,12 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.AddAssign:
             case BinaryOperator.SubtractAssign:
             case BinaryOperator.MultiplyAssign:
-            case BinaryOperator.DivideAssign: {
+            case BinaryOperator.DivideAssign:    
+            case BinaryOperator.BitwiseAndAssign:
+            case BinaryOperator.BitwiseOrAssign:
+            case BinaryOperator.BitwiseXorAssign:
+            case BinaryOperator.BitwiseLeftShiftAssign:
+            case BinaryOperator.BitwiseRightShiftAssign: {
 
                 var lhsTy = lhs.GetNeuType();
                 var rhsTy = rhs.GetNeuType();

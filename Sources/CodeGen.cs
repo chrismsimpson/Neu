@@ -1275,6 +1275,41 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case BinaryOperator.BitwiseAndAssign: { 
+                        
+                        output.Append(" &= "); 
+
+                        break;
+                    }
+
+                    case BinaryOperator.BitwiseOrAssign: { 
+                        
+                        output.Append(" |= "); 
+
+                        break;
+                    }
+                    
+                    case BinaryOperator.BitwiseXorAssign: { 
+                        
+                        output.Append(" ^= ");
+
+                        break;
+                    }
+                    
+                    case BinaryOperator.BitwiseLeftShiftAssign: { 
+                        
+                        output.Append(" <<= "); 
+
+                        break;
+                    }
+                    
+                    case BinaryOperator.BitwiseRightShiftAssign: { 
+                        
+                        output.Append(" >>= ");
+
+                        break;
+                    }
+
                     case BinaryOperator.Equal: {
 
                         output.Append(" == ");

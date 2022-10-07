@@ -1,0 +1,36 @@
+func check(anon a: Int64, anon b: Int64) -> Int64 {
+    if a != b {
+        printLine("Not equal!")
+        printLine(a)
+        printLine(b)
+        return 1
+    }
+    return 0
+}
+
+func main() {
+    var errors = 0
+
+    var a = 1
+    a <<= 5
+    errors += check(a, 1 << 5)
+
+    var b = 0x8000
+    b >>= 5
+    errors += check(b, 0x8000 >> 5)
+
+    var c = 0xffc0c0
+    c &= 0x777777
+    errors += check(c, 0xffc0c0 & 0x777777)
+
+    var d = 0xffc0c0
+    d ^= 0x777777
+    errors += check(d, 0xffc0c0 ^ 0x777777)
+
+    if errors > 0 {
+        printLine("Had error")
+    } 
+    else {
+        printLine("No error")
+    }
+}
