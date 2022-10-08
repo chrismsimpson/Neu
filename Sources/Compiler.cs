@@ -3,6 +3,28 @@ namespace Neu;
 
 public partial class Compiler {
 
+    public static readonly Int32 UnknownTypeId = 0;
+    public static readonly Int32 VoidTypeId = 1;
+    public static readonly Int32 BoolTypeId = 2;
+
+    public static readonly Int32 Int8TypeId = 3;
+    public static readonly Int32 Int16TypeId = 4;
+    public static readonly Int32 Int32TypeId = 5;
+    public static readonly Int32 Int64TypeId = 6;
+
+    public static readonly Int32 UInt8TypeId = 7;
+    public static readonly Int32 UInt16TypeId = 8;
+    public static readonly Int32 UInt32TypeId = 9;
+    public static readonly Int32 UInt64TypeId = 10;
+
+    public static readonly Int32 FloatTypeId = 11;
+    public static readonly Int32 DoubleTypeId = 12;
+
+    public static readonly Int32 CCharTypeId = 13;
+    public static readonly Int32 CIntTypeId = 14;
+
+    public static readonly Int32 StringTypeId = 14;
+
     public List<(String, byte[])> RawFiles { get; init; }
 
     ///
