@@ -30,19 +30,6 @@ public static partial class NeuTypeFunctions {
 
         switch (true) {
 
-            case var _ when l is BoolType && r is BoolType:                         return true;
-            case var _ when l is StringType && r is StringType:                     return true;
-            case var _ when l is Int8Type && r is Int8Type:                         return true;
-            case var _ when l is Int16Type && r is Int16Type:                       return true;
-            case var _ when l is Int32Type && r is Int32Type:                       return true;
-            case var _ when l is Int64Type && r is Int64Type:                       return true;
-            case var _ when l is UInt8Type && r is UInt8Type:                       return true;
-            case var _ when l is UInt16Type && r is UInt16Type:                     return true;
-            case var _ when l is UInt32Type && r is UInt32Type:                     return true;
-            case var _ when l is UInt64Type && r is UInt64Type:                     return true;
-            case var _ when l is FloatType && r is FloatType:                       return true;
-            case var _ when l is DoubleType && r is DoubleType:                     return true;
-            case var _ when l is VoidType && r is VoidType:                         return true;
             case var _ when l is VectorType lv && r is VectorType rv:               return lv.TypeId == rv.TypeId;
 
             case var _ when l is TupleType lt && r is TupleType rt: {
@@ -69,94 +56,14 @@ public static partial class NeuTypeFunctions {
             
             case var _ when l is RawPointerType lp && r is RawPointerType rp:       return lp.TypeId == rp.TypeId;
 
-            case var _ when l is UnknownType && r is UnknownType:                   return true;
-
-            // C interop
-
-            case var _ when l is CCharType && r is CCharType:                       return true;
-            case var _ when l is CIntType && r is CIntType:                         return true;
-
             default:                                                                return false;
         }
     }
 }
 
-public partial class BoolType : NeuType {
+public partial class UnknownOrBuiltin: NeuType {
 
-    public BoolType() 
-        : base() { }
-}
-
-public partial class StringType : NeuType {
-
-    public StringType() 
-        : base() { }
-}
-
-public partial class Int8Type : NeuType {
-
-    public Int8Type() 
-        : base() { }
-}
-
-public partial class Int16Type : NeuType {
-
-    public Int16Type() 
-        : base() { }
-}
-
-public partial class Int32Type : NeuType {
-
-    public Int32Type() 
-        : base() { }
-}
-
-public partial class Int64Type : NeuType {
-
-    public Int64Type() 
-        : base() { }
-}
-
-public partial class UInt8Type : NeuType {
-
-    public UInt8Type() 
-        : base() { }
-}
-
-public partial class UInt16Type : NeuType {
-
-    public UInt16Type() 
-        : base() { }
-}
-
-public partial class UInt32Type : NeuType {
-
-    public UInt32Type() 
-        : base() { }
-}
-
-public partial class UInt64Type : NeuType {
-
-    public UInt64Type() 
-        : base() { }
-}
-
-public partial class FloatType : NeuType {
-
-    public FloatType() 
-        : base() { }
-}
-
-public partial class DoubleType : NeuType {
-
-    public DoubleType() 
-        : base() { }
-}
-
-public partial class VoidType : NeuType {
-
-    public VoidType() 
-        : base() { }
+    public UnknownOrBuiltin() { }
 }
 
 public partial class VectorType : NeuType {
@@ -224,79 +131,62 @@ public partial class RawPointerType: NeuType {
     }
 }
 
-public partial class UnknownType : NeuType {
-
-    public UnknownType()
-        : base() { }
-}
-
-// C interop
-
-public partial class CCharType: NeuType {
-
-    public CCharType()
-        : base() { }
-}
-
-public partial class CIntType: NeuType {
-
-    public CIntType()
-        : base() { }
-}
-
 public static partial class NeuTypeFunctions {
 
     public static bool IsInteger(
-        this NeuType ty) {
+        Int32 typeId) {
 
-        switch (ty) {
+        switch (typeId) {
 
-            case Int8Type _:        return true;
-            case Int16Type _:       return true;
-            case Int32Type _:       return true;
-            case Int64Type _:       return true;
-            case UInt8Type _:       return true;
-            case UInt16Type _:      return true;
-            case UInt32Type _:      return true;
-            case UInt64Type _:      return true;
-            default:                return false;
+            case Compiler.Int8TypeId:
+            case Compiler.Int16TypeId:
+            case Compiler.Int32TypeId:
+            case Compiler.Int64TypeId:
+            case Compiler.UInt8TypeId:
+            case Compiler.UInt16TypeId:
+            case Compiler.UInt32TypeId:
+            case Compiler.UInt64TypeId:
+                return true;
+            
+            default: 
+                return false;
         }
     }
 
     public static bool CanFitInteger(
-        this NeuType ty,
+        Int32 typeId,
         IntegerConstant value) {
 
         switch (value) {
 
             case SignedIntegerConstant si: {
 
-                switch (ty) {
+                switch (typeId) {
 
-                    case Int8Type _: return si.Value >= sbyte.MinValue && si.Value <= sbyte.MaxValue;
-                    case Int16Type _: return si.Value >= short.MinValue && si.Value <= short.MaxValue;
-                    case Int32Type _: return si.Value >= int.MinValue && si.Value <= int.MaxValue;
-                    case Int64Type _: return true;
-                    case UInt8Type _: return si.Value >= 0 && si.Value <= byte.MaxValue;
-                    case UInt16Type _: return si.Value >= 0 && si.Value <= ushort.MaxValue;
-                    case UInt32Type _: return si.Value >= 0 && si.Value <= uint.MaxValue;
-                    case UInt64Type _: return si.Value >= 0;
+                    case Compiler.Int8TypeId: return si.Value >= sbyte.MinValue && si.Value <= sbyte.MaxValue;
+                    case Compiler.Int16TypeId: return si.Value >= short.MinValue && si.Value <= short.MaxValue;
+                    case Compiler.Int32TypeId: return si.Value >= int.MinValue && si.Value <= int.MaxValue;
+                    case Compiler.Int64TypeId: return true;
+                    case Compiler.UInt8TypeId: return si.Value >= 0 && si.Value <= byte.MaxValue;
+                    case Compiler.UInt16TypeId: return si.Value >= 0 && si.Value <= ushort.MaxValue;
+                    case Compiler.UInt32TypeId: return si.Value >= 0 && si.Value <= uint.MaxValue;
+                    case Compiler.UInt64TypeId: return si.Value >= 0;
                     default: return false;
                 }
             }
 
             case UnsignedIntegerConstant ui: {
 
-                switch (ty) {
+                switch (typeId) {
 
-                    case Int8Type _: return ui.Value <= ToUInt64(sbyte.MaxValue);
-                    case Int16Type _: return ui.Value <= ToUInt64(short.MaxValue);
-                    case Int32Type _: return ui.Value <= ToUInt64(int.MaxValue);
-                    case Int64Type _: return ui.Value <= ToUInt64(long.MaxValue);
-                    case UInt8Type _: return ui.Value <= ToUInt64(byte.MaxValue);
-                    case UInt16Type _: return ui.Value <= ToUInt64(ushort.MaxValue);
-                    case UInt32Type _: return ui.Value <= ToUInt64(uint.MaxValue);
-                    case UInt64Type _: return true;
+                    case Compiler.Int8TypeId: return ui.Value <= ToUInt64(sbyte.MaxValue);
+                    case Compiler.Int16TypeId: return ui.Value <= ToUInt64(short.MaxValue);
+                    case Compiler.Int32TypeId: return ui.Value <= ToUInt64(int.MaxValue);
+                    case Compiler.Int64TypeId: return ui.Value <= ToUInt64(long.MaxValue);
+                    case Compiler.UInt8TypeId: return ui.Value <= ToUInt64(byte.MaxValue);
+                    case Compiler.UInt16TypeId: return ui.Value <= ToUInt64(ushort.MaxValue);
+                    case Compiler.UInt32TypeId: return ui.Value <= ToUInt64(uint.MaxValue);
+                    case Compiler.UInt64TypeId: return true;
                     default: return false;
                 }
             }
@@ -901,38 +791,34 @@ public static partial class IntegerConstantFunctions {
 
     public static (NumericConstant?, Int32) Promote(
         this IntegerConstant i,
-        Int32 typeId,
-        Project project) {
+        Int32 typeId) {
 
-        var ty = project.Types[typeId];
-
-        if (!ty.CanFitInteger(i)) {
+        if (!NeuTypeFunctions.CanFitInteger(typeId, i)) {
 
             return (null, Compiler.UnknownTypeId);
         }
 
         NumericConstant newConstant = i switch {
-            SignedIntegerConstant si => ty switch {      
-                Int8Type => new Int8Constant(ToSByte(si.Value)),
-                Int16Type => new Int16Constant(ToInt16(si.Value)),
-                Int32Type => new Int32Constant(ToInt32(si.Value)),
-                Int64Type => new Int64Constant(si.Value),
-                UInt8Type => new UInt8Constant(ToByte(si.Value)),
-                UInt16Type => new UInt16Constant(ToUInt16(si.Value)),
-                UInt32Type => new UInt32Constant(ToUInt32(si.Value)),
-                UInt64Type => new UInt64Constant(ToUInt64(si.Value)),
+            SignedIntegerConstant si => typeId switch {      
+                Compiler.Int8TypeId => new Int8Constant(ToSByte(si.Value)),
+                Compiler.Int16TypeId => new Int16Constant(ToInt16(si.Value)),
+                Compiler.Int32TypeId => new Int32Constant(ToInt32(si.Value)),
+                Compiler.Int64TypeId => new Int64Constant(si.Value),
+                Compiler.UInt8TypeId => new UInt8Constant(ToByte(si.Value)),
+                Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(si.Value)),
+                Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(si.Value)),
+                Compiler.UInt64TypeId => new UInt64Constant(ToUInt64(si.Value)),
                 _ => throw new Exception("Bogus state in IntegerConstant.promote")
             },
-
-            UnsignedIntegerConstant ui => ty switch {
-                Int8Type => new Int8Constant(ToSByte(ui.Value)),
-                Int16Type => new Int16Constant(ToInt16(ui.Value)),
-                Int32Type => new Int32Constant(ToInt32(ui.Value)),
-                Int64Type => new Int64Constant(System.Convert.ToInt64(ui.Value)),
-                UInt8Type => new UInt8Constant(ToByte(ui.Value)),
-                UInt16Type => new UInt16Constant(ToUInt16(ui.Value)),
-                UInt32Type => new UInt32Constant(ToUInt32(ui.Value)),
-                UInt64Type => new UInt64Constant(ui.Value),
+            UnsignedIntegerConstant ui => typeId switch {
+                Compiler.Int8TypeId => new Int8Constant(ToSByte(ui.Value)),
+                Compiler.Int16TypeId => new Int16Constant(ToInt16(ui.Value)),
+                Compiler.Int32TypeId => new Int32Constant(ToInt32(ui.Value)),
+                Compiler.Int64TypeId => new Int64Constant(System.Convert.ToInt64(ui.Value)),
+                Compiler.UInt8TypeId => new UInt8Constant(ToByte(ui.Value)),
+                Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(ui.Value)),
+                Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(ui.Value)),
+                Compiler.UInt64TypeId => new UInt64Constant(ui.Value),
                 _ => throw new Exception("Bogus state in IntegerConstant.promote")
             },
             _ => throw new Exception()
@@ -2098,11 +1984,9 @@ public static partial class TypeCheckerFunctions {
                 }
 
                 var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
-                    // checkedType, 
                     checkedTypeId,
                     checkedExpr,
-                    vds.Expr.GetSpan(),
-                    project);
+                    vds.Expr.GetSpan());
 
                 error = error ?? tryPromoteErr;
 
@@ -2213,19 +2097,16 @@ public static partial class TypeCheckerFunctions {
     public static (CheckedNumericConstantExpression?, Error?) TryPromoteConstantExprToType(
         Int32 lhsTypeId,
         CheckedExpression checkedRhs,
-        Span span,
-        Project project) {
+        Span span) {
 
-        var lhsType = project.Types[lhsTypeId];
-
-        if (!lhsType.IsInteger()) {
+        if (!NeuTypeFunctions.IsInteger(lhsTypeId)) {
 
             return (null, null);
         }
 
         if (checkedRhs.ToIntegerConstant() is IntegerConstant rhsConstant) {
 
-            var (_newConstant, newType) = rhsConstant.Promote(lhsTypeId, project);
+            var (_newConstant, newType) = rhsConstant.Promote(lhsTypeId);
 
             if (_newConstant is NumericConstant newConstant) {
 
@@ -2269,8 +2150,7 @@ public static partial class TypeCheckerFunctions {
                 var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
                     checkedLhs.GetNeuType(), 
                     checkedRhs, 
-                    e.Span,
-                    project);
+                    e.Span);
 
                 error = error ?? tryPromoteErr;
 
@@ -2447,7 +2327,6 @@ public static partial class TypeCheckerFunctions {
                     }
                     else {
 
-                        // if (!NeuTypeFunctions.Eq(innerType, checkedExpr.GetNeuType())) {
                         if (innerType != checkedExpr.GetNeuType()) {
 
                             error = error ?? 
@@ -2516,11 +2395,9 @@ public static partial class TypeCheckerFunctions {
 
                         var _chkIdx = checkedIdx.GetNeuType();
 
-                        var checkedIdxTy = project.Types[_chkIdx];
+                        switch (true) {
 
-                        switch (_chkIdx) {
-
-                            case var _ when checkedIdxTy.IsInteger(): {
+                            case var _ when NeuTypeFunctions.IsInteger(_chkIdx): {
 
                                 exprType = vt.TypeId;
 
@@ -2529,7 +2406,7 @@ public static partial class TypeCheckerFunctions {
 
                             default: {
 
-                                error = error ??
+                                error = error ?? 
                                     new TypeCheckError(
                                         "index is not an integer",
                                         ie.Index.GetSpan());
@@ -2664,123 +2541,115 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? chkExprErr;
 
-                var checkedExprTy = project.Types[checkedExpr.GetNeuType()];
+                if (checkedExpr.GetNeuType() == Compiler.StringTypeId) {
 
-                switch (checkedExprTy) {
+                    // Special-case the built-in so we don't accidentally find the user's definition
 
-                    case StructType st: {
+                    var stringStruct = project.FindStructInScope(0, "String");
 
-                        var (checkedCall, err) = TypeCheckMethodCall(
-                            mce.Call,
-                            scopeId,
-                            mce.Span,
-                            project,
-                            st.StructId,
-                            safetyMode);
+                    switch (stringStruct) {
 
-                        error = error ?? err;
+                        case Int32 structId: {
 
-                        var ty = checkedCall.Type;
+                            var (checkedCall, err) = TypeCheckMethodCall(
+                                mce.Call,
+                                scopeId,
+                                mce.Span,
+                                project,
+                                structId,
+                                safetyMode);
 
-                        return (
-                            new CheckedMethodCallExpression(checkedExpr, checkedCall, ty),
-                            error);
-                    }
+                            return (
+                                new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
+                                error);
+                        }
 
-                    case StringType _: {
+                        default: {
 
-                        // Special-case the built-in so we don't accidentally find the user's definition
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "no methods available on value",
+                                    mce.Expression.GetSpan());
 
-                        var stringStruct = project.FindStructInScope(0, "String");
-
-                        switch (stringStruct) {
-
-                            case Int32 structId: {
-
-                                var (checkedCall, err) = TypeCheckMethodCall(
-                                    mce.Call,
-                                    scopeId,
-                                    mce.Span,
-                                    project,
-                                    structId,
-                                    safetyMode);
-
-                                error = error ?? err;
-
-                                var ty = checkedCall.Type;
-
-                                return (
-                                    new CheckedMethodCallExpression(
-                                        checkedExpr,
-                                        checkedCall,
-                                        ty),
-                                    error);
-                            }
-
-                            default: {
-
-                                error = error ?? 
-                                    new TypeCheckError(
-                                        "no methods available on value",
-                                        mce.Expression.GetSpan());
-
-                                return (new CheckedGarbageExpression(), error);
-                            }
+                            return (
+                                new CheckedGarbageExpression(), 
+                                error);
                         }
                     }
+                }
+                else {
 
-                    case VectorType _: {
+                    var checkedExprTy = project.Types[checkedExpr.GetNeuType()];
 
-                        // Special-case the built-in so we don't accidentally find the user's definition
+                    switch (checkedExprTy) {
 
-                        var vectorString = project.FindStructInScope(0, "RefVector");
+                        case StructType st: {
 
-                        switch (vectorString) {
+                            var (checkedCall, err) = TypeCheckMethodCall(
+                                mce.Call, 
+                                scopeId, 
+                                mce.Span, 
+                                project, 
+                                st.StructId, 
+                                safetyMode);
 
-                            case Int32 structId: {
+                            error = error ?? err;
 
-                                var (checkedCall, err) = TypeCheckMethodCall(
-                                    mce.Call, 
-                                    scopeId, 
-                                    mce.Span,
-                                    project,
-                                    structId,
-                                    safetyMode);
+                            return (
+                                new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
+                                error);
+                        }
 
-                                error = error ?? err;
+                        case VectorType vt: {
 
-                                var ty = checkedCall.Type;
+                            // Special-case the built-in so we don't accidentally find the user's definition
 
-                                return (
-                                    new CheckedMethodCallExpression(
-                                        checkedExpr,
-                                        checkedCall,
-                                        ty),
-                                    error);
-                            }
+                            var vectorStruct = project.FindStructInScope(0, "RefVector");
 
-                            default: {
+                            switch (vectorStruct) {
 
-                                error = error ?? 
-                                    new TypeCheckError(
-                                        "no methods available on value",
-                                        mce.Expression.GetSpan());
+                                case Int32 structId: {
 
-                                return (new CheckedGarbageExpression(), error);
+                                    var (checkedCall, err) = TypeCheckMethodCall(
+                                        mce.Call,
+                                        scopeId,
+                                        mce.Span,
+                                        project,
+                                        structId,
+                                        safetyMode);
+
+                                    error = error ?? err;
+
+                                    return (
+                                        new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
+                                        error);
+                                }
+
+                                default: {
+
+                                    error = error ??
+                                        new TypeCheckError(
+                                            "no methods available on value",
+                                            mce.Expression.GetSpan());
+
+                                    return (
+                                        new CheckedGarbageExpression(),
+                                        error);
+                                }
                             }
                         }
-                    }
 
-                    default: {
+                        default: {
 
-                        error = error ?? 
-                            new TypeCheckError(
-                                "no methods available on value",
-                                mce.Expression.GetSpan());
+                            error = error ??
+                                new TypeCheckError(
+                                    "no methods available on value",
+                                    mce.Expression.GetSpan());
 
-                        return (
-                            new CheckedGarbageExpression(),
-                            error);
+                            return (
+                                new CheckedGarbageExpression(),
+                                error);
+                        }
                     }
                 }
             }
@@ -3005,8 +2874,6 @@ public static partial class TypeCheckerFunctions {
                 var lhsTy = lhs.GetNeuType();
                 var rhsTy = rhs.GetNeuType();
 
-                // if (!NeuTypeFunctions.Eq(lhsTy, rhsTy)) {
-
                 if (lhsTy != rhsTy) {
 
                     return (
@@ -3119,8 +2986,6 @@ public static partial class TypeCheckerFunctions {
 
         DefinitionType? calleDefType = null;
 
-        // NeuType returnType = new UnknownType();
-
         var returnType = Compiler.UnknownTypeId;
 
         switch (call.Name) {
@@ -3209,8 +3074,7 @@ public static partial class TypeCheckerFunctions {
                             var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
                                 callee.Parameters[idx].Variable.Type,
                                 checkedArg,
-                                call.Args[idx].Item2.GetSpan(),
-                                project);
+                                call.Args[idx].Item2.GetSpan());
 
                             error = error ?? tryPromoteErr;
 
@@ -3318,8 +3182,7 @@ public static partial class TypeCheckerFunctions {
                     var (_checkedArg, promoteErr) = TryPromoteConstantExprToType(
                         callee.Parameters[idx + 1].Variable.Type, 
                         checkedArg, 
-                        call.Args[idx].Item2.GetSpan(),
-                        project);
+                        call.Args[idx].Item2.GetSpan());
 
                     error = error ?? promoteErr;
 

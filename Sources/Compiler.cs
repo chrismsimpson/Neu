@@ -40,27 +40,27 @@ public partial class Compiler {
         // First, let's make types for all the builtin types
         // This order *must* match the order of the constants the typechecker expects
 
-        project.Types.Add(new UnknownType());   // 0
-        project.Types.Add(new VoidType());      // 1
-        project.Types.Add(new BoolType());      // 2
+        project.Types.Add(new UnknownOrBuiltin());      // 0
+        project.Types.Add(new UnknownOrBuiltin());      // 1
+        project.Types.Add(new UnknownOrBuiltin());      // 2
         
-        project.Types.Add(new Int8Type());      // 3
-        project.Types.Add(new Int16Type());     // 4
-        project.Types.Add(new Int32Type());     // 5
-        project.Types.Add(new Int64Type());     // 6
+        project.Types.Add(new UnknownOrBuiltin());      // 3
+        project.Types.Add(new UnknownOrBuiltin());      // 4
+        project.Types.Add(new UnknownOrBuiltin());      // 5
+        project.Types.Add(new UnknownOrBuiltin());      // 6
         
-        project.Types.Add(new UInt8Type());     // 7
-        project.Types.Add(new UInt16Type());    // 8
-        project.Types.Add(new UInt32Type());    // 9
-        project.Types.Add(new UInt64Type());    // 10
+        project.Types.Add(new UnknownOrBuiltin());      // 7
+        project.Types.Add(new UnknownOrBuiltin());      // 8
+        project.Types.Add(new UnknownOrBuiltin());      // 9
+        project.Types.Add(new UnknownOrBuiltin());      // 10
 
-        project.Types.Add(new FloatType());     // 11
-        project.Types.Add(new DoubleType());    // 12
+        project.Types.Add(new UnknownOrBuiltin());      // 11
+        project.Types.Add(new UnknownOrBuiltin());      // 12
 
-        project.Types.Add(new CCharType());     // 13
-        project.Types.Add(new CIntType());      // 14
+        project.Types.Add(new UnknownOrBuiltin());      // 13
+        project.Types.Add(new UnknownOrBuiltin());      // 14
         
-        project.Types.Add(new StringType());    // 15
+        project.Types.Add(new UnknownOrBuiltin());      // 15
 
         var prelude = Compiler.Prelude();
 

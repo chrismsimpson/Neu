@@ -419,140 +419,87 @@ public static partial class CodeGenFunctions {
         Int32 typeId,
         Project project) {
 
-        var ty = project.Types[typeId];
+        switch (typeId) {
 
-        switch (ty) {
-
-            case BoolType _: {
-
-                return "bool";
-            }
-
-            case StringType _: {
-
-                return "String";
-            }
-
-            case CCharType _: {
-
-                return "char";
-            }
-
-            case CIntType _: {
-
-                return "int";
-            }
-
-            case Int8Type _: {
-
-                return "Int8";
-            }
-
-            case Int16Type _: {
-
-                return "Int16";
-            }
-
-            case Int32Type _: {
-
-                return "Int32";
-            }
-
-            case Int64Type _: {
-
-                return "Int64";
-            }
-
-            case UInt8Type _: {
-
-                return "UInt8";
-            }
-
-            case UInt16Type _: {
-
-                return "UInt16";
-            }
-
-            case UInt32Type _: {
-
-                return "UInt32";
-            }
-
-            case UInt64Type _: {
-
-                return "UInt64";
-            }
-
-            case FloatType _: {
-
-                return "Float";
-            }
-
-            case DoubleType _: {
-
-                return "Double";
-            }
-
-            case VoidType _: {
-                
-                return "void";
-            }
-
-            case RawPointerType rp: {
-
-                return $"{compiler.CodeGenType(rp.TypeId, project)}*";
-            }
-
-            case VectorType vt: {
-
-                return $"RefVector<{compiler.CodeGenType(vt.TypeId, project)}>";
-            }
-
-            case TupleType tt: {
-
-                var output = new StringBuilder("Tuple<");
-
-                var first = true;
-
-                foreach (var t in tt.TypeIds) {
-
-                    if (!first) {
-
-                        output.Append(", ");
-                    }
-                    else {
-
-                        first = false;
-                    }
-
-                    output.Append(compiler.CodeGenType(t, project));
-                }
-
-                output.Append('>');
-
-                return output.ToString();
-            }
-
-            case OptionalType ot: {
-
-                return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
-            }
-
-            case StructType st: {
-
-                return project.Structs[st.StructId].Name;
-            }
-
-            case UnknownType _: {
-
-                return "auto";
-            }
-
-            ///
-
+            case Compiler.BoolTypeId: return "bool";
+            case Compiler.StringTypeId: return "String";
+            case Compiler.CCharTypeId: return "char";
+            case Compiler.CIntTypeId: return "int";
+            case Compiler.Int8TypeId: return "Int8";
+            case Compiler.Int16TypeId: return "Int16";
+            case Compiler.Int32TypeId: return "Int32";
+            case Compiler.Int64TypeId: return "Int64";
+            case Compiler.UInt8TypeId: return "UInt8";
+            case Compiler.UInt16TypeId: return "UInt16";
+            case Compiler.UInt32TypeId: return "UInt32";
+            case Compiler.UInt64TypeId: return "UInt64";
+            case Compiler.FloatTypeId: return "Float";
+            case Compiler.DoubleTypeId: return "Double";
+            case Compiler.VoidTypeId: return "void";
+            case Compiler.UnknownTypeId: return "auto";
             default: {
 
-                throw new Exception();
+                var ty = project.Types[typeId];
+
+                switch (ty) {
+
+                    case RawPointerType rp: {
+
+                        return $"{compiler.CodeGenType(rp.TypeId, project)}*";
+                    }
+
+                    case VectorType vt: {
+
+                        return $"RefVector<{compiler.CodeGenType(vt.TypeId, project)}>";
+                    }
+
+                    case TupleType tt: {
+
+                        var output = new StringBuilder("Tuple<");
+
+                        var first = true;
+
+                        foreach (var t in tt.TypeIds) {
+
+                            if (!first) {
+
+                                output.Append(", ");
+                            }
+                            else {
+
+                                first = false;
+                            }
+
+                            output.Append(compiler.CodeGenType(t, project));
+                        }
+
+                        output.Append('>');
+
+                        return output.ToString();
+                    }
+
+                    case OptionalType ot: {
+
+                        return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
+                    }
+
+                    case StructType st: {
+
+                        return project.Structs[st.StructId].Name;
+                    }
+
+                    case UnknownOrBuiltin _: {
+
+                        return "auto";
+                    }
+
+                    ///
+
+                    default: {
+
+                        throw new Exception();
+                    }
+                }
             }
         }
     }
@@ -1081,14 +1028,12 @@ public static partial class CodeGenFunctions {
 
                     case TypeCastUnaryOperator tc: {
 
-                        var ty = project.Types[unaryOp.Type];
-
                         switch (tc.TypeCast) {
 
                             case FallibleTypeCast _: {
 
-                                if (ty.IsInteger()) {
-
+                                if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
+                            
                                     output.Append("fallibleIntegerCast");
                                 }
                                 else {
@@ -1101,7 +1046,7 @@ public static partial class CodeGenFunctions {
 
                             case InfallibleTypeCast _: {
 
-                                if (ty.IsInteger()) {
+                                if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
                                     output.Append("infallibleIntegerCast");
                                 }
@@ -1115,7 +1060,7 @@ public static partial class CodeGenFunctions {
 
                             case SaturatingTypeCast _: {
 
-                                if (ty.IsInteger()) {
+                                if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
                                     output.Append("saturatingIntegerCast");
                                 }
@@ -1129,7 +1074,7 @@ public static partial class CodeGenFunctions {
 
                             case TruncatingTypeCast _: {
 
-                                if (ty.IsInteger()) {
+                                if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
                                     output.Append("truncatingIntegerCast");
                                 }
