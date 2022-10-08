@@ -210,7 +210,7 @@ extern class String {
 
 extern class RefVector {
     func size(this) -> Int64 { }
-    fun resize(var this, anon size: UInt64) { }
+    func resize(var this, anon size: Int64) { }
 }
 
 ");
