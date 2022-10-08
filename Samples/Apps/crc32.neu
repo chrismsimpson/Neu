@@ -7,14 +7,14 @@ extern func feof(anon file: var raw FILE) -> CInt
 extern func putchar(anon ch: CInt) -> CInt
 
 func makeLookupTable() -> [UInt32] {
-    var data = [0 as! UInt32; 256]
+    var data = [UInt32(0); 256]
     var i = 0
     while i < data.size() {
         var value = i as! UInt32
         var j = 0
         while j < 8 {
             if value & 1 {
-                value = 0xedb88320 as! UInt32 ^ (value >> 1)
+                value = UInt32(0xedb88320) ^ (value >> 1)
             } 
             else {
                 value >>= 1
@@ -39,7 +39,7 @@ func main(args: [String]) {
 
     let table = makeLookupTable()
     
-    var state: UInt32 = 0xffffffff
+    var state = UInt32(0xffffffff)
     var c = fgetc(file)
     while not feof(file) {
         state = table[(state ^ c) & 0xff] ^ (state >> 8);
