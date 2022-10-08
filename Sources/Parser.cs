@@ -3550,7 +3550,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new NumericConstantExpression(new Int64Constant(numTok.Value), span);
+                expr = new NumericConstantExpression(numTok.Value, span);
 
                 break;
             }
@@ -3761,6 +3761,25 @@ public static partial class ParserFunctions {
 
                             switch (tokens.ElementAt(index)) {
 
+                                case NumberToken numberToken: {
+
+                                    index += 1;
+
+                                    var _span = new Span(
+                                        fileId: expr.GetSpan().FileId,
+                                        start: expr.GetSpan().Start,
+                                        end: tokens[index].Span.End);
+
+                                    expr = new IndexedTupleExpression(
+                                        expr,
+                                        numberToken.Value.IntegerConstant()!.ToInt64(),
+                                        _span);
+
+                                    contNS = false;
+
+                                    break;
+                                }
+
                                 case NameToken nsNameToken: {
 
                                     index += 1;
@@ -3860,25 +3879,6 @@ public static partial class ParserFunctions {
                                     break;
                                 }
 
-                                case NumberToken numberToken: {
-
-                                    index += 1;
-
-                                    var _span = new Span(
-                                        fileId: expr.GetSpan().FileId,
-                                        start: expr.GetSpan().Start,
-                                        end: tokens[index].Span.End);
-
-                                    expr = new IndexedTupleExpression(
-                                        expr,
-                                        numberToken.Value,
-                                        _span);
-
-                                    contNS = false;
-
-                                    break;
-                                }
-
                                 default: {
 
                                     index += 1;
@@ -3912,7 +3912,7 @@ public static partial class ParserFunctions {
                                         start: expr.GetSpan().Start,
                                         end: tokens.ElementAt(index).Span.End);
 
-                                    expr = new IndexedTupleExpression(expr, number.Value, _span);
+                                    expr = new IndexedTupleExpression(expr, number.Value.IntegerConstant()!.ToInt64(), _span);
 
                                     break;
                                 }

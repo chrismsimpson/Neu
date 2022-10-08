@@ -877,6 +877,28 @@ public partial class IntegerConstant {
 
 public static partial class IntegerConstantFunctions {
 
+    public static Int64 ToInt64(
+        this IntegerConstant i) {
+
+        switch (i) {
+
+            case SignedIntegerConstant s: {
+
+                return s.Value;
+            }
+
+            case UnsignedIntegerConstant u: {
+
+                return System.Convert.ToInt64(u.Value);
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+    }
+
     public static (NumericConstant?, Int32) Promote(
         this IntegerConstant i,
         Int32 typeId,
@@ -906,7 +928,7 @@ public static partial class IntegerConstantFunctions {
                 Int8Type => new Int8Constant(ToSByte(ui.Value)),
                 Int16Type => new Int16Constant(ToInt16(ui.Value)),
                 Int32Type => new Int32Constant(ToInt32(ui.Value)),
-                Int64Type => new Int64Constant(ToInt64(ui.Value)),
+                Int64Type => new Int64Constant(System.Convert.ToInt64(ui.Value)),
                 UInt8Type => new UInt8Constant(ToByte(ui.Value)),
                 UInt16Type => new UInt16Constant(ToUInt16(ui.Value)),
                 UInt32Type => new UInt32Constant(ToUInt32(ui.Value)),

@@ -17,3 +17,5 @@ Instances are denoted with `(this, ...`, mutable instances with `(var this, ...`
 `func` is the keyword specifier for functions.
 
 C's `char` and `int` are mapped to `CChar` and `CInt`, respectively.
+
+Instead of literal suffixes (e.g. `0u8`), there are literal casts (e.g. `UInt8(0)`), more like Swift.

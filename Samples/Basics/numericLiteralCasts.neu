@@ -1,0 +1,36 @@
+func main() {
+
+    {
+        var i = UInt8(0)
+        var j = UInt16(0)
+        var k = UInt32(0)
+        var l = UInt64(0)
+
+        i += 5 as! UInt8
+        j += 5 as! UInt16
+        k += 5 as! UInt32
+        l += 5 as! UInt64
+        
+        printLine(i)
+        printLine(j)
+        printLine(k)
+        printLine(l)
+    }
+
+    {
+        var i = Int8(0)
+        var j = Int16(0)
+        var k = Int32(0)
+        var l = Int64(0)
+
+        i += 5 as! Int8
+        j += 5 as! Int16
+        k += 5 as! Int32
+        l += 5 as! Int64
+
+        printLine(i)
+        printLine(j)
+        printLine(k)
+        printLine(l)
+    }
+}

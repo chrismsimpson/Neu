@@ -81,12 +81,15 @@ public partial class Token {
 
     public partial class NumberToken: Token {
 
-        public Int64 Value { get; init; }
+        // public Int64 Value { get; init; }
+
+        public NumericConstant Value { get; init; }
 
         ///
 
         public NumberToken(
-            Int64 value,
+            // Int64 value,
+            NumericConstant value,
             Span span)
             : base(span) {
 
@@ -1049,7 +1052,8 @@ public static partial class LexerFunctions {
             if (Int64.TryParse(str, System.Globalization.NumberStyles.HexNumber, null, out number)) {
 
                 return (
-                    new NumberToken(number, new Span(fileId, start, index)),
+                    // new NumberToken(number, new Span(fileId, start, index)),
+                    MakeNumberToken(null, null, number, new Span(fileId, start, index)),
                     null);
             }
             else {
@@ -1060,7 +1064,99 @@ public static partial class LexerFunctions {
                         "could not parse hex",
                         new Span(fileId, start, index)));
             }
-        } 
+        }
+        else if (bytes.MatchLiteralCast(ref index) is LiteralCast literalCast) {
+
+            // Literal cast
+
+            var start = index;
+
+            index += literalCast.Length;
+
+            var literalStart = index;
+
+            var isHex = false;
+
+            var isBinary = false;
+
+            if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'x') {
+
+                isHex = true;
+
+                index += 2;
+
+                literalStart += 2;
+
+                // Hex number
+
+                while (index < bytes.Length && bytes[index].IsAsciiHexDigit()) {
+
+                    index += 1;
+                }
+            }
+            else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'x') {
+
+                isBinary = true;
+
+                index += 2;
+
+                literalStart += 2;
+
+                // Binary number
+
+                while (index < bytes.Length && (bytes[index] == '0' || bytes[index] == '1')) {
+                    
+                    index += 1;
+                }
+            }
+            else if (bytes[index].IsAsciiDigit()) {
+
+                // Number
+
+                while (index < bytes.Length && bytes[index].IsAsciiDigit()) {
+
+                    index += 1;
+                }
+            }
+            else {
+
+                throw new Exception();
+            }
+
+            var str = UTF8.GetString(bytes[(literalStart)..index]);
+
+            index += 1; // trailing ')'
+
+            Int64 number = 0;
+
+            try {
+
+                if (isHex) {
+
+                    number = ToInt64(str, 16);
+                }
+                else if (isBinary) {
+
+                    number = ToInt64(str, 2);
+                }
+                else {
+
+                    number = ToInt64(str, 10);
+                }
+
+                return (
+                    MakeNumberToken(literalCast.Sign, literalCast.Width, number, new Span(fileId, start, index)),
+                    null);
+            }
+            catch {
+
+                return (
+                    new UnknownToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "could not parse hex",
+                        new Span(fileId, start, index)));
+            }
+        }
         else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'b') {
             
             // Binary number
@@ -1081,7 +1177,8 @@ public static partial class LexerFunctions {
                 var number = ToInt64(str, 2);
 
                 return (
-                    new NumberToken(number, new Span(fileId, start, index)),
+                    // new NumberToken(number, new Span(fileId, start, index)),
+                    MakeNumberToken(null, null, number, new Span(fileId, start, index)),
                     null);
             }
             catch {
@@ -1110,8 +1207,12 @@ public static partial class LexerFunctions {
 
             if (Int64.TryParse(str, out number)) {
 
+                // return (
+                //     new NumberToken(number, new Span(fileId, start, index)),
+                //     null);
+
                 return (
-                    new NumberToken(number, new Span(fileId, start, index)),
+                    MakeNumberToken(null, null, number, new Span(fileId, start, index)),
                     null);
             }
             else {
@@ -1262,9 +1363,177 @@ public static partial class LexerFunctions {
                 error);
         }
     }
+
+    public static Token MakeNumberToken(
+        bool? sign,
+        int? width,
+        Int64 number,
+        Span span) {
+
+        switch (true) {
+
+            case var _ when sign == false && width == 8:
+                return new NumberToken(new UInt8Constant(ToByte(number)), span);
+
+            case var _ when sign == false && width == 16:
+                return new NumberToken(new UInt16Constant(ToUInt16(number)), span);
+
+            case var _ when sign == false && width == 32:   // FIXME: Check whether this loses precision
+                return new NumberToken(new UInt32Constant(ToUInt32(number)), span);
+
+            case var _ when sign == false && width == 64:
+                return new NumberToken(new UInt64Constant(ToUInt64(number)), span);
+
+            case var _ when sign == true && width == 8:
+                return new NumberToken(new Int8Constant(ToSByte(number)), span);
+
+            case var _ when sign == true && width == 16:
+                return new NumberToken(new Int16Constant(ToInt16(number)), span);
+
+            case var _ when sign == true && width == 32:
+                return new NumberToken(new Int32Constant(ToInt32(number)), span);
+
+            case var _ when sign == true && width == 64:
+                return new NumberToken(new Int64Constant(number), span);
+
+            // FIXME: These 2 don't work at all:
+
+            case var _ when sign == null && width == 32: // (Float)
+                return new NumberToken(new Int64Constant(number), span);
+
+            case var _ when sign == null && width == 64: // (Double)
+                return new NumberToken(new Int64Constant(number), span);
+
+            default:
+                return new NumberToken(new Int64Constant(number), span);
+        }
+    }
+}
+
+public struct LiteralCast {
+
+    public Int32 Length { get; init; }
+
+    public bool? Sign { get; init; }
+
+    public int? Width { get; init; }
+
+    ///
+
+    public LiteralCast(
+        Int32 length,
+        bool? sign,
+        int? width) {
+
+        this.Length = length;
+        this.Sign = sign;
+        this.Width = width;
+    }
 }
 
 public static partial class CharExtensions {
+
+    public static bool Match(
+        this byte[] bytes,
+        int index,
+        String str) {
+
+        if ((index + str.Length) >= bytes.Length) {
+
+            return false;
+        }
+
+        for (var i = 0; i < str.Length; i++) {
+
+            if (bytes[index + i] != str[i]) {
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static LiteralCast? MatchLiteralCast(
+        this byte[] bytes,
+        ref int index) {
+
+        var i = index;
+
+        bool? sign = null;
+        int? width = null;
+
+        if (bytes.Match(i, "UInt")) {
+
+            i += 4;
+
+            sign = false;
+        }
+        else if (bytes.Match(i, "Int")) {
+
+            i += 3;
+
+            sign = true;
+        }
+        else if (bytes.Match(i, "Float")) {
+
+            width = 32;
+        }
+        else if (bytes.Match(i, "Double")) {
+
+            width = 64;
+        }
+        else {
+
+            return null;
+        }
+
+        if (sign != null && width == null) {
+
+            if (bytes.Match(i, "8")) {
+
+                i += 1;
+                
+                width = 8;
+            }
+            else if (bytes.Match(i, "16")) {
+
+                i += 2;
+
+                width = 16;
+            }
+            else if (bytes.Match(i, "32")) {
+                
+                i += 2;
+
+                width = 32;
+            }
+            else if (bytes.Match(i, "64")) {
+                
+                i += 2;
+
+                width = 64;
+            }
+            else {
+
+                return null;
+            }
+        }
+
+        if (bytes.Match(i, "(")) {
+
+            i += 1;
+        }
+        else {
+
+            return null;
+        }
+
+        return new LiteralCast(
+            i - index, 
+            sign, 
+            width);
+    }
 
     public static bool IsAsciiAlphanumeric(
         this byte b) {
