@@ -2089,20 +2089,6 @@ public static partial class ParserFunctions {
                                 break;
                             }
 
-                            // case EofToken _: {
-
-                            //     Trace($"ERROR: expected field, found: {tokens.ElementAt(index)}");
-
-                            //     error = error ?? 
-                            //         new ParserError(
-                            //             "expected field",
-                            //             tokens.ElementAt(index).Span);
-
-                            //     contFields = false;
-
-                            //     break;
-                            // }
-
                             default: {
 
                                 Trace($"ERROR: expected field, found: {tokens.ElementAt(index)}");
@@ -4936,13 +4922,6 @@ public static partial class ParserFunctions {
         }
 
         switch (tokens.ElementAt(index)) {
-
-            // case NameToken nt: {
-
-            //     uncheckedType.Name = nt.Value;
-
-            //     break;
-            // }
 
             case NameToken nt: {
 

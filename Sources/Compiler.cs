@@ -35,10 +35,7 @@ public partial class Compiler {
     }
 
     public void IncludePrelude(
-        Project project
-        // ,
-        // ScopeStack stack
-        ) {
+        Project project) {
 
         var prelude = Compiler.Prelude();
 
@@ -68,9 +65,6 @@ public partial class Compiler {
 
         var project = new Project();
 
-        // var stack = new ScopeStack();
-
-        // this.IncludePrelude(project, stack);
         this.IncludePrelude(project);
 
         var contents = ReadAllBytes(filename);
@@ -137,13 +131,6 @@ public partial class Compiler {
         }
 
         // Hardwire to first file for now
-
-        // return new ErrorOr<String>(this.CodeGen(
-        //     project, 
-        //     stack
-        //         .Frames
-        //         .FirstOrDefault() 
-        //         ?? throw new Exception("internal error: missing global scope")));
 
         return new ErrorOr<String>(this.CodeGen(
             project, 
