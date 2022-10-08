@@ -2677,7 +2677,7 @@ public static partial class TypeCheckerFunctions {
 
                                 var (checkedCall, err) = TypeCheckMethodCall(
                                     mce.Call,
-                                    0,
+                                    scopeId,
                                     mce.Span,
                                     project,
                                     structId,
@@ -2719,7 +2719,7 @@ public static partial class TypeCheckerFunctions {
 
                                 var (checkedCall, err) = TypeCheckMethodCall(
                                     mce.Call, 
-                                    0, 
+                                    scopeId, 
                                     mce.Span,
                                     project,
                                     structId,
@@ -3260,8 +3260,6 @@ public static partial class TypeCheckerFunctions {
             else {
 
                 var idx = 0;
-
-                // The first index should be the 'this'
 
                 while (idx < call.Args.Count) {
 
