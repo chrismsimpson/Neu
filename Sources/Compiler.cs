@@ -3,27 +3,27 @@ namespace Neu;
 
 public partial class Compiler {
 
-    public static readonly Int32 UnknownTypeId = 0;
-    public static readonly Int32 VoidTypeId = 1;
-    public static readonly Int32 BoolTypeId = 2;
+    public const Int32 UnknownTypeId    = 0;
+    public const Int32 VoidTypeId       = 1;
+    public const Int32 BoolTypeId       = 2;
 
-    public static readonly Int32 Int8TypeId = 3;
-    public static readonly Int32 Int16TypeId = 4;
-    public static readonly Int32 Int32TypeId = 5;
-    public static readonly Int32 Int64TypeId = 6;
+    public const Int32 Int8TypeId       = 3;
+    public const Int32 Int16TypeId      = 4;
+    public const Int32 Int32TypeId      = 5;
+    public const Int32 Int64TypeId      = 6;
 
-    public static readonly Int32 UInt8TypeId = 7;
-    public static readonly Int32 UInt16TypeId = 8;
-    public static readonly Int32 UInt32TypeId = 9;
-    public static readonly Int32 UInt64TypeId = 10;
+    public const Int32 UInt8TypeId      = 7;
+    public const Int32 UInt16TypeId     = 8;
+    public const Int32 UInt32TypeId     = 9;
+    public const Int32 UInt64TypeId     = 10;
 
-    public static readonly Int32 FloatTypeId = 11;
-    public static readonly Int32 DoubleTypeId = 12;
+    public const Int32 FloatTypeId      = 11;
+    public const Int32 DoubleTypeId     = 12;
 
-    public static readonly Int32 CCharTypeId = 13;
-    public static readonly Int32 CIntTypeId = 14;
+    public const Int32 CCharTypeId      = 13;
+    public const Int32 CIntTypeId       = 14;
 
-    public static readonly Int32 StringTypeId = 14;
+    public const Int32 StringTypeId     = 15;
 
     public List<(String, byte[])> RawFiles { get; init; }
 
@@ -36,6 +36,31 @@ public partial class Compiler {
 
     public void IncludePrelude(
         Project project) {
+
+        // First, let's make types for all the builtin types
+        // This order *must* match the order of the constants the typechecker expects
+
+        project.Types.Add(new UnknownType());   // 0
+        project.Types.Add(new VoidType());      // 1
+        project.Types.Add(new BoolType());      // 2
+        
+        project.Types.Add(new Int8Type());      // 3
+        project.Types.Add(new Int16Type());     // 4
+        project.Types.Add(new Int32Type());     // 5
+        project.Types.Add(new Int64Type());     // 6
+        
+        project.Types.Add(new UInt8Type());     // 7
+        project.Types.Add(new UInt16Type());    // 8
+        project.Types.Add(new UInt32Type());    // 9
+        project.Types.Add(new UInt64Type());    // 10
+
+        project.Types.Add(new FloatType());     // 11
+        project.Types.Add(new DoubleType());    // 12
+
+        project.Types.Add(new CCharType());     // 13
+        project.Types.Add(new CIntType());      // 14
+        
+        project.Types.Add(new StringType());    // 15
 
         var prelude = Compiler.Prelude();
 

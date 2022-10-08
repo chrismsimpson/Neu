@@ -416,8 +416,10 @@ public static partial class CodeGenFunctions {
 
     public static String CodeGenType(
         this Compiler compiler,
-        NeuType ty,
+        Int32 typeId,
         Project project) {
+
+        var ty = project.Types[typeId];
 
         switch (ty) {
 
@@ -498,12 +500,12 @@ public static partial class CodeGenFunctions {
 
             case RawPointerType rp: {
 
-                return $"{compiler.CodeGenType(rp.Type, project)}*";
+                return $"{compiler.CodeGenType(rp.TypeId, project)}*";
             }
 
             case VectorType vt: {
 
-                return $"RefVector<{compiler.CodeGenType(vt.Type, project)}>";
+                return $"RefVector<{compiler.CodeGenType(vt.TypeId, project)}>";
             }
 
             case TupleType tt: {
@@ -512,7 +514,7 @@ public static partial class CodeGenFunctions {
 
                 var first = true;
 
-                foreach (var t in tt.Types) {
+                foreach (var t in tt.TypeIds) {
 
                     if (!first) {
 
@@ -533,7 +535,7 @@ public static partial class CodeGenFunctions {
 
             case OptionalType ot: {
 
-                return $"Optional<{compiler.CodeGenType(ot.Type, project)}>";
+                return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
             }
 
             case StructType st: {
@@ -1079,11 +1081,13 @@ public static partial class CodeGenFunctions {
 
                     case TypeCastUnaryOperator tc: {
 
+                        var ty = project.Types[unaryOp.Type];
+
                         switch (tc.TypeCast) {
 
                             case FallibleTypeCast _: {
 
-                                if (unaryOp.Type.IsInteger()) {
+                                if (ty.IsInteger()) {
 
                                     output.Append("fallibleIntegerCast");
                                 }
@@ -1097,7 +1101,7 @@ public static partial class CodeGenFunctions {
 
                             case InfallibleTypeCast _: {
 
-                                if (unaryOp.Type.IsInteger()) {
+                                if (ty.IsInteger()) {
 
                                     output.Append("infallibleIntegerCast");
                                 }
@@ -1111,7 +1115,7 @@ public static partial class CodeGenFunctions {
 
                             case SaturatingTypeCast _: {
 
-                                if (unaryOp.Type.IsInteger()) {
+                                if (ty.IsInteger()) {
 
                                     output.Append("saturatingIntegerCast");
                                 }
@@ -1125,7 +1129,7 @@ public static partial class CodeGenFunctions {
 
                             case TruncatingTypeCast _: {
 
-                                if (unaryOp.Type.IsInteger()) {
+                                if (ty.IsInteger()) {
 
                                     output.Append("truncatingIntegerCast");
                                 }
