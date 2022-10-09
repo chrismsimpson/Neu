@@ -30,6 +30,12 @@ ALWAYS_INLINE bool is(InputType* input) {
 }
 
 template<typename OutputType, typename InputType>
+ALWAYS_INLINE bool is(NonNullRefPointer<InputType> const& input) {
+
+    return is<OutputType>(*input);
+}
+
+template<typename OutputType, typename InputType>
 ALWAYS_INLINE CopyConst<InputType, OutputType>* verifyCast(InputType* input) {
 
     static_assert(IsBaseOf<InputType, OutputType>);
