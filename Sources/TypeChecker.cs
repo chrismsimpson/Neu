@@ -1019,6 +1019,107 @@ public static partial class NumericConstantFunctions {
 
 ///
 
+public partial class CheckedTypeCast {
+
+    public CheckedTypeCast() { }
+}
+
+    public partial class CheckedFallibleTypeCast: CheckedTypeCast {
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedFallibleTypeCast(Int32 typeId) {
+
+            this.TypeId = typeId;
+        }
+    }
+
+    public partial class CheckedInfallibleTypeCast: CheckedTypeCast {
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedInfallibleTypeCast(Int32 typeId) {
+
+            this.TypeId = typeId;
+        }
+    }
+
+    public partial class CheckedSaturatingTypeCast: CheckedTypeCast {
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedSaturatingTypeCast(Int32 typeId) {
+
+            this.TypeId = typeId;
+        }
+    }
+
+    public partial class CheckedTruncatingTypeCast: CheckedTypeCast {
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedTruncatingTypeCast(Int32 typeId) {
+
+            this.TypeId = typeId;
+        }
+    }
+
+public static partial class CheckedTypeCastFunctions {
+
+    public static bool Eq(CheckedTypeCast l, CheckedTypeCast r) {
+
+        switch (true) {
+
+            case var _ when l is CheckedFallibleTypeCast lc && r is CheckedFallibleTypeCast rc:
+                return lc.TypeId == rc.TypeId;
+
+            case var _ when l is CheckedInfallibleTypeCast lc && r is CheckedInfallibleTypeCast rc:
+                return lc.TypeId == rc.TypeId;
+
+            case var _ when l is CheckedSaturatingTypeCast lc && r is CheckedSaturatingTypeCast rc:
+                return lc.TypeId == rc.TypeId;
+
+            case var _ when l is CheckedTruncatingTypeCast lc && r is CheckedTruncatingTypeCast rc:
+                return lc.TypeId == rc.TypeId;
+
+            default:
+                return false;
+        }
+    }
+
+    public static Int32 GetNeuType(
+        this CheckedTypeCast t) {
+
+        switch (t) {
+
+            case CheckedFallibleTypeCast f:
+                return f.TypeId;
+
+            case CheckedInfallibleTypeCast i:
+                return i.TypeId;
+
+            case CheckedSaturatingTypeCast s:
+                return s.TypeId;
+
+            case CheckedTruncatingTypeCast tt:
+                return tt.TypeId;
+
+            default: 
+                throw new Exception();
+        }
+    }
+}
+
+///
+
 public partial class CheckedUnaryOperator {
 
     public CheckedUnaryOperator() { }
@@ -1071,11 +1172,11 @@ public partial class CheckedUnaryOperator {
 
     public partial class CheckedTypeCastUnaryOperator : CheckedUnaryOperator {
 
-        public TypeCast TypeCast { get; init; }
+        public CheckedTypeCast TypeCast { get; init; }
 
         ///
         
-        public CheckedTypeCastUnaryOperator(TypeCast typeCast) {
+        public CheckedTypeCastUnaryOperator(CheckedTypeCast typeCast) {
 
             this.TypeCast = typeCast;
         }
@@ -1099,7 +1200,7 @@ public static partial class CheckedUnaryOperatorFunctions {
                 return true;
 
             case var _ when l is CheckedTypeCastUnaryOperator lt && r is CheckedTypeCastUnaryOperator rt:
-                return TypeCastFunctions.Eq(lt.TypeCast, rt.TypeCast);
+                return CheckedTypeCastFunctions.Eq(lt.TypeCast, rt.TypeCast);
 
             default: 
                 return false;
@@ -2463,25 +2564,151 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedExprErr;
 
-                CheckedUnaryOperator checkedOp = u.Operator switch {
-                    PreIncrementUnaryOperator _ => new CheckedPreIncrementUnaryOperator(),
-                    PostIncrementUnaryOperator _ => new CheckedPostIncrementUnaryOperator(),
-                    PreDecrementUnaryOperator _ => new CheckedPreDecrementUnaryOperator(),
-                    PostDecrementUnaryOperator _ => new CheckedPostDecrementUnaryOperator(),
-                    NegateUnaryOperator _ => new CheckedNegateUnaryOperator(),
-                    DereferenceUnaryOperator _ => new CheckedDereferenceUnaryOperator(),
-                    RawAddressUnaryOperator _ => new CheckedRawAddressUnaryOperator(),
-                    LogicalNotUnaryOperator _ => new CheckedLogicalNotUnaryOperator(),
-                    BitwiseNotUnaryOperator _ => new CheckedBitwiseNotUnaryOperator(),
-                    TypeCastUnaryOperator t => new CheckedTypeCastUnaryOperator(t.TypeCast),
-                    _ => throw new Exception()
-                };
+                // CheckedUnaryOperator checkedOp = u.Operator switch {
+                //     PreIncrementUnaryOperator _ => new CheckedPreIncrementUnaryOperator(),
+                //     PostIncrementUnaryOperator _ => new CheckedPostIncrementUnaryOperator(),
+                //     PreDecrementUnaryOperator _ => new CheckedPreDecrementUnaryOperator(),
+                //     PostDecrementUnaryOperator _ => new CheckedPostDecrementUnaryOperator(),
+                //     NegateUnaryOperator _ => new CheckedNegateUnaryOperator(),
+                //     DereferenceUnaryOperator _ => new CheckedDereferenceUnaryOperator(),
+                //     RawAddressUnaryOperator _ => new CheckedRawAddressUnaryOperator(),
+                //     LogicalNotUnaryOperator _ => new CheckedLogicalNotUnaryOperator(),
+                //     BitwiseNotUnaryOperator _ => new CheckedBitwiseNotUnaryOperator(),
+                //     // TypeCastUnaryOperator t => {
+
+                //     //     var (typeId, typeErr) = Typechekc
+
+                //     //     return new CheckedTypeCastUnaryOperator(t.TypeCast);
+                //     // },
+                //     _ => throw new Exception()
+                // };
+
+                CheckedUnaryOperator? checkedOp = null;
+
+                switch (u.Operator) {
+
+                    case PreIncrementUnaryOperator _: {
+                        
+                        checkedOp = new CheckedPreIncrementUnaryOperator();
+
+                        break;
+                    }
+
+                    case PostIncrementUnaryOperator _: {
+                        
+                        checkedOp = new CheckedPostIncrementUnaryOperator();
+
+                        break;
+                    }
+
+                    case PreDecrementUnaryOperator _: {
+                        
+                        checkedOp = new CheckedPreDecrementUnaryOperator();
+
+                        break;
+                    }
+
+                    case PostDecrementUnaryOperator _: {
+                        
+                        checkedOp = new CheckedPostDecrementUnaryOperator();
+
+                        break;
+                    }
+
+                    case NegateUnaryOperator _: {
+                        
+                        checkedOp = new CheckedNegateUnaryOperator();
+
+                        break;
+                    }
+
+                    case DereferenceUnaryOperator _: {
+                        
+                        checkedOp = new CheckedDereferenceUnaryOperator();
+
+                        break;
+                    }
+
+                    case RawAddressUnaryOperator _: {
+                        
+                        checkedOp = new CheckedRawAddressUnaryOperator();
+
+                        break;
+                    }
+
+                    case LogicalNotUnaryOperator _: {
+                        
+                        checkedOp = new CheckedLogicalNotUnaryOperator();
+
+                        break;
+                    }
+
+                    case BitwiseNotUnaryOperator _: {
+                        
+                        checkedOp = new CheckedBitwiseNotUnaryOperator();
+
+                        break;
+                    }
+
+                    case TypeCastUnaryOperator tc: {
+
+                        var (typeId, typeErr) = TypeCheckTypeName(tc.TypeCast.GetUncheckedType(), scopeId, project);
+
+                        error = error ?? typeErr;
+
+                        CheckedTypeCast? checkedCast = null;
+
+                        switch (tc.TypeCast) {
+
+                            case FallibleTypeCast _: {
+
+                                checkedCast = new CheckedFallibleTypeCast(typeId);
+
+                                break;
+                            }
+
+                            case InfallibleTypeCast _: {
+
+                                checkedCast = new CheckedInfallibleTypeCast(typeId);
+
+                                break;
+                            }
+
+                            case SaturatingTypeCast _: {
+
+                                checkedCast = new CheckedSaturatingTypeCast(typeId);
+
+                                break;
+                            }
+
+                            case TruncatingTypeCast _: {
+
+                                checkedCast = new CheckedTruncatingTypeCast(typeId);
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+
+                        checkedOp = new CheckedTypeCastUnaryOperator(checkedCast ?? throw new Exception());
+
+                        break;
+                    }
+
+                    default: {
+
+                        break;
+                    }
+                }
 
                 var (_checkedExpr, chkUnaryOpErr) = TypeCheckUnaryOperation(
                     checkedExpr, 
-                    checkedOp, 
+                    checkedOp ?? throw new Exception(), 
                     u.Span, 
-                    scopeId, 
                     project, 
                     safetyMode);
 
@@ -3007,7 +3234,7 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression expr,
         CheckedUnaryOperator op,
         Span span,
-        Int32 scopeId,
+        // Int32 scopeId,
         Project project,
         SafetyMode safetyMode) {
     
@@ -3019,13 +3246,17 @@ public static partial class TypeCheckerFunctions {
             
             case CheckedTypeCastUnaryOperator tc: {
 
-                var uncheckedType = tc.TypeCast.GetUncheckedType();
+                // var uncheckedType = tc.TypeCast.GetUncheckedType();
 
-                var (ty, err) = TypeCheckTypeName(uncheckedType, scopeId, project);
+                // var (ty, err) = TypeCheckTypeName(uncheckedType, scopeId, project);
+
+                // return (
+                //     new CheckedUnaryOpExpression(expr, op, ty),
+                //     err);
 
                 return (
-                    new CheckedUnaryOpExpression(expr, op, ty),
-                    err);
+                    new CheckedUnaryOpExpression(expr, op, tc.TypeCast.GetNeuType()),
+                    null);
             }
 
             case CheckedDereferenceUnaryOperator _: {

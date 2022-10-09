@@ -1317,7 +1317,7 @@ public static partial class CodeGenFunctions {
 
                         switch (tc.TypeCast) {
 
-                            case FallibleTypeCast _: {
+                            case CheckedFallibleTypeCast _: {
 
                                 if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
                             
@@ -1331,7 +1331,7 @@ public static partial class CodeGenFunctions {
                                 break;
                             }
 
-                            case InfallibleTypeCast _: {
+                            case CheckedInfallibleTypeCast _: {
 
                                 if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
@@ -1345,7 +1345,7 @@ public static partial class CodeGenFunctions {
                                 break;
                             }
 
-                            case SaturatingTypeCast _: {
+                            case CheckedSaturatingTypeCast _: {
 
                                 if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
@@ -1359,7 +1359,7 @@ public static partial class CodeGenFunctions {
                                 break;
                             }
 
-                            case TruncatingTypeCast _: {
+                            case CheckedTruncatingTypeCast _: {
 
                                 if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
