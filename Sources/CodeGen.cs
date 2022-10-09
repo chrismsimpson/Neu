@@ -419,88 +419,179 @@ public static partial class CodeGenFunctions {
         Int32 typeId,
         Project project) {
 
-        switch (typeId) {
+        // switch (typeId) {
 
-            case Compiler.BoolTypeId: return "bool";
-            case Compiler.StringTypeId: return "String";
-            case Compiler.CCharTypeId: return "char";
-            case Compiler.CIntTypeId: return "int";
-            case Compiler.Int8TypeId: return "Int8";
-            case Compiler.Int16TypeId: return "Int16";
-            case Compiler.Int32TypeId: return "Int32";
-            case Compiler.Int64TypeId: return "Int64";
-            case Compiler.UInt8TypeId: return "UInt8";
-            case Compiler.UInt16TypeId: return "UInt16";
-            case Compiler.UInt32TypeId: return "UInt32";
-            case Compiler.UInt64TypeId: return "UInt64";
-            case Compiler.FloatTypeId: return "Float";
-            case Compiler.DoubleTypeId: return "Double";
-            case Compiler.VoidTypeId: return "void";
-            case Compiler.UnknownTypeId: return "auto";
-            default: {
+        //     case Compiler.BoolTypeId: return "bool";
+        //     case Compiler.StringTypeId: return "String";
+        //     case Compiler.CCharTypeId: return "char";
+        //     case Compiler.CIntTypeId: return "int";
+        //     case Compiler.Int8TypeId: return "Int8";
+        //     case Compiler.Int16TypeId: return "Int16";
+        //     case Compiler.Int32TypeId: return "Int32";
+        //     case Compiler.Int64TypeId: return "Int64";
+        //     case Compiler.UInt8TypeId: return "UInt8";
+        //     case Compiler.UInt16TypeId: return "UInt16";
+        //     case Compiler.UInt32TypeId: return "UInt32";
+        //     case Compiler.UInt64TypeId: return "UInt64";
+        //     case Compiler.FloatTypeId: return "Float";
+        //     case Compiler.DoubleTypeId: return "Double";
+        //     case Compiler.VoidTypeId: return "void";
+        //     case Compiler.UnknownTypeId: return "auto";
+        //     default: {
 
-                var ty = project.Types[typeId];
+        //         var ty = project.Types[typeId];
 
-                switch (ty) {
+        //         switch (ty) {
 
-                    case RawPointerType rp: {
+        //             case RawPointerType rp: {
 
-                        return $"{compiler.CodeGenType(rp.TypeId, project)}*";
+        //                 return $"{compiler.CodeGenType(rp.TypeId, project)}*";
+        //             }
+
+        //             case VectorType vt: {
+
+        //                 return $"RefVector<{compiler.CodeGenType(vt.TypeId, project)}>";
+        //             }
+
+        //             case TupleType tt: {
+
+        //                 var output = new StringBuilder("Tuple<");
+
+        //                 var first = true;
+
+        //                 foreach (var t in tt.TypeIds) {
+
+        //                     if (!first) {
+
+        //                         output.Append(", ");
+        //                     }
+        //                     else {
+
+        //                         first = false;
+        //                     }
+
+        //                     output.Append(compiler.CodeGenType(t, project));
+        //                 }
+
+        //                 output.Append('>');
+
+        //                 return output.ToString();
+        //             }
+
+        //             case OptionalType ot: {
+
+        //                 return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
+        //             }
+
+        //             case StructType st: {
+
+        //                 return project.Structs[st.StructId].Name;
+        //             }
+
+        //             case UnknownOrBuiltin _: {
+
+        //                 return "auto";
+        //             }
+
+        //             ///
+
+        //             default: {
+
+        //                 throw new Exception();
+        //             }
+        //         }
+        //     }
+        // }
+
+        var ty = project.Types[typeId];
+
+        switch (ty) {
+
+            case RawPointerType pt: {
+
+                return $"{compiler.CodeGenType(pt.TypeId, project)}*";
+            }
+
+            case GenericType gt: {
+
+                var output = new StringBuilder(project.Structs[gt.ParentStructId].Name);
+
+                output.Append('<');
+
+                var first = true;
+
+                foreach (var t in gt.InnerTypeIds) {
+
+                    if (!first) {
+
+                        output.Append(", ");
+                    }
+                    else {
+
+                        first = false;
                     }
 
-                    case VectorType vt: {
+                    output.Append(compiler.CodeGenType(t, project));
+                }
 
-                        return $"RefVector<{compiler.CodeGenType(vt.TypeId, project)}>";
+                output.Append('>');
+
+                return output.ToString();
+            }
+
+            case TupleType tt: {
+
+                var output = new StringBuilder("Tuple<");
+
+                var first = true;
+
+                foreach (var t in tt.TypeIds) {
+
+                    if (!first) {
+
+                        output.Append(", ");
+                    }
+                    else {
+
+                        first = false;
                     }
 
-                    case TupleType tt: {
+                    output.Append(compiler.CodeGenType(t, project));
+                }
 
-                        var output = new StringBuilder("Tuple<");
+                output.Append('>');
 
-                        var first = true;
+                return output.ToString();
+            }
 
-                        foreach (var t in tt.TypeIds) {
+            case OptionalType ot: return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
 
-                            if (!first) {
+            case StructType st: return project.Structs[st.StructId].Name;
 
-                                output.Append(", ");
-                            }
-                            else {
+            case UnknownOrBuiltin _: {
 
-                                first = false;
-                            }
-
-                            output.Append(compiler.CodeGenType(t, project));
-                        }
-
-                        output.Append('>');
-
-                        return output.ToString();
-                    }
-
-                    case OptionalType ot: {
-
-                        return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
-                    }
-
-                    case StructType st: {
-
-                        return project.Structs[st.StructId].Name;
-                    }
-
-                    case UnknownOrBuiltin _: {
-
-                        return "auto";
-                    }
-
-                    ///
-
-                    default: {
-
-                        throw new Exception();
-                    }
+                switch (typeId) {
+                    case Compiler.BoolTypeId: return "bool";
+                    case Compiler.StringTypeId: return "String";
+                    case Compiler.CCharTypeId: return "char";
+                    case Compiler.CIntTypeId: return "int";
+                    case Compiler.Int8TypeId: return "Int8";
+                    case Compiler.Int16TypeId: return "Int16";
+                    case Compiler.Int32TypeId: return "Int32";
+                    case Compiler.Int64TypeId: return "Int64";
+                    case Compiler.UInt8TypeId: return "UInt8";
+                    case Compiler.UInt16TypeId: return "UInt16";
+                    case Compiler.UInt32TypeId: return "UInt32";
+                    case Compiler.UInt64TypeId: return "UInt64";
+                    case Compiler.FloatTypeId: return "Float";
+                    case Compiler.DoubleTypeId: return "Double";
+                    case Compiler.VoidTypeId: return "void";
+                    default: return "auto";
                 }
             }
+
+            default:    
+                throw new Exception();
         }
     }
 

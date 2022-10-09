@@ -30,7 +30,30 @@ public static partial class NeuTypeFunctions {
 
         switch (true) {
 
-            case var _ when l is VectorType lv && r is VectorType rv:               return lv.TypeId == rv.TypeId;
+            // case var _ when l is VectorType lv && r is VectorType rv:               return lv.TypeId == rv.TypeId;
+
+            case var _ when l is GenericType lg && r is GenericType rg: {
+
+                if (lg.ParentStructId != rg.ParentStructId) {
+
+                    return false;
+                }
+
+                if (lg.InnerTypeIds.Count != rg.InnerTypeIds.Count) {
+
+                    return false;
+                }
+
+                for (var i = 0; i < lg.InnerTypeIds.Count; i++) {
+
+                    if (lg.InnerTypeIds[i] != rg.InnerTypeIds[i]) {
+
+                        return false;
+                    }
+                }
+
+                return true;
+            }
 
             case var _ when l is TupleType lt && r is TupleType rt: {
 
@@ -66,16 +89,33 @@ public partial class UnknownOrBuiltin: NeuType {
     public UnknownOrBuiltin() { }
 }
 
-public partial class VectorType : NeuType {
+// public partial class VectorType : NeuType {
 
-    public Int32 TypeId { get; init; }
+//     public Int32 TypeId { get; init; }
+
+//     ///
+
+//     public VectorType(
+//         Int32 typeId) : base() {
+        
+//         this.TypeId = typeId;
+//     }
+// }
+
+public partial class GenericType: NeuType {
+
+    public Int32 ParentStructId { get; init; }
+
+    public List<Int32> InnerTypeIds { get; init; }
 
     ///
 
-    public VectorType(
-        Int32 typeId) : base() {
-        
-        this.TypeId = typeId;
+    public GenericType(
+        Int32 parentStructId,
+        List<Int32> innerTypeIds) {
+
+        this.ParentStructId = parentStructId;
+        this.InnerTypeIds = innerTypeIds;
     }
 }
 
@@ -2339,7 +2379,11 @@ public static partial class TypeCheckerFunctions {
                     output.Add(checkedExpr);
                 }
 
-                var typeId = project.FindOrAddTypeId(new VectorType(innerType));
+                var vectorStructId = project
+                    .FindStructInScope(0, "RefVector")
+                    ?? throw new Exception("internal compiler error: RefVector builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(new GenericType(vectorStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     new CheckedVectorExpression(
@@ -2387,11 +2431,15 @@ public static partial class TypeCheckerFunctions {
 
                 var exprType = Compiler.UnknownTypeId;
 
+                var vectorStructId = project
+                    .FindStructInScope(0, "RefVector")
+                    ?? throw new Exception("internal compiler error: RefVector builtin definition not found");
+
                 var ty = project.Types[checkedExpr.GetNeuType()];
 
                 switch (ty) {
 
-                    case VectorType vt: {
+                    case GenericType gt when gt.ParentStructId == vectorStructId: {
 
                         var _chkIdx = checkedIdx.GetNeuType();
 
@@ -2399,7 +2447,7 @@ public static partial class TypeCheckerFunctions {
 
                             case var _ when NeuTypeFunctions.IsInteger(_chkIdx): {
 
-                                exprType = vt.TypeId;
+                                exprType = gt.InnerTypeIds[0];
 
                                 break;
                             }
@@ -2600,43 +2648,64 @@ public static partial class TypeCheckerFunctions {
                                 error);
                         }
 
-                        case VectorType vt: {
+                        // case VectorType vt: {
 
-                            // Special-case the built-in so we don't accidentally find the user's definition
+                        //     // Special-case the built-in so we don't accidentally find the user's definition
 
-                            var vectorStruct = project.FindStructInScope(0, "RefVector");
+                        //     var vectorStruct = project.FindStructInScope(0, "RefVector");
 
-                            switch (vectorStruct) {
+                        //     switch (vectorStruct) {
 
-                                case Int32 structId: {
+                        //         case Int32 structId: {
 
-                                    var (checkedCall, err) = TypeCheckMethodCall(
-                                        mce.Call,
-                                        scopeId,
-                                        mce.Span,
-                                        project,
-                                        structId,
-                                        safetyMode);
+                        //             var (checkedCall, err) = TypeCheckMethodCall(
+                        //                 mce.Call,
+                        //                 scopeId,
+                        //                 mce.Span,
+                        //                 project,
+                        //                 structId,
+                        //                 safetyMode);
 
-                                    error = error ?? err;
+                        //             error = error ?? err;
 
-                                    return (
-                                        new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
-                                        error);
-                                }
+                        //             return (
+                        //                 new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
+                        //                 error);
+                        //         }
 
-                                default: {
+                        //         default: {
 
-                                    error = error ??
-                                        new TypeCheckError(
-                                            "no methods available on value",
-                                            mce.Expression.GetSpan());
+                        //             error = error ??
+                        //                 new TypeCheckError(
+                        //                     "no methods available on value",
+                        //                     mce.Expression.GetSpan());
 
-                                    return (
-                                        new CheckedGarbageExpression(),
-                                        error);
-                                }
-                            }
+                        //             return (
+                        //                 new CheckedGarbageExpression(),
+                        //                 error);
+                        //         }
+                        //     }
+                        // }
+
+                        case GenericType gt: {
+
+                            // ignore the inner types for now, but we'll need them in the future
+
+                            var (checkedCall, err) = TypeCheckMethodCall(
+                                mce.Call,
+                                scopeId,
+                                mce.Span,
+                                project,
+                                gt.ParentStructId,
+                                safetyMode);
+
+                            error = error ?? err;
+
+                            var ty = checkedCall.Type;
+
+                            return (
+                                new CheckedMethodCallExpression(checkedExpr, checkedCall, ty),
+                                error);
                         }
 
                         default: {
@@ -3336,7 +3405,11 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? innerTypeErr;
 
-                var typeId = project.FindOrAddTypeId(new VectorType(innerType));
+                var vectorStructId = project
+                    .FindStructInScope(0, "RefVector")
+                    ?? throw new Exception("internal compiler error: RefVector builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(new GenericType(vectorStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     typeId,
