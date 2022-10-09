@@ -3564,6 +3564,14 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? checkedArgErr;
 
+                    if (checkedArg.GetNeuType() == Compiler.VoidTypeId) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "printLine/warnLine can't take void value",
+                                span);
+                    }
+
                     returnType = Compiler.VoidTypeId;
 
                     checkedArgs.Add((arg.Item1, checkedArg));
@@ -3640,73 +3648,28 @@ public static partial class TypeCheckerFunctions {
 
                             var lhsTypeId = callee.Parameters[idx].Variable.Type;
 
-                            var lhsType = project.Types[lhsTypeId];
+                            var (promoted, promoteErr) = TryPromoteConstantExprToType(lhsTypeId, checkedArg, span);
 
-                            if (lhsType is TypeVariable) {
+                            error = error ?? promoteErr;
 
-                                // If the call expects a generic type variable, let's see if we've already seen it
+                            if (promoted is not null) {
 
-                                if (genericInferences.ContainsKey(lhsTypeId)) {
-
-                                    // We've seen this type variable assigned something before
-                                    // we should error if it's incompatible.
-
-                                    var (promote1, promote1Err) = TryPromoteConstantExprToType(
-                                        genericInferences[lhsTypeId],
-                                        checkedArg,
-                                        call.Args[idx].Item2.GetSpan());
-
-                                    error = error ?? promote1Err;
-
-                                    if (promote1 is not null) {
-
-                                        checkedArg = promote1;
-                                    }
-
-                                    if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
-
-                                        error = error ??
-                                            new TypeCheckError(
-                                                "Parameter type mismatch",
-                                                call.Args[idx].Item2.GetSpan());
-                                    }
-
-                                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-                                }
-                                else {
-
-                                    // We haven't seen this type variable before, so go ahead
-                                    // and give it an actual type during this call
-                                    
-                                    genericInferences.Add(lhsTypeId, checkedArg.GetNeuType());
-
-                                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-                                }
+                                checkedArg = promoted;
                             }
-                            else {
 
-                                var (promoted2, promote2Err) = TryPromoteConstantExprToType(
-                                    lhsTypeId,
-                                    checkedArg,
-                                    call.Args[idx].Item2.GetSpan());
+                            var rhsTypeId = checkedArg.GetNeuType();
 
-                                error = error ?? promote2Err;
+                            if (CheckTypesForCompat(
+                                callee.Parameters[idx].Variable.Type, 
+                                rhsTypeId,
+                                genericInferences, 
+                                call.Args[idx].Item2.GetSpan(), 
+                                project) is Error compatErr1) {
 
-                                if (promoted2 is not null) {
-
-                                    checkedArg = promoted2;
-                                }
-
-                                if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
-
-                                    error = error ??
-                                        new TypeCheckError(
-                                        "Parameter type mismatch",
-                                        call.Args[idx].Item2.GetSpan());
-                                }
-
-                                checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                                error = error ?? compatErr1;
                             }
+
+                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
 
                             idx += 1;
                         }
@@ -3824,73 +3787,28 @@ public static partial class TypeCheckerFunctions {
 
                     var lhsTypeId = callee.Parameters[idx + 1].Variable.Type;
 
-                    var lhsType = project.Types[lhsTypeId];
+                    var (promoted, promoteErr) = TryPromoteConstantExprToType(lhsTypeId, checkedArg, span);
 
-                    if (lhsType is TypeVariable) {
+                    error = error ?? promoteErr;
 
-                        // If the call expects a generic type variable, let's see if we've already seen it
+                    if (promoted is not null) {
 
-                        if (genericInferences.ContainsKey(lhsTypeId)) {
-
-                            // We've seen this type variable assigned something before
-                            // we should error if it's incompatible.
-
-                            var (promote1, promote1Err) = TryPromoteConstantExprToType(
-                                genericInferences[lhsTypeId],
-                                checkedArg,
-                                call.Args[idx].Item2.GetSpan());
-
-                            error = error ?? promote1Err;
-
-                            if (promote1 is not null) {
-
-                                checkedArg = promote1;
-                            }
-
-                            if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
-
-                                error = error ??
-                                    new TypeCheckError(
-                                        "Parameter type mismatch",
-                                        call.Args[idx].Item2.GetSpan());
-                            }
-
-                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-                        }
-                        else {
-
-                            // We haven't seen this type variable before, so go ahead
-                            // and give it an actual type during this call
-
-                            genericInferences.Add(lhsTypeId, checkedArg.GetNeuType());
-
-                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-                        }
+                        checkedArg = promoted;
                     }
-                    else {
 
-                        var (promoted2, promote2Err) = TryPromoteConstantExprToType(
-                            lhsTypeId,
-                            checkedArg,
-                            call.Args[idx].Item2.GetSpan());
+                    var rhsTypeId = checkedArg.GetNeuType();
 
-                        error = error ?? promote2Err;
+                    if (CheckTypesForCompat(
+                        lhsTypeId, 
+                        rhsTypeId, 
+                        genericInferences, 
+                        call.Args[idx].Item2.GetSpan(), 
+                        project) is Error compatErr) {
 
-                        if (promoted2 is not null) {
-
-                            checkedArg = promoted2;
-                        }
-
-                        if (checkedArg.GetNeuType() != callee.Parameters[idx + 1].Variable.Type) {
-
-                            error = error ??
-                                new TypeCheckError(
-                                    "Parameter type mismatch",
-                                    call.Args[idx].Item2.GetSpan());
-                        }
-
-                        checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                        error = error ?? compatErr;
                     }
+
+                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
 
                     idx += 1;
                 }
@@ -3927,6 +3845,195 @@ public static partial class TypeCheckerFunctions {
                 type: returnType,
                 calleeDefType),
             error);
+    }
+
+    public static Error? CheckTypesForCompat(
+        Int32 lhsTypeId,
+        Int32 rhsTypeId,
+        Dictionary<Int32, Int32> genericInferences,
+        Span span,
+        Project project) {
+
+        Error? error = null;
+
+        var lhsType = project.Types[lhsTypeId];
+
+        switch (lhsType) {
+
+            case TypeVariable _: {
+
+                // If the call expects a generic type variable, let's see if we've already seen it
+                
+                if (genericInferences.ContainsKey(lhsTypeId)) {
+
+                    // We've seen this type variable assigned something before
+                    // we should error if it's incompatible.
+
+                    if (rhsTypeId != genericInferences[lhsTypeId]) {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "Parameter type mismatch",
+                                span);
+                    }
+                }
+                else {
+
+                    // We haven't seen this type variable before, so go ahead
+                    // and give it an actual type during this call
+
+                    genericInferences[lhsTypeId] = rhsTypeId;
+                }
+
+                break;
+            }
+
+            case GenericType gt: {
+
+                var lhsArgs = gt.InnerTypeIds.ToList();
+
+                var rhsType = project.Types[rhsTypeId];
+
+                switch (rhsType) {
+
+                    case GenericType rhsGt: {
+
+                        if (gt.ParentStructId == rhsGt.ParentStructId) {
+
+                            var rhsArgs = rhsGt.InnerTypeIds.ToList();
+
+                            // Same struct, perhaps this is an instantiation of it
+
+                            var lhsStruct = project.Structs[gt.ParentStructId];
+
+                            if (rhsArgs.Count != gt.InnerTypeIds.Count) {
+
+                                return new TypeCheckError(
+                                    $"mismatched number of generic parameters for {lhsStruct.Name}",
+                                    span);
+                            }
+
+                            var idx = 0;
+
+                            var lhsArgTypeId = gt.InnerTypeIds[idx];
+                            var rhsArgTypeId = rhsArgs[idx];
+
+                            while (idx < gt.InnerTypeIds.Count) {
+
+                                if (CheckTypesForCompat(lhsArgTypeId, rhsArgTypeId, genericInferences, span, project) is Error e2) {
+
+                                    return e2;
+                                }
+
+                                idx += 1;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        if (rhsTypeId != lhsTypeId) {
+
+                            // They're the same type, might be okay to just leave now
+                            
+                            error = error ??
+                                new TypeCheckError(
+                                    "Parameter type mismatch",
+                                    span);
+                        }
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            case StructType st: {
+
+                if (rhsTypeId == lhsTypeId) {
+
+                    // They're the same type, might be okay to just leave now
+
+                    return null;
+                }
+
+                var rhsType = project.Types[rhsTypeId];
+
+                switch (rhsType) {
+
+                    case GenericType gt: {
+
+                        if (st.StructId == gt.ParentStructId) {
+
+                            var args = gt.InnerTypeIds.ToList();
+
+                            // Same struct, perhaps this is an instantiation of it
+
+                            var lhsStruct = project.Structs[st.StructId];
+
+                            if (args.Count != lhsStruct.GenericParameters.Count) {
+
+                                return new TypeCheckError(
+                                    $"mismatched number of generic parameters for {lhsStruct.Name}",
+                                    span);
+                            }
+
+                            var idx = 0;
+
+                            var lhsArgTypeId = lhsStruct.GenericParameters[idx];
+                            var rhsArgTypeId = args[idx];
+
+                            while (idx < args.Count) {
+
+                                if (CheckTypesForCompat(lhsArgTypeId, rhsArgTypeId, genericInferences, span, project) is Error e3) {
+
+                                    return e3;
+                                }
+
+                                idx += 1;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        if (rhsTypeId != lhsTypeId) {
+                            
+                            // They're the same type, might be okay to just leave now
+                            
+                            error = error ??
+                                new TypeCheckError(
+                                    "Parameter type mismatch",
+                                    span);
+                        }
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+
+            default: {
+
+                if (rhsTypeId != lhsTypeId) {
+
+                    error = error ?? 
+                        new TypeCheckError(
+                            "Parameter type mismatch",
+                            span);
+                }
+
+                break;
+            }
+        }
+
+        return error;
     }
 
     public static (Int32, Error?) TypeCheckTypeName(

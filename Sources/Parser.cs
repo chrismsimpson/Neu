@@ -5160,18 +5160,7 @@ public static partial class ParserFunctions {
 
         ///
 
-        var end = index;
-
-        if (index >= tokens.Count) {
-
-            Trace("ERROR: incomplete function");
-
-            error = error ?? new ParserError(
-                "incomplete function",
-                tokens.ElementAt(index - 1).Span);
-
-            end -= 1;
-        }
+        var end = index - 1;
 
         ///
 

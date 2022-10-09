@@ -246,6 +246,17 @@ public:
         }
     }
 
+    T pop() {
+
+        VERIFY(m_storage);
+
+        T result = m_storage->at(this->size() - 1);
+        
+        ensureStorage().resize(this->size() - 1);
+        
+        return result;
+    }
+
     static RefVector filled(size_t size, T value) {
 
         RefVector vector;
