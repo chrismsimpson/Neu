@@ -1554,7 +1554,9 @@ public static partial class ExpressionFunctions {
 
             case OperatorExpression opExpr when
                 opExpr.Operator == BinaryOperator.BitwiseLeftShift
-                || opExpr.Operator == BinaryOperator.BitwiseRightShift: 
+                || opExpr.Operator == BinaryOperator.BitwiseRightShift
+                || opExpr.Operator == BinaryOperator.ArithmeticLeftShift
+                || opExpr.Operator == BinaryOperator.ArithmeticRightShift: 
                 
                 return 85;
 
@@ -1785,6 +1787,8 @@ public enum BinaryOperator {
     BitwiseXor,
     BitwiseLeftShift,
     BitwiseRightShift,
+    ArithmeticLeftShift,
+    ArithmeticRightShift,
     Assign,
     AddAssign,
     SubtractAssign,
@@ -3250,6 +3254,13 @@ public static partial class ParserFunctions {
 
         while (cont && index < tokens.Count) {
 
+            // Test to see if the next token is an operator
+
+            if (tokens[index] is EolToken) {
+
+                break;
+            }
+
             var (op, opErr) = exprKind switch {
                 ExpressionKind.ExpressionWithAssignments => ParseOperatorWithAssignment(tokens, ref index),
                 ExpressionKind.ExpressionWithoutAssignment => ParseOperator(tokens, ref index),
@@ -3299,6 +3310,11 @@ public static partial class ParserFunctions {
                 exprStack.Add(new GarbageExpression(tokens.ElementAt(index - 1).Span));
 
                 break;
+            }
+
+            while (tokens[index] is EolToken) {
+
+                index += 1;
             }
 
             var (rhs, rhsErr) = ParseOperand(tokens, ref index);
@@ -3403,6 +3419,11 @@ public static partial class ParserFunctions {
         Error? error = null;
 
         var span = tokens.ElementAt(index).Span;
+
+        while (index < tokens.Count && tokens[index] is EolToken) {
+
+            index += 1;
+        }
 
         Expression? expr = null;
 
@@ -4639,6 +4660,24 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
             }
 
+            case LeftArithmeticShiftToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
+                    null);
+            }
+
+            case RightArithmeticShiftToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.ArithmeticRightShift, span),
+                    null);
+            }
+
             ///
 
             default: {
@@ -4746,6 +4785,24 @@ public static partial class ParserFunctions {
                 index += 1;
             
                 return (new OperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
+            }
+
+            case LeftArithmeticShiftToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
+                    null);
+            }
+
+            case RightArithmeticShiftToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.ArithmeticRightShift, span),
+                    null);
             }
 
             case EqualToken _: {
@@ -5367,7 +5424,12 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        ///
+                        case EolToken _: {
+
+                            index += 1;
+
+                            break;
+                        }
 
                         case CommaToken _: {
 
@@ -5377,8 +5439,6 @@ public static partial class ParserFunctions {
 
                             break;
                         }
-
-                        ///
 
                         default: {
 

@@ -263,6 +263,12 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class LeftArithmeticShiftToken: Token {
+
+        public LeftArithmeticShiftToken(Span span)
+            : base(span) { }
+    }
+
     public partial class LeftShiftToken: Token {
 
         public LeftShiftToken(Span span) 
@@ -272,6 +278,12 @@ public partial class Token {
     public partial class LeftShiftEqualToken: Token {
 
         public LeftShiftEqualToken(Span span)
+            : base(span) { }
+    }
+
+    public partial class RightArithmeticShiftToken: Token {
+
+        public RightArithmeticShiftToken(Span span)
             : base(span) { }
     }
 
@@ -676,6 +688,13 @@ public static partial class LexerFunctions {
 
                                 output.Add(new RightShiftEqualToken(new Span(fileId, start, start + 3)));
                             }
+                            else if (index < bytes.Length
+                                && ToChar(bytes[index]) == '>') {
+
+                                index += 1;
+
+                                output.Add(new RightArithmeticShiftToken(new Span(fileId, start, start + 3)));
+                            }
                             else {
 
                                 output.Add(new RightShiftToken(new Span(fileId, start, start + 2)));
@@ -718,6 +737,13 @@ public static partial class LexerFunctions {
                                 index += 1;
 
                                 output.Add(new LeftShiftEqualToken(new Span(fileId, start, start + 3)));
+                            }
+                            else if (index < bytes.Length
+                                && ToChar(bytes[index]) == '<') {
+
+                                index += 1;
+
+                                output.Add(new LeftArithmeticShiftToken(new Span(fileId, start, start + 3)));
                             }
                             else {
 

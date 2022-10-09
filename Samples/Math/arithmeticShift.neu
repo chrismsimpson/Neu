@@ -1,0 +1,6 @@
+func main() {
+    let x: Int64 = -100
+
+    printLine(x >>> 1)
+    printLine(x <<< 1)
+}

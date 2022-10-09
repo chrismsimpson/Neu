@@ -1432,220 +1432,246 @@ public static partial class CodeGenFunctions {
 
                 output.Append("(");
 
-                output.Append(compiler.CodeGenExpr(indent, binOp.Lhs, project));
-
                 switch (binOp.Operator) {
 
-                    case BinaryOperator.Add: {
-
-                        output.Append(" + ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.Subtract: {
-
-                        output.Append(" - ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.Multiply: {
-
-                        output.Append(" * ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.Modulo: {
-
-                        output.Append(" % ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.Divide: {
-
-                        output.Append(" / ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.Assign: {
-
-                        output.Append(" = ");
-
-                        break;
-                    }
-                    
-                    case BinaryOperator.AddAssign: {
-
-                        output.Append(" += ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.SubtractAssign: {
-
-                        output.Append(" -= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.MultiplyAssign: {
-
-                        output.Append(" *= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.ModuloAssign: {
-
-                        output.Append(" %= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.DivideAssign: {
-
-                        output.Append(" /= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseAndAssign: { 
-                        
-                        output.Append(" &= "); 
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseOrAssign: { 
-                        
-                        output.Append(" |= "); 
-
-                        break;
-                    }
-                    
-                    case BinaryOperator.BitwiseXorAssign: { 
-                        
-                        output.Append(" ^= ");
-
-                        break;
-                    }
-                    
-                    case BinaryOperator.BitwiseLeftShiftAssign: { 
-                        
-                        output.Append(" <<= "); 
-
-                        break;
-                    }
-                    
-                    case BinaryOperator.BitwiseRightShiftAssign: { 
-                        
-                        output.Append(" >>= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.Equal: {
-
-                        output.Append(" == ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.NotEqual: {
-
-                        output.Append(" != ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.LessThan: {
-
-                        output.Append(" < ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.LessThanOrEqual: {
-
-                        output.Append(" <= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.GreaterThan: {
-
-                        output.Append(" > ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.GreaterThanOrEqual: {
-
-                        output.Append(" >= ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.LogicalAnd: {
-
-                        output.Append(" && ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.LogicalOr: {
-
-                        output.Append(" || ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseAnd: {
-
-                        output.Append(" & ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseOr: {
-                        
-                        output.Append(" | ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseXor: {
-
-                        output.Append(" ^ ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseLeftShift: {
-
-                        output.Append(" << ");
-
-                        break;
-                    }
-
-                    case BinaryOperator.BitwiseRightShift: {
-
-                        output.Append(" >> ");
+                    case BinaryOperator.ArithmeticRightShift: {
+
+                        output.Append("__arithmeticShiftRight(");
+                        output.Append(compiler.CodeGenExpr(indent, binOp.Lhs, project));
+                        output.Append(", ");
+                        output.Append(compiler.CodeGenExpr(indent, binOp.Rhs, project));
+                        output.Append(')');
 
                         break;
                     }
 
                     default: {
-                        
-                        throw new Exception("Cannot codegen garbage operator");
+
+                        output.Append(compiler.CodeGenExpr(indent, binOp.Lhs, project));
+
+                        switch (binOp.Operator) {
+
+                            case BinaryOperator.Add: {
+
+                                output.Append(" + ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.Subtract: {
+
+                                output.Append(" - ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.Multiply: {
+
+                                output.Append(" * ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.Modulo: {
+
+                                output.Append(" % ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.Divide: {
+
+                                output.Append(" / ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.Assign: {
+
+                                output.Append(" = ");
+
+                                break;
+                            }
+                            
+                            case BinaryOperator.AddAssign: {
+
+                                output.Append(" += ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.SubtractAssign: {
+
+                                output.Append(" -= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.MultiplyAssign: {
+
+                                output.Append(" *= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.ModuloAssign: {
+
+                                output.Append(" %= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.DivideAssign: {
+
+                                output.Append(" /= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseAndAssign: { 
+                                
+                                output.Append(" &= "); 
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseOrAssign: { 
+                                
+                                output.Append(" |= "); 
+
+                                break;
+                            }
+                            
+                            case BinaryOperator.BitwiseXorAssign: { 
+                                
+                                output.Append(" ^= ");
+
+                                break;
+                            }
+                            
+                            case BinaryOperator.BitwiseLeftShiftAssign: { 
+                                
+                                output.Append(" <<= "); 
+
+                                break;
+                            }
+                            
+                            case BinaryOperator.BitwiseRightShiftAssign: { 
+                                
+                                output.Append(" >>= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.Equal: {
+
+                                output.Append(" == ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.NotEqual: {
+
+                                output.Append(" != ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.LessThan: {
+
+                                output.Append(" < ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.LessThanOrEqual: {
+
+                                output.Append(" <= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.GreaterThan: {
+
+                                output.Append(" > ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.GreaterThanOrEqual: {
+
+                                output.Append(" >= ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.LogicalAnd: {
+
+                                output.Append(" && ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.LogicalOr: {
+
+                                output.Append(" || ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseAnd: {
+
+                                output.Append(" & ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseOr: {
+                                
+                                output.Append(" | ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseXor: {
+
+                                output.Append(" ^ ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.ArithmeticLeftShift: {
+
+                                output.Append(" << ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseLeftShift: {
+
+                                output.Append(" << ");
+
+                                break;
+                            }
+
+                            case BinaryOperator.BitwiseRightShift: {
+
+                                output.Append(" >> ");
+
+                                break;
+                            }
+
+                            default: {
+                                
+                                break;
+                            }
+                        }
+
+                        output.Append(compiler.CodeGenExpr(indent, binOp.Rhs, project));
+
+                        break;
                     }
                 }
-
-                output.Append(compiler.CodeGenExpr(indent, binOp.Rhs, project));
 
                 output.Append(")");
 
