@@ -363,56 +363,6 @@ public static partial class CodeGenFunctions {
         CheckedFunction func,
         Project project) {
 
-        // var output = new StringBuilder();
-
-        // output.Append(func.Name);
-        
-        // output.Append('(');
-
-        // var first = true;
-        
-        // foreach (var p in func.Parameters) {
-            
-        //     if (!first) {
-                
-        //         output.Append(", ");
-        //     }
-        //     else {
-
-        //         first = false;
-        //     }
-
-        //     var ty = compiler.CodeGenType(p.Variable.Type, project);
-        //     output.Append(ty);
-        //     output.Append(" a_");
-        //     output.Append(p.Variable.Name);
-        // }
-
-        // output.Append("): ");
-
-        // first = true;
-        
-        // foreach (var p in func.Parameters) {
-
-        //     if (!first) {
-                
-        //         output.Append(", ");
-        //     } 
-        //     else {
-                
-        //         first = false;
-        //     }
-
-        //     output.Append(p.Variable.Name);
-        //     output.Append("(a_");
-        //     output.Append(p.Variable.Name);
-        //     output.Append(')');
-        // }
-
-        // output.Append("{}\n");
-
-        // return output.ToString();
-
         var typeId = func.ReturnType;
 
         var ty = project.Types[typeId];
@@ -565,8 +515,6 @@ public static partial class CodeGenFunctions {
                 return output.ToString();
             }
 
-            // case StructType st: return project.Structs[st.StructId].Name;
-
             case StructType st: {
 
                 var inner = project.Structs[st.StructId];
@@ -603,8 +551,10 @@ public static partial class CodeGenFunctions {
                 }
             }
 
-            default:    
+            default: {
+
                 throw new Exception();
+            }
         }
     }
 
@@ -646,6 +596,25 @@ public static partial class CodeGenFunctions {
 
         switch (stmt) {
 
+            case CheckedForStatement f: {
+                
+                output.Append("{ auto&& _range = ");
+                output.Append(compiler.CodeGenExpr(indent, f.Range, project));
+                output.Append("; for(auto ");
+                output.Append(f.IteratorName);
+                output.Append(' ');
+                output.Append(" = _range.start;");
+                output.Append(f.IteratorName);
+                output.Append("!= _range.end;");
+                output.Append(f.IteratorName);
+                output.Append("++");
+                output.Append(") {");
+                output.Append(compiler.CodeGenBlock(indent, f.Block, project));
+                output.Append("}}");
+
+                break;
+            }
+
             case CheckedExpression expr: {
 
                 var exprStr = compiler.CodeGenExpr(indent, expr, project);
@@ -656,8 +625,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             case CheckedDeferStatement defer: {
 
@@ -671,8 +638,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedReturnStatement rs: {
 
                 var exprStr = compiler.CodeGenExpr(indent, rs.Expr, project);
@@ -685,8 +650,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             case CheckedIfStatement ifStmt: {
 
@@ -716,8 +679,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedWhileStatement whileStmt: {
 
                 var exprStr = compiler.CodeGenExpr(indent, whileStmt.Expression, project);
@@ -734,8 +695,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             case CheckedVarDeclStatement vd: {
 
@@ -754,8 +713,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedBlockStatement chBlockStmt: {
 
                 var blockStr = compiler.CodeGenBlock(indent, chBlockStmt.Block, project);
@@ -765,8 +722,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            ///
-
             case CheckedGarbageStatement _: {
 
                 // Incorrect parse/typecheck
@@ -774,8 +729,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-            ///
 
             default: {
 
@@ -797,6 +750,45 @@ public static partial class CodeGenFunctions {
         var output = new StringBuilder();
 
         switch (expr) {
+
+            case CheckedRangeExpression r: {
+
+                Int32? _indexType = null;
+
+                var ty = project.Types[r.TypeId];
+
+                switch (ty) {
+
+                    case GenericType gt: {
+
+                        _indexType = gt.InnerTypeIds[0];
+
+                        break;
+                    }
+
+                    default: {
+
+                        throw new Exception("Interal error: range expression doesn't have Range type");
+                    }
+                }
+
+                Int32 indexType = _indexType ?? throw new Exception();
+
+                output.Append("(");
+                output.Append(compiler.CodeGenType(r.TypeId, project));
+                output.Append("{");
+                output.Append("static_cast<");
+                output.Append(compiler.CodeGenType(indexType, project));
+                output.Append(">(");
+                output.Append(compiler.CodeGenExpr(indent, r.Start, project));
+                output.Append("),static_cast<");
+                output.Append(compiler.CodeGenType(indexType, project));
+                output.Append(">(");
+                output.Append(compiler.CodeGenExpr(indent, r.End, project));
+                output.Append(")})");
+
+                break;
+            }
 
             case CheckedOptionalNoneExpression _: {
 

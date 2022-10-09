@@ -493,6 +493,15 @@ public static partial class StatementFunctions {
 
             ///
 
+            case var _ when 
+                l is ForStatement lf
+                && r is ForStatement rf: {
+
+                return ForStatementFunctions.Eq(lf, rf);
+            }
+
+            ///
+
             case var _ when
                 l is ReturnStatement retL
                 && r is ReturnStatement retR:
@@ -761,6 +770,57 @@ public static partial class WhileStatementFunctions {
         ///
 
         return ExpressionFunctions.Eq(_l.Expr, _r.Expr) 
+            && BlockFunctions.Eq(_l.Block, _r.Block);
+    }
+}
+
+///
+
+public partial class ForStatement: Statement {
+
+    public String IteratorName { get; init; }
+
+    public Expression Range { get; init; }
+
+    public Block Block { get; init; }
+
+    ///
+
+    public ForStatement(
+        String iteratorName,
+        Expression range,
+        Block block) {
+
+        this.IteratorName = iteratorName;
+        this.Range = range;
+        this.Block = block;
+    }
+}
+
+public static partial class ForStatementFunctions {
+
+    public static bool Eq(
+        ForStatement? l,
+        ForStatement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        ForStatement _l = l!;
+        ForStatement _r = r!;
+
+        ///
+
+        return 
+            _l.IteratorName == _r.IteratorName
+            && ExpressionFunctions.Eq(_l.Range, _r.Range)
             && BlockFunctions.Eq(_l.Block, _r.Block);
     }
 }
@@ -1059,6 +1119,27 @@ public partial class Expression: Statement {
         }
     }
 
+    public partial class RangeExpression: Expression {
+
+        public Expression Start { get; init; }
+
+        public Expression End { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public RangeExpression(
+            Expression start,
+            Expression end,
+            Span span) {
+
+            this.Start = start;
+            this.End = end;
+            this.Span = span;
+        }
+    }
+
     public partial class IndexedTupleExpression: Expression {
 
         public Expression Expression { get; init; }
@@ -1262,6 +1343,11 @@ public static partial class ExpressionFunctions {
             case TupleExpression te: {
 
                 return te.Span;
+            }
+
+            case RangeExpression re: {
+
+                return re.Span;
             }
 
             case IndexedExpression ie: {
@@ -2633,8 +2719,6 @@ public static partial class ParserFunctions {
                     error);
             }
 
-            ///
-
             case NameToken nt when nt.Value == "unsafe": {
 
                 Trace("parsing unsafe");
@@ -2650,14 +2734,10 @@ public static partial class ParserFunctions {
                     error);
             }
 
-            ///
-
             case NameToken nt when nt.Value == "if": {
 
                 return ParseIfStatement(tokens, ref index);
             }
-
-            ///
 
             case NameToken nt when nt.Value == "while": {
 
@@ -2679,7 +2759,53 @@ public static partial class ParserFunctions {
                 );
             }
 
-            ///
+            case NameToken nt when nt.Value == "for": {
+
+                Trace("parsing for");
+
+                index += 1;
+
+                if (tokens.ElementAt(index) is NameToken iter) {
+
+                    index += 1;
+
+                    switch (tokens.ElementAt(index)) {
+
+                        case NameToken keyword when keyword.Value == "in": {
+
+                            index += 1;
+
+                            var (rangeExpr, rangeErr) = ParseExpression(
+                                tokens, 
+                                ref index, 
+                                ExpressionKind.ExpressionWithoutAssignment);
+
+                            error = error ?? rangeErr;
+
+                            var (block, blockErr) = ParseBlock(tokens, ref index);
+
+                            error = error ?? blockErr;
+
+                            return (
+                                new ForStatement(iter.Value, rangeExpr, block),
+                                error);
+                        }
+
+                        default: {
+
+                            return (
+                                new GarbageStatement(),
+                                error);
+                        }
+                    }
+                }
+                else {
+
+                    return (
+                        new GarbageStatement(),
+                        error);
+                }
+            }
 
             case NameToken nt when nt.Value == "return": {
 
@@ -2696,8 +2822,6 @@ public static partial class ParserFunctions {
                     error
                 );
             }
-
-            ///
 
             case NameToken nt when nt.Value == "let" || nt.Value == "var": {
 
@@ -2767,8 +2891,6 @@ public static partial class ParserFunctions {
                 }
             }
 
-            ///
-
             case LCurlyToken _: {
 
                 Trace("parsing block from statement parser");
@@ -2779,8 +2901,6 @@ public static partial class ParserFunctions {
 
                 return (new BlockStatement(block), error);
             }
-
-            ///
 
             case var t: {
 
@@ -3604,6 +3724,19 @@ public static partial class ParserFunctions {
         while (cont && index < tokens.Count) {
 
             switch (tokens.ElementAt(index)) {
+
+                case PeriodPeriodToken _: {
+
+                    index += 1;
+
+                    var (endExpr, endErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                    error = error ?? endErr;
+
+                    expr = new RangeExpression(expr, endExpr, span);
+
+                    break;
+                }
 
                 case ExclamationToken _: {
 

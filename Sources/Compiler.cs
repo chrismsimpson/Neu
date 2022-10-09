@@ -202,6 +202,8 @@ extern class Optional { }
 
 extern class Tuple { }
 
+extern class Range { }
+
 ");
     }
 }

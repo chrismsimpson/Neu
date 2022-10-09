@@ -706,6 +706,27 @@ public partial class CheckedStatement {
         }
     }
 
+    public partial class CheckedForStatement: CheckedStatement {
+
+        public String IteratorName { get; init; }
+
+        public CheckedExpression Range { get; init; }
+
+        public CheckedBlock Block { get; init; }
+
+        ///
+
+        public CheckedForStatement(
+            String iteratorName,
+            CheckedExpression range,
+            CheckedBlock block) {
+
+            this.IteratorName = iteratorName;
+            this.Range = range;
+            this.Block = block;
+        }
+    }
+
     public partial class CheckedGarbageStatement: CheckedStatement {
 
         public CheckedGarbageStatement() { }
@@ -1097,6 +1118,27 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
+    public partial class CheckedRangeExpression: CheckedExpression {
+
+        public CheckedExpression Start { get; init; }
+
+        public CheckedExpression End { get; init; }
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedRangeExpression(
+            CheckedExpression start,
+            CheckedExpression end,
+            Int32 typeId) {
+            
+            this.Start = start;
+            this.End = end;
+            this.TypeId = typeId;
+        }
+    }
+
     public partial class CheckedVectorExpression: CheckedExpression {
 
         public List<CheckedExpression> Expressions { get; init; }
@@ -1342,6 +1384,11 @@ public static partial class CheckedExpressionFunctions {
             case CheckedTupleExpression tupleExpr: {
 
                 return tupleExpr.Type;
+            }
+
+            case CheckedRangeExpression rangeExpr: {
+
+                return rangeExpr.TypeId;
             }
 
             case CheckedIndexedExpression ie: {
@@ -1922,6 +1969,55 @@ public static partial class TypeCheckerFunctions {
 
         switch (stmt) {
 
+            case ForStatement fs: {
+
+                var (checkedExpr, err) = TypeCheckExpression(fs.Range, scopeId, project, safetyMode);
+
+                error = error ?? err;
+
+                var iteratorScopeId = project.CreateScope(scopeId);
+
+                var rangeStructId = project
+                    .FindStructInScope(0, "Range")
+                    ?? throw new Exception("internal error: Range builtin definition not found");
+
+                Int32? indexType = null;
+
+                if (project.Types[checkedExpr.GetNeuType()] is GenericType gt) {
+
+                    if (gt.ParentStructId == rangeStructId) {
+
+                        indexType = gt.InnerTypeIds[0];
+                    }
+                    else {
+
+                        throw new Exception("Range expression doesn't have Range type");
+                    }
+                }
+                else {
+
+                    throw new Exception("Range expression doesn't have Range type");
+                }
+
+                var iteratorDecl = new CheckedVariable(
+                    name: fs.IteratorName,
+                    type: indexType ?? throw new Exception(),
+                    mutable: true);
+
+                if (project.AddVarToScope(iteratorScopeId, iteratorDecl, fs.Range.GetSpan()).Error is Error e) {
+
+                    error = error ?? e;
+                }
+
+                var (checkedBlock, blockErr) = TypeCheckBlock(fs.Block, iteratorScopeId, project, SafetyMode.Unsafe);
+
+                error = error ?? blockErr;
+
+                return (
+                    new CheckedForStatement(fs.IteratorName, checkedExpr, checkedBlock),
+                    error);
+            }
+
             case Expression e: {
 
                 var (checkedExpr, exprErr) = TypeCheckExpression(e, scopeId, project, safetyMode);
@@ -2119,6 +2215,38 @@ public static partial class TypeCheckerFunctions {
         Error? error = null;
 
         switch (expr) {
+
+            case RangeExpression re: {
+
+                var (checkedStart, startErr) = TypeCheckExpression(re.Start, scopeId, project, safetyMode);
+
+                error = error ?? startErr;
+
+                var (checkedEnd, endErr) = TypeCheckExpression(re.End, scopeId, project, safetyMode);
+
+                error = error ?? endErr;
+
+                if (checkedStart.GetNeuType() != checkedEnd.GetNeuType()) {
+
+                    error = error ?? 
+                        new TypeCheckError(
+                            "Range start and end must be the same type",
+                            re.Span);
+                }
+
+                var rangeStructId = project
+                    .FindStructInScope(0, "Range")
+                    ?? throw new Exception("internal error: Range builtin definition not found");
+
+                var ty = new GenericType(rangeStructId, new List<Int32>(new [] { checkedStart.GetNeuType() }));
+
+                return (
+                    new CheckedRangeExpression(
+                        checkedStart, 
+                        checkedEnd, 
+                        project.FindOrAddTypeId(ty)),
+                    error);
+            }
 
             case BinaryOpExpression e: {
 

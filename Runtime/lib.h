@@ -80,6 +80,16 @@
 using Float = float; // 32-bit
 using Double = double; // 64-bit
 
+template<typename T>
+struct Range {
+
+    using IndexType = T;
+
+    T start { };
+
+    T end { };
+};
+
 // FIXME: Remove this once we can call qualified functions like "String.number" directly from neu
 
 inline String runtimeHelperNumberToString(Int64 number) {

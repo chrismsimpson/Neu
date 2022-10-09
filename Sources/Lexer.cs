@@ -366,6 +366,12 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class PeriodPeriodToken: Token {
+
+        public PeriodPeriodToken(Span span)
+            : base(span) { }
+    }
+
     public partial class EolToken: Token {
 
         public EolToken(Span span)
@@ -892,6 +898,16 @@ public static partial class LexerFunctions {
                     var start = index;
 
                     index += 1;
+
+                    if (index < bytes.Length 
+                        && ToChar(bytes[index]) == '.') {
+
+                        index += 1;
+
+                        output.Add(new PeriodPeriodToken(new Span(fileId, start, start + 2)));
+
+                        continue;
+                    }
 
                     output.Add(new PeriodToken(new Span(fileId, start, start + 1)));
 
