@@ -279,6 +279,8 @@ public partial class Struct {
     
     public String Name { get; init; }
 
+    public List<(String, Span)> GenericParameters { get; init; }
+
     public List<VarDecl> Fields { get; init; }
 
     public List<Function> Methods { get; init; }
@@ -293,6 +295,7 @@ public partial class Struct {
 
     public Struct(
         String name,
+        List<(String, Span)> genericParameters,
         List<VarDecl> fields,
         List<Function> methods,
         Span span,
@@ -300,6 +303,7 @@ public partial class Struct {
         DefinitionType definitionType) {
 
         this.Name = name;
+        this.GenericParameters = genericParameters;
         this.Fields = fields;
         this.Methods = methods;
         this.Span = span;
@@ -337,6 +341,8 @@ public partial class Function {
 
     public List<Parameter> Parameters { get; init; }
 
+    public List<(String, Span)> GenericParameters { get; init; }
+
     public Block Block { get; init; }
 
     public UncheckedType ReturnType { get; init; }
@@ -354,6 +360,7 @@ public partial class Function {
                 start: 0, 
                 end: 0),
             new List<Parameter>(), 
+            new List<(String, Span)>(),
             new Block(), 
             returnType: 
                 new UncheckedEmptyType(),
@@ -363,6 +370,7 @@ public partial class Function {
         String name,
         Span nameSpan,
         List<Parameter> parameters,
+        List<(String, Span)> genericParameters,
         Block block,
         UncheckedType returnType,
         FunctionLinkage linkage) {
@@ -370,6 +378,7 @@ public partial class Function {
         this.Name = name;
         this.NameSpan = nameSpan;
         this.Parameters = parameters;
+        this.GenericParameters = genericParameters;
         this.Block = block;
         this.ReturnType = returnType;
         this.Linkage = linkage;
@@ -2061,6 +2070,8 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
+        var genericParameters = new List<(String, Span)>();
+
         index += 1;
 
         if (index < tokens.Count) {
@@ -2072,6 +2083,77 @@ public static partial class ParserFunctions {
                 case NameToken nt: {
 
                     index += 1;
+
+                    // Check for generic
+
+                    if (index < tokens.Count) {
+
+                        switch (tokens[index]) {
+
+                            case LessThanToken _: {
+
+                                index += 1;
+
+                                var contGenerics = true;
+
+                                while (contGenerics && index < tokens.Count) {
+
+                                    switch (tokens[index]) {
+
+                                        case GreaterThanToken _: {
+
+                                            index += 1;
+
+                                            contGenerics = false;
+
+                                            break;
+                                        }
+
+                                        case CommaToken _:
+                                        case EolToken _:
+
+                                            // Treat comma as whitespace? Might require them in the future
+
+                                            index += 1;
+
+                                            break;
+
+                                        case NameToken nt2: {
+
+                                            index += 1;
+
+                                            genericParameters.Add((nt2.Value, tokens[index].Span));
+
+                                            break;
+                                        }
+
+                                        default: {
+
+                                            Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
+
+                                            error = error ??
+                                                new ParserError(
+                                                    "expected generic parameter",
+                                                    tokens[index].Span);
+
+                                            contGenerics = false;
+
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+
+                    // Read in definition
 
                     if (index < tokens.Count) {
 
@@ -2204,6 +2286,7 @@ public static partial class ParserFunctions {
                     return (
                         new Struct(
                             name: nt.Value,
+                            genericParameters,
                             fields: fields,
                             methods: methods,
                             span: tokens.ElementAt(index - 1).Span,
@@ -2225,6 +2308,7 @@ public static partial class ParserFunctions {
                     return (
                         new Struct(
                             name: String.Empty,
+                            genericParameters,
                             fields: new List<VarDecl>(),
                             methods: new List<Function>(),
                             span: tokens.ElementAt(index).Span,
@@ -2246,6 +2330,7 @@ public static partial class ParserFunctions {
             return (
                 new Struct(
                     name: String.Empty, 
+                    genericParameters,
                     fields: new List<VarDecl>(),
                     methods: new List<Function>(),
                     span: tokens.ElementAt(index).Span,
@@ -2266,6 +2351,8 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
+        var genericParameters = new List<(String, Span)>();
+
         index += 1;
 
         if (index < tokens.Count) {
@@ -2279,6 +2366,78 @@ public static partial class ParserFunctions {
                     var nameSpan = tokens.ElementAt(index).Span;
 
                     index += 1;
+
+                    // Check for generic
+
+                    if (index < tokens.Count) {
+
+                        switch (tokens[index]) {
+
+                            case LessThanToken _: {
+
+                                index += 1;
+
+                                var contGenerics = true;
+
+                                while (contGenerics && index < tokens.Count) {
+
+                                    switch (tokens[index]) {
+
+                                        case GreaterThanToken _: {
+
+                                            index += 1;
+
+                                            contGenerics = false;
+
+                                            break;
+                                        }
+
+                                        case CommaToken _:
+                                        case EolToken _: {
+
+                                            // Treat comma as whitespace? Might require them in the future
+                                            
+                                            index += 1;
+
+                                            break;
+                                        }
+
+                                        case NameToken nt2: {
+
+                                            index += 1;
+
+                                            genericParameters.Add((nt2.Value, tokens[index].Span));
+
+                                            break;
+                                        }
+
+                                        default: {
+
+                                            Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
+
+                                            error = error ??
+                                                new ParserError(
+                                                    "expected generic parameter",
+                                                    tokens[index].Span);
+
+                                            contGenerics = false;
+
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+
+                    // Read in definition
 
                     if (index < tokens.Count) {
 
@@ -2554,6 +2713,7 @@ public static partial class ParserFunctions {
                                 name: funNameToken.Value,
                                 nameSpan,
                                 parameters,
+                                genericParameters,
                                 block: new Block(),
                                 returnType,
                                 linkage),
@@ -2592,6 +2752,7 @@ public static partial class ParserFunctions {
                             name: funNameToken.Value,
                             nameSpan,
                             parameters,
+                            genericParameters,
                             block,
                             returnType,
                             linkage),

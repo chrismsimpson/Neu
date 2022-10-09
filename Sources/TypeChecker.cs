@@ -30,6 +30,8 @@ public static partial class NeuTypeFunctions {
 
         switch (true) {
 
+            case var _ when l is TypeVariable lt && r is TypeVariable rt:           return lt.Name == rt.Name;
+
             case var _ when l is GenericType lg && r is GenericType rg: {
 
                 if (lg.ParentStructId != rg.ParentStructId) {
@@ -65,6 +67,19 @@ public static partial class NeuTypeFunctions {
 public partial class Builtin: NeuType {
 
     public Builtin() { }
+}
+
+public partial class TypeVariable: NeuType {
+
+    public String Name { get; init; }
+
+    ///
+
+    public TypeVariable(
+        String name) {
+
+        this.Name = name;
+    }
 }
 
 public partial class GenericType: NeuType {
@@ -445,6 +460,8 @@ public partial class CheckedStruct {
 
     public String Name { get; init; }
 
+    public List<Int32> GenericParameters { get; init; }
+
     public List<CheckedVarDecl> Fields { get; set; }
 
     public Int32 ScopeId { get; init; }
@@ -457,12 +474,14 @@ public partial class CheckedStruct {
 
     public CheckedStruct(
         String name,
+        List<Int32> genericParameters,
         List<CheckedVarDecl> fields,
         Int32 scopeId,
         DefinitionLinkage definitionLinkage,
         DefinitionType definitionType) {
 
         this.Name = name;
+        this.GenericParameters = genericParameters;
         this.Fields = fields;
         this.ScopeId = scopeId;
         this.DefinitionLinkage = definitionLinkage;
@@ -498,6 +517,10 @@ public partial class CheckedFunction {
     public Int32 ReturnType { get; set; }
     
     public List<CheckedParameter> Parameters { get; init; }
+
+    public List<Int32> GenericParameters { get; set; }
+
+    public Int32 FuncScopeId { get; init; }
     
     public CheckedBlock Block { get; set; }
 
@@ -509,12 +532,16 @@ public partial class CheckedFunction {
         String name,
         Int32 returnType,
         List<CheckedParameter> parameters,
+        List<Int32> genericParameters,
+        Int32 funcScopeId,
         CheckedBlock block,
         FunctionLinkage linkage) { 
 
         this.Name = name;
         this.ReturnType = returnType;
         this.Parameters = parameters;
+        this.GenericParameters = genericParameters;
+        this.FuncScopeId = funcScopeId;
         this.Block = block;
         this.Linkage = linkage;
     }
@@ -1616,9 +1643,13 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var func in structure.Methods) {
 
+            var methodScopeId = project.CreateScope(structScopeId);
+
             var checkedFunction = new CheckedFunction(
                 name: func.Name,
                 parameters: new List<CheckedParameter>(),
+                genericParameters: new List<Int32>(),
+                funcScopeId: methodScopeId,
                 returnType: Compiler.UnknownTypeId,
                 block: new CheckedBlock(),
                 linkage: func.Linkage);
@@ -1666,8 +1697,8 @@ public static partial class TypeCheckerFunctions {
         project.Structs.Add(
             new CheckedStruct(
                 name: structure.Name,
+                genericParameters: new List<Int32>(),
                 fields: new List<CheckedVarDecl>(),
-                // scope,
                 scopeId: structScopeId,
                 definitionLinkage: structure.DefinitionLinkage,
                 definitionType: structure.DefinitionType));
@@ -1690,11 +1721,33 @@ public static partial class TypeCheckerFunctions {
 
         var fields = new List<CheckedVarDecl>();
 
+        foreach (var (genParam, paramSpan) in structure.GenericParameters) {
+
+            project.Types.Add(new TypeVariable(genParam));
+
+            var paramTypeId = project.Types.Count - 1;
+
+            var _checkedStruct = project.Structs[structId];
+
+            var _checkedStructScopeId = _checkedStruct.ScopeId;
+
+            _checkedStruct.GenericParameters.Add(paramTypeId);
+
+            if (project.AddTypeToScope(_checkedStructScopeId, genParam, paramTypeId, paramSpan).Error is Error genErr) {
+
+                error = error ?? genErr;
+            }
+        }
+
+        var chkStruct = project.Structs[structId];
+
+        var chkStructScopeId = chkStruct.ScopeId;
+
         var structTypeId = project.FindOrAddTypeId(new StructType(structId));
 
         foreach (var uncheckedMember in structure.Fields) {
 
-            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, parentScopeId, project);
+            var (checkedMemberType, checkedMemberTypeErr) = TypeCheckTypeName(uncheckedMember.Type, chkStructScopeId, project);
 
             error = error ?? checkedMemberTypeErr;
 
@@ -1720,16 +1773,20 @@ public static partial class TypeCheckerFunctions {
                             mutable: field.Mutable)));
         }
 
+        var funcScopeId = project.CreateScope(parentScopeId);
+
         var checkedStruct = project.Structs.ElementAt(structId);
 
         checkedStruct.Fields = fields;
 
         var checkedConstructor = new CheckedFunction(
             name: structure.Name,
-            block: new CheckedBlock(),
-            linkage: FunctionLinkage.ImplicitConstructor,
+            returnType: structTypeId,
             parameters: constructorParams,
-            returnType: structTypeId);
+            genericParameters: new List<Int32>(),
+            funcScopeId,
+            block: new CheckedBlock(),
+            linkage: FunctionLinkage.ImplicitConstructor);
 
         // Internal constructor
 
@@ -1766,16 +1823,40 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
+        var funcScopeId = project.CreateScope(parentScopeId);
+
         var checkedFunction = new CheckedFunction(
             name: func.Name,
             returnType: Compiler.UnknownTypeId,
             parameters: new List<CheckedParameter>(),
+            genericParameters: new List<Int32>(),
+            funcScopeId,
             block: new CheckedBlock(),
             linkage: func.Linkage);
 
+        var checkedFuncScopeId = checkedFunction.FuncScopeId;
+
+        var genericParams = new List<Int32>();
+
+        foreach (var (genParam, paramSpan) in func.GenericParameters) {
+
+            project.Types.Add(new TypeVariable(genParam));
+
+            var typeVarTypeId = project.Types.Count - 1;
+
+            genericParams.Add(typeVarTypeId);
+
+            if (project.AddTypeToScope(checkedFuncScopeId, genParam, typeVarTypeId, paramSpan).Error is Error genErr) {
+
+                error = error ?? genErr;
+            }
+        }
+
+        checkedFunction.GenericParameters = genericParams;
+
         foreach (var param in func.Parameters) {
 
-            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, parentScopeId, project);
+            var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, funcScopeId, project);
 
             error = error ?? typeCheckNameErr;
 
@@ -1836,7 +1917,7 @@ public static partial class TypeCheckerFunctions {
 
         error = error ?? typeCheckBlockErr;
 
-        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, parentScopeId, project);
+        var (funcReturnType, typeCheckReturnTypeErr) = TypeCheckTypeName(func.ReturnType, functionScopeId, project);
 
         error = error ?? typeCheckReturnTypeErr;
 
@@ -3164,6 +3245,8 @@ public static partial class TypeCheckerFunctions {
 
                     linkage = callee.Linkage;
 
+                    var genericInferences = new Dictionary<Int32, Int32>();
+
                     // Check that we have the right number of arguments
 
                     if (callee.Parameters.Count != call.Args.Count) {
@@ -3208,27 +3291,75 @@ public static partial class TypeCheckerFunctions {
                                         call.Args[idx].Item2.GetSpan());
                             }
 
-                            var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
-                                callee.Parameters[idx].Variable.Type,
-                                checkedArg,
-                                call.Args[idx].Item2.GetSpan());
+                            var lhsTypeId = callee.Parameters[idx].Variable.Type;
 
-                            error = error ?? tryPromoteErr;
+                            var lhsType = project.Types[lhsTypeId];
 
-                            if (promotedExpr is not null) {
+                            if (lhsType is TypeVariable) {
 
-                                checkedArg = promotedExpr;
+                                // If the call expects a generic type variable, let's see if we've already seen it
+
+                                if (genericInferences.ContainsKey(lhsTypeId)) {
+
+                                    // We've seen this type variable assigned something before
+                                    // we should error if it's incompatible.
+
+                                    var (promote1, promote1Err) = TryPromoteConstantExprToType(
+                                        genericInferences[lhsTypeId],
+                                        checkedArg,
+                                        call.Args[idx].Item2.GetSpan());
+
+                                    error = error ?? promote1Err;
+
+                                    if (promote1 is not null) {
+
+                                        checkedArg = promote1;
+                                    }
+
+                                    if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
+
+                                        error = error ??
+                                            new TypeCheckError(
+                                                "Parameter type mismatch",
+                                                call.Args[idx].Item2.GetSpan());
+                                    }
+
+                                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                                }
+                                else {
+
+                                    // We haven't seen this type variable before, so go ahead
+                                    // and give it an actual type during this call
+                                    
+                                    genericInferences.Add(lhsTypeId, checkedArg.GetNeuType());
+
+                                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                                }
                             }
+                            else {
 
-                            if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
+                                var (promoted2, promote2Err) = TryPromoteConstantExprToType(
+                                    lhsTypeId,
+                                    checkedArg,
+                                    call.Args[idx].Item2.GetSpan());
 
-                                error = error ??
-                                    new TypeCheckError(
+                                error = error ?? promote2Err;
+
+                                if (promoted2 is not null) {
+
+                                    checkedArg = promoted2;
+                                }
+
+                                if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
+
+                                    error = error ??
+                                        new TypeCheckError(
                                         "Parameter type mismatch",
                                         call.Args[idx].Item2.GetSpan());
-                            }
+                                }
 
-                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                                checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                            }
 
                             idx += 1;
                         }

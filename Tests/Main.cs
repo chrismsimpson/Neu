@@ -27,6 +27,7 @@ public static partial class Program {
         TestClasses();
         TestBoolean();
         TestRanges();
+        TestGenerics();
 
         WriteLine($"\nCompleted in {start.Elapsed()}");
     }
@@ -343,5 +344,10 @@ public static partial class Program {
     public static ErrorOrVoid TestRanges() {
 
         return TestSamples("./Samples/Ranges");
+    }
+
+    public static ErrorOrVoid TestGenerics() {
+
+        return TestSamples("./Samples/Generics");
     }
 }

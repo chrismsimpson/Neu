@@ -18,7 +18,7 @@ public static partial class CodeGenFunctions {
 
             var structure = project.Structs[structId];
 
-            var structOutput = compiler.CodeGenStructPredecl(structure);
+            var structOutput = compiler.CodeGenStructPredecl(structure, project);
 
             if (!IsNullOrWhiteSpace(structOutput)) {
 
@@ -87,7 +87,8 @@ public static partial class CodeGenFunctions {
 
     public static String CodeGenStructPredecl(
         this Compiler compiler,
-        CheckedStruct structure) {
+        CheckedStruct structure,
+        Project project) {
 
         if (structure.DefinitionLinkage == DefinitionLinkage.External) {
 
@@ -95,16 +96,49 @@ public static partial class CodeGenFunctions {
         }
         else {
 
+            var output = new StringBuilder();
+
+            if (structure.GenericParameters.Any()) {
+
+                output.Append("template <");
+            }
+
+            var first = true;
+
+            foreach (var genParam in structure.GenericParameters) {
+
+                if (!first) {
+
+                    output.Append(", ");
+                }
+                else {
+
+                    first = false;
+                }
+
+                output.Append("typename ");
+                output.Append(compiler.CodeGenType(genParam, project));
+            }
+
+            if (structure.GenericParameters.Any()) {
+
+                output.Append(">\n");
+            }
+            
             switch (structure.DefinitionType) {
 
                 case DefinitionType.Class: {
 
-                    return $"class {structure.Name};";
+                    output.Append($"class {structure.Name};");
+
+                    break;
                 }
 
                 case DefinitionType.Struct: {
 
-                    return $"struct {structure.Name};";
+                    output.Append($"struct {structure.Name};");
+
+                    break;
                 }
 
                 default: {
@@ -112,6 +146,8 @@ public static partial class CodeGenFunctions {
                     throw new Exception();
                 }
             }
+
+            return output.ToString();
         }
     }
 
@@ -126,6 +162,33 @@ public static partial class CodeGenFunctions {
         }
 
         var output = new StringBuilder();
+
+        if (structure.GenericParameters.Any()) {
+
+            output.Append("template <");
+        }
+
+        var first = true;
+
+        foreach (var genParam in structure.GenericParameters) {
+
+            if (!first) {
+
+                output.Append(", ");
+            }
+            else {
+
+                first = false;
+            }
+
+            output.Append("typename ");
+            output.Append(compiler.CodeGenType(genParam, project));
+        }
+
+        if (structure.GenericParameters.Any()) {
+
+            output.Append(">\n");
+        }
 
         switch (structure.DefinitionType) {
 
@@ -143,7 +206,8 @@ public static partial class CodeGenFunctions {
 
             case DefinitionType.Struct: {
 
-                output.Append($"struct {structure.Name} {{\n");
+                output.Append($"struct {structure.Name}");
+                output.Append(" {\n");
                 output.Append("  public:\n");
 
                 break;
@@ -214,6 +278,33 @@ public static partial class CodeGenFunctions {
             output.Append("extern ");
         }
 
+        if (fun.GenericParameters.Any()) {
+
+            output.Append("template <");
+        }
+
+        var firstGenParam = true;
+
+        foreach (var genParam in fun.GenericParameters) {
+
+            if (!firstGenParam) {
+
+                output.Append(", ");
+            }
+            else {
+
+                firstGenParam = false;
+            }
+
+            output.Append("typename ");
+            output.Append(compiler.CodeGenType(genParam, project));
+        }
+
+        if (fun.GenericParameters.Any()) {
+
+            output.Append(">\n");
+        }
+
         if (fun.Name == "main") {
 
             output.Append("int");
@@ -267,6 +358,33 @@ public static partial class CodeGenFunctions {
         Project project) {
 
         var output = new StringBuilder();
+
+        if (fun.GenericParameters.Any()) {
+            
+            output.Append("template <");
+        }
+        
+        var firstGenParam = true;
+        
+        foreach (var genParam in fun.GenericParameters) {
+            
+            if (!firstGenParam) {
+                
+                output.Append(", ");
+            } 
+            else {
+                
+                firstGenParam = false;
+            }
+            
+            output.Append("typename ");
+            output.Append(compiler.CodeGenType(genParam, project));
+        }
+
+        if (fun.GenericParameters.Any()) {
+            
+            output.Append(">\n");
+        }
 
         if (fun.Name == "main") {
 
@@ -549,6 +667,11 @@ public static partial class CodeGenFunctions {
                     case Compiler.VoidTypeId: return "void";
                     default: return "auto";
                 }
+            }
+
+            case TypeVariable t: {
+
+                return t.Name;
             }
 
             default: {
@@ -991,8 +1114,6 @@ public static partial class CodeGenFunctions {
                             output.Append("::");
                         }
 
-                        // output.Append(ce.Call.Name);
-
                         if (ce.Call.Linkage == FunctionLinkage.ImplicitConstructor) {
 
                             var typeId = ce.Call.Type;
@@ -1073,13 +1194,6 @@ public static partial class CodeGenFunctions {
 
                         break;
                     }
-
-                    // default: {
-
-                    //     output.Append('.');
-
-                    //     break;
-                    // }
 
                     case var x: {
 
@@ -1646,13 +1760,6 @@ public static partial class CodeGenFunctions {
 
                         break;
                     }
-
-                    // default: {
-
-                    //     output.Append('.');
-
-                    //     break;
-                    // }
 
                     case var x: {
 
