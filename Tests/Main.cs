@@ -11,23 +11,23 @@ public static partial class Program {
 
         var start = System.Environment.TickCount;
 
-        TestScratchpad();
+        // TestScratchpad();
 
-        // TestBasics();
-        // TestControlFlow();
-        // TestFunctions();
-        // TestMath();
-        // TestVariables();
-        // TestStrings();
-        // TestVectors();
-        // TestOptional();
-        // TestTuples();
-        // TestStructs();
-        // TestPointers();
-        // TestClasses();
-        // TestBoolean();
-        // TestRanges();
-        // TestGenerics();
+        TestBasics();
+        TestControlFlow();
+        TestFunctions();
+        TestMath();
+        TestVariables();
+        TestStrings();
+        TestVectors();
+        TestOptional();
+        TestTuples();
+        TestStructs();
+        TestPointers();
+        TestClasses();
+        TestBoolean();
+        TestRanges();
+        TestGenerics();
 
         WriteLine($"\nCompleted in {start.Elapsed()}");
     }
