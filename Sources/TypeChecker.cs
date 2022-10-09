@@ -1181,6 +1181,18 @@ public partial class CheckedUnaryOperator {
             this.TypeCast = typeCast;
         }
     }
+
+    public partial class CheckedIsUnaryOperator: CheckedUnaryOperator {
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedIsUnaryOperator(Int32 typeId) {
+
+            this.TypeId = typeId;
+        }
+    }
     
 public static partial class CheckedUnaryOperatorFunctions {
 
@@ -1201,6 +1213,9 @@ public static partial class CheckedUnaryOperatorFunctions {
 
             case var _ when l is CheckedTypeCastUnaryOperator lt && r is CheckedTypeCastUnaryOperator rt:
                 return CheckedTypeCastFunctions.Eq(lt.TypeCast, rt.TypeCast);
+
+            case var _ when l is CheckedIsUnaryOperator li && r is CheckedIsUnaryOperator ri:
+                return li.TypeId == ri.TypeId;
 
             default: 
                 return false;
@@ -2631,6 +2646,17 @@ public static partial class TypeCheckerFunctions {
                         break;
                     }
 
+                    case IsUnaryOperator i: {
+
+                        var (isTypeId, isTypeErr) = TypeCheckTypeName(i.Type, scopeId, project);
+
+                        error = error ?? isTypeErr;
+
+                        checkedOp = new CheckedIsUnaryOperator(isTypeId);
+
+                        break;
+                    }
+
                     case TypeCastUnaryOperator tc: {
 
                         var (typeId, typeErr) = TypeCheckTypeName(tc.TypeCast.GetUncheckedType(), scopeId, project);
@@ -3224,6 +3250,13 @@ public static partial class TypeCheckerFunctions {
         var exprType = project.Types[exprTypeId];
 
         switch (op) {
+
+            case CheckedIsUnaryOperator i: {
+
+                return (
+                    new CheckedUnaryOpExpression(expr, new CheckedIsUnaryOperator(i.TypeId), Compiler.BoolTypeId),
+                    null);
+            }
             
             case CheckedTypeCastUnaryOperator tc: {
 

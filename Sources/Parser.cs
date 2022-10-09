@@ -1788,6 +1788,61 @@ public partial class UnaryOperator {
         }
     }
 
+    public partial class IsUnaryOperator: UnaryOperator {
+
+        public UncheckedType Type { get; init; }
+
+        ///
+
+        public IsUnaryOperator(
+            UncheckedType type) {
+
+            this.Type = type;
+        }
+    }
+
+public static partial class UnaryOperatorFunctions {
+
+    public static bool Eq(UnaryOperator? l, UnaryOperator? r) {
+
+        if (l is null && r is null) {
+
+            return true;
+        }
+
+        if (l is null || r is null) {
+
+            return false;
+        }
+
+        switch (true) {
+
+            case var _ when l is PreIncrementUnaryOperator && r is PreIncrementUnaryOperator:
+            case var _ when l is PostIncrementUnaryOperator && r is PostIncrementUnaryOperator:
+            case var _ when l is PreDecrementUnaryOperator && r is PreDecrementUnaryOperator:
+            case var _ when l is PostDecrementUnaryOperator && r is PostDecrementUnaryOperator:
+            case var _ when l is NegateUnaryOperator && r is NegateUnaryOperator:
+            case var _ when l is DereferenceUnaryOperator && r is DereferenceUnaryOperator:
+            case var _ when l is RawAddressUnaryOperator && r is RawAddressUnaryOperator:
+            case var _ when l is LogicalNotUnaryOperator && r is LogicalNotUnaryOperator:
+            case var _ when l is BitwiseNotUnaryOperator && r is BitwiseNotUnaryOperator:
+                return true;
+
+            case var _ when l is TypeCastUnaryOperator lt && r is TypeCastUnaryOperator rt:
+                return TypeCastFunctions.Eq(lt.TypeCast, rt.TypeCast);
+
+
+            case var _ when l is IsUnaryOperator li && r is IsUnaryOperator ri:
+                return UncheckedTypeFunctions.Eq(li.Type, ri.Type);
+
+            default:
+                return false;
+        }
+    }
+}
+
+///
+
 public enum BinaryOperator {
 
     Add,
@@ -3964,6 +4019,28 @@ public static partial class ParserFunctions {
                         end: endSpan.End);
 
                     expr = new UnaryOpExpression(expr, new PostIncrementUnaryOperator(), _span);
+
+                    break;
+                }
+
+                case NameToken nt when nt.Value == "is": {
+
+                    var endSpan = tokens[index + 1].Span;
+
+                    index += 1;
+
+                    var _span = new Span(
+                        fileId: expr.GetSpan().FileId,
+                        start: expr.GetSpan().Start,
+                        end: endSpan.End);
+
+                    var (isTypeName, isTypeNameErr) = ParseTypeName(tokens, ref index);
+
+                    error = error ?? isTypeNameErr;
+
+                    index += 1;
+
+                    expr = new UnaryOpExpression(expr, new IsUnaryOperator(isTypeName), _span);
 
                     break;
                 }

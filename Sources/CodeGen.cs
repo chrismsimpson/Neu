@@ -596,6 +596,27 @@ public static partial class CodeGenFunctions {
         }
     }
 
+    public static String CodeGenStructType(
+        this Compiler compiler,
+        Int32 typeId,
+        Project project) {
+
+        var ty = project.Types[typeId];
+
+        switch (ty) {
+
+            case StructType st: {
+
+                return project.Structs[st.StructId].Name;
+            }
+
+            default: {
+
+                throw new Exception("codegen_struct_type on non-struct");
+            }
+        }
+    }
+
     public static String CodeGenType(
         this Compiler compiler,
         Int32 typeId,
@@ -1317,6 +1338,15 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case CheckedIsUnaryOperator i: {
+
+                        output.Append("is<");
+                        output.Append(compiler.CodeGenStructType(i.TypeId, project));
+                        output.Append(">(");
+
+                        break;
+                    }
+
                     case CheckedTypeCastUnaryOperator tc: {
 
                         switch (tc.TypeCast) {
@@ -1414,7 +1444,8 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    case CheckedTypeCastUnaryOperator _: {
+                    case CheckedTypeCastUnaryOperator _:
+                    case CheckedIsUnaryOperator _: {
 
                         output.Append(')');
 

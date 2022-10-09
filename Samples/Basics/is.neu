@@ -1,0 +1,27 @@
+class Foo {
+    x: Int64
+}
+
+class Bar {
+    y: Int64
+}
+
+func main() {
+    let foo = Foo(x: 1)
+
+    if foo is Foo {
+        printLine("OK")
+    }
+
+    if foo is Bar {
+        printLine("Error: Foo should not be Bar")
+    }
+
+    if Bar(y: 5) is Bar {
+        printLine("OK")
+    }
+
+    if Bar(y: 10) is Foo {
+        printLine("Error: Bar should not be Foo")
+    }
+}
