@@ -193,12 +193,12 @@ extern class String {
     func length(this) -> Int64 { }
 }
 
-extern class RefVector {
+extern class RefVector<T> {
     func size(this) -> Int64 { }
     func resize(var this, anon size: Int64) { }
 }
 
-extern class Optional { }
+extern class Optional<T> { }
 
 extern class Tuple { }
 

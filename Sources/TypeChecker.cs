@@ -1890,13 +1890,13 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        var functionScopeId = project.CreateScope(parentScopeId);
-
         var funcId = project
             .FindFuncInScope(parentScopeId, func.Name) 
             ?? throw new Exception("Internal error: missing previously defined function");
 
         var checkedFunction = project.Functions[funcId];
+
+        var functionScopeId = checkedFunction.FuncScopeId;
 
         var paramVars = new List<CheckedVariable>();
 
@@ -1955,8 +1955,6 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        var funcScopeId = project.CreateScope(parentScopeId);
-
         var structure = project.Structs[structId];
 
         var structureScopeId = structure.ScopeId;
@@ -1966,6 +1964,8 @@ public static partial class TypeCheckerFunctions {
             ?? throw new Exception("Internal error: we just pushed the checked function, but it's not present");
 
         var checkedFunction = project.Functions[methodId];
+
+        var funcScopeId = checkedFunction.FuncScopeId;
 
         var paramVars = new List<CheckedVariable>();
 
@@ -3364,6 +3364,27 @@ public static partial class TypeCheckerFunctions {
                             idx += 1;
                         }
                     }
+
+                    // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
+                    // type variable. For the moment, we'll just checked to see if it's a type variable.
+
+                    switch (project.Types[returnType]) {
+
+                        case TypeVariable _: {
+
+                            if (genericInferences.ContainsKey(returnType)) {
+
+                                returnType = genericInferences[returnType];
+                            }
+
+                            break;
+                        }
+
+                        default: {
+
+                            break;
+                        }
+                    }
                 }
 
                 break;
@@ -3406,6 +3427,8 @@ public static partial class TypeCheckerFunctions {
             returnType = callee.ReturnType;
 
             linkage = callee.Linkage;
+
+            var genericInferences = new Dictionary<Int32, Int32>();
 
             // Check that we have the right number of arguments.
 
@@ -3452,26 +3475,98 @@ public static partial class TypeCheckerFunctions {
                                 call.Args[idx].Item2.GetSpan());
                     }
 
-                    var (_checkedArg, promoteErr) = TryPromoteConstantExprToType(
-                        callee.Parameters[idx + 1].Variable.Type, 
-                        checkedArg, 
-                        call.Args[idx].Item2.GetSpan());
+                    var lhsTypeId = callee.Parameters[idx + 1].Variable.Type;
 
-                    error = error ?? promoteErr;
+                    var lhsType = project.Types[lhsTypeId];
 
-                    checkedArg = _checkedArg ?? checkedArg;
+                    if (lhsType is TypeVariable) {
 
-                    if (checkedArg.GetNeuType() != callee.Parameters[idx + 1].Variable.Type) {
+                        // If the call expects a generic type variable, let's see if we've already seen it
 
-                        error = error ?? 
-                            new TypeCheckError(
-                                "Parameter type mismatch",
+                        if (genericInferences.ContainsKey(lhsTypeId)) {
+
+                            // We've seen this type variable assigned something before
+                            // we should error if it's incompatible.
+
+                            var (promote1, promote1Err) = TryPromoteConstantExprToType(
+                                genericInferences[lhsTypeId],
+                                checkedArg,
                                 call.Args[idx].Item2.GetSpan());
+
+                            error = error ?? promote1Err;
+
+                            if (promote1 is not null) {
+
+                                checkedArg = promote1;
+                            }
+
+                            if (checkedArg.GetNeuType() != callee.Parameters[idx].Variable.Type) {
+
+                                error = error ??
+                                    new TypeCheckError(
+                                        "Parameter type mismatch",
+                                        call.Args[idx].Item2.GetSpan());
+                            }
+
+                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                        }
+                        else {
+
+                            // We haven't seen this type variable before, so go ahead
+                            // and give it an actual type during this call
+
+                            genericInferences.Add(lhsTypeId, checkedArg.GetNeuType());
+
+                            checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+                        }
+                    }
+                    else {
+
+                        var (promoted2, promote2Err) = TryPromoteConstantExprToType(
+                            lhsTypeId,
+                            checkedArg,
+                            call.Args[idx].Item2.GetSpan());
+
+                        error = error ?? promote2Err;
+
+                        if (promoted2 is not null) {
+
+                            checkedArg = promoted2;
+                        }
+
+                        if (checkedArg.GetNeuType() != callee.Parameters[idx + 1].Variable.Type) {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "Parameter type mismatch",
+                                    call.Args[idx].Item2.GetSpan());
+                        }
+
+                        checkedArgs.Add((call.Args[idx].Item1, checkedArg));
                     }
 
-                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-
                     idx += 1;
+                }
+            }
+
+            // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
+            // type variable. For the moment, we'll just checked to see if it's a type variable.
+
+            switch (project.Types[returnType]) {
+
+                case TypeVariable _: {
+
+                    if (genericInferences.ContainsKey(returnType)) {
+
+                        returnType = genericInferences[returnType];
+                    }
+
+                    break;
+                }
+
+                default: {
+
+                    break;
                 }
             }
         }
