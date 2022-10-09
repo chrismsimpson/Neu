@@ -1094,7 +1094,6 @@ public static partial class LexerFunctions {
             if (Int64.TryParse(str, System.Globalization.NumberStyles.HexNumber, null, out number)) {
 
                 return (
-                    // new NumberToken(number, new Span(fileId, start, index)),
                     MakeNumberToken(null, null, number, new Span(fileId, start, index)),
                     null);
             }
@@ -1219,7 +1218,6 @@ public static partial class LexerFunctions {
                 var number = ToInt64(str, 2);
 
                 return (
-                    // new NumberToken(number, new Span(fileId, start, index)),
                     MakeNumberToken(null, null, number, new Span(fileId, start, index)),
                     null);
             }
@@ -1420,8 +1418,15 @@ public static partial class LexerFunctions {
             case var _ when sign == false && width == 16:
                 return new NumberToken(new UInt16Constant(ToUInt16(number)), span);
 
-            case var _ when sign == false && width == 32:   // FIXME: Check whether this loses precision
+            case var _ when sign == false && width == 32:   
                 return new NumberToken(new UInt32Constant(ToUInt32(number)), span);
+
+            // FIXME: This loses precision if UInt is 64-bit
+        
+            case var _ when sign == false && width == null:
+                return new NumberToken(new UIntConstant(ToUInt64(number)), span);
+
+            // FIXME: This loses precision:
 
             case var _ when sign == false && width == 64:
                 return new NumberToken(new UInt64Constant(ToUInt64(number)), span);
@@ -1434,6 +1439,9 @@ public static partial class LexerFunctions {
 
             case var _ when sign == true && width == 32:
                 return new NumberToken(new Int32Constant(ToInt32(number)), span);
+
+            case var _ when sign == true && width == null:
+                return new NumberToken(new IntConstant(number), span);
 
             case var _ when sign == true && width == 64:
                 return new NumberToken(new Int64Constant(number), span);
@@ -1530,7 +1538,16 @@ public static partial class CharExtensions {
             return null;
         }
 
-        if (sign != null && width == null) {
+        if (bytes.Match(i, "(")) {
+
+            i += 1;
+
+            return new LiteralCast(
+                i - index, 
+                sign, 
+                width);
+        }
+        else if (sign != null && width == null) {
 
             if (bytes.Match(i, "8")) {
 

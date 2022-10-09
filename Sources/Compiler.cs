@@ -23,9 +23,12 @@ public partial class Compiler {
     public const Int32 CCharTypeId      = 13;
     public const Int32 CIntTypeId       = 14;
 
+    public const Int32 UIntTypeId       = 15;
+    public const Int32 IntTypeId        = 16;
+
     // Note: keep StringTypeId last as it is how we know how many slots to pre-fill
 
-    public const Int32 StringTypeId     = 15;
+    public const Int32 StringTypeId     = 17;
 
     public List<(String, byte[])> RawFiles { get; init; }
 
@@ -190,12 +193,12 @@ extern class String {
     func toLowercase(this) -> String { }
     func toUppercase(this) -> String { }
     func isEmpty(this) -> Bool { }
-    func length(this) -> Int64 { }
+    func length(this) -> UInt { }
 }
 
 extern class RefVector<T> {
-    func size(this) -> Int64 { }
-    func resize(var this, anon size: Int64) { }
+    func size(this) -> UInt { }
+    func resize(var this, anon size: UInt) { }
     func pop(var this) -> T? { }
 }
 

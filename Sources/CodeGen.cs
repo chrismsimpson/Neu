@@ -675,6 +675,8 @@ public static partial class CodeGenFunctions {
             case Builtin _: {
 
                 switch (typeId) {
+                    case Compiler.IntTypeId: return "ssize_t";
+                    case Compiler.UIntTypeId: return "size_t";
                     case Compiler.BoolTypeId: return "bool";
                     case Compiler.StringTypeId: return "String";
                     case Compiler.CCharTypeId: return "char";
@@ -1021,6 +1023,15 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case IntConstant i: {
+
+                        output.Append("static_cast<ssize_t>(");
+                        output.Append(i.Value.ToString());
+                        output.Append("LL)");
+
+                        break;
+                    }
+
                     case UInt8Constant u8: {
 
                         output.Append("static_cast<UInt8>(");
@@ -1052,6 +1063,15 @@ public static partial class CodeGenFunctions {
 
                         output.Append("static_cast<UInt64>(");
                         output.Append(u64.Value.ToString());
+                        output.Append("ULL)");
+
+                        break;
+                    }
+
+                    case UIntConstant u: {
+
+                        output.Append("static_cast<size_t>(");
+                        output.Append(u.Value.ToString());
                         output.Append("ULL)");
 
                         break;

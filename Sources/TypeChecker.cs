@@ -179,10 +179,12 @@ public static partial class NeuTypeFunctions {
             case Compiler.Int16TypeId:
             case Compiler.Int32TypeId:
             case Compiler.Int64TypeId:
+            case Compiler.IntTypeId:
             case Compiler.UInt8TypeId:
             case Compiler.UInt16TypeId:
             case Compiler.UInt32TypeId:
             case Compiler.UInt64TypeId:
+            case Compiler.UIntTypeId:
                 return true;
             
             default: 
@@ -204,10 +206,15 @@ public static partial class NeuTypeFunctions {
                     case Compiler.Int16TypeId: return si.Value >= short.MinValue && si.Value <= short.MaxValue;
                     case Compiler.Int32TypeId: return si.Value >= int.MinValue && si.Value <= int.MaxValue;
                     case Compiler.Int64TypeId: return true;
+                    // FIXME: Don't assume that UInt is 64-bit
+                    case Compiler.IntTypeId: return true;
                     case Compiler.UInt8TypeId: return si.Value >= 0 && si.Value <= byte.MaxValue;
                     case Compiler.UInt16TypeId: return si.Value >= 0 && si.Value <= ushort.MaxValue;
                     case Compiler.UInt32TypeId: return si.Value >= 0 && si.Value <= uint.MaxValue;
                     case Compiler.UInt64TypeId: return si.Value >= 0;
+                    // FIXME: Don't assume that UInt is 64-bit
+                    case Compiler.UIntTypeId: return si.Value >= 0;
+
                     default: return false;
                 }
             }
@@ -220,9 +227,13 @@ public static partial class NeuTypeFunctions {
                     case Compiler.Int16TypeId: return ui.Value <= ToUInt64(short.MaxValue);
                     case Compiler.Int32TypeId: return ui.Value <= ToUInt64(int.MaxValue);
                     case Compiler.Int64TypeId: return ui.Value <= ToUInt64(long.MaxValue);
+                    // FIXME: Don't assume that usize is 64-bit
+                    case Compiler.IntTypeId: return ui.Value <= ToUInt64(long.MaxValue);
                     case Compiler.UInt8TypeId: return ui.Value <= ToUInt64(byte.MaxValue);
                     case Compiler.UInt16TypeId: return ui.Value <= ToUInt64(ushort.MaxValue);
                     case Compiler.UInt32TypeId: return ui.Value <= ToUInt64(uint.MaxValue);
+                    // FIXME: Don't assume that usize is 64-bit
+                    case Compiler.UIntTypeId: return true;
                     case Compiler.UInt64TypeId: return true;
                     default: return false;
                 }
@@ -874,10 +885,12 @@ public static partial class IntegerConstantFunctions {
                 Compiler.Int16TypeId => new Int16Constant(ToInt16(si.Value)),
                 Compiler.Int32TypeId => new Int32Constant(ToInt32(si.Value)),
                 Compiler.Int64TypeId => new Int64Constant(si.Value),
+                Compiler.IntTypeId => new IntConstant(si.Value),
                 Compiler.UInt8TypeId => new UInt8Constant(ToByte(si.Value)),
                 Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(si.Value)),
                 Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(si.Value)),
                 Compiler.UInt64TypeId => new UInt64Constant(ToUInt64(si.Value)),
+                Compiler.UIntTypeId => new UIntConstant(ToUInt64(si.Value)),
                 _ => throw new Exception("Bogus state in IntegerConstant.promote")
             },
             UnsignedIntegerConstant ui => typeId switch {
@@ -885,10 +898,12 @@ public static partial class IntegerConstantFunctions {
                 Compiler.Int16TypeId => new Int16Constant(ToInt16(ui.Value)),
                 Compiler.Int32TypeId => new Int32Constant(ToInt32(ui.Value)),
                 Compiler.Int64TypeId => new Int64Constant(System.Convert.ToInt64(ui.Value)),
+                Compiler.IntTypeId => new IntConstant(System.Convert.ToInt64(ui.Value)),
                 Compiler.UInt8TypeId => new UInt8Constant(ToByte(ui.Value)),
                 Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(ui.Value)),
                 Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(ui.Value)),
                 Compiler.UInt64TypeId => new UInt64Constant(ui.Value),
+                Compiler.UIntTypeId => new UIntConstant(ui.Value),
                 _ => throw new Exception("Bogus state in IntegerConstant.promote")
             },
             _ => throw new Exception()
@@ -957,6 +972,19 @@ public partial class NumericConstant {
         }
     }
 
+    public partial class IntConstant: NumericConstant {
+
+        public long Value { get; init; }
+
+        ///
+
+        public IntConstant(
+            long value) {
+
+            this.Value = value;
+        }
+    }
+
     public partial class UInt8Constant: NumericConstant {
 
         public byte Value { get; init; }
@@ -1009,20 +1037,35 @@ public partial class NumericConstant {
         }
     }
 
+    public partial class UIntConstant: NumericConstant {
+
+        public ulong Value { get; init; }
+
+        ///
+
+        public UIntConstant(
+            ulong value) {
+
+            this.Value = value;
+        }
+    }
+
 public static partial class NumericConstantFunctions {
 
     public static bool Eq(NumericConstant l, NumericConstant r) {
 
         switch (true) {
 
-            case var _ when l is Int8Constant li8 && r is Int8Constant ri8:             return li8 == ri8;
-            case var _ when l is Int16Constant li16 && r is Int16Constant ri16:         return li16 == ri16;
-            case var _ when l is Int32Constant li32 && r is Int32Constant ri32:         return li32 == ri32;
-            case var _ when l is Int64Constant li64 && r is Int64Constant ri64:         return li64 == ri64;
-            case var _ when l is UInt8Constant lu8 && r is UInt8Constant ru8:           return lu8 == ru8;
-            case var _ when l is UInt16Constant lu16 && r is UInt16Constant ru16:       return lu16 == ru16;
-            case var _ when l is UInt32Constant lu32 && r is UInt32Constant ru32:       return lu32 == ru32;
-            case var _ when l is UInt64Constant lu64 && r is UInt64Constant ru64:       return lu64 == ru64;
+            case var _ when l is Int8Constant li8 && r is Int8Constant ri8:             return li8.Value == ri8.Value;
+            case var _ when l is Int16Constant li16 && r is Int16Constant ri16:         return li16.Value == ri16.Value;
+            case var _ when l is Int32Constant li32 && r is Int32Constant ri32:         return li32.Value == ri32.Value;
+            case var _ when l is Int64Constant li64 && r is Int64Constant ri64:         return li64.Value == ri64.Value;
+            case var _ when l is IntConstant li && r is IntConstant ri:                 return li.Value == ri.Value;
+            case var _ when l is UInt8Constant lu8 && r is UInt8Constant ru8:           return lu8.Value == ru8.Value;
+            case var _ when l is UInt16Constant lu16 && r is UInt16Constant ru16:       return lu16.Value == ru16.Value;
+            case var _ when l is UInt32Constant lu32 && r is UInt32Constant ru32:       return lu32.Value == ru32.Value;
+            case var _ when l is UInt64Constant lu64 && r is UInt64Constant ru64:       return lu64.Value == ru64.Value;
+            case var _ when l is UIntConstant lu && r is UIntConstant ru:               return lu.Value == ru.Value;
             default:                                                                    return false;
         }
     }
@@ -1035,10 +1078,12 @@ public static partial class NumericConstantFunctions {
             case Int16Constant i16: return new SignedIntegerConstant(ToInt64(i16.Value));
             case Int32Constant i32: return new SignedIntegerConstant(ToInt64(i32.Value));
             case Int64Constant i64: return new SignedIntegerConstant(i64.Value);
+            case IntConstant i: return new SignedIntegerConstant(i.Value);
             case UInt8Constant u8: return new UnsignedIntegerConstant(ToUInt64(u8.Value));
             case UInt16Constant u16: return new UnsignedIntegerConstant(ToUInt64(u16.Value));
             case UInt32Constant u32: return new UnsignedIntegerConstant(ToUInt64(u32.Value));
             case UInt64Constant u64: return new UnsignedIntegerConstant(u64.Value);
+            case UIntConstant u: return new UnsignedIntegerConstant(u.Value);
             default: throw new Exception();
         }
     }
@@ -1051,10 +1096,12 @@ public static partial class NumericConstantFunctions {
             case Int16Constant i16: return Compiler.Int16TypeId;
             case Int32Constant i32: return Compiler.Int32TypeId;
             case Int64Constant i64: return Compiler.Int64TypeId;
+            case IntConstant i: return Compiler.IntTypeId;
             case UInt8Constant u8: return Compiler.UInt8TypeId;
             case UInt16Constant u16: return Compiler.UInt16TypeId;
             case UInt32Constant u32: return Compiler.UInt32TypeId;
             case UInt64Constant u64: return Compiler.UInt64TypeId;
+            case UIntConstant u: return Compiler.UIntTypeId;
             default: throw new Exception();
         }
     }
@@ -2635,6 +2682,27 @@ public static partial class TypeCheckerFunctions {
                 var (checkedEnd, endErr) = TypeCheckExpression(re.End, scopeId, project, safetyMode);
 
                 error = error ?? endErr;
+
+                // If the range starts or ends at a constant number, we try promoting the constant to the
+                // type of the other end. This makes ranges like `0..array.size()` (as the 0 becomes 0uz).
+
+                var (promotedEnd, promoteEndErr) = TryPromoteConstantExprToType(checkedStart.GetNeuType(), checkedEnd, re.Span);
+
+                error = error ?? promoteEndErr;
+
+                if (promotedEnd is not null) {
+
+                    checkedEnd = promotedEnd;
+                }
+
+                var (promotedStart, promoteStartErr) = TryPromoteConstantExprToType(checkedEnd.GetNeuType(), checkedStart, re.Span);
+
+                error = error ?? promoteStartErr;
+
+                if (promotedStart is not null) {
+
+                    checkedStart = promotedStart;
+                }
 
                 if (checkedStart.GetNeuType() != checkedEnd.GetNeuType()) {
 
@@ -4326,6 +4394,16 @@ public static partial class TypeCheckerFunctions {
                     case "CInt": {
 
                         return (Compiler.CIntTypeId, null);
+                    }
+
+                    case "Int": {
+
+                        return (Compiler.IntTypeId, null);
+                    }
+
+                    case "UInt": {
+
+                        return (Compiler.UIntTypeId, null);
                     }
 
                     case "String": {
