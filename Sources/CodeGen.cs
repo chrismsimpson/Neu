@@ -1264,56 +1264,56 @@ public static partial class CodeGenFunctions {
 
                 switch (unaryOp.Operator) {
 
-                    case PreIncrementUnaryOperator _: {
+                    case CheckedPreIncrementUnaryOperator _: {
 
                         output.Append("++");
 
                         break;
                     }
 
-                    case PreDecrementUnaryOperator _: {
+                    case CheckedPreDecrementUnaryOperator _: {
 
                         output.Append("--");
 
                         break;
                     }
 
-                    case NegateUnaryOperator _: {
+                    case CheckedNegateUnaryOperator _: {
 
                         output.Append('-');
 
                         break;
                     }
 
-                    case DereferenceUnaryOperator _: {
+                    case CheckedDereferenceUnaryOperator _: {
 
                         output.Append('*');
 
                         break;
                     }
 
-                    case RawAddressUnaryOperator _: {
+                    case CheckedRawAddressUnaryOperator _: {
 
                         output.Append('&');
 
                         break;
                     }
 
-                    case LogicalNotUnaryOperator _: {
+                    case CheckedLogicalNotUnaryOperator _: {
 
                         output.Append('!');
 
                         break;
                     }
 
-                    case BitwiseNotUnaryOperator _: {
+                    case CheckedBitwiseNotUnaryOperator _: {
 
                         output.Append('~');
 
                         break;
                     }
 
-                    case TypeCastUnaryOperator tc: {
+                    case CheckedTypeCastUnaryOperator tc: {
 
                         switch (tc.TypeCast) {
 
@@ -1396,21 +1396,21 @@ public static partial class CodeGenFunctions {
 
                 switch (unaryOp.Operator) {
 
-                    case PostIncrementUnaryOperator _: {
+                    case CheckedPostIncrementUnaryOperator _: {
 
                         output.Append("++");
 
                         break;
                     }
 
-                    case PostDecrementUnaryOperator _: {
+                    case CheckedPostDecrementUnaryOperator _: {
 
                         output.Append("--");
 
                         break;
                     }
 
-                    case TypeCastUnaryOperator _: {
+                    case CheckedTypeCastUnaryOperator _: {
 
                         output.Append(')');
 

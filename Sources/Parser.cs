@@ -1672,6 +1672,27 @@ public partial class TypeCast {
 
 public static partial class TypeCastFunctions {
 
+    public static bool Eq(TypeCast l, TypeCast r) {
+
+        switch (true) {
+
+            case var _ when l is FallibleTypeCast lf && r is FallibleTypeCast rf:
+                return UncheckedTypeFunctions.Eq(lf.Type, rf.Type);
+
+            case var _ when l is InfallibleTypeCast li && r is InfallibleTypeCast ri:
+                return UncheckedTypeFunctions.Eq(li.Type, ri.Type);
+
+            case var _ when l is SaturatingTypeCast ls && r is SaturatingTypeCast rs:
+                return UncheckedTypeFunctions.Eq(ls.Type, rs.Type);
+
+            case var _ when l is TruncatingTypeCast lt && r is TruncatingTypeCast rt:
+                return UncheckedTypeFunctions.Eq(lt.Type, rt.Type);
+
+            default:
+                return false;
+        }
+    }
+
     public static UncheckedType GetUncheckedType(
         this TypeCast typeCast) {
 
