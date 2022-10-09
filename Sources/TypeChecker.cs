@@ -1431,6 +1431,8 @@ public partial class CheckedCall {
     public String Name { get; init; }
     
     public List<(String, CheckedExpression)> Args { get; init; }
+
+    public FunctionLinkage Linkage { get; init; }
     
     public Int32 Type { get; init; }
 
@@ -1442,12 +1444,14 @@ public partial class CheckedCall {
         List<String> ns,
         String name,
         List<(String, CheckedExpression)> args,
+        FunctionLinkage linkage,
         Int32 type,
         DefinitionType? calleeDefinitionType) {
 
         this.Namespace = ns;
         this.Name = name;
         this.Args = args;
+        this.Linkage = linkage;
         this.Type = type;
         this.CalleeDefinitionType = calleeDefinitionType;
     }
@@ -2989,6 +2993,8 @@ public static partial class TypeCheckerFunctions {
 
         var returnType = Compiler.UnknownTypeId;
 
+        var linkage = FunctionLinkage.Internal;
+
         switch (call.Name) {
 
             case "printLine":
@@ -3027,6 +3033,8 @@ public static partial class TypeCheckerFunctions {
                 if (callee != null) {
 
                     returnType = callee.ReturnType;
+
+                    linkage = callee.Linkage;
 
                     // Check that we have the right number of arguments
 
@@ -3108,6 +3116,7 @@ public static partial class TypeCheckerFunctions {
                 ns: call.Namespace,
                 call.Name, 
                 checkedArgs, 
+                linkage,
                 returnType,
                 calleDefType),
             error);
@@ -3127,6 +3136,8 @@ public static partial class TypeCheckerFunctions {
 
         var returnType = Compiler.UnknownTypeId;
 
+        var linkage = FunctionLinkage.Internal;
+
         var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, project.Structs[structId].ScopeId, project);
 
         error = error ?? resolveCallErr;
@@ -3134,6 +3145,8 @@ public static partial class TypeCheckerFunctions {
         if (_callee is CheckedFunction callee) {
 
             returnType = callee.ReturnType;
+
+            linkage = callee.Linkage;
 
             // Check that we have the right number of arguments.
 
@@ -3209,6 +3222,7 @@ public static partial class TypeCheckerFunctions {
                 ns: new List<String>(),
                 name: call.Name,
                 args: checkedArgs,
+                linkage,
                 type: returnType,
                 calleeDefType),
             error);

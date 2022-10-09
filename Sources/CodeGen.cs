@@ -131,7 +131,7 @@ public static partial class CodeGenFunctions {
 
             case DefinitionType.Class: {
 
-                output.Append($"class {structure.Name} {{\n");
+                output.Append($"class {structure.Name} : public RefCounted<{structure.Name}> {{\n");
                 
                 // As we should test the visibility before codegen, we take a simple
                 // approach to codegen
@@ -363,55 +363,165 @@ public static partial class CodeGenFunctions {
         CheckedFunction func,
         Project project) {
 
-        var output = new StringBuilder();
+        // var output = new StringBuilder();
 
-        output.Append(func.Name);
+        // output.Append(func.Name);
         
-        output.Append('(');
+        // output.Append('(');
 
-        var first = true;
+        // var first = true;
         
-        foreach (var p in func.Parameters) {
+        // foreach (var p in func.Parameters) {
             
-            if (!first) {
+        //     if (!first) {
                 
-                output.Append(", ");
-            }
-            else {
+        //         output.Append(", ");
+        //     }
+        //     else {
 
-                first = false;
-            }
+        //         first = false;
+        //     }
 
-            var ty = compiler.CodeGenType(p.Variable.Type, project);
-            output.Append(ty);
-            output.Append(" a_");
-            output.Append(p.Variable.Name);
-        }
+        //     var ty = compiler.CodeGenType(p.Variable.Type, project);
+        //     output.Append(ty);
+        //     output.Append(" a_");
+        //     output.Append(p.Variable.Name);
+        // }
 
-        output.Append("): ");
+        // output.Append("): ");
 
-        first = true;
+        // first = true;
         
-        foreach (var p in func.Parameters) {
+        // foreach (var p in func.Parameters) {
 
-            if (!first) {
+        //     if (!first) {
                 
-                output.Append(", ");
-            } 
-            else {
+        //         output.Append(", ");
+        //     } 
+        //     else {
                 
-                first = false;
+        //         first = false;
+        //     }
+
+        //     output.Append(p.Variable.Name);
+        //     output.Append("(a_");
+        //     output.Append(p.Variable.Name);
+        //     output.Append(')');
+        // }
+
+        // output.Append("{}\n");
+
+        // return output.ToString();
+
+        var typeId = func.ReturnType;
+
+        var ty = project.Types[typeId];
+
+        switch (ty) {
+
+            case StructType st: {
+
+                var structure = project.Structs[st.StructId];
+
+                if (structure.DefinitionType == DefinitionType.Class) {
+
+                    var output = new StringBuilder($"static NonNullRefPointer<{func.Name}> create");
+
+                    output.Append('(');
+
+                    var first = true;
+
+                    foreach (var param in func.Parameters) {
+
+                        if (!first) {
+
+                            output.Append(", ");
+                        }
+                        else {
+
+                            first = false;
+                        }
+
+                        var tyStr = compiler.CodeGenType(param.Variable.Type, project);
+
+                        output.Append(tyStr);
+                        output.Append(' ');
+                        output.Append(param.Variable.Name);
+                    }
+
+                    output.Append($") {{ auto o = adoptRef(*new {func.Name}); ");
+
+                    foreach (var param in func.Parameters) {
+
+                        output.Append("o->");
+                        output.Append(param.Variable.Name);
+                        output.Append(" = ");
+                        output.Append(param.Variable.Name);
+                        output.Append("; ");
+                    }
+
+                    output.Append("return o; }");
+
+                    return output.ToString();
+                }
+                else {
+
+                    var output = new StringBuilder();
+
+                    output.Append(func.Name);
+                    output.Append('(');
+
+                    var first = true;
+
+                    foreach (var param in func.Parameters) {
+
+                        if (!first) {
+
+                            output.Append(", ");
+                        }
+                        else {
+
+                            first = false;
+                        }
+
+                        var tyStr = compiler.CodeGenType(param.Variable.Type, project);
+                        output.Append(tyStr);
+                        output.Append(" a_");
+                        output.Append(param.Variable.Name);
+                    }
+
+                    output.Append("): ");
+
+                    first = true;
+
+                    foreach (var param in func.Parameters) {
+
+                        if (!first) {
+
+                            output.Append(", ");
+                        }
+                        else {
+
+                            first = false;
+                        }
+
+                        output.Append(param.Variable.Name);
+                        output.Append("(a_");
+                        output.Append(param.Variable.Name);
+                        output.Append(')');
+                    }
+
+                    output.Append("{ }\n");
+
+                    return output.ToString();
+                }
             }
 
-            output.Append(p.Variable.Name);
-            output.Append("(a_");
-            output.Append(p.Variable.Name);
-            output.Append(')');
+            default: {
+
+                throw new Exception("internal error: call to a constructor, but not a struct/class type");
+            }
         }
-
-        output.Append("{}\n");
-
-        return output.ToString();
     }
 
     public static String CodeGenType(
@@ -455,7 +565,21 @@ public static partial class CodeGenFunctions {
                 return output.ToString();
             }
 
-            case StructType st: return project.Structs[st.StructId].Name;
+            // case StructType st: return project.Structs[st.StructId].Name;
+
+            case StructType st: {
+
+                var inner = project.Structs[st.StructId];
+
+                if (inner.DefinitionType == DefinitionType.Class) {
+
+                    return $"NonNullRefPointer<{inner.Name}>";
+                }
+                else {
+
+                    return inner.Name;
+                }
+            }
 
             case Builtin _: {
 
@@ -863,17 +987,56 @@ public static partial class CodeGenFunctions {
 
                             output.Append(ns);
 
-                            if (ce.Call.CalleeDefinitionType == DefinitionType.Struct) {
+                            // if (ce.Call.CalleeDefinitionType == DefinitionType.Struct) {
 
-                                output.Append(".");
-                            }
-                            else {
+                            //     output.Append(".");
+                            // }
+                            // else {
 
-                                output.Append("::");
-                            }
+                            //     output.Append("::");
+                            // }
+
+                            output.Append("::");
                         }
 
-                        output.Append(ce.Call.Name);
+                        // output.Append(ce.Call.Name);
+
+                        if (ce.Call.Linkage == FunctionLinkage.ImplicitConstructor) {
+
+                            var typeId = ce.Call.Type;
+
+                            var ty = project.Types[typeId];
+
+                            switch (ty) {
+
+                                case StructType st: {
+
+                                    var structure = project.Structs[st.StructId];
+
+                                    if (structure.DefinitionType == DefinitionType.Class) {
+                                        
+                                        output.Append(ce.Call.Name);
+                                        output.Append("::");
+                                        output.Append("create");
+                                    }
+                                    else {
+
+                                        output.Append(ce.Call.Name);
+                                    }
+
+                                    break;
+                                }
+
+                                default: {
+
+                                    throw new Exception("internal error: constructor expected class or struct type");
+                                }
+                            }
+                        }
+                        else {
+
+                            output.Append(ce.Call.Name);
+                        }
 
                         output.Append("(");
 
@@ -919,9 +1082,47 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    default: {
+                    // default: {
 
-                        output.Append('.');
+                    //     output.Append('.');
+
+                    //     break;
+                    // }
+
+                    case var x: {
+
+                        switch (project.Types[x.GetNeuType()]) {
+
+                            case RawPointerType p: {
+
+                                output.Append("->");
+
+                                break;
+                            }
+
+                            case StructType s: {
+
+                                var structure = project.Structs[s.StructId];
+
+                                if (structure.DefinitionType == DefinitionType.Class) {
+
+                                    output.Append("->");
+                                }
+                                else {
+
+                                    output.Append('.');
+                                }
+
+                                break;
+                            }
+
+                            default: {
+
+                                output.Append('.');
+
+                                break;
+                            }
+                        }
 
                         break;
                     }
@@ -1439,7 +1640,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedIndexedStructExpression ise: {
 
-                // x.someName
+                // x.foo or x->foo
                 
                 output.Append("((");
                 output.Append(compiler.CodeGenExpr(indent, ise.Expression, project));
@@ -1454,9 +1655,47 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
-                    default: {
+                    // default: {
 
-                        output.Append('.');
+                    //     output.Append('.');
+
+                    //     break;
+                    // }
+
+                    case var x: {
+
+                        switch (project.Types[x.GetNeuType()]) {
+
+                            case RawPointerType p: {
+
+                                output.Append("->");
+
+                                break;
+                            }
+
+                            case StructType s: {
+
+                                var structure = project.Structs[s.StructId];
+
+                                if (structure.DefinitionType == DefinitionType.Class) {
+
+                                    output.Append("->");
+                                }
+                                else {
+
+                                    output.Append('.');
+                                }
+
+                                break;
+                            }
+
+                            default: {
+
+                                output.Append('.');
+
+                                break;
+                            }
+                        }
 
                         break;
                     }

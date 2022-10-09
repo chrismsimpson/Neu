@@ -41,9 +41,9 @@ public static partial class Program {
 
         ///
 
-        // TestScratchpad();
-
         var start = System.Environment.TickCount;
+
+        // TestScratchpad();
 
         TestBasics();
         TestControlFlow();
