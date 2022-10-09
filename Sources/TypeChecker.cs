@@ -30,8 +30,6 @@ public static partial class NeuTypeFunctions {
 
         switch (true) {
 
-            // case var _ when l is VectorType lv && r is VectorType rv:               return lv.TypeId == rv.TypeId;
-
             case var _ when l is GenericType lg && r is GenericType rg: {
 
                 if (lg.ParentStructId != rg.ParentStructId) {
@@ -88,19 +86,6 @@ public partial class UnknownOrBuiltin: NeuType {
 
     public UnknownOrBuiltin() { }
 }
-
-// public partial class VectorType : NeuType {
-
-//     public Int32 TypeId { get; init; }
-
-//     ///
-
-//     public VectorType(
-//         Int32 typeId) : base() {
-        
-//         this.TypeId = typeId;
-//     }
-// }
 
 public partial class GenericType: NeuType {
 
@@ -2647,45 +2632,6 @@ public static partial class TypeCheckerFunctions {
                                 new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
                                 error);
                         }
-
-                        // case VectorType vt: {
-
-                        //     // Special-case the built-in so we don't accidentally find the user's definition
-
-                        //     var vectorStruct = project.FindStructInScope(0, "RefVector");
-
-                        //     switch (vectorStruct) {
-
-                        //         case Int32 structId: {
-
-                        //             var (checkedCall, err) = TypeCheckMethodCall(
-                        //                 mce.Call,
-                        //                 scopeId,
-                        //                 mce.Span,
-                        //                 project,
-                        //                 structId,
-                        //                 safetyMode);
-
-                        //             error = error ?? err;
-
-                        //             return (
-                        //                 new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
-                        //                 error);
-                        //         }
-
-                        //         default: {
-
-                        //             error = error ??
-                        //                 new TypeCheckError(
-                        //                     "no methods available on value",
-                        //                     mce.Expression.GetSpan());
-
-                        //             return (
-                        //                 new CheckedGarbageExpression(),
-                        //                 error);
-                        //         }
-                        //     }
-                        // }
 
                         case GenericType gt: {
 
