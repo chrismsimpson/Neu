@@ -2564,25 +2564,6 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedExprErr;
 
-                // CheckedUnaryOperator checkedOp = u.Operator switch {
-                //     PreIncrementUnaryOperator _ => new CheckedPreIncrementUnaryOperator(),
-                //     PostIncrementUnaryOperator _ => new CheckedPostIncrementUnaryOperator(),
-                //     PreDecrementUnaryOperator _ => new CheckedPreDecrementUnaryOperator(),
-                //     PostDecrementUnaryOperator _ => new CheckedPostDecrementUnaryOperator(),
-                //     NegateUnaryOperator _ => new CheckedNegateUnaryOperator(),
-                //     DereferenceUnaryOperator _ => new CheckedDereferenceUnaryOperator(),
-                //     RawAddressUnaryOperator _ => new CheckedRawAddressUnaryOperator(),
-                //     LogicalNotUnaryOperator _ => new CheckedLogicalNotUnaryOperator(),
-                //     BitwiseNotUnaryOperator _ => new CheckedBitwiseNotUnaryOperator(),
-                //     // TypeCastUnaryOperator t => {
-
-                //     //     var (typeId, typeErr) = Typechekc
-
-                //     //     return new CheckedTypeCastUnaryOperator(t.TypeCast);
-                //     // },
-                //     _ => throw new Exception()
-                // };
-
                 CheckedUnaryOperator? checkedOp = null;
 
                 switch (u.Operator) {
@@ -3245,14 +3226,6 @@ public static partial class TypeCheckerFunctions {
         switch (op) {
             
             case CheckedTypeCastUnaryOperator tc: {
-
-                // var uncheckedType = tc.TypeCast.GetUncheckedType();
-
-                // var (ty, err) = TypeCheckTypeName(uncheckedType, scopeId, project);
-
-                // return (
-                //     new CheckedUnaryOpExpression(expr, op, ty),
-                //     err);
 
                 return (
                     new CheckedUnaryOpExpression(expr, op, tc.TypeCast.GetNeuType()),

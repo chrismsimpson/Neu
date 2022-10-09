@@ -201,6 +201,10 @@ public static partial class CodeGenFunctions {
                 
                 output.Append("  public:\n");
 
+                // Make sure emitted classes always have a vtable.
+            
+                output.Append($"    virtual ~{structure.Name}() = default;");
+
                 break;
             }
 
