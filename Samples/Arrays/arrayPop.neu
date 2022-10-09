@@ -1,0 +1,7 @@
+func main() {
+    var v = [1, 2, 3]
+
+    let last = v.pop()
+
+    printLine(last!)
+}

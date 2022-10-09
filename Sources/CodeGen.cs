@@ -631,15 +631,15 @@ public static partial class CodeGenFunctions {
                 return $"{compiler.CodeGenType(pt.TypeId, project)}*";
             }
 
-            case GenericType gt: {
+            case GenericInstance gi: {
 
-                var output = new StringBuilder(project.Structs[gt.ParentStructId].Name);
+                var output = new StringBuilder(project.Structs[gi.StructId].Name);
 
                 output.Append('<');
 
                 var first = true;
 
-                foreach (var t in gt.InnerTypeIds) {
+                foreach (var t in gi.TypeIds) {
 
                     if (!first) {
 
@@ -907,9 +907,9 @@ public static partial class CodeGenFunctions {
 
                 switch (ty) {
 
-                    case GenericType gt: {
+                    case GenericInstance gi: {
 
-                        _indexType = gt.InnerTypeIds[0];
+                        _indexType = gi.TypeIds[0];
 
                         break;
                     }

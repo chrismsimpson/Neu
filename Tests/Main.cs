@@ -28,6 +28,7 @@ public static partial class Program {
         TestBoolean();
         TestRanges();
         TestGenerics();
+        TestArrays();
 
         WriteLine($"\nCompleted in {start.Elapsed()}");
     }
@@ -70,7 +71,19 @@ public static partial class Program {
     public static ErrorOrVoid TestSamples(
         String path) {
 
-        foreach (var sample in Directory.GetFiles(path).OrderBy(x => x)) {
+        if (!Directory.Exists(path)) {
+
+            return new ErrorOrVoid();
+        }
+
+        var files = Directory.GetFiles(path);
+
+        if (!files.Any()) {
+
+            return new ErrorOrVoid();
+        }
+
+        foreach (var sample in files.OrderBy(x => x)) {
 
             var ext = Path.GetExtension(sample);
 
@@ -349,5 +362,10 @@ public static partial class Program {
     public static ErrorOrVoid TestGenerics() {
 
         return TestSamples("./Samples/Generics");
+    }
+
+    public static ErrorOrVoid TestArrays() {
+
+        return TestSamples("./Samples/Arrays");
     }
 }

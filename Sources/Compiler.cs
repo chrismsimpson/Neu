@@ -196,7 +196,7 @@ extern class String {
 extern class RefVector<T> {
     func size(this) -> Int64 { }
     func resize(var this, anon size: Int64) { }
-    func pop(this) -> T? { }
+    func pop(var this) -> T? { }
 }
 
 extern class Optional<T> { }

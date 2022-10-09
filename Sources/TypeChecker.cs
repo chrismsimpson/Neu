@@ -55,6 +55,29 @@ public static partial class NeuTypeFunctions {
                 return true;
             }
 
+            case var _ when l is GenericInstance lgi && r is GenericInstance rgi: {
+
+                if (lgi.StructId != rgi.StructId) {
+
+                    return false;
+                }
+
+                if (lgi.TypeIds.Count != rgi.TypeIds.Count) {
+
+                    return false;
+                }
+
+                for (var i = 0; i < lgi.TypeIds.Count; i++) {
+
+                    if (lgi.TypeIds[i] != rgi.TypeIds[i]) {
+
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             case var _ when l is StructType ls && r is StructType rs:               return ls.StructId == rs.StructId;
             
             case var _ when l is RawPointerType lp && r is RawPointerType rp:       return lp.TypeId == rp.TypeId;
@@ -96,6 +119,26 @@ public partial class GenericType: NeuType {
 
         this.ParentStructId = parentStructId;
         this.InnerTypeIds = innerTypeIds;
+    }
+}
+
+// A GenericInstance is a generic that has known values for its type param
+// For example Foo<Bar> is an instance of the generic Foo<T>
+
+public partial class GenericInstance: NeuType {
+
+    public Int32 StructId { get; init; }
+
+    public List<Int32> TypeIds { get; init; }
+
+    ///
+
+    public GenericInstance(
+        Int32 structId,
+        List<Int32> typeIds) { 
+
+        this.StructId = structId;
+        this.TypeIds = typeIds;
     }
 }
 
@@ -2270,11 +2313,11 @@ public static partial class TypeCheckerFunctions {
 
                 Int32? indexType = null;
 
-                if (project.Types[checkedExpr.GetNeuType()] is GenericType gt) {
+                if (project.Types[checkedExpr.GetNeuType()] is GenericInstance gi) {
 
-                    if (gt.ParentStructId == rangeStructId) {
+                    if (gi.StructId == rangeStructId) {
 
-                        indexType = gt.InnerTypeIds[0];
+                        indexType = gi.TypeIds[0];
                     }
                     else {
 
@@ -2525,7 +2568,7 @@ public static partial class TypeCheckerFunctions {
                     .FindStructInScope(0, "Range")
                     ?? throw new Exception("internal error: Range builtin definition not found");
 
-                var ty = new GenericType(rangeStructId, new List<Int32>(new [] { checkedStart.GetNeuType() }));
+                var ty = new GenericInstance(rangeStructId, new List<Int32>(new [] { checkedStart.GetNeuType() }));
 
                 return (
                     new CheckedRangeExpression(
@@ -2761,9 +2804,9 @@ public static partial class TypeCheckerFunctions {
 
                 switch (type) {
 
-                    case GenericType gt when gt.ParentStructId == optionalStructId: {
+                    case GenericInstance gi when gi.StructId == optionalStructId: {
 
-                        typeId = gt.InnerTypeIds[0];
+                        typeId = gi.TypeIds[0];
 
                         break;
                     }
@@ -2893,7 +2936,7 @@ public static partial class TypeCheckerFunctions {
                     .FindStructInScope(0, "RefVector")
                     ?? throw new Exception("internal error: RefVector builtin definition not found");
 
-                var typeId = project.FindOrAddTypeId(new GenericType(vectorStructId, new List<Int32>(new [] { innerType })));
+                var typeId = project.FindOrAddTypeId(new GenericInstance(vectorStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     new CheckedVectorExpression(
@@ -2924,7 +2967,7 @@ public static partial class TypeCheckerFunctions {
                     .FindStructInScope(0, "Tuple")
                     ?? throw new Exception("internal error: Tuple builtin definition not found");
 
-                var typeId = project.FindOrAddTypeId(new GenericType(tupleStructId, checkedTypes));
+                var typeId = project.FindOrAddTypeId(new GenericInstance(tupleStructId, checkedTypes));
 
                 return (
                     new CheckedTupleExpression(
@@ -2953,7 +2996,7 @@ public static partial class TypeCheckerFunctions {
 
                 switch (ty) {
 
-                    case GenericType gt when gt.ParentStructId == vectorStructId: {
+                    case GenericInstance gi when gi.StructId == vectorStructId: {
 
                         var _chkIdx = checkedIdx.GetNeuType();
 
@@ -2961,7 +3004,7 @@ public static partial class TypeCheckerFunctions {
 
                             case var _ when NeuTypeFunctions.IsInteger(_chkIdx): {
 
-                                exprType = gt.InnerTypeIds[0];
+                                exprType = gi.TypeIds[0];
 
                                 break;
                             }
@@ -3015,15 +3058,15 @@ public static partial class TypeCheckerFunctions {
 
                 switch (checkedExprTy) {
 
-                    case GenericType gt when gt.ParentStructId == tupleStructId: {
+                    case GenericInstance gi when gi.StructId == tupleStructId: {
 
                         var idx = ToInt32(ite.Index);
 
                         switch (true) {
 
-                            case var _ when gt.InnerTypeIds.Count > idx: {
+                            case var _ when gi.TypeIds.Count > idx: {
 
-                                ty = gt.InnerTypeIds[idx];
+                                ty = gi.TypeIds[idx];
 
                                 break;
                             }
@@ -3132,6 +3175,7 @@ public static partial class TypeCheckerFunctions {
                                 scopeId,
                                 mce.Span,
                                 project,
+                                checkedExpr,
                                 structId,
                                 safetyMode);
 
@@ -3165,7 +3209,8 @@ public static partial class TypeCheckerFunctions {
                                 mce.Call, 
                                 scopeId, 
                                 mce.Span, 
-                                project, 
+                                project,
+                                checkedExpr,
                                 st.StructId, 
                                 safetyMode);
 
@@ -3176,7 +3221,7 @@ public static partial class TypeCheckerFunctions {
                                 error);
                         }
 
-                        case GenericType gt: {
+                        case GenericInstance gi: {
 
                             // ignore the inner types for now, but we'll need them in the future
 
@@ -3185,7 +3230,8 @@ public static partial class TypeCheckerFunctions {
                                 scopeId,
                                 mce.Span,
                                 project,
-                                gt.ParentStructId,
+                                checkedExpr,
+                                gi.StructId,
                                 safetyMode);
 
                             error = error ?? err;
@@ -3241,7 +3287,6 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression expr,
         CheckedUnaryOperator op,
         Span span,
-        // Int32 scopeId,
         Project project,
         SafetyMode safetyMode) {
     
@@ -3678,23 +3723,25 @@ public static partial class TypeCheckerFunctions {
                     // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
                     // type variable. For the moment, we'll just checked to see if it's a type variable.
 
-                    switch (project.Types[returnType]) {
+                    // switch (project.Types[returnType]) {
 
-                        case TypeVariable _: {
+                    //     case TypeVariable _: {
 
-                            if (genericInferences.ContainsKey(returnType)) {
+                    //         if (genericInferences.ContainsKey(returnType)) {
 
-                                returnType = genericInferences[returnType];
-                            }
+                    //             returnType = genericInferences[returnType];
+                    //         }
 
-                            break;
-                        }
+                    //         break;
+                    //     }
 
-                        default: {
+                    //     default: {
 
-                            break;
-                        }
-                    }
+                    //         break;
+                    //     }
+                    // }
+
+                    returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
                 }
 
                 break;
@@ -3717,6 +3764,7 @@ public static partial class TypeCheckerFunctions {
         Int32 scopeId,
         Span span,
         Project project,
+        CheckedExpression thisExpr,
         Int32 structId,
         SafetyMode safetyMode) {
 
@@ -3739,6 +3787,48 @@ public static partial class TypeCheckerFunctions {
             linkage = callee.Linkage;
 
             var genericInferences = new Dictionary<Int32, Int32>();
+
+
+
+
+            // Before we check the method, let's go ahead and make sure we know any instantiated generic types
+            // This will make it easier later to know how to create the proper return type
+
+
+            var typeId = thisExpr.GetNeuType();
+
+            var paramType = project.Types[typeId];
+
+            switch (paramType) {
+
+                case GenericInstance gi: {
+
+                    var structure = project.Structs[gi.StructId];
+
+                    var idx = 0;
+
+                    while (idx < structure.GenericParameters.Count) {
+
+                        genericInferences[structure.GenericParameters[idx]] = gi.TypeIds[idx];
+
+                        idx += 1;
+                    }
+
+                    break;
+                }
+
+                default: {
+                    
+                    break;
+                }
+            }
+
+
+
+
+
+
+
 
             // Check that we have the right number of arguments.
 
@@ -3817,23 +3907,25 @@ public static partial class TypeCheckerFunctions {
             // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
             // type variable. For the moment, we'll just checked to see if it's a type variable.
 
-            switch (project.Types[returnType]) {
+            // switch (project.Types[returnType]) {
 
-                case TypeVariable _: {
+            //     case TypeVariable _: {
 
-                    if (genericInferences.ContainsKey(returnType)) {
+            //         if (genericInferences.ContainsKey(returnType)) {
 
-                        returnType = genericInferences[returnType];
-                    }
+            //             returnType = genericInferences[returnType];
+            //         }
 
-                    break;
-                }
+            //         break;
+            //     }
 
-                default: {
+            //     default: {
 
-                    break;
-                }
-            }
+            //         break;
+            //     }
+            // }
+
+            returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
         }
 
         return (
@@ -3845,6 +3937,46 @@ public static partial class TypeCheckerFunctions {
                 type: returnType,
                 calleeDefType),
             error);
+    }
+
+    public static Int32 SubstituteTypeVarsInType(
+        Int32 typeId,
+        Dictionary<Int32, Int32> genericInferences,
+        Project project) {
+
+        var ty = project.Types[typeId];
+
+        switch (ty) {
+
+            case TypeVariable _: {
+
+                if (genericInferences.ContainsKey(typeId)) {
+
+                    return genericInferences[typeId];
+                }
+
+                break;
+            }
+
+            case GenericInstance gi: {
+
+                var newArgs = gi.TypeIds.ToList();
+
+                for (var i = 0; i < newArgs.Count; i++) {
+
+                    newArgs[i] = SubstituteTypeVarsInType(newArgs[i], genericInferences, project);
+                }
+
+                return project.FindOrAddTypeId(new GenericInstance(gi.StructId, newArgs));
+            }
+
+            default: {
+
+                break;
+            }
+        }
+
+        return typeId;
     }
 
     public static Error? CheckTypesForCompat(
@@ -3888,25 +4020,25 @@ public static partial class TypeCheckerFunctions {
                 break;
             }
 
-            case GenericType gt: {
+            case GenericInstance gi: {
 
-                var lhsArgs = gt.InnerTypeIds.ToList();
+                var lhsArgs = gi.TypeIds.ToList();
 
                 var rhsType = project.Types[rhsTypeId];
 
                 switch (rhsType) {
 
-                    case GenericType rhsGt: {
+                    case GenericInstance rhsGi: {
 
-                        if (gt.ParentStructId == rhsGt.ParentStructId) {
+                        if (gi.StructId == rhsGi.StructId) {
 
-                            var rhsArgs = rhsGt.InnerTypeIds.ToList();
+                            var rhsArgs = rhsGi.TypeIds.ToList();
 
                             // Same struct, perhaps this is an instantiation of it
 
-                            var lhsStruct = project.Structs[gt.ParentStructId];
+                            var lhsStruct = project.Structs[gi.StructId];
 
-                            if (rhsArgs.Count != gt.InnerTypeIds.Count) {
+                            if (rhsArgs.Count != gi.TypeIds.Count) {
 
                                 return new TypeCheckError(
                                     $"mismatched number of generic parameters for {lhsStruct.Name}",
@@ -3915,10 +4047,10 @@ public static partial class TypeCheckerFunctions {
 
                             var idx = 0;
 
-                            var lhsArgTypeId = gt.InnerTypeIds[idx];
+                            var lhsArgTypeId = gi.TypeIds[idx];
                             var rhsArgTypeId = rhsArgs[idx];
 
-                            while (idx < gt.InnerTypeIds.Count) {
+                            while (idx < gi.TypeIds.Count) {
 
                                 if (CheckTypesForCompat(lhsArgTypeId, rhsArgTypeId, genericInferences, span, project) is Error e2) {
 
@@ -3964,11 +4096,11 @@ public static partial class TypeCheckerFunctions {
 
                 switch (rhsType) {
 
-                    case GenericType gt: {
+                    case GenericInstance gi: {
 
-                        if (st.StructId == gt.ParentStructId) {
+                        if (st.StructId == gi.StructId) {
 
-                            var args = gt.InnerTypeIds.ToList();
+                            var args = gi.TypeIds.ToList();
 
                             // Same struct, perhaps this is an instantiation of it
 
@@ -4163,7 +4295,7 @@ public static partial class TypeCheckerFunctions {
                     .FindStructInScope(0, "RefVector")
                     ?? throw new Exception("internal error: RefVector builtin definition not found");
 
-                var typeId = project.FindOrAddTypeId(new GenericType(vectorStructId, new List<Int32>(new [] { innerType })));
+                var typeId = project.FindOrAddTypeId(new GenericInstance(vectorStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     typeId,
@@ -4180,7 +4312,7 @@ public static partial class TypeCheckerFunctions {
                     .FindStructInScope(0, "Optional")
                     ?? throw new Exception("internal error: Optional builtin definition not found");
 
-                var typeId = project.FindOrAddTypeId(new GenericType(optionalStructId, new List<Int32>(new [] { innerType })));
+                var typeId = project.FindOrAddTypeId(new GenericInstance(optionalStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     typeId,
