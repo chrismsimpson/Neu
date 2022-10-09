@@ -19,7 +19,7 @@ public static partial class Program {
         TestMath();
         TestVariables();
         TestStrings();
-        TestVectors();
+        TestArrays();
         TestOptional();
         TestTuples();
         TestStructs();
@@ -28,7 +28,6 @@ public static partial class Program {
         TestBoolean();
         TestRanges();
         TestGenerics();
-        TestArrays();
 
         WriteLine($"\nCompleted in {start.Elapsed()}");
     }
@@ -319,9 +318,9 @@ public static partial class Program {
         return TestSamples("./Samples/Strings");
     }
 
-    public static ErrorOrVoid TestVectors() {
+    public static ErrorOrVoid TestArrays() {
 
-        return TestSamples("./Samples/Vectors");
+        return TestSamples("./Samples/Arrays");
     }
 
     public static ErrorOrVoid TestOptional() {
@@ -362,10 +361,5 @@ public static partial class Program {
     public static ErrorOrVoid TestGenerics() {
 
         return TestSamples("./Samples/Generics");
-    }
-
-    public static ErrorOrVoid TestArrays() {
-
-        return TestSamples("./Samples/Arrays");
     }
 }
