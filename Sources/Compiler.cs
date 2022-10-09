@@ -23,6 +23,8 @@ public partial class Compiler {
     public const Int32 CCharTypeId      = 13;
     public const Int32 CIntTypeId       = 14;
 
+    // Note: keep StringTypeId last as it is how we know how many slots to pre-fill
+
     public const Int32 StringTypeId     = 15;
 
     public List<(String, byte[])> RawFiles { get; init; }
@@ -40,27 +42,10 @@ public partial class Compiler {
         // First, let's make types for all the builtin types
         // This order *must* match the order of the constants the typechecker expects
 
-        project.Types.Add(new UnknownOrBuiltin());      // 0
-        project.Types.Add(new UnknownOrBuiltin());      // 1
-        project.Types.Add(new UnknownOrBuiltin());      // 2
-        
-        project.Types.Add(new UnknownOrBuiltin());      // 3
-        project.Types.Add(new UnknownOrBuiltin());      // 4
-        project.Types.Add(new UnknownOrBuiltin());      // 5
-        project.Types.Add(new UnknownOrBuiltin());      // 6
-        
-        project.Types.Add(new UnknownOrBuiltin());      // 7
-        project.Types.Add(new UnknownOrBuiltin());      // 8
-        project.Types.Add(new UnknownOrBuiltin());      // 9
-        project.Types.Add(new UnknownOrBuiltin());      // 10
+        for (var i = 0; i < (Compiler.StringTypeId + 1); i++) {
 
-        project.Types.Add(new UnknownOrBuiltin());      // 11
-        project.Types.Add(new UnknownOrBuiltin());      // 12
-
-        project.Types.Add(new UnknownOrBuiltin());      // 13
-        project.Types.Add(new UnknownOrBuiltin());      // 14
-        
-        project.Types.Add(new UnknownOrBuiltin());      // 15
+            project.Types.Add(new Builtin());
+        }
 
         var prelude = Compiler.Prelude();
 
@@ -213,11 +198,9 @@ extern class RefVector {
     func resize(var this, anon size: Int64) { }
 }
 
-extern class Optional {
-}
+extern class Optional { }
 
-extern class Tuple {   
-}
+extern class Tuple { }
 
 ");
     }

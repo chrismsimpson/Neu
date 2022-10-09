@@ -457,7 +457,7 @@ public static partial class CodeGenFunctions {
 
             case StructType st: return project.Structs[st.StructId].Name;
 
-            case UnknownOrBuiltin _: {
+            case Builtin _: {
 
                 switch (typeId) {
                     case Compiler.BoolTypeId: return "bool";

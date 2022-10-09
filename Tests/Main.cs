@@ -1,6 +1,38 @@
 
 namespace NeuTests;
 
+public static partial class IntFunctions {
+
+    public static double ElapsedSeconds(
+        this int start) {
+
+        return ToDouble(Environment.TickCount - start) / 1000.0;
+    }
+
+    public static String Elapsed(
+        this int start) {
+
+        var seconds = start.ElapsedSeconds();
+
+        if (seconds < 1) {
+
+            return $"{(seconds * 1000.0).ToString("G1")}ms";
+        }
+        else if (seconds > 60) {
+
+            var r = seconds % 60;
+
+            var m = ToInt32(Math.Floor(seconds / 60));
+
+            return $"{m}m {r.ToString("G1")}s";
+        }
+        else {
+
+            return $"{seconds.ToString("G2")}s";
+        }
+    }
+}
+
 public static partial class Program {
 
     public static void Main() {
@@ -10,6 +42,8 @@ public static partial class Program {
         ///
 
         // TestScratchpad();
+
+        var start = System.Environment.TickCount;
 
         TestBasics();
         TestControlFlow();
@@ -24,6 +58,8 @@ public static partial class Program {
         TestPointers();
         TestClasses();
         TestBoolean();
+
+        WriteLine($"\nCompleted in {start.Elapsed()}");
     }
 
     public static ErrorOrVoid TestSamples(

@@ -62,9 +62,9 @@ public static partial class NeuTypeFunctions {
     }
 }
 
-public partial class UnknownOrBuiltin: NeuType {
+public partial class Builtin: NeuType {
 
-    public UnknownOrBuiltin() { }
+    public Builtin() { }
 }
 
 public partial class GenericType: NeuType {
