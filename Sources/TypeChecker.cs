@@ -1279,12 +1279,16 @@ public partial class CheckedExpression: CheckedStatement {
 
         public bool Value { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public CheckedBooleanExpression(
-            bool value) {
+            bool value,
+            Span span) {
 
             this.Value = value;
+            this.Span = span;
         }
     }
 
@@ -1292,15 +1296,19 @@ public partial class CheckedExpression: CheckedStatement {
 
         public NumericConstant Value { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
 
         public CheckedNumericConstantExpression(
             NumericConstant value,
+            Span span,
             Int32 type) {
 
             this.Value = value;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1309,12 +1317,16 @@ public partial class CheckedExpression: CheckedStatement {
 
         public String Value { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public CheckedQuotedStringExpression(
-            String value) {
+            String value,
+            Span span) {
 
             this.Value = value;
+            this.Span = span;
         }
     }
 
@@ -1322,12 +1334,16 @@ public partial class CheckedExpression: CheckedStatement {
 
         public Char Char { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public CheckedCharacterConstantExpression(
-            Char c) {
+            Char c,
+            Span span) {
 
             this.Char = c;
+            this.Span = span;
         }
     }
 
@@ -1337,6 +1353,8 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedUnaryOperator Operator { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
@@ -1344,10 +1362,12 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedUnaryOpExpression(
             CheckedExpression expression,
             CheckedUnaryOperator op,
+            Span span,
             Int32 type) {
 
             this.Expression = expression;
             this.Operator = op;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1360,6 +1380,8 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedExpression Rhs { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
@@ -1368,11 +1390,13 @@ public partial class CheckedExpression: CheckedStatement {
             CheckedExpression lhs,
             BinaryOperator op,
             CheckedExpression rhs,
+            Span span,
             Int32 type) {
 
             this.Lhs = lhs;
             this.Operator = op;
             this.Rhs = rhs;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1381,15 +1405,19 @@ public partial class CheckedExpression: CheckedStatement {
 
         public List<CheckedExpression> Expressions { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
 
         public CheckedTupleExpression(
             List<CheckedExpression> expressions,
+            Span span,
             Int32 type) {
 
             this.Expressions = expressions;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1400,6 +1428,8 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedExpression End { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 TypeId { get; init; }
 
         ///
@@ -1407,10 +1437,12 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedRangeExpression(
             CheckedExpression start,
             CheckedExpression end,
+            Span span,
             Int32 typeId) {
             
             this.Start = start;
             this.End = end;
+            this.Span = span;
             this.TypeId = typeId;
         }
     }
@@ -1420,6 +1452,8 @@ public partial class CheckedExpression: CheckedStatement {
         public List<CheckedExpression> Expressions { get; init; }
 
         public CheckedExpression? FillSize { get; init; }
+
+        public Span Span { get; init; }
         
         public Int32 Type { get; init; }
 
@@ -1428,11 +1462,13 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedVectorExpression(
             List<CheckedExpression> expressions,
             CheckedExpression? fillSize,
+            Span span,
             Int32 type) 
             : base() {
 
             this.Expressions = expressions;
             this.FillSize = fillSize;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1443,6 +1479,8 @@ public partial class CheckedExpression: CheckedStatement {
         
         public CheckedExpression Index { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
@@ -1450,11 +1488,13 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedIndexedExpression(
             CheckedExpression expression,
             CheckedExpression index,
+            Span span,
             Int32 type) 
             : base() {
 
             this.Expression = expression;
             this.Index = index;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1465,6 +1505,8 @@ public partial class CheckedExpression: CheckedStatement {
 
         public Int64 Index { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
@@ -1472,10 +1514,12 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedIndexedTupleExpression(
             CheckedExpression expression,
             Int64 index,
+            Span span,
             Int32 type) {
 
             this.Expression = expression;
             this.Index = index;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1486,6 +1530,8 @@ public partial class CheckedExpression: CheckedStatement {
 
         public String Name { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
@@ -1493,10 +1539,12 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedIndexedStructExpression(
             CheckedExpression expression,
             String name,
+            Span span,
             Int32 type) {
 
             this.Expression = expression;
             this.Name = name;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1506,15 +1554,19 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedCall Call { get; init; }
         
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
 
         public CheckedCallExpression(
             CheckedCall call,
+            Span span,
             Int32 type) {
 
             this.Call = call;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1525,6 +1577,8 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedCall Call { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
@@ -1532,10 +1586,12 @@ public partial class CheckedExpression: CheckedStatement {
         public CheckedMethodCallExpression(
             CheckedExpression expression,
             CheckedCall call,
+            Span span,
             Int32 type) {
 
             this.Expression = expression;
             this.Call = call;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1545,24 +1601,32 @@ public partial class CheckedExpression: CheckedStatement {
         
         public CheckedVariable Variable { get; init; }
 
+        public Span Span { get; init; }
+
         ///
 
         public CheckedVarExpression(
-            CheckedVariable variable) {
+            CheckedVariable variable,
+            Span span) {
 
             this.Variable = variable;
+            this.Span = span;
         }
     }
 
     public partial class CheckedOptionalNoneExpression: CheckedExpression {
+
+        public Span Span { get; init; }
 
         public Int32 Type { get; init; }
 
         ///
 
         public CheckedOptionalNoneExpression(
+            Span span,
             Int32 type) {
 
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1571,15 +1635,19 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedExpression Expression { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
 
         public CheckedOptionalSomeExpression(
             CheckedExpression expression,
+            Span span,
             Int32 type) {
 
             this.Expression = expression;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1588,15 +1656,19 @@ public partial class CheckedExpression: CheckedStatement {
 
         public CheckedExpression Expression { get; init; }
 
+        public Span Span { get; init; }
+
         public Int32 Type { get; init; }
 
         ///
 
         public CheckedForceUnwrapExpression(
             CheckedExpression expression,
+            Span span,
             Int32 type) {
 
             this.Expression = expression;
+            this.Span = span;
             this.Type = type;
         }
     }
@@ -1605,7 +1677,15 @@ public partial class CheckedExpression: CheckedStatement {
 
     public partial class CheckedGarbageExpression: CheckedExpression {
 
-        public CheckedGarbageExpression() { }
+        public Span Span { get; init; }
+
+        ///
+
+        public CheckedGarbageExpression(
+            Span span) { 
+
+            this.Span = span;
+        }
     }
 
 ///
@@ -2520,7 +2600,7 @@ public static partial class TypeCheckerFunctions {
             if (_newConstant is NumericConstant newConstant) {
 
                 return (
-                    new CheckedNumericConstantExpression(newConstant, newType), 
+                    new CheckedNumericConstantExpression(newConstant, span, newType), 
                     null);
             }
             else {
@@ -2573,7 +2653,8 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedRangeExpression(
                         checkedStart, 
-                        checkedEnd, 
+                        checkedEnd,
+                        re.Span,
                         project.FindOrAddTypeId(ty)),
                     error);
             }
@@ -2611,7 +2692,8 @@ public static partial class TypeCheckerFunctions {
                     new CheckedBinaryOpExpression(
                         checkedLhs, 
                         e.Operator, 
-                        checkedRhs, 
+                        checkedRhs,
+                        e.Span,
                         ty),
                     error);
             }
@@ -2771,6 +2853,7 @@ public static partial class TypeCheckerFunctions {
 
                 return (
                     new CheckedOptionalNoneExpression(
+                        e.Span,
                         Compiler.UnknownTypeId),
                     error);
             }
@@ -2784,7 +2867,7 @@ public static partial class TypeCheckerFunctions {
                 var type = ckdExpr.GetNeuType();
 
                 return (
-                    new CheckedOptionalSomeExpression(ckdExpr, type),
+                    new CheckedOptionalSomeExpression(ckdExpr, e.Span, type),
                     error);
             }
 
@@ -2823,14 +2906,14 @@ public static partial class TypeCheckerFunctions {
                 }
 
                 return (
-                    new CheckedForceUnwrapExpression(ckdExpr, typeId),
+                    new CheckedForceUnwrapExpression(ckdExpr, e.Span, typeId),
                     error);
             }
 
             case BooleanExpression e: {
 
                 return (
-                    new CheckedBooleanExpression(e.Value),
+                    new CheckedBooleanExpression(e.Value, e.Span),
                     null);
             }
 
@@ -2841,28 +2924,28 @@ public static partial class TypeCheckerFunctions {
                 var ty = checkedCall.Type;
 
                 return (
-                    new CheckedCallExpression(checkedCall, ty),
+                    new CheckedCallExpression(checkedCall, e.Span, ty),
                     error ?? checkedCallErr);
             }
 
             case NumericConstantExpression ne: {
 
                 return (
-                    new CheckedNumericConstantExpression(ne.Value, ne.Value.GetNeuType()),
+                    new CheckedNumericConstantExpression(ne.Value, ne.Span, ne.Value.GetNeuType()),
                     null);
             }
 
             case QuotedStringExpression e: {
 
                 return (
-                    new CheckedQuotedStringExpression(e.Value),
+                    new CheckedQuotedStringExpression(e.Value, e.Span),
                     null);
             }
 
             case CharacterLiteralExpression cle: {
 
                 return (
-                    new CheckedCharacterConstantExpression(cle.Char),
+                    new CheckedCharacterConstantExpression(cle.Char, cle.Span),
                     null);
             }
 
@@ -2871,7 +2954,7 @@ public static partial class TypeCheckerFunctions {
                 if (project.FindVarInScope(scopeId, e.Value) is CheckedVariable v) {
 
                     return (
-                        new CheckedVarExpression(v),
+                        new CheckedVarExpression(v, e.Span),
                         null);
                 }
                 else {
@@ -2881,8 +2964,8 @@ public static partial class TypeCheckerFunctions {
                             new CheckedVariable(
                                 e.Value, 
                                 type: Compiler.UnknownTypeId, 
-                                mutable: false)
-                        ),
+                                mutable: false),
+                            e.Span),
                         new TypeCheckError(
                             "variable not found",
                             e.Span));
@@ -2942,6 +3025,7 @@ public static partial class TypeCheckerFunctions {
                     new CheckedVectorExpression(
                         expressions: output,
                         checkedFillSizeExpr,
+                        ve.Span,
                         typeId),
                     error);
             }
@@ -2971,7 +3055,8 @@ public static partial class TypeCheckerFunctions {
 
                 return (
                     new CheckedTupleExpression(
-                        checkedItems, 
+                        checkedItems,
+                        te.Span,
                         typeId),
                     error);
             }
@@ -3038,6 +3123,7 @@ public static partial class TypeCheckerFunctions {
                     new CheckedIndexedExpression(
                         checkedExpr,
                         checkedIdx,
+                        ie.Span,
                         exprType),
                     error);
             }
@@ -3097,7 +3183,7 @@ public static partial class TypeCheckerFunctions {
                 }
 
                 return (
-                    new CheckedIndexedTupleExpression(checkedExpr, ite.Index, ty),
+                    new CheckedIndexedTupleExpression(checkedExpr, ite.Index, ite.Span, ty),
                     error);
             }
 
@@ -3125,6 +3211,7 @@ public static partial class TypeCheckerFunctions {
                                     new CheckedIndexedStructExpression(
                                         checkedExpr,
                                         ise.Name,
+                                        ise.Span,
                                         member.Type),
                                     null);
                             }
@@ -3150,7 +3237,7 @@ public static partial class TypeCheckerFunctions {
                 }
 
                 return (
-                    new CheckedIndexedStructExpression(checkedExpr, ise.Name, ty),
+                    new CheckedIndexedStructExpression(checkedExpr, ise.Name, ise.Span, ty),
                     error);
             }
 
@@ -3180,7 +3267,7 @@ public static partial class TypeCheckerFunctions {
                                 safetyMode);
 
                             return (
-                                new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
+                                new CheckedMethodCallExpression(checkedExpr, checkedCall, mce.Span, checkedCall.Type),
                                 error);
                         }
 
@@ -3192,7 +3279,7 @@ public static partial class TypeCheckerFunctions {
                                     mce.Expression.GetSpan());
 
                             return (
-                                new CheckedGarbageExpression(), 
+                                new CheckedGarbageExpression(mce.Span), 
                                 error);
                         }
                     }
@@ -3217,7 +3304,7 @@ public static partial class TypeCheckerFunctions {
                             error = error ?? err;
 
                             return (
-                                new CheckedMethodCallExpression(checkedExpr, checkedCall, checkedCall.Type),
+                                new CheckedMethodCallExpression(checkedExpr, checkedCall, mce.Span, checkedCall.Type),
                                 error);
                         }
 
@@ -3239,7 +3326,7 @@ public static partial class TypeCheckerFunctions {
                             var ty = checkedCall.Type;
 
                             return (
-                                new CheckedMethodCallExpression(checkedExpr, checkedCall, ty),
+                                new CheckedMethodCallExpression(checkedExpr, checkedCall, mce.Span, ty),
                                 error);
                         }
 
@@ -3251,7 +3338,7 @@ public static partial class TypeCheckerFunctions {
                                     mce.Expression.GetSpan());
 
                             return (
-                                new CheckedGarbageExpression(),
+                                new CheckedGarbageExpression(mce.Span),
                                 error);
                         }
                     }
@@ -3261,7 +3348,7 @@ public static partial class TypeCheckerFunctions {
             case OperatorExpression e: {
 
                 return (
-                    new CheckedGarbageExpression(),
+                    new CheckedGarbageExpression(e.Span),
                     new TypeCheckError(
                         "garbage in expression", 
                         e.Span));
@@ -3270,7 +3357,7 @@ public static partial class TypeCheckerFunctions {
             case GarbageExpression e: {
 
                 return (
-                    new CheckedGarbageExpression(),
+                    new CheckedGarbageExpression(e.Span),
                     new TypeCheckError(
                         "garbage in expression",
                         e.Span));
@@ -3299,14 +3386,14 @@ public static partial class TypeCheckerFunctions {
             case CheckedIsUnaryOperator i: {
 
                 return (
-                    new CheckedUnaryOpExpression(expr, new CheckedIsUnaryOperator(i.TypeId), Compiler.BoolTypeId),
+                    new CheckedUnaryOpExpression(expr, new CheckedIsUnaryOperator(i.TypeId), span, Compiler.BoolTypeId),
                     null);
             }
             
             case CheckedTypeCastUnaryOperator tc: {
 
                 return (
-                    new CheckedUnaryOpExpression(expr, op, tc.TypeCast.GetNeuType()),
+                    new CheckedUnaryOpExpression(expr, op, span, tc.TypeCast.GetNeuType()),
                     null);
             }
 
@@ -3319,13 +3406,13 @@ public static partial class TypeCheckerFunctions {
                         if (safetyMode == SafetyMode.Unsafe) {
 
                             return (
-                                new CheckedUnaryOpExpression(expr, op, rp.TypeId),
+                                new CheckedUnaryOpExpression(expr, op, span, rp.TypeId),
                                 null);
                         }
                         else {
 
                             return (
-                                new CheckedUnaryOpExpression(expr, op, rp.TypeId),
+                                new CheckedUnaryOpExpression(expr, op, span, rp.TypeId),
                                 new TypeCheckError(
                                     "dereference of raw pointer outside of unsafe block",
                                     span));
@@ -3335,7 +3422,7 @@ public static partial class TypeCheckerFunctions {
                     default: {
 
                         return (
-                            new CheckedUnaryOpExpression(expr, op, Compiler.UnknownTypeId),
+                            new CheckedUnaryOpExpression(expr, op, span, Compiler.UnknownTypeId),
                             new TypeCheckError(
                                 "dereference of a non-pointer value",
                                 span));
@@ -3348,20 +3435,20 @@ public static partial class TypeCheckerFunctions {
                 var typeId = project.FindOrAddTypeId(new RawPointerType(exprTypeId));
 
                 return (
-                    new CheckedUnaryOpExpression(expr, op, typeId),
+                    new CheckedUnaryOpExpression(expr, op, span, typeId),
                     null);
             }
 
             case CheckedLogicalNotUnaryOperator _: {
 
                 return (
-                    new CheckedUnaryOpExpression(expr, new CheckedLogicalNotUnaryOperator(), exprTypeId),
+                    new CheckedUnaryOpExpression(expr, new CheckedLogicalNotUnaryOperator(), span, exprTypeId),
                     null);
             }
 
             case CheckedBitwiseNotUnaryOperator _: {
 
-                return (new CheckedUnaryOpExpression(expr, new CheckedBitwiseNotUnaryOperator(), exprTypeId), null);
+                return (new CheckedUnaryOpExpression(expr, new CheckedBitwiseNotUnaryOperator(), span, exprTypeId), null);
             }
 
             case CheckedNegateUnaryOperator _: {
@@ -3380,14 +3467,14 @@ public static partial class TypeCheckerFunctions {
                     case Compiler.DoubleTypeId: {
 
                         return (
-                            new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), exprTypeId),
+                            new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), span, exprTypeId),
                             null);
                     }
 
                     default: {
 
                         return (
-                            new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), exprTypeId),
+                            new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), span, exprTypeId),
                             new TypeCheckError(
                                 "negate on non-numeric value",
                                 span));
@@ -3416,7 +3503,7 @@ public static partial class TypeCheckerFunctions {
                         if (!expr.IsMutable()) {
 
                             return (
-                                new CheckedUnaryOpExpression(expr, op, exprTypeId),
+                                new CheckedUnaryOpExpression(expr, op, span, exprTypeId),
                                 new TypeCheckError(
                                     "increment/decrement of immutable variable",
                                     span));
@@ -3424,7 +3511,7 @@ public static partial class TypeCheckerFunctions {
                         else {
 
                             return (
-                                new CheckedUnaryOpExpression(expr, op, exprTypeId),
+                                new CheckedUnaryOpExpression(expr, op, span, exprTypeId),
                                 null);
                         }
                     }
@@ -3432,7 +3519,7 @@ public static partial class TypeCheckerFunctions {
                     default: {
 
                         return (
-                            new CheckedUnaryOpExpression(expr, op, exprTypeId),
+                            new CheckedUnaryOpExpression(expr, op, span, exprTypeId),
                             new TypeCheckError(
                                 "unary operation on non-numeric value",
                                 span)
