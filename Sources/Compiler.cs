@@ -213,6 +213,12 @@ extern class RefVector {
     func resize(var this, anon size: Int64) { }
 }
 
+extern class Optional {
+}
+
+extern class Tuple {   
+}
+
 ");
     }
 }

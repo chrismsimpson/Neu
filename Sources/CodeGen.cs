@@ -455,33 +455,6 @@ public static partial class CodeGenFunctions {
                 return output.ToString();
             }
 
-            case TupleType tt: {
-
-                var output = new StringBuilder("Tuple<");
-
-                var first = true;
-
-                foreach (var t in tt.TypeIds) {
-
-                    if (!first) {
-
-                        output.Append(", ");
-                    }
-                    else {
-
-                        first = false;
-                    }
-
-                    output.Append(compiler.CodeGenType(t, project));
-                }
-
-                output.Append('>');
-
-                return output.ToString();
-            }
-
-            case OptionalType ot: return $"Optional<{compiler.CodeGenType(ot.TypeId, project)}>";
-
             case StructType st: return project.Structs[st.StructId].Name;
 
             case UnknownOrBuiltin _: {

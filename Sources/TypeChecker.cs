@@ -53,26 +53,6 @@ public static partial class NeuTypeFunctions {
                 return true;
             }
 
-            case var _ when l is TupleType lt && r is TupleType rt: {
-
-                if (lt.TypeIds.Count != rt.TypeIds.Count) {
-
-                    return false;
-                }
-
-                for (var i = 0; i < lt.TypeIds.Count; i++) {
-
-                    if (lt.TypeIds[i] != rt.TypeIds[i]) {
-
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            case var _ when l is OptionalType lo && r is OptionalType ro:           return lo.TypeId == ro.TypeId;
-
             case var _ when l is StructType ls && r is StructType rs:               return ls.StructId == rs.StructId;
             
             case var _ when l is RawPointerType lp && r is RawPointerType rp:       return lp.TypeId == rp.TypeId;
@@ -101,32 +81,6 @@ public partial class GenericType: NeuType {
 
         this.ParentStructId = parentStructId;
         this.InnerTypeIds = innerTypeIds;
-    }
-}
-
-public partial class TupleType : NeuType {
-
-    public List<Int32> TypeIds { get; init; }
-
-    ///
-
-    public TupleType(
-        List<Int32> typeIds) {
-
-        this.TypeIds = typeIds;
-    }
-}
-
-public partial class OptionalType : NeuType {
-
-    public Int32 TypeId { get; init; }
-
-    ///
-
-    public OptionalType(
-        Int32 typeId) {
-
-        this.TypeId = typeId;
     }
 }
 
@@ -2238,20 +2192,34 @@ public static partial class TypeCheckerFunctions {
 
                 var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, scopeId, project, safetyMode);
 
+                error = error ?? ckdExprError;
+
                 var type = project.Types[ckdExpr.GetNeuType()];
 
                 var typeId = Compiler.UnknownTypeId;
 
-                if (type is OptionalType inner) {
+                var optionalStructId = project
+                    .FindStructInScope(0, "Optional") 
+                    ?? throw new Exception("internal error: can't find builtin Optional type");
 
-                    typeId = inner.TypeId;
-                }
-                else {
+                switch (type) {
 
-                    error = error ??
-                        new TypeCheckError(
-                            "Forced unwrap only works on Optional",
-                            e.Expression.GetSpan());
+                    case GenericType gt when gt.ParentStructId == optionalStructId: {
+
+                        typeId = gt.InnerTypeIds[0];
+
+                        break;
+                    }
+
+                    default: {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "Forced unwrap only works on Optional",
+                                e.Expression.GetSpan());
+
+                        break;
+                    }
                 }
 
                 return (
@@ -2366,7 +2334,7 @@ public static partial class TypeCheckerFunctions {
 
                 var vectorStructId = project
                     .FindStructInScope(0, "RefVector")
-                    ?? throw new Exception("internal compiler error: RefVector builtin definition not found");
+                    ?? throw new Exception("internal error: RefVector builtin definition not found");
 
                 var typeId = project.FindOrAddTypeId(new GenericType(vectorStructId, new List<Int32>(new [] { innerType })));
 
@@ -2395,7 +2363,11 @@ public static partial class TypeCheckerFunctions {
                     checkedItems.Add(checkedItemExpr);
                 }
 
-                var typeId = project.FindOrAddTypeId(new TupleType(checkedTypes));
+                var tupleStructId = project
+                    .FindStructInScope(0, "Tuple")
+                    ?? throw new Exception("internal error: Tuple builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(new GenericType(tupleStructId, checkedTypes));
 
                 return (
                     new CheckedTupleExpression(
@@ -2418,7 +2390,7 @@ public static partial class TypeCheckerFunctions {
 
                 var vectorStructId = project
                     .FindStructInScope(0, "RefVector")
-                    ?? throw new Exception("internal compiler error: RefVector builtin definition not found");
+                    ?? throw new Exception("internal error: RefVector builtin definition not found");
 
                 var ty = project.Types[checkedExpr.GetNeuType()];
 
@@ -2478,22 +2450,36 @@ public static partial class TypeCheckerFunctions {
 
                 var ty = Compiler.UnknownTypeId;
 
+                var tupleStructId = project
+                    .FindStructInScope(0, "Tuple")
+                    ?? throw new Exception("internal error: Tuple builtin definition not found");
+
                 var checkedExprTy = project.Types[checkedExpr.GetNeuType()];
 
                 switch (checkedExprTy) {
 
-                    case TupleType tt: {
+                    case GenericType gt when gt.ParentStructId == tupleStructId: {
 
-                        if (ite.Index < tt.TypeIds.Count) {
+                        var idx = ToInt32(ite.Index);
 
-                            ty = tt.TypeIds[ToInt32(ite.Index)];
-                        }
-                        else {
+                        switch (true) {
 
-                            error = error ?? 
-                                new TypeCheckError(
-                                    "tuple index past the end of the tuple",
-                                    ite.Span);
+                            case var _ when gt.InnerTypeIds.Count > idx: {
+
+                                ty = gt.InnerTypeIds[idx];
+
+                                break;
+                            }
+
+                            default: {
+
+                                error = error ?? 
+                                    new TypeCheckError(
+                                        "tuple index past the end of the tuple",
+                                        ite.Span);
+
+                                break;
+                            }
                         }
 
                         break;
@@ -2505,7 +2491,7 @@ public static partial class TypeCheckerFunctions {
                             new TypeCheckError(
                                 "tuple index used non-tuple value",
                                 ite.Expression.GetSpan());
-
+                        
                         break;
                     }
                 }
@@ -3353,7 +3339,7 @@ public static partial class TypeCheckerFunctions {
 
                 var vectorStructId = project
                     .FindStructInScope(0, "RefVector")
-                    ?? throw new Exception("internal compiler error: RefVector builtin definition not found");
+                    ?? throw new Exception("internal error: RefVector builtin definition not found");
 
                 var typeId = project.FindOrAddTypeId(new GenericType(vectorStructId, new List<Int32>(new [] { innerType })));
 
@@ -3368,7 +3354,11 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? err;
 
-                var typeId = project.FindOrAddTypeId(new OptionalType(innerType));
+                var optionalStructId = project
+                    .FindStructInScope(0, "Optional")
+                    ?? throw new Exception("internal error: Optional builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(new GenericType(optionalStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     typeId,
