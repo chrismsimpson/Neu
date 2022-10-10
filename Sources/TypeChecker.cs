@@ -2019,12 +2019,26 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var func in structure.Methods) {
 
+            var genericParameters = new List<Int32>();
+
             var methodScopeId = project.CreateScope(structScopeId);
+
+            foreach (var (genParam, paramSpan) in func.GenericParameters) {
+
+                project.Types.Add(new TypeVariable(genParam));
+
+                var typeVarTypeId = project.Types.Count - 1;
+
+                if (project.AddTypeToScope(methodScopeId, genParam, typeVarTypeId, paramSpan).Error is Error e) {
+
+                    error = error ?? e;
+                }
+            }
 
             var checkedFunction = new CheckedFunction(
                 name: func.Name,
                 parameters: new List<CheckedParameter>(),
-                genericParameters: new List<Int32>(),
+                genericParameters: genericParameters,
                 funcScopeId: methodScopeId,
                 returnType: Compiler.UnknownTypeId,
                 block: new CheckedBlock(),
@@ -3878,24 +3892,6 @@ public static partial class TypeCheckerFunctions {
                     // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
                     // type variable. For the moment, we'll just checked to see if it's a type variable.
 
-                    // switch (project.Types[returnType]) {
-
-                    //     case TypeVariable _: {
-
-                    //         if (genericInferences.ContainsKey(returnType)) {
-
-                    //             returnType = genericInferences[returnType];
-                    //         }
-
-                    //         break;
-                    //     }
-
-                    //     default: {
-
-                    //         break;
-                    //     }
-                    // }
-
                     returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
                 }
 
@@ -4061,24 +4057,6 @@ public static partial class TypeCheckerFunctions {
 
             // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
             // type variable. For the moment, we'll just checked to see if it's a type variable.
-
-            // switch (project.Types[returnType]) {
-
-            //     case TypeVariable _: {
-
-            //         if (genericInferences.ContainsKey(returnType)) {
-
-            //             returnType = genericInferences[returnType];
-            //         }
-
-            //         break;
-            //     }
-
-            //     default: {
-
-            //         break;
-            //     }
-            // }
 
             returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
         }
@@ -4495,6 +4473,37 @@ public static partial class TypeCheckerFunctions {
                 return (
                     typeId,
                     error);
+            }
+
+            case UncheckedGenericType gt: {
+
+                var checkedInnerTypes = new List<Int32>();
+
+                foreach (var innerType in gt.Types) {
+
+                    var (innerTy, innerTypeNameErr) = TypeCheckTypeName(innerType, scopeId, project);
+
+                    error = error ?? innerTypeNameErr;
+
+                    checkedInnerTypes.Add(innerTy);
+                }
+
+                var structId = project.FindStructInScope(scopeId, gt.Name);
+
+                if (structId is Int32 _structId) {
+
+                    return (
+                        project.FindOrAddTypeId(new GenericInstance(_structId, checkedInnerTypes)),
+                        error);
+                }
+                else {
+
+                    return (
+                        Compiler.UnknownTypeId,
+                        new TypeCheckError(
+                            $"could not find {gt.Name}",
+                            gt.Span));
+                }
             }
 
             default: {

@@ -107,6 +107,27 @@ public partial class UncheckedType {
         }
     }
 
+    public partial class UncheckedGenericType: UncheckedType {
+
+        public String Name { get; init; }
+
+        public List<UncheckedType> Types { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public UncheckedGenericType(
+            String name,
+            List<UncheckedType> types,
+            Span span) { 
+
+            this.Name = name;
+            this.Types = types;
+            this.Span = span;
+        }
+    }
+
     public partial class UncheckedVectorType: UncheckedType {
 
         public UncheckedType Type { get; init; }
@@ -5348,6 +5369,8 @@ public static partial class ParserFunctions {
 
         var start = tokens.ElementAt(index).Span;
 
+        var typename = String.Empty;
+
         Trace($"ParseTypeName: {(tokens.ElementAt(index) as NameToken)?.Value}");
 
         var (vectorType, parseVectorTypeErr) = ParseVectorType(tokens, ref index);
@@ -5383,6 +5406,8 @@ public static partial class ParserFunctions {
                 }
                 else {
 
+                    typename = nt.Value;
+
                     uncheckedType = new UncheckedNameType(nt.Value, tokens.ElementAt(index).Span);
                 }
 
@@ -5416,6 +5441,68 @@ public static partial class ParserFunctions {
                         fileId: start.FileId,
                         start: start.Start,
                         end: tokens.ElementAt(index).Span.End));
+            }
+
+            if (index + 1 < tokens.Count
+                && tokens[index + 1] is LessThanToken) {
+
+                // Generic type
+                
+                index += 2;
+
+                var innerTypes = new List<UncheckedType>();
+
+                var contInnerTypes = true;
+
+                while (contInnerTypes && index < tokens.Count) {
+
+                    switch (tokens[index]) {
+
+                        case GreaterThanToken _: {
+
+                            index += 1;
+
+                            contInnerTypes = false;
+
+                            break;
+                        }
+
+                        case CommaToken _: {
+
+                            index += 1;
+
+                            break;
+                        }
+
+                        case EolToken _: {
+
+                            index += 1;
+
+                            break;
+                        }
+
+                        default: {
+
+                            var (innerType, innerTypeNameErr) = ParseTypeName(tokens, ref index);
+
+                            error = error ??innerTypeNameErr;
+
+                            index += 1;
+
+                            innerTypes.Add(innerType);
+
+                            break;
+                        }
+                    }
+                }
+
+                uncheckedType = new UncheckedGenericType(
+                    typename,
+                    innerTypes,
+                    new Span(
+                        fileId: start.FileId,
+                        start: start.Start,
+                        end: tokens[index].Span.End));
             }
         }
 

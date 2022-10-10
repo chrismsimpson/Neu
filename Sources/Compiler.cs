@@ -202,7 +202,9 @@ extern class RefVector<T> {
     func pop(var this) -> T? { }
 }
 
-extern class Optional<T> { }
+extern class Optional<T> {
+    func hasValue(this) -> bool { }
+}
 
 extern class Tuple { }
 
