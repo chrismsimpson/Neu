@@ -318,7 +318,7 @@ String String::bijectiveBaseFrom(size_t value, unsigned base, StringView map) {
 
     // The '8 bits per byte' assumption may need to go?
     
-    Array<char, roundUpToPowerOfTwo(sizeof(size_t) * 8 + 1, 2)> buffer;
+    LinearArray<char, roundUpToPowerOfTwo(sizeof(size_t) * 8 + 1, 2)> buffer;
     
     size_t i = 0;
     

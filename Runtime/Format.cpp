@@ -49,7 +49,7 @@ static constexpr size_t useNextIndex = NumericLimits<size_t>::max();
 // The worst case is that we have the largest 64-bit value formatted as binary number, this would take
 // 65 bytes. Choosing a larger power of two won't hurt and is a bit of mitigation against out-of-bounds accesses.
 
-static constexpr size_t convertUnsignedToString(UInt64 value, Array<UInt8, 128>& buffer, UInt8 base, bool upperCase) {
+static constexpr size_t convertUnsignedToString(UInt64 value, LinearArray<UInt8, 128>& buffer, UInt8 base, bool upperCase) {
 
     VERIFY(base >= 2 && base <= 16);
 
@@ -324,7 +324,7 @@ ErrorOr<void> FormatBuilder::putUInt64(
         align = Align::Right;
     }
 
-    Array<UInt8, 128> buffer;
+    LinearArray<UInt8, 128> buffer;
 
     auto const usedByDigits = convertUnsignedToString(value, buffer, base, upperCase);
 

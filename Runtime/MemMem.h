@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Array.h"
+#include "LinearArray.h"
 #include "Assertions.h"
 #include "Span.h"
 #include "Types.h"
@@ -183,7 +183,7 @@ namespace {
         }
 
         // Fallback to KMP.
-        Array<Span<const UInt8>, 1> spans { Span<const UInt8> { (UInt8 const*) haystack, haystackLength } };
+        LinearArray<Span<const UInt8>, 1> spans { Span<const UInt8> { (UInt8 const*) haystack, haystackLength } };
         
         return memmem(spans.begin(), spans.end(), { (UInt8 const*) needle, needleLength });
     }

@@ -13,7 +13,7 @@
 #include <initializer_list>
 
 template<typename K, typename V, typename KeyTraits, bool IsOrdered>
-class HashMap {
+class Dictionary {
 
 private:
 
@@ -35,9 +35,9 @@ public:
     
     using ValueType = V;
 
-    HashMap() = default;
+    Dictionary() = default;
 
-    HashMap(std::initializer_list<Entry> list) {
+    Dictionary(std::initializer_list<Entry> list) {
 
         ensureCapacity(list.size());
             

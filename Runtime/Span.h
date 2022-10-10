@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Array.h"
+#include "LinearArray.h"
 #include "Assertions.h"
 #include "Iterator.h"
 #include "TypedTransfer.h"
@@ -33,13 +33,13 @@ namespace Detail {
               m_size(size) { }
 
         template<size_t size>
-        ALWAYS_INLINE constexpr Span(Array<T, size>& array)
+        ALWAYS_INLINE constexpr Span(LinearArray<T, size>& array)
             : m_values(array.data()),
               m_size(size) { }
 
         template<size_t size>
         requires(IsConst<T>)
-        ALWAYS_INLINE constexpr Span(Array<T, size> const& array)
+        ALWAYS_INLINE constexpr Span(LinearArray<T, size> const& array)
             : m_values(array.data()), m_size(size) { }
 
     protected:

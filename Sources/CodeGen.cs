@@ -414,7 +414,7 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main" && !fun.Parameters.Any()) {
         
-            output.Append("RefVector<String>");
+            output.Append("Array<String>");
         }
 
         var first = true;
@@ -1733,11 +1733,11 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            case CheckedVectorExpression ve: {
+            case CheckedArrayExpression ve: {
 
                 if (ve.FillSize is CheckedExpression fillSize) {
 
-                    output.Append("(RefVector<");
+                    output.Append("(Array<");
                     output.Append(compiler.CodeGenType(ve.Expressions.First().GetNeuType(), project));
                     output.Append(">::filled(");
                     output.Append(compiler.CodeGenExpr(indent, fillSize, project));
@@ -1747,9 +1747,9 @@ public static partial class CodeGenFunctions {
                 }
                 else {
 
-                    // (RefVector({1, 2, 3}))
+                    // (Array({1, 2, 3}))
 
-                    output.Append("(RefVector({");
+                    output.Append("(Array({");
 
                     var first = true;
 

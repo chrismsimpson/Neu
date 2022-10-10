@@ -5,8 +5,8 @@
 
 #include "AllOf.h"
 #include "AnyOf.h"
-#include "Array.h"
 #include "Assertions.h"
+#include "Array.h"
 #include "Atomic.h"
 #include "Badge.h"
 #include "BitCast.h"
@@ -17,6 +17,7 @@
 #include "CheckedFormatString.h"
 #include "Debug.h"
 #include "Detail.h"
+#include "Dictionary.h"
 #include "Error.h"
 #include "Find.h"
 #include "FixedPoint.h"
@@ -24,11 +25,11 @@
 #include "Function.h"
 #include "GenericLexer.h"
 #include "HashFunctions.h"
-#include "HashMap.h"
 #include "HashTable.h"
 #include "IntegralMath.h"
 #include "IterationDecision.h"
 #include "Iterator.h"
+#include "LinearArray.h"
 #include "Math.h"
 #include "Memory.h"
 #include "NonCopyable.h"
@@ -40,7 +41,6 @@
 #include "Platform.h"
 #include "RefCounted.h"
 #include "RefPointer.h"
-#include "RefVector.h"
 #include "Result.h"
 #include "ReverseIterator.h"
 #include "ScopeGuard.h"
@@ -97,7 +97,7 @@ inline String runtimeHelperNumberToString(Int64 number) {
     return String::number(number);
 }
 
-int __neu_main(RefVector<String>);
+int __neu_main(Array<String>);
 
 template<typename T>
 inline constexpr T __arithmeticShiftRight(T value, size_t steps) {
@@ -145,7 +145,7 @@ inline constexpr T __arithmeticShiftRight(T value, size_t steps) {
 
 int main(int argc, char** argv) {
 
-    RefVector<String> args;
+    Array<String> args;
 
     for (int i = 0; i < argc; ++i) {
 

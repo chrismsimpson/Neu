@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "Array.h"
+#include "LinearArray.h"
 #include "Types.h"
 
 // NOTE: For a quick reference for most of this, see https://www.cplusplus.com/reference/cctype/ and https://infra.spec.whatwg.org/#code-points.
@@ -189,7 +189,7 @@ constexpr UInt32 parseAsciiBase36Digit(UInt32 codePoint) {
 
 constexpr UInt32 toAsciiBase36Digit(UInt32 digit) {
 
-    constexpr Array<char, 36> base36Map = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+    constexpr LinearArray<char, 36> base36Map = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
     
     VERIFY(digit < base36Map.size());
     

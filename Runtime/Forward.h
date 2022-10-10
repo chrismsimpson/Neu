@@ -28,7 +28,7 @@ template<typename T>
 class Span;
 
 template<typename T, size_t Size>
-struct Array;
+struct LinearArray;
 
 template<typename Container, typename ValueType>
 class SimpleIterator;
@@ -50,10 +50,10 @@ template<typename T, typename TraitsForT = Traits<T>>
 using OrderedHashTable = HashTable<T, TraitsForT, true>;
 
 template<typename K, typename V, typename KeyTraits = Traits<K>, bool IsOrdered = false>
-class HashMap;
+class Dictionary;
 
 template<typename K, typename V, typename KeyTraits = Traits<K>>
-using OrderedHashMap = HashMap<K, V, KeyTraits, true>;
+using OrderedHashMap = Dictionary<K, V, KeyTraits, true>;
 
 template<typename T>
 class Badge;

@@ -1494,7 +1494,7 @@ public partial class CheckedExpression: CheckedStatement {
         }
     }
 
-    public partial class CheckedVectorExpression: CheckedExpression {
+    public partial class CheckedArrayExpression: CheckedExpression {
 
         public List<CheckedExpression> Expressions { get; init; }
 
@@ -1506,7 +1506,7 @@ public partial class CheckedExpression: CheckedStatement {
 
         ///
 
-        public CheckedVectorExpression(
+        public CheckedArrayExpression(
             List<CheckedExpression> expressions,
             CheckedExpression? fillSize,
             Span span,
@@ -1779,7 +1779,7 @@ public static partial class CheckedExpressionFunctions {
                 return e.Type;
             }
 
-            case CheckedVectorExpression vecExpr: {
+            case CheckedArrayExpression vecExpr: {
 
                 return vecExpr.Type;
             }
@@ -3054,7 +3054,7 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case VectorExpression ve: {
+            case ArrayExpression ve: {
 
                 var innerType = Compiler.UnknownTypeId;
 
@@ -3098,13 +3098,13 @@ public static partial class TypeCheckerFunctions {
                 }
 
                 var vectorStructId = project
-                    .FindStructInScope(0, "RefVector")
-                    ?? throw new Exception("internal error: RefVector builtin definition not found");
+                    .FindStructInScope(0, "Array")
+                    ?? throw new Exception("internal error: Array builtin definition not found");
 
                 var typeId = project.FindOrAddTypeId(new GenericInstance(vectorStructId, new List<Int32>(new [] { innerType })));
 
                 return (
-                    new CheckedVectorExpression(
+                    new CheckedArrayExpression(
                         expressions: output,
                         checkedFillSizeExpr,
                         ve.Span,
@@ -3156,8 +3156,8 @@ public static partial class TypeCheckerFunctions {
                 var exprType = Compiler.UnknownTypeId;
 
                 var vectorStructId = project
-                    .FindStructInScope(0, "RefVector")
-                    ?? throw new Exception("internal error: RefVector builtin definition not found");
+                    .FindStructInScope(0, "Array")
+                    ?? throw new Exception("internal error: Array builtin definition not found");
 
                 var ty = project.Types[checkedExpr.GetNeuType()];
 
@@ -4428,15 +4428,15 @@ public static partial class TypeCheckerFunctions {
                 return (Compiler.UnknownTypeId, null);
             }
 
-            case UncheckedVectorType vt: {
+            case UncheckedArrayType vt: {
 
                 var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, scopeId, project);
 
                 error = error ?? innerTypeErr;
 
                 var vectorStructId = project
-                    .FindStructInScope(0, "RefVector")
-                    ?? throw new Exception("internal error: RefVector builtin definition not found");
+                    .FindStructInScope(0, "Array")
+                    ?? throw new Exception("internal error: Array builtin definition not found");
 
                 var typeId = project.FindOrAddTypeId(new GenericInstance(vectorStructId, new List<Int32>(new [] { innerType })));
 

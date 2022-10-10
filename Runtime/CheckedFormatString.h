@@ -8,7 +8,7 @@
 
 #include "AllOf.h"
 #include "AnyOf.h"
-#include "Array.h"
+#include "LinearArray.h"
 #include "std.h"
 #include "StringView.h"
 
@@ -95,7 +95,7 @@ namespace Format::Detail {
             
             // FIXME: Switch to variable-sized storage whenever we can come up with one :)
             
-            Array<size_t, 128> usedArguments { 0 };
+            LinearArray<size_t, 128> usedArguments { 0 };
             
             size_t totalUsedArgumentCount { 0 };
             
@@ -109,7 +109,7 @@ namespace Format::Detail {
             
             size_t nestingLevel { 0 };
 
-            Array<size_t, 4> lastFormatSpecifierStart { 0 };
+            LinearArray<size_t, 4> lastFormatSpecifierStart { 0 };
             
             size_t totalUsedLastFormatSpecifierStartCount { 0 };
 
@@ -274,7 +274,7 @@ namespace Format::Detail {
 
             if (check.hasExplicitArgumentReferences) {
                 
-                auto allParameters = iotaArray<size_t, paramCount>(0);
+                auto allParameters = iotaLinearArray<size_t, paramCount>(0);
                 
                 constexpr auto contains = [](auto begin, auto end, auto entry) {
 

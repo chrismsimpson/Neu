@@ -10,7 +10,7 @@
 
 #include "AllOf.h"
 #include "AnyOf.h"
-#include "Array.h"
+#include "LinearArray.h"
 #include "Error.h"
 #include "FixedPoint.h"
 #include "Forward.h"
@@ -351,7 +351,7 @@ public:
 
 private:
 
-    Array<TypeErasedParameter, sizeof...(Parameters)> m_data;
+    LinearArray<TypeErasedParameter, sizeof...(Parameters)> m_data;
 };
 
 ///

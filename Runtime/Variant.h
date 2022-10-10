@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Array.h"
+#include "LinearArray.h"
 #include "BitCast.h"
 #include "std.h"
 #include "TypeList.h"
@@ -570,9 +570,9 @@ public:
 
 private:
 
-    static constexpr auto dataSize = Detail::integerSequenceGenerateArray<size_t>(0, IntegerSequence<size_t, sizeof(Ts)...>()).max();
+    static constexpr auto dataSize = Detail::integerSequenceGenerateLinearArray<size_t>(0, IntegerSequence<size_t, sizeof(Ts)...>()).max();
     
-    static constexpr auto dataAlignment = Detail::integerSequenceGenerateArray<size_t>(0, IntegerSequence<size_t, alignof(Ts)...>()).max();
+    static constexpr auto dataAlignment = Detail::integerSequenceGenerateLinearArray<size_t>(0, IntegerSequence<size_t, alignof(Ts)...>()).max();
 
     using Helper = Detail::Variant<IndexType, 0, Ts...>;
 

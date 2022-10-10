@@ -196,7 +196,7 @@ extern class String {
     func length(this) -> UInt { }
 }
 
-extern class RefVector<T> {
+extern class Array<T> {
     func size(this) -> UInt { }
     func resize(var this, anon size: UInt) { }
     func pop(var this) -> T? { }

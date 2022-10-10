@@ -128,7 +128,7 @@ public partial class UncheckedType {
         }
     }
 
-    public partial class UncheckedVectorType: UncheckedType {
+    public partial class UncheckedArrayType: UncheckedType {
 
         public UncheckedType Type { get; init; }
 
@@ -136,7 +136,7 @@ public partial class UncheckedType {
 
         ///
 
-        public UncheckedVectorType(
+        public UncheckedArrayType(
             UncheckedType type,
             Span span) {
 
@@ -1026,7 +1026,7 @@ public partial class Expression: Statement {
         }
     }
 
-    public partial class VectorExpression: Expression {
+    public partial class ArrayExpression: Expression {
 
         public List<Expression> Expressions { get; init; }
 
@@ -1036,7 +1036,7 @@ public partial class Expression: Statement {
 
         ///
 
-        public VectorExpression(
+        public ArrayExpression(
             List<Expression> expressions,
             Expression? fillSize,
             Span span) {
@@ -1365,7 +1365,7 @@ public static partial class ExpressionFunctions {
                 return cle.Span;
             }
 
-            case VectorExpression ve: {
+            case ArrayExpression ve: {
 
                 return ve.Span;
             }
@@ -5159,7 +5159,7 @@ public static partial class ParserFunctions {
 
                         error = error ??
                             new ParserError(
-                                "Can't fill a Vector with more than one expression",
+                                "Can't fill an Array with more than one expression",
                                 tokens.ElementAt(index).Span);
                     }
 
@@ -5186,7 +5186,7 @@ public static partial class ParserFunctions {
         ///
 
         return (
-            new VectorExpression(
+            new ArrayExpression(
                 expressions: output,
                 fillSizeExpr,
                 new Span(
@@ -5321,11 +5321,11 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (UncheckedType, Error?) ParseVectorType(
+    public static (UncheckedType, Error?) ParseArrayType(
         List<Token> tokens,
         ref int index) {
 
-        // [T] is shorthand for Vector<T>
+        // [T] is shorthand for Array<T>
 
         if (index + 2 >= tokens.Count) {
 
@@ -5340,7 +5340,7 @@ public static partial class ParserFunctions {
 
                 if (tokens.ElementAt(index + 1) is NameToken nt) {
 
-                    var uncheckedType = new UncheckedVectorType(
+                    var uncheckedType = new UncheckedArrayType(
                         new UncheckedNameType(nt.Value, nt.Span),
                         new Span(
                             fileId: start.FileId,
@@ -5373,11 +5373,11 @@ public static partial class ParserFunctions {
 
         Trace($"ParseTypeName: {(tokens.ElementAt(index) as NameToken)?.Value}");
 
-        var (vectorType, parseVectorTypeErr) = ParseVectorType(tokens, ref index);
+        var (vectorType, parseVectorTypeErr) = ParseArrayType(tokens, ref index);
 
         error = error ?? parseVectorTypeErr;
 
-        if (vectorType is UncheckedVectorType vt) {
+        if (vectorType is UncheckedArrayType vt) {
 
             return (vt, error);
         }
