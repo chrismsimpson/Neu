@@ -175,6 +175,15 @@ public static partial class Program {
 
                     ///
 
+                    if (cppStringOrError.Error is Error e) {
+
+                        var errStr = e.Content ?? e.ErrorType.ToString();
+
+                        WriteLine(errStr);
+
+                        throw new Exception(errStr);
+                    }
+
                     compiler.Generate(
                         buildDir,
                         projBuildDir,

@@ -203,7 +203,9 @@ extern class Array<T> {
 }
 
 extern class Optional<T> {
-    func hasValue(this) -> bool { }
+    func hasValue(this) -> bool
+    func value(this) -> T
+    func Optional<S>(anon x: S) -> Optional<S>
 }
 
 extern class Tuple { }

@@ -47,6 +47,27 @@ public partial class Token {
 
         this.Span = span;
     }
+
+    public override string ToString() {
+        
+        switch (this) {
+
+            case NameToken nt:
+                return $"Token {{ contents: Name(\"{nt.Value}\") }}";
+
+            case LSquareToken lst:
+                return $"Token {{ contents: LSquare }}";
+
+            case LCurlyToken lct:
+                return $"Token {{ contents: LCurly }}";
+
+            case NumberToken nt:
+                return $"Token {{ contents: Number({nt.Value}) }}";
+
+            default: 
+                return base.ToString() ?? "";
+        }
+    }
 }
 
     public partial class SingleQuotedStringToken: Token {

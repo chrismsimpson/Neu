@@ -695,6 +695,19 @@ public partial class CheckedStatement {
 
 ///
 
+    public partial class CheckedExpressionStatement: CheckedStatement {
+
+        public CheckedExpression Expression { get; init; }
+
+        ///
+
+        public CheckedExpressionStatement(
+            CheckedExpression expression) {
+
+            this.Expression = expression;
+        }
+    }
+
     public partial class CheckedDeferStatement: CheckedStatement {
 
         public CheckedStatement Statement { get; init; }
@@ -918,6 +931,18 @@ public static partial class IntegerConstantFunctions {
 public partial class NumericConstant {
 
     public NumericConstant() { }
+
+    public override string ToString() {
+
+        switch (this) {
+
+            case Int64Constant i64:
+                return $"Int64({i64.Value})";
+
+            default: 
+                return base.ToString() ?? "";
+        }
+    }
 }
     
     public partial class Int8Constant: NumericConstant {
@@ -1315,7 +1340,7 @@ public static partial class CheckedUnaryOperatorFunctions {
 
 ///
 
-public partial class CheckedExpression: CheckedStatement {
+public partial class CheckedExpression {
 
     public CheckedExpression() { }
 }
@@ -1882,6 +1907,8 @@ public partial class CheckedCall {
     
     public List<(String, CheckedExpression)> Args { get; init; }
 
+    public List<Int32> TypeArgs { get; init; }
+
     public FunctionLinkage Linkage { get; init; }
     
     public Int32 Type { get; init; }
@@ -1894,6 +1921,7 @@ public partial class CheckedCall {
         List<String> ns,
         String name,
         List<(String, CheckedExpression)> args,
+        List<Int32> typeArgs,
         FunctionLinkage linkage,
         Int32 type,
         DefinitionType? calleeDefinitionType) {
@@ -1901,6 +1929,7 @@ public partial class CheckedCall {
         this.Namespace = ns;
         this.Name = name;
         this.Args = args;
+        this.TypeArgs = typeArgs;
         this.Linkage = linkage;
         this.Type = type;
         this.CalleeDefinitionType = calleeDefinitionType;
@@ -1984,23 +2013,29 @@ public static partial class TypeCheckerFunctions {
             
             // Ensure we know the function ahead of time, so they can be recursive
             
-            error = error ?? TypeCheckFuncPredecl(fun, scopeId, project);
+            var chkFuncPredeclErr = TypeCheckFuncPredecl(fun, scopeId, project);
+
+            error = error ?? chkFuncPredeclErr;
         }
 
         for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
 
             var structure = parsedFile.Structs.ElementAt(structId);
 
-            error = error ?? TypeCheckStruct(
+            var chkStructErr = TypeCheckStruct(
                 structure, 
                 structId + projectStructLength,
                 scopeId, 
                 project);
+
+            error = error ?? chkStructErr;
         }
 
         foreach (var fun in parsedFile.Functions) {
 
-            error = error ?? TypeCheckFunc(fun, scopeId, project);
+            var chkFuncErr = TypeCheckFunc(fun, scopeId, project);
+
+            error = error ?? chkFuncErr;
         }
 
         return error;
@@ -2028,6 +2063,8 @@ public static partial class TypeCheckerFunctions {
                 project.Types.Add(new TypeVariable(genParam));
 
                 var typeVarTypeId = project.Types.Count - 1;
+
+                genericParameters.Add(typeVarTypeId);
 
                 if (project.AddTypeToScope(methodScopeId, genParam, typeVarTypeId, paramSpan).Error is Error e) {
 
@@ -2060,7 +2097,7 @@ public static partial class TypeCheckerFunctions {
                 }
                 else {
 
-                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, structScopeId, project);
+                    var (paramType, err) = TypeCheckTypeName(param.Variable.Type, methodScopeId, project);
 
                     error = error ?? err;
 
@@ -2186,21 +2223,31 @@ public static partial class TypeCheckerFunctions {
 
         // Add constructor to the struct's scope
 
-        if (project.AddFuncToScope(checkedStructScopeId, structure.Name, project.Functions.Count - 1, structure.Span).Error is Error e1) {
+        if (project.AddFuncToScope(
+            checkedStructScopeId, 
+            structure.Name, 
+            project.Functions.Count - 1, 
+            structure.Span).Error is Error e1) {
 
             error = error ?? e1;
         }
 
         // Add helper function for constructor to the parent scope
 
-        if (project.AddFuncToScope(parentScopeId, structure.Name, project.Functions.Count - 1, structure.Span).Error is Error e2) {
+        if (project.AddFuncToScope(
+            parentScopeId, 
+            structure.Name, 
+            project.Functions.Count - 1, 
+            structure.Span).Error is Error e2) {
 
             error = error ?? e2;
         }
         
         foreach (var func in structure.Methods) {
 
-            error = error ?? TypeCheckMethod(func, checkedStructScopeId, project, structId);
+            var typeChkErr = TypeCheckMethod(func, project, structId);
+
+            error = error ?? typeChkErr;
         }
         
         return error;
@@ -2339,7 +2386,6 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckMethod(
         Function func,
-        Int32 parentScopeId,
         Project project,
         Int32 structId) { 
 
@@ -2376,7 +2422,7 @@ public static partial class TypeCheckerFunctions {
 
         error = error ?? chkBlockErr;
 
-        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, parentScopeId, project);
+        var (funcReturnType, chkRetTypeErr) = TypeCheckTypeName(func.ReturnType, funcScopeId, project);
 
         error = error ?? chkRetTypeErr;
 
@@ -2489,12 +2535,12 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case Expression e: {
+            case ExpressionStatement es: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(e, scopeId, project, safetyMode);
+                var (checkedExpr, exprErr) = TypeCheckExpression(es.Expression, scopeId, project, safetyMode);
 
                 return (
-                    checkedExpr,
+                    new CheckedExpressionStatement(checkedExpr),
                     exprErr);
             }
 
@@ -3281,6 +3327,32 @@ public static partial class TypeCheckerFunctions {
 
                 switch (checkedExprTy) {
 
+                    case GenericInstance gi: {
+
+                        var structure = project.Structs[gi.StructId];
+
+                        foreach (var member in structure.Fields) {
+
+                            if (member.Name == ise.Name) {
+
+                                return (
+                                    new CheckedIndexedStructExpression(
+                                        checkedExpr,
+                                        ise.Name,
+                                        ise.Span,
+                                        member.Type),
+                                    null);
+                            }
+                        }
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                $"unknown member of struct: {structure.Name}.{ise.Name}",
+                                ise.Span);
+
+                        break;
+                    }
+
                     case StructType st: {
 
                         var structure = project.Structs[st.StructId];
@@ -3765,6 +3837,10 @@ public static partial class TypeCheckerFunctions {
 
         var linkage = FunctionLinkage.Internal;
 
+        var genericInferences = new Dictionary<Int32, Int32>();
+
+        var typeArgs = new List<Int32>();
+
         switch (call.Name) {
 
             case "printLine":
@@ -3813,8 +3889,6 @@ public static partial class TypeCheckerFunctions {
                     returnType = callee.ReturnType;
 
                     linkage = callee.Linkage;
-
-                    var genericInferences = new Dictionary<Int32, Int32>();
 
                     // Check that we have the right number of arguments
 
@@ -3893,6 +3967,21 @@ public static partial class TypeCheckerFunctions {
                     // type variable. For the moment, we'll just checked to see if it's a type variable.
 
                     returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
+
+                    foreach (var genericTypeVar in callee.GenericParameters) {
+
+                        if (genericInferences.ContainsKey(genericTypeVar)) {
+
+                            typeArgs.Add(genericInferences[genericTypeVar]);
+                        }
+                        else {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "not all generic parameters have known types",
+                                    span);
+                        }
+                    }
                 }
 
                 break;
@@ -3903,7 +3992,8 @@ public static partial class TypeCheckerFunctions {
             new CheckedCall(
                 ns: call.Namespace,
                 call.Name, 
-                checkedArgs, 
+                checkedArgs,
+                typeArgs,
                 linkage,
                 returnType,
                 calleDefType),
@@ -3927,6 +4017,10 @@ public static partial class TypeCheckerFunctions {
 
         var linkage = FunctionLinkage.Internal;
 
+        var typeArgs = new List<Int32>();
+
+        var genericInferences = new Dictionary<Int32, Int32>();
+
         var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, project.Structs[structId].ScopeId, project);
 
         error = error ?? resolveCallErr;
@@ -3937,14 +4031,8 @@ public static partial class TypeCheckerFunctions {
 
             linkage = callee.Linkage;
 
-            var genericInferences = new Dictionary<Int32, Int32>();
-
-
-
-
             // Before we check the method, let's go ahead and make sure we know any instantiated generic types
             // This will make it easier later to know how to create the proper return type
-
 
             var typeId = thisExpr.GetNeuType();
 
@@ -3974,14 +4062,7 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-
-
-
-
-
-
-
-            // Check that we have the right number of arguments.
+            // Check that we have the right number of arguments
 
             if (callee.Parameters.Count != (call.Args.Count + 1)) {
                 
@@ -4059,6 +4140,21 @@ public static partial class TypeCheckerFunctions {
             // type variable. For the moment, we'll just checked to see if it's a type variable.
 
             returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
+        
+            foreach (var genericTypeVar in callee.GenericParameters) {
+
+                if (genericInferences.ContainsKey(genericTypeVar)) {
+
+                    typeArgs.Add(genericInferences[genericTypeVar]);
+                }
+                else {
+
+                    error = error ??
+                        new TypeCheckError(
+                            "not all generic parameters have known types",
+                            span);
+                }
+            }
         }
 
         return (
@@ -4066,6 +4162,7 @@ public static partial class TypeCheckerFunctions {
                 ns: new List<String>(),
                 name: call.Name,
                 args: checkedArgs,
+                typeArgs,
                 linkage,
                 type: returnType,
                 calleeDefType),
@@ -4101,6 +4198,25 @@ public static partial class TypeCheckerFunctions {
                 }
 
                 return project.FindOrAddTypeId(new GenericInstance(gi.StructId, newArgs));
+            }
+
+            case StructType st: {
+
+                var structure = project.Structs[st.StructId];
+
+                if (structure.GenericParameters.Any()) {
+
+                    var newArgs = structure.GenericParameters.ToList();
+
+                    for (var i = 0; i < newArgs.Count; i++) {
+
+                        newArgs[i] = SubstituteTypeVarsInType(newArgs[i], genericInferences, project);
+                    }
+
+                    return project.FindOrAddTypeId(new GenericInstance(st.StructId, newArgs));
+                }
+
+                break;
             }
 
             default: {

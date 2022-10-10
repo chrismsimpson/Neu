@@ -765,9 +765,9 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            case CheckedExpression expr: {
+            case CheckedExpressionStatement es: {
 
-                var exprStr = compiler.CodeGenExpr(indent, expr, project);
+                var exprStr = compiler.CodeGenExpr(indent, es.Expression, project);
 
                 output.Append(exprStr);
 
@@ -854,7 +854,7 @@ public static partial class CodeGenFunctions {
                 }
 
                 output.Append(compiler.CodeGenType(vd.VarDecl.Type, project));
-                output.Append(" ");
+                output.Append(' ');
                 output.Append(vd.VarDecl.Name);
                 output.Append(" = ");
                 output.Append(compiler.CodeGenExpr(indent, vd.Expr, project));
@@ -1143,19 +1143,18 @@ public static partial class CodeGenFunctions {
 
                     default: {
 
-                        foreach (var ns in ce.Call.Namespace) {
+                        for (var idx = 0; idx < ce.Call.Namespace.Count; idx++) {
+
+                            var ns = ce.Call.Namespace[idx];
+
+                            // hack warning: this is to get around C++'s limitation that a constructor
+                            // can't be called like other static methods
+                            if (idx == ce.Call.Namespace.Count - 1 && ns == ce.Call.Name) {
+                                
+                                break;
+                            }
 
                             output.Append(ns);
-
-                            // if (ce.Call.CalleeDefinitionType == DefinitionType.Struct) {
-
-                            //     output.Append(".");
-                            // }
-                            // else {
-
-                            //     output.Append("::");
-                            // }
-
                             output.Append("::");
                         }
 
@@ -1166,6 +1165,24 @@ public static partial class CodeGenFunctions {
                             var ty = project.Types[typeId];
 
                             switch (ty) {
+
+                                case GenericInstance gi: {
+
+                                    var structure = project.Structs[gi.StructId];
+
+                                    if (structure.DefinitionType == DefinitionType.Class) {
+                                        
+                                        output.Append(ce.Call.Name);
+                                        output.Append("::");
+                                        output.Append("create");
+                                    }
+                                    else {
+
+                                        output.Append(ce.Call.Name);
+                                    }
+
+                                    break;
+                                }
 
                                 case StructType st: {
 
@@ -1196,6 +1213,29 @@ public static partial class CodeGenFunctions {
                             output.Append(ce.Call.Name);
                         }
 
+                        if (ce.Call.TypeArgs.Any()) {
+
+                            output.Append('<');
+
+                            var firstTypeArg = true;
+
+                            foreach (var typeArg in ce.Call.TypeArgs) {
+
+                                if (!firstTypeArg) {
+
+                                    output.Append(", ");
+                                }
+                                else {
+
+                                    firstTypeArg = false;
+                                }
+
+                                output.Append(compiler.CodeGenType(typeArg, project));
+                            }
+
+                            output.Append('>');
+                        }
+                    
                         output.Append("(");
 
                         var first = true;

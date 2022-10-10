@@ -199,6 +199,39 @@ public static partial class UncheckedTypeFunctions {
                     && SpanFunctions.Eq(ln.Span, rn.Span);
             }
 
+            case var _ when
+                l is UncheckedGenericType lg
+                && r is UncheckedGenericType rg: {
+
+                if (lg.Name != rg.Name) {
+
+                    return false;
+                }
+
+                if (lg.Types.Count != rg.Types.Count) {
+
+                    return false;
+                }
+
+                for (var i = 0; i < lg.Types.Count; i++) {
+
+                    if (!UncheckedTypeFunctions.Eq(lg.Types[i], rg.Types[i])) {
+
+                        return false;
+                    }
+                }
+
+                return SpanFunctions.Eq(lg.Span, rg.Span);
+            }
+
+            case var _ when 
+                l is UncheckedArrayType la
+                && r is UncheckedArrayType ra: {
+
+                return UncheckedTypeFunctions.Eq(la.Type, ra.Type)
+                    && SpanFunctions.Eq(la.Span, ra.Span);
+            }
+            
             case var _ when 
                 l is UncheckedOptionalType lo
                 && r is UncheckedOptionalType ro: {
@@ -476,6 +509,12 @@ public static partial class StatementFunctions {
         switch (true) {
 
             case var _ when
+                l is ExpressionStatement le
+                && r is ExpressionStatement re:
+
+                return ExpressionStatementFunctions.Eq(le, re);
+
+            case var _ when
                 l is DeferStatement deferL
                 && r is DeferStatement deferR:
 
@@ -548,14 +587,6 @@ public static partial class StatementFunctions {
 
             ///
 
-            case var _ when
-                l is Expression exprL
-                && r is Expression exprR:
-
-                return ExpressionFunctions.Eq(exprL, exprR);
-
-            ///
-
             default:
 
                 return false;
@@ -580,6 +611,29 @@ public static partial class StatementFunctions {
         }
 
         return true;
+    }
+}
+
+///
+
+public partial class ExpressionStatement: Statement {
+
+    public Expression Expression { get; init; }
+
+    ///
+
+    public ExpressionStatement(
+        Expression expression) {
+
+        this.Expression = expression;
+    }
+}
+
+public static partial class ExpressionStatementFunctions {
+
+    public static bool Eq(ExpressionStatement le, ExpressionStatement re) {
+
+        return ExpressionFunctions.Eq(le.Expression, re.Expression);
     }
 }
 
@@ -950,7 +1004,7 @@ public static partial class BlockFunctions {
 
 ///
 
-public partial class Expression: Statement {
+public partial class Expression {
 
     public Expression() : base() { }
 }
@@ -1932,7 +1986,7 @@ public static partial class ParserFunctions {
     public static (ParsedFile, Error?) ParseFile(
         List<Token> tokens) {
 
-        Trace($"parse_file");
+        Trace($"ParseFile");
 
         Error? error = null;
 
@@ -2591,7 +2645,7 @@ public static partial class ParserFunctions {
 
                     var cont = true;
 
-                    while (index < tokens.Count && cont) {
+                    while (cont && index < tokens.Count) {
 
                         switch (tokens.ElementAt(index)) {
 
@@ -2735,7 +2789,7 @@ public static partial class ParserFunctions {
 
                                         fatArrowExpr = _fatArrowExpr;
 
-                                        error = error ??fatArrowExprErr;
+                                        error = error ?? fatArrowExprErr;
 
                                         index += 1;
 
@@ -3194,7 +3248,7 @@ public static partial class ParserFunctions {
                 }
 
                 return (
-                    expr,
+                    new ExpressionStatement(expr),
                     error);
             }
         }
@@ -3362,7 +3416,7 @@ public static partial class ParserFunctions {
 
             // Test to see if the next token is an operator
 
-            if (tokens[index] is EolToken) {
+            while (tokens[index] is EolToken) {
 
                 break;
             }
@@ -4299,7 +4353,7 @@ public static partial class ParserFunctions {
                                             var _span = new Span(
                                                 fileId: expr.GetSpan().FileId,
                                                 start: expr.GetSpan().Start,
-                                                end: tokens[index].Span.End);
+                                                end: tokens[index - 1].Span.End);
 
                                             expr = new IndexedStructExpression(
                                                 expr,
@@ -5380,7 +5434,7 @@ public static partial class ParserFunctions {
 
         var typename = String.Empty;
 
-        Trace($"ParseTypeName: {(tokens.ElementAt(index) as NameToken)?.Value}");
+        Trace($"ParseTypeName: {tokens.ElementAt(index)}");
 
         var (vectorType, parseVectorTypeErr) = ParseArrayType(tokens, ref index);
 
