@@ -1,0 +1,9 @@
+func doPop<T>(anon arr: var [T]) -> Optional<T> {
+  return arr.pop()
+}
+
+func main() {
+  var arr = [1, 2, 3];
+
+  printLine(doPop(arr)!)
+}
