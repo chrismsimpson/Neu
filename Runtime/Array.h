@@ -3,6 +3,7 @@
 
 #include "Checked.h"
 #include "RefCounted.h"
+#include <stdlib.h>
 #include <initializer_list>
 
 template<typename T>
