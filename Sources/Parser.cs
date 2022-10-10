@@ -2321,7 +2321,16 @@ public static partial class ParserFunctions {
 
                             case NameToken nt2 when nt2.Value == "func": {
 
-                                var (funcDecl, err) = ParseFunction(tokens, ref index, FunctionLinkage.Internal);
+                                // Lets parse a method
+
+                                var funcLinkage = definitionLinkage switch {
+
+                                    DefinitionLinkage.Internal => FunctionLinkage.Internal,
+                                    DefinitionLinkage.External => FunctionLinkage.External,
+                                    _ => throw new Exception()
+                                };
+
+                                var (funcDecl, err) = ParseFunction(tokens, ref index, funcLinkage);
 
                                 error = error ?? err;
 

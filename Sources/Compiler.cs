@@ -188,18 +188,18 @@ public partial class Compiler {
 
         return UTF8.GetBytes(@"
 extern class String {
-    func split(this, anon c: CChar) -> [String] { }
-    func characters(this) -> raw CChar { }
-    func toLowercase(this) -> String { }
-    func toUppercase(this) -> String { }
-    func isEmpty(this) -> Bool { }
-    func length(this) -> UInt { }
+    func split(this, anon c: CChar) -> [String]
+    func characters(this) -> raw CChar
+    func toLowercase(this) -> String
+    func toUppercase(this) -> String
+    func isEmpty(this) -> Bool
+    func length(this) -> UInt
 }
 
 extern class Array<T> {
-    func size(this) -> UInt { }
-    func resize(var this, anon size: UInt) { }
-    func pop(var this) -> T? { }
+    func size(this) -> UInt
+    func resize(var this, anon size: UInt)
+    func pop(var this) -> T?
 }
 
 extern class Optional<T> {
