@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < argc; ++i) {
 
-        args.append(argv[i]);
+        args.push(argv[i]);
     }
 
     return __neu_main(move(args));

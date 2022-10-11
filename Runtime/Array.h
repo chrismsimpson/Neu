@@ -87,7 +87,7 @@ public:
         return m_elements[index];
     }
 
-    void append(T value) {
+    void push(T value) {
 
         ensureCapacity(m_size + 1);
         
@@ -192,7 +192,7 @@ public:
 
         for (auto& item : list) {
 
-            append(item);
+            push(item);
         }
     }
 
@@ -202,9 +202,9 @@ public:
 
     size_t capacity() const { return m_storage ? m_storage->capacity() : 0; }
 
-    void append(T value) {
+    void push(T value) {
 
-        ensureStorage().append(move(value));
+        ensureStorage().push(move(value));
     }
 
     T const& at(size_t index) const {
@@ -263,16 +263,16 @@ public:
 
     static Array filled(size_t size, T value) {
 
-        Array vector;
+        Array array;
         
-        vector.ensureCapacity(size);
+        array.ensureCapacity(size);
         
         for (size_t i = 0; i < size; ++i) {
             
-            vector.append(value);
+            array.push(value);
         }
         
-        return vector;
+        return array;
     }
 
     Array(Vector<T> const& vec) {
@@ -281,7 +281,7 @@ public:
 
         for (auto value : vec) {
 
-            append(move(value));
+            push(move(value));
         }
     }
 
