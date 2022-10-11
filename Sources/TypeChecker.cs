@@ -2254,17 +2254,6 @@ public static partial class TypeCheckerFunctions {
 
             error = error ?? e1;
         }
-
-        // Add helper function for constructor to the parent scope
-
-        if (project.AddFuncToScope(
-            parentScopeId, 
-            structure.Name, 
-            project.Functions.Count - 1, 
-            structure.Span).Error is Error e2) {
-
-            error = error ?? e2;
-        }
         
         foreach (var func in structure.Methods) {
 
@@ -3822,7 +3811,18 @@ public static partial class TypeCheckerFunctions {
 
                 definitionType = structure.DefinitionType;
 
-                if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId1) {
+                // Look for the constructor
+
+                if (project.FindStructInScope(structure.ScopeId, call.Name) is Int32 _structId) {
+
+                    var _structure = project.Structs[_structId];
+
+                    if (project.FindFuncInScope(_structure.ScopeId, call.Name) is Int32 _funcId) {
+
+                        callee = project.Functions[_funcId];
+                    }
+                }
+                else if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId1) {
 
                     callee = project.Functions[funcId1];
                 }
@@ -3851,7 +3851,18 @@ public static partial class TypeCheckerFunctions {
 
             // FIXME: Support function overloading.
 
-            if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId3) {
+            // Look for the constructor
+
+            if (project.FindStructInScope(scopeId, call.Name) is Int32 _structId) {
+
+                var _structure = project.Structs[_structId];
+
+                if (project.FindFuncInScope(_structure.ScopeId, call.Name) is Int32 _funcId) {
+
+                    callee = project.Functions[_funcId];
+                }
+            }
+            else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId3) {
 
                 callee = project.Functions[funcId3];
             }

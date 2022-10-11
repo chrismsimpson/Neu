@@ -1,5 +1,5 @@
 func main() {
-    let item = Optional.Optional(100)
+    let item = Optional(100)
 
     printLine(item!)
 }
