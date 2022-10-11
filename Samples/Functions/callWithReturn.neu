@@ -3,5 +3,5 @@ func greet() -> String {
 }
 
 func main() {
-    printLine(greet())
+    printLine("{}", greet())
 }

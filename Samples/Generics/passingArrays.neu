@@ -1,5 +1,5 @@
 func dump<T>(anon v: [T]) { return v[0] }
 
 func main() {
-    printLine(dump([1, 2, 3]))
+    printLine("{}", dump([1, 2, 3]))
 }

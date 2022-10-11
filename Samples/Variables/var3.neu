@@ -1,5 +1,5 @@
 func main() {
     var x: Int64 = 100
     x += 1
-    printLine(x)
+    printLine("{}", x)
 }

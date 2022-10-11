@@ -1126,11 +1126,27 @@ public static partial class CodeGenFunctions {
 
                     case "printLine": {
 
-                        output.Append("outLine(\"{}\", ");
+                        // output.Append("outLine(\"{}\", ");
                         
-                        foreach (var param in ce.Call.Args) {
+                        // foreach (var param in ce.Call.Args) {
+
+                        //     output.Append(CodeGenExpr(indent, param.Item2, project));
+                        // }
+                        
+                        // output.Append(")");
+
+                        output.Append("outLine(");
+                        
+                        for (var i = 0; i < ce.Call.Args.Count; i++) {
+
+                            var param = ce.Call.Args[i];
 
                             output.Append(CodeGenExpr(indent, param.Item2, project));
+
+                            if (i != ce.Call.Args.Count - 1) {
+
+                                output.Append(',');
+                            }
                         }
                         
                         output.Append(")");
@@ -1140,11 +1156,27 @@ public static partial class CodeGenFunctions {
 
                     case "warnLine": {
 
-                        output.Append("warnLine(\"{}\", ");
+                        // output.Append("warnLine(\"{}\", ");
                         
-                        foreach (var param in ce.Call.Args) {
+                        // foreach (var param in ce.Call.Args) {
+
+                        //     output.Append(CodeGenExpr(indent, param.Item2, project));
+                        // }
+                        
+                        // output.Append(")");
+
+                        output.Append("warnLine(");
+
+                        for (var i = 0; i < ce.Call.Args.Count; i++) {
+
+                            var param = ce.Call.Args[i];
 
                             output.Append(CodeGenExpr(indent, param.Item2, project));
+
+                            if (i != ce.Call.Args.Count - 1) {
+
+                                output.Append(',');
+                            }
                         }
                         
                         output.Append(")");

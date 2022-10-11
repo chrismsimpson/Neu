@@ -8,7 +8,7 @@ func main() {
 
     var i = 0
     while i < v.size() {
-        printLine(v[i])
+        printLine("{}", v[i])
         ++i
     }
 }

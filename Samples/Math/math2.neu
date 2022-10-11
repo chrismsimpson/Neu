@@ -1,4 +1,4 @@
 func main() {
-    printLine(5 - 5 * 10 + 5)
-    printLine(2 * 8 - 12 / 2)
+    printLine("{}", 5 - 5 * 10 + 5)
+    printLine("{}", 2 * 8 - 12 / 2)
 }

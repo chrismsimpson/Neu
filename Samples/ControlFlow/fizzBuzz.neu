@@ -11,7 +11,7 @@ func main() {
             printLine("Buzz")
         } 
         else {
-            printLine(i)
+            printLine("{}", i)
         }
         ++i
     }

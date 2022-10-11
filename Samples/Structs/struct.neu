@@ -6,6 +6,6 @@ struct Person {
 func main() {
     let p = Person(name: "Jane", age: 100)
 
-    printLine(p.name)
-    printLine(p.age)
+    printLine("{}", p.name)
+    printLine("{}", p.age)
 }

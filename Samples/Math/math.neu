@@ -1,5 +1,5 @@
 func subtract(x: Int64, y: Int64) {
-    printLine(x - y)
+    printLine("{}", x - y)
 }
 
 func main() {

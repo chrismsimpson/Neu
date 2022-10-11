@@ -1,4 +1,4 @@
 func main() {
     let msg: String = "hello foo"
-    printLine(msg)
+    printLine("{}", msg)
 }

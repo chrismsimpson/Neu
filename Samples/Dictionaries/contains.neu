@@ -1,5 +1,5 @@
 func main() {
     let dict = ["a": 1, "b": 2]
-    printLine(dict.contains("b"))
-    printLine(dict.contains("c"))
+    printLine("{}", dict.contains("b"))
+    printLine("{}", dict.contains("c"))
 }

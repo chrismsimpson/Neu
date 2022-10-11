@@ -15,8 +15,8 @@ func main() {
     var f = Foo(x: 123)
     f.x += 2
 
-    printLine(a)
-    printLine(b)
-    printLine(c)
-    printLine(f.x)
+    printLine("{}", a)
+    printLine("{}", b)
+    printLine("{}", c)
+    printLine("{}", f.x)
 }

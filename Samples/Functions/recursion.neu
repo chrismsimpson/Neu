@@ -3,7 +3,7 @@ func main() {
 }
 
 func recurse(count: Int64) {
-    printLine(count)
+    printLine("{}", count)
     if count > 0 {
         recurse(count: count - 1)
     }

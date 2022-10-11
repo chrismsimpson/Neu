@@ -1,5 +1,5 @@
 func main() {
-    printLine(0x123456789abcde)
-    printLine(0x0)
-    printLine(0xfffffffff)
+    printLine("{}", 0x123456789abcde)
+    printLine("{}", 0x0)
+    printLine("{}", 0xfffffffff)
 }

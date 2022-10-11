@@ -8,12 +8,12 @@ func setX(foo: var Foo, x: Int64) {
 
 func main() {
     let foo = Foo(x: 5)
-    printLine(foo.x)
+    printLine("{}", foo.x)
 
     setX(foo: foo, x: 10)
-    printLine(foo.x)
+    printLine("{}", foo.x)
 
     var bar = foo
     bar.x = 15
-    printLine(foo.x)
+    printLine("{}", foo.x)
 }

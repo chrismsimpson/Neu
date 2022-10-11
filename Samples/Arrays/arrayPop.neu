@@ -3,5 +3,5 @@ func main() {
 
     let last = v.pop()
 
-    printLine(last!)
+    printLine("{}", last!)
 }

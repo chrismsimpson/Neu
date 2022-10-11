@@ -1,9 +1,9 @@
 func main() {
     let a = "n"
     let b = "eu"
-    printLine(a + b)
+    printLine("{}", a + b)
 
     var str = "programming "
     str += "language"
-    printLine(str)
+    printLine("{}", str)
 }

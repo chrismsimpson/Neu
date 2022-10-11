@@ -1,8 +1,8 @@
 func check(anon a: Int64, anon b: Int64) -> Int64 {
     if a != b {
         printLine("Not equal!")
-        printLine(a)
-        printLine(b)
+        printLine("{}", a)
+        printLine("{}", b)
         return 1
     }
     return 0

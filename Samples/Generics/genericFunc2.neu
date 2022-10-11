@@ -1,5 +1,5 @@
 func id<T>(anon x: T) => x
 
 func main() {
-    printLine(id(3) + 10)
+    printLine("{}", id(3) + 10)
 }

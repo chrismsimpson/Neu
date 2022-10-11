@@ -3,5 +3,5 @@ func main() {
 
     dict.set(key: "c", value: 3)
 
-    printLine(dict.get("c")!)
+    printLine("{}", dict.get("c")!)
 }

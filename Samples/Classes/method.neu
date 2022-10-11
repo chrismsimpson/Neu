@@ -12,5 +12,5 @@ func main() {
 
     p.birthday()
 
-    printLine(p.age)
+    printLine("{}", p.age)
 }

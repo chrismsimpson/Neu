@@ -1,4 +1,4 @@
 func main() {
     var x = 100
-    printLine(x)
+    printLine("{}", x)
 }

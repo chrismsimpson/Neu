@@ -2,7 +2,7 @@ func main() {
     var x: Int64 = 10
 
     while (x > 0) {
-        printLine(x)
+        printLine("{}", x)
         x = x - 1
     }
 }

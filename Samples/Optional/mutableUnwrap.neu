@@ -16,5 +16,5 @@ func main() {
 
     optFoo!.set(value: 2)
 
-    printLine(optFoo!.get())
+    printLine("{}", optFoo!.get())
 }

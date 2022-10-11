@@ -2,7 +2,7 @@ func main() {
     let x = 10
     {
         let x = 20
-        printLine(x)
+        printLine("{}", x)
     }
-    printLine(x)
+    printLine("{}", x)
 }

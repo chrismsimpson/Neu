@@ -4,7 +4,7 @@ func greet(name: String) => printLine(greeting(name: name))
 
 func main() {
     let a = area(width: 5, height: 10)
-    printLine(a)
+    printLine("{}", a)
 
     greet(name: "friends")
 }

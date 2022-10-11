@@ -6,5 +6,5 @@ func main() {
 
     let f = Foo(x: 100)
 
-    printLine(f.x)
+    printLine("{}", f.x)
 }

@@ -4,5 +4,5 @@ func main() {
 
     item.set(key: "bob", value: 123)
 
-    printLine(item.get("bob")!)
+    printLine("{}", item.get("bob")!)
 }

@@ -7,11 +7,11 @@ func main() {
     let f = -127 as truncated Int8
     let g = 128 as truncated Int8
 
-    printLine(a)
-    printLine(b)
-    printLine(c)
-    printLine(d)
-    printLine(e)
-    printLine(f)
-    printLine(g)
+    printLine("{}", a)
+    printLine("{}", b)
+    printLine("{}", c)
+    printLine("{}", d)
+    printLine("{}", e)
+    printLine("{}", f)
+    printLine("{}", g)
 }

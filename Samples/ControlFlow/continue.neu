@@ -5,6 +5,6 @@ func main() {
         if i % 2 == 0 {
             continue
         }
-        printLine(i)
+        printLine("{}", i)
     }
 }

@@ -44,5 +44,5 @@ func main(args: [String]) {
     }
 
     let digest = ~state
-    printLine(digest)
+    printLine("{}", digest)
 }

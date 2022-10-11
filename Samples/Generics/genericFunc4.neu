@@ -5,5 +5,5 @@ func id<T>(anon x: T) -> T {
 func main() {
     let y = id(3)
 
-    printLine(y + 1000)
+    printLine("{}", y + 1000)
 }

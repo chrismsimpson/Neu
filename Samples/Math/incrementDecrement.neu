@@ -1,11 +1,11 @@
 func main() {
     var x = 10
 
-    printLine(++x)
-    printLine(x++)
-    printLine(x)
+    printLine("{}", ++x)
+    printLine("{}", x++)
+    printLine("{}", x)
 
-    printLine(--x)
-    printLine(x--)
-    printLine(x)
+    printLine("{}", --x)
+    printLine("{}", x--)
+    printLine("{}", x)
 }

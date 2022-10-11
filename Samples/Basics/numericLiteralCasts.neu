@@ -1,7 +1,7 @@
 func main() {
     var a = UInt(0)
     a += 5 as! UInt
-    printLine(a)
+    printLine("{}", a)
 
     {
         var i = UInt8(0)
@@ -14,10 +14,10 @@ func main() {
         k += 5 as! UInt32
         l += 5 as! UInt64
         
-        printLine(i)
-        printLine(j)
-        printLine(k)
-        printLine(l)
+        printLine("{}", i)
+        printLine("{}", j)
+        printLine("{}", k)
+        printLine("{}", l)
     }
 
     {
@@ -31,9 +31,9 @@ func main() {
         k += 5 as! Int32
         l += 5 as! Int64
 
-        printLine(i)
-        printLine(j)
-        printLine(k)
-        printLine(l)
+        printLine("{}", i)
+        printLine("{}", j)
+        printLine("{}", k)
+        printLine("{}", l)
     }
 }
