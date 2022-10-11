@@ -39,7 +39,7 @@ public partial class Compiler {
         this.RawFiles = new List<(String, byte[])>();
     }
 
-    public void IncludePrelude(
+    public Error? IncludePrelude(
         Project project) {
 
         // First, let's make types for all the builtin types
@@ -66,7 +66,7 @@ public partial class Compiler {
 
         // Scope ID 0 is the global project-level scope that all files can see
 
-        TypeCheckerFunctions.TypeCheckFile(file, 0, project);
+        return TypeCheckerFunctions.TypeCheckFile(file, 0, project);
     }
 }
 
@@ -78,7 +78,12 @@ public partial class Compiler {
 
         var project = new Project();
 
-        this.IncludePrelude(project);
+        var err = this.IncludePrelude(project);
+
+        if (err != null) {
+
+            return new ErrorOr<String>(err);
+        }
 
         var contents = ReadAllBytes(filename);
         
@@ -145,7 +150,7 @@ public partial class Compiler {
 
         // Hardwire to first file for now
 
-        return new ErrorOr<String>(this.CodeGen(
+        return new ErrorOr<String>(CodeGenFunctions.CodeGen(
             project, 
             project.Scopes[fileScopeId]));
     }
@@ -203,13 +208,14 @@ extern class Array<T> {
 }
 
 extern class Optional<T> {
-    func hasValue(this) -> bool
+    func hasValue(this) -> Bool
     func value(this) -> T
     func Optional<S>(anon x: S) -> Optional<S>
 }
 
 extern class Dictionary<K, V> {
-    func get(this, key: K) -> V?
+    func get(this, anon key: K) -> V?
+    func contains(this, anon key: K) -> Bool
 }
 
 extern class Tuple { }

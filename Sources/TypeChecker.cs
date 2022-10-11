@@ -322,7 +322,7 @@ public static partial class ProjectFunctions {
 
                 return new ErrorOrVoid(
                     new TypeCheckError(
-                        $"redefinition of {var.Name}",
+                        $"redefinition of variable {var.Name}",
                         span));
             }
         }
@@ -372,7 +372,7 @@ public static partial class ProjectFunctions {
 
                 return new ErrorOrVoid(
                     new TypeCheckError(
-                        $"redefinition of {name}",
+                        $"redefinition of struct/class {name}",
                         span));
             }
         }
@@ -422,7 +422,7 @@ public static partial class ProjectFunctions {
 
                 return new ErrorOrVoid(
                     new TypeCheckError(
-                        $"redefinition of {name}",
+                        $"redefinition of function {name}",
                         span));
             }
         }
@@ -472,7 +472,7 @@ public static partial class ProjectFunctions {
 
                 return new ErrorOrVoid(
                     new TypeCheckError(
-                        $"redefinition of {typeName}",
+                        $"redefinition of type {typeName}",
                         span));
             }
         }
@@ -2085,7 +2085,10 @@ public static partial class TypeCheckerFunctions {
                 error = error ?? e1;
             }
 
-            TypeCheckStructPredecl(structure, structTypeId, structId, scopeId, project);
+            if (TypeCheckStructPredecl(structure, structTypeId, structId, scopeId, project) is Error err) {
+
+                error = error ?? err;
+            }
         }
 
         foreach (var fun in parsedFile.Functions) {
@@ -2130,6 +2133,26 @@ public static partial class TypeCheckerFunctions {
         Error? error = null;
 
         var structScopeId = project.CreateScope(parentScopeId);
+
+        var _genericParameters = new List<Int32>();
+
+        foreach (var (genParam, paramSpan) in structure.GenericParameters) {
+
+            project.Types.Add(new TypeVariable(genParam));
+
+            var paramTypeId = project.Types.Count - 1;
+
+            _genericParameters.Add(paramTypeId);
+
+            if (project.AddTypeToScope(
+                structScopeId, 
+                genParam, 
+                paramTypeId, 
+                paramSpan).Error is Error err) {
+
+                error = error ?? err;
+            }
+        }
 
         foreach (var func in structure.Methods) {
 
@@ -2203,7 +2226,7 @@ public static partial class TypeCheckerFunctions {
         project.Structs.Add(
             new CheckedStruct(
                 name: structure.Name,
-                genericParameters: new List<Int32>(),
+                _genericParameters,
                 fields: new List<CheckedVarDecl>(),
                 scopeId: structScopeId,
                 definitionLinkage: structure.DefinitionLinkage,
@@ -2227,24 +2250,6 @@ public static partial class TypeCheckerFunctions {
 
         var fields = new List<CheckedVarDecl>();
 
-        foreach (var (genParam, paramSpan) in structure.GenericParameters) {
-
-            project.Types.Add(new TypeVariable(genParam));
-
-            var paramTypeId = project.Types.Count - 1;
-
-            var _checkedStruct = project.Structs[structId];
-
-            var _checkedStructScopeId = _checkedStruct.ScopeId;
-
-            _checkedStruct.GenericParameters.Add(paramTypeId);
-
-            if (project.AddTypeToScope(_checkedStructScopeId, genParam, paramTypeId, paramSpan).Error is Error genErr) {
-
-                error = error ?? genErr;
-            }
-        }
-
         var chkStruct = project.Structs[structId];
 
         var chkStructScopeId = chkStruct.ScopeId;
@@ -2265,52 +2270,54 @@ public static partial class TypeCheckerFunctions {
                     span: uncheckedMember.Span));
         }
 
-        var constructorParams = new List<CheckedParameter>();
+        if (project.FindFuncInScope(chkStructScopeId, structure.Name) == null) {
 
-        foreach (var field in fields) {
+            // No constructor found, so let's make one
 
-            constructorParams.Add(
-                new CheckedParameter(
-                    requiresLabel: true,
-                    variable: 
-                        new CheckedVariable(
+            var constructorParams = new List<CheckedParameter>();
+
+            foreach (var field in fields) {
+
+                constructorParams.Add(
+                    new CheckedParameter(
+                        requiresLabel: true,
+                        variable: new CheckedVariable(
                             name: field.Name,
                             type: field.Type,
                             mutable: field.Mutable)));
+            }
+
+            var funcScopeId = project.CreateScope(parentScopeId);
+
+            var checkedConstructor = new CheckedFunction(
+                name: structure.Name,
+                returnType: structTypeId,
+                parameters: constructorParams,
+                genericParameters: new List<Int32>(),
+                funcScopeId,
+                block: new CheckedBlock(),
+                linkage: FunctionLinkage.ImplicitConstructor);
+
+            // Internal constructor
+
+            project.Functions.Add(checkedConstructor);
+
+            // Add constructor to the struct's scope
+
+            if (project.AddFuncToScope(
+                chkStructScopeId,
+                structure.Name,
+                project.Functions.Count - 1,
+                structure.Span).Error is Error constructorErr) {
+
+                error = error ?? constructorErr;
+            }
         }
 
-        var funcScopeId = project.CreateScope(parentScopeId);
-
-        var checkedStruct = project.Structs.ElementAt(structId);
+        var checkedStruct = project.Structs[structId];
 
         checkedStruct.Fields = fields;
 
-        var checkedConstructor = new CheckedFunction(
-            name: structure.Name,
-            returnType: structTypeId,
-            parameters: constructorParams,
-            genericParameters: new List<Int32>(),
-            funcScopeId,
-            block: new CheckedBlock(),
-            linkage: FunctionLinkage.ImplicitConstructor);
-
-        // Internal constructor
-
-        project.Functions.Add(checkedConstructor);
-
-        var checkedStructScopeId = checkedStruct.ScopeId;
-
-        // Add constructor to the struct's scope
-
-        if (project.AddFuncToScope(
-            checkedStructScopeId, 
-            structure.Name, 
-            project.Functions.Count - 1, 
-            structure.Span).Error is Error e1) {
-
-            error = error ?? e1;
-        }
-        
         foreach (var func in structure.Methods) {
 
             var typeChkErr = TypeCheckMethod(func, project, structId);
@@ -4455,8 +4462,8 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ?? 
                             new TypeCheckError(
-                                "Parameter type mismatch",
-                                span);
+                                $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(genericInferences[lhsTypeId], project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                span);   
                     }
                 }
                 else {
@@ -4522,7 +4529,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    "Parameter type mismatch",
+                                    $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                     span);
                         }
 
@@ -4590,7 +4597,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    "Parameter type mismatch",
+                                    $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                     span);
                         }
 
@@ -4607,7 +4614,7 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? 
                         new TypeCheckError(
-                            "Parameter type mismatch",
+                            $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                             span);
                 }
 
