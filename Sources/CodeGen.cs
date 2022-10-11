@@ -1837,6 +1837,40 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
+            case CheckedDictionaryExpression de: {
+
+                // (Dictionary({1, 2, 3}))
+
+                var keyTypeId = de.Entries[0].Item1.GetNeuType();
+                var valueTypeId = de.Entries[0].Item2.GetNeuType();
+
+                output.Append($"(Dictionary<{compiler.CodeGenType(keyTypeId, project)}, {compiler.CodeGenType(valueTypeId, project)}>({{");
+
+                var first = true;
+
+                foreach (var (key, value) in de.Entries) {
+
+                    if (!first) {
+
+                        output.Append(", ");
+                    }
+                    else {
+
+                        first = false;
+                    }
+
+                    output.Append('{');
+                    output.Append(compiler.CodeGenExpr(indent, key, project));
+                    output.Append(", ");
+                    output.Append(compiler.CodeGenExpr(indent, value, project));
+                    output.Append('}');
+                }
+
+                output.Append("}))");
+
+                break;
+            }
+
             case CheckedTupleExpression te: {
 
                 // (Tuple{1, 2, 3})
@@ -1874,6 +1908,17 @@ public static partial class CodeGenFunctions {
                 output.Append(compiler.CodeGenExpr(indent, ie.Index, project));
             
                 output.Append("])");
+
+                break;
+            }
+
+            case CheckedIndexedDictionaryExpression ide: {
+
+                output.Append("((");
+                output.Append(compiler.CodeGenExpr(indent, ide.Expression, project));
+                output.Append(").get(");
+                output.Append(compiler.CodeGenExpr(indent, ide.Index, project));
+                output.Append("))");
 
                 break;
             }

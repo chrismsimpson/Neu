@@ -1202,6 +1202,23 @@ public partial class Expression {
         }
     }
 
+    public partial class DictionaryExpression: Expression {
+
+        public List<(Expression, Expression)> Entries { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public DictionaryExpression(
+            List<(Expression, Expression)> entries,
+            Span span) {
+
+            this.Entries = entries;
+            this.Span = span;
+        }
+    }
+
     public partial class IndexedExpression: Expression {
 
         public Expression Expression { get; init; }
@@ -1523,6 +1540,11 @@ public static partial class ExpressionFunctions {
             case ArrayExpression ve: {
 
                 return ve.Span;
+            }
+
+            case DictionaryExpression de: {
+
+                return de.Span;
             }
 
             case TupleExpression te: {
@@ -3981,7 +4003,7 @@ public static partial class ParserFunctions {
 
             case LSquareToken _: {
 
-                var (_expr, exprErr) = ParseVector(tokens, ref index);
+                var (_expr, exprErr) = ParseArray(tokens, ref index);
 
                 error = error ?? exprErr;
 
@@ -5254,13 +5276,16 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Expression, Error?) ParseVector(
+    public static (Expression, Error?) ParseArray(
         List<Token> tokens,
         ref int index) {
 
         Error? error = null;
 
         var output = new List<Expression>();
+        var dictOutput = new List<(Expression, Expression)>();
+
+        var isDictionary = false;
 
         var start = index;
 
@@ -5373,7 +5398,50 @@ public static partial class ParserFunctions {
 
                     error = error ?? err;
 
-                    output.Add(expr);
+                    if (index < tokens.Count) {
+
+                        if (tokens[index] is ColonToken) {
+
+                            if (output.Any()) {
+
+                                error = error ??
+                                    new ParserError(
+                                        "mixing dictionary and array values",
+                                        tokens[index].Span);
+                            }
+
+                            isDictionary = true;
+
+                            index += 1;
+
+                            if (index < tokens.Count) {
+
+                                var (dictValue, dictValueErr) = ParseExpression(
+                                    tokens, 
+                                    ref index, 
+                                    ExpressionKind.ExpressionWithoutAssignment);
+
+                                error = error ?? dictValueErr;
+
+                                dictOutput.Add((expr, dictValue));
+                            }
+                            else {
+
+                                error = error ??
+                                    new ParserError(
+                                        "key missing value in dictionary",
+                                        tokens[index - 1].Span);
+                            }
+                        }
+                        else if (!isDictionary) {
+
+                            output.Add(expr);
+                        }
+                    }
+                    else if (!isDictionary) {
+
+                        output.Add(expr);
+                    }
 
                     break;
                 }
@@ -5386,15 +5454,29 @@ public static partial class ParserFunctions {
 
         ///
 
-        return (
-            new ArrayExpression(
-                expressions: output,
-                fillSizeExpr,
-                new Span(
-                    fileId: tokens.ElementAt(start).Span.FileId,
-                    start: tokens.ElementAt(start).Span.Start,
-                    end: tokens.ElementAt(end).Span.End)),
-            error);
+        if (isDictionary) {
+
+            return (
+                new DictionaryExpression(
+                    dictOutput,
+                    new Span(
+                        fileId: tokens.ElementAt(start).Span.FileId,
+                        start: tokens.ElementAt(start).Span.Start,
+                        end: tokens.ElementAt(end).Span.End)),
+                error);
+        }
+        else {
+
+            return (
+                new ArrayExpression(
+                    expressions: output,
+                    fillSizeExpr,
+                    new Span(
+                        fileId: tokens.ElementAt(start).Span.FileId,
+                        start: tokens.ElementAt(start).Span.Start,
+                        end: tokens.ElementAt(end).Span.End)),
+                error);
+        }
     }
 
     ///

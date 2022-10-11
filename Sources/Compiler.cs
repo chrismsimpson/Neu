@@ -208,6 +208,10 @@ extern class Optional<T> {
     func Optional<S>(anon x: S) -> Optional<S>
 }
 
+extern class Dictionary<K, V> {
+    func get(this, key: K) -> V?
+}
+
 extern class Tuple { }
 
 extern class Range { }

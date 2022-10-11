@@ -1568,6 +1568,27 @@ public partial class CheckedExpression {
         }
     }
 
+    public partial class CheckedDictionaryExpression: CheckedExpression {
+
+        public List<(CheckedExpression, CheckedExpression)> Entries { get; init; }
+
+        public Span Span { get; init; }
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedDictionaryExpression(
+            List<(CheckedExpression, CheckedExpression)> entries,
+            Span span,
+            Int32 typeId) {
+
+            this.Entries = entries;
+            this.Span = span;
+            this.TypeId = typeId;
+        }
+    }
+
     public partial class CheckedIndexedExpression: CheckedExpression {
 
         public CheckedExpression Expression { get; init; }
@@ -1581,6 +1602,32 @@ public partial class CheckedExpression {
         ///
 
         public CheckedIndexedExpression(
+            CheckedExpression expression,
+            CheckedExpression index,
+            Span span,
+            Int32 type) 
+            : base() {
+
+            this.Expression = expression;
+            this.Index = index;
+            this.Span = span;
+            this.Type = type;
+        }
+    }
+
+    public partial class CheckedIndexedDictionaryExpression: CheckedExpression {
+
+        public CheckedExpression Expression { get; init; }
+        
+        public CheckedExpression Index { get; init; }
+
+        public Span Span { get; init; }
+
+        public Int32 Type { get; init; }
+
+        ///
+
+        public CheckedIndexedDictionaryExpression(
             CheckedExpression expression,
             CheckedExpression index,
             Span span,
@@ -1643,7 +1690,6 @@ public partial class CheckedExpression {
             this.Type = type;
         }
     }
-
 
     public partial class CheckedCallExpression: CheckedExpression {
 
@@ -1832,6 +1878,11 @@ public static partial class CheckedExpressionFunctions {
                 return vecExpr.Type;
             }
 
+            case CheckedDictionaryExpression de: {
+
+                return de.TypeId;
+            }
+
             case CheckedTupleExpression tupleExpr: {
 
                 return tupleExpr.Type;
@@ -1840,6 +1891,11 @@ public static partial class CheckedExpressionFunctions {
             case CheckedRangeExpression rangeExpr: {
 
                 return rangeExpr.TypeId;
+            }
+
+            case CheckedIndexedDictionaryExpression ide: {
+
+                return ide.Type;
             }
 
             case CheckedIndexedExpression ie: {
@@ -3044,17 +3100,19 @@ public static partial class TypeCheckerFunctions {
 
                 var type = project.Types[ckdExpr.GetNeuType()];
 
-                var typeId = Compiler.UnknownTypeId;
-
                 var optionalStructId = project
                     .FindStructInScope(0, "Optional") 
                     ?? throw new Exception("internal error: can't find builtin Optional type");
+
+                var typeId = Compiler.UnknownTypeId;
 
                 switch (type) {
 
                     case GenericInstance gi when gi.StructId == optionalStructId: {
 
                         typeId = gi.TypeIds[0];
+
+                        error = null;
 
                         break;
                     }
@@ -3180,11 +3238,11 @@ public static partial class TypeCheckerFunctions {
                     output.Add(checkedExpr);
                 }
 
-                var vectorStructId = project
+                var arrayStructId = project
                     .FindStructInScope(0, "Array")
                     ?? throw new Exception("internal error: Array builtin definition not found");
 
-                var typeId = project.FindOrAddTypeId(new GenericInstance(vectorStructId, new List<Int32>(new [] { innerType })));
+                var typeId = project.FindOrAddTypeId(new GenericInstance(arrayStructId, new List<Int32>(new [] { innerType })));
 
                 return (
                     new CheckedArrayExpression(
@@ -3192,6 +3250,60 @@ public static partial class TypeCheckerFunctions {
                         checkedFillSizeExpr,
                         ve.Span,
                         typeId),
+                    error);
+            }
+
+            case DictionaryExpression de: {
+
+                var innerTy = (Compiler.UnknownTypeId, Compiler.UnknownTypeId);
+
+                var output = new List<(CheckedExpression, CheckedExpression)>();
+
+                foreach (var (key, value) in de.Entries) {
+
+                    var (checkedKey, keyErr) = TypeCheckExpression(key, scopeId, project, safetyMode);
+
+                    error = error ?? keyErr;
+
+                    var (checkedValue, valueErr) = TypeCheckExpression(value, scopeId, project, safetyMode);
+
+                    error = error ?? valueErr;
+
+                    if (innerTy.Item1 == Compiler.UnknownTypeId
+                        && innerTy.Item2 == Compiler.UnknownTypeId) {
+
+                        innerTy = (checkedKey.GetNeuType(), checkedValue.GetNeuType());
+                    }
+                    else {
+
+                        if (innerTy.Item1 != checkedKey.GetNeuType()) {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "does not match type of previous values in dictionary",
+                                    key.GetSpan());
+                        }
+
+                        if (innerTy.Item2 != checkedValue.GetNeuType()) {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "does not match type of previous values in dictionary",
+                                    value.GetSpan());
+                        }
+                    }
+
+                    output.Add((checkedKey, checkedValue));
+                }
+
+                var dictStructId = project
+                    .FindStructInScope(0, "Dictionary")
+                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(new GenericInstance(dictStructId, new List<Int32>(new [] { innerTy.Item1, innerTy.Item2 })));
+
+                return (
+                    new CheckedDictionaryExpression(output, de.Span, typeId),
                     error);
             }
 
@@ -3238,15 +3350,19 @@ public static partial class TypeCheckerFunctions {
 
                 var exprType = Compiler.UnknownTypeId;
 
-                var vectorStructId = project
+                var arrayStructId = project
                     .FindStructInScope(0, "Array")
                     ?? throw new Exception("internal error: Array builtin definition not found");
+
+                var dictStructId = project
+                    .FindStructInScope(0, "Dictionary")
+                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
 
                 var ty = project.Types[checkedExpr.GetNeuType()];
 
                 switch (ty) {
 
-                    case GenericInstance gi when gi.StructId == vectorStructId: {
+                    case GenericInstance ga when ga.StructId == arrayStructId: {
 
                         var _chkIdx = checkedIdx.GetNeuType();
 
@@ -3254,7 +3370,7 @@ public static partial class TypeCheckerFunctions {
 
                             case var _ when NeuTypeFunctions.IsInteger(_chkIdx): {
 
-                                exprType = gi.TypeIds[0];
+                                exprType = ga.TypeIds[0];
 
                                 break;
                             }
@@ -3270,7 +3386,35 @@ public static partial class TypeCheckerFunctions {
                             }
                         }
 
-                        break;
+                        return (
+                            new CheckedIndexedExpression(
+                                checkedExpr,
+                                checkedIdx,
+                                ie.Span,
+                                exprType),
+                            error);
+                    }
+
+                    case GenericInstance gd when gd.StructId == dictStructId: {
+
+                        var valueTy = gd.TypeIds[1];
+
+                        var optionalStructId = project
+                            .FindStructInScope(0, "Optional")
+                            ?? throw new Exception("internal error: Optional builtin definition not found");
+
+                        var innerTy = project.FindOrAddTypeId(
+                            new GenericInstance(
+                                optionalStructId, 
+                                new List<Int32>(new [] { valueTy })));
+
+                        return (
+                            new CheckedIndexedDictionaryExpression(
+                                checkedExpr, 
+                                checkedIdx, 
+                                ie.Span, 
+                                innerTy),
+                            error);
                     }
 
                     default: {
@@ -3280,17 +3424,15 @@ public static partial class TypeCheckerFunctions {
                                 "index used on value that can't be indexed",
                                 ie.Expression.GetSpan());
 
-                        break;
+                        return (
+                            new CheckedIndexedExpression(
+                                checkedExpr,
+                                checkedIdx,
+                                ie.Span,
+                                exprType),
+                            error);
                     }
                 }
-
-                return (
-                    new CheckedIndexedExpression(
-                        checkedExpr,
-                        checkedIdx,
-                        ie.Span,
-                        exprType),
-                    error);
             }
 
             case IndexedTupleExpression ite: {
@@ -4157,7 +4299,7 @@ public static partial class TypeCheckerFunctions {
                                     call.Args[idx].Item2.GetSpan());
                         }
                     }
-                    else if (callee.Parameters[idx + 1].RequiresLabel
+                    else if (callee.Parameters[idx].RequiresLabel
                         && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
 
                         error = error ??
