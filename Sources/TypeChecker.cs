@@ -772,6 +772,19 @@ public partial class CheckedStatement {
         }
     }
 
+    public partial class CheckedLoopStatement: CheckedStatement {
+
+        public CheckedBlock Block { get; init; }
+
+        ///
+
+        public CheckedLoopStatement(
+            CheckedBlock block) {
+
+            this.Block = block;
+        }
+    }
+
     public partial class CheckedWhileStatement: CheckedStatement {
 
         public CheckedExpression Expression { get; init; }
@@ -2640,6 +2653,17 @@ public static partial class TypeCheckerFunctions {
 
                 return (
                     new CheckedIfStatement(checkedCond, checkedBlock, elseOutput), 
+                    error);
+            }
+
+            case LoopStatement ls: {
+
+                var (checkedBlock, blockErr) = TypeCheckBlock(ls.Block, scopeId, project, safetyMode);
+
+                error = error ?? blockErr;
+
+                return (
+                    new CheckedLoopStatement(checkedBlock),
                     error);
             }
 

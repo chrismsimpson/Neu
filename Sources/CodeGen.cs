@@ -829,6 +829,16 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
+            case CheckedLoopStatement loopStmt: {
+
+                output.Append("for (;;) {");
+                var block = compiler.CodeGenBlock(indent, loopStmt.Block, project);
+                output.Append(block);
+                output.Append("}");
+                
+                break;
+            }
+
             case CheckedWhileStatement whileStmt: {
 
                 var exprStr = compiler.CodeGenExpr(indent, whileStmt.Expression, project);

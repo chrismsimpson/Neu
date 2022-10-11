@@ -554,6 +554,12 @@ public static partial class StatementFunctions {
 
             ///
 
+            case var _ when 
+                l is LoopStatement ll
+                && r is LoopStatement rl:
+                
+                return LoopStatementFunctions.Eq(ll, rl);
+
             case var _ when
                 l is WhileStatement whileL
                 && r is WhileStatement whileR:
@@ -807,6 +813,29 @@ public static partial class BlockStatementFunctions {
     public static bool Eq(
         BlockStatement? l,
         BlockStatement? r) {
+
+        return BlockFunctions.Eq(l?.Block, r?.Block);
+    }
+}
+
+///
+
+public partial class LoopStatement: Statement {
+
+    public Block Block { get; init; }
+
+    public LoopStatement(
+        Block block) {
+
+        this.Block = block;
+    }
+}
+
+public static partial class LoopStatementFunctions {
+
+    public static bool Eq(
+        LoopStatement? l,
+        LoopStatement? r) {
 
         return BlockFunctions.Eq(l?.Block, r?.Block);
     }
@@ -3062,6 +3091,21 @@ public static partial class ParserFunctions {
             case NameToken nt when nt.Value == "if": {
 
                 return ParseIfStatement(tokens, ref index);
+            }
+
+            case NameToken nt when nt.Value == "loop": {
+
+                Trace("parsing loop");
+
+                index += 1;
+
+                var (block, blockErr) = ParseBlock(tokens, ref index);
+
+                error = error ?? blockErr;
+                
+                return (
+                    new LoopStatement(block),
+                    error);
             }
 
             case NameToken nt when nt.Value == "while": {
