@@ -1,0 +1,12 @@
+func main() {
+    let text = "midway upon the journey of our life I found myself within a forest dark for the straightforward pathway had been lost"
+    let words = text.split(' ')
+
+    var counts = Dictionary<String, Int64>();
+
+    for i in 0..words.size() {
+        counts.set(key: words[i], value: counts[words[i]].valueOr(0) + 1)
+    }
+
+    printLine("the: {}", counts["the"]!)
+}

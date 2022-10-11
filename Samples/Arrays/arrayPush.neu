@@ -1,0 +1,11 @@
+func main() {
+    var values = [0; 0]
+
+    for i in 0..10 {
+        values.push(i)
+    }
+
+    while not values.isEmpty() {
+        printLine("{}", values.pop()!)
+    }
+}
