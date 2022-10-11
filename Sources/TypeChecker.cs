@@ -1949,6 +1949,80 @@ public static partial class CheckedExpressionFunctions {
         }
     }
 
+    public static Span GetSpan(
+        this CheckedExpression expr) {
+
+        switch (expr) {
+
+            case CheckedBooleanExpression b:
+                return b.Span;
+            
+            case CheckedCallExpression c:
+                return c.Span;
+            
+            case CheckedNumericConstantExpression n:
+                return n.Span;
+
+            case CheckedQuotedStringExpression q:
+                return q.Span;
+
+            case CheckedCharacterConstantExpression c:
+                return c.Span;
+
+            case CheckedUnaryOpExpression u:
+                return u.Span;
+            
+            case CheckedBinaryOpExpression b:
+                return b.Span;
+
+            case CheckedDictionaryExpression d:
+                return d.Span;
+
+            case CheckedArrayExpression a:
+                return a.Span;
+
+            case CheckedTupleExpression t:
+                return t.Span;
+
+            case CheckedRangeExpression r:
+                return r.Span;
+
+            case CheckedIndexedDictionaryExpression i:
+                return i.Span;
+
+            case CheckedIndexedExpression i:
+                return i.Span;
+
+            case CheckedIndexedTupleExpression i:
+                return i.Span;
+
+            case CheckedIndexedStructExpression i:
+                return i.Span;
+
+            case CheckedMethodCallExpression m:
+                return m.Span;
+
+            case CheckedVarExpression v:
+                return v.Span;
+
+            case CheckedOptionalNoneExpression n:
+                return n.Span;
+
+            case CheckedOptionalSomeExpression s:
+                return s.Span;
+
+            case CheckedForceUnwrapExpression f:
+                return f.Span;
+
+            case CheckedGarbageExpression g:
+                return g.Span;
+
+            default:
+                throw new Exception();
+        }
+
+    }
+
     public static IntegerConstant? ToIntegerConstant(
         this CheckedExpression e) {
 
@@ -4239,6 +4313,17 @@ public static partial class TypeCheckerFunctions {
 
             linkage = callee.Linkage;
 
+            if (callee.Parameters.FirstOrDefault() is CheckedParameter checkedParam) {
+
+                if (checkedParam.Variable.Mutable && !thisExpr.IsMutable()) {
+
+                    error = error ??
+                        new TypeCheckError(
+                            "call requires 'this' to be mutable",
+                            thisExpr.GetSpan());
+                }
+            }
+
             // Before we check the method, let's go ahead and make sure we know any instantiated generic types
             // This will make it easier later to know how to create the proper return type
 
@@ -4306,7 +4391,7 @@ public static partial class TypeCheckerFunctions {
                                     call.Args[idx].Item2.GetSpan());
                         }
                     }
-                    else if (callee.Parameters[idx].RequiresLabel
+                    else if (callee.Parameters[idx + 1].RequiresLabel
                         && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
 
                         error = error ??
