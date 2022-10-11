@@ -834,6 +834,16 @@ public partial class CheckedStatement {
         }
     }
 
+    public partial class CheckedBreakStatement: CheckedStatement {
+
+        public CheckedBreakStatement() { }
+    }
+
+    public partial class CheckedContinueStatement: CheckedStatement {
+
+        public CheckedContinueStatement() { }
+    }
+
     public partial class CheckedGarbageStatement: CheckedStatement {
 
         public CheckedGarbageStatement() { }
@@ -2546,6 +2556,20 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedForStatement(fs.IteratorName, checkedExpr, checkedBlock),
                     error);
+            }
+
+            case ContinueStatement cs: {
+
+                return (
+                    new CheckedContinueStatement(),
+                    null);
+            }
+
+            case BreakStatement bs: {
+
+                return (
+                    new CheckedBreakStatement(),
+                    null);
             }
 
             case ExpressionStatement es: {

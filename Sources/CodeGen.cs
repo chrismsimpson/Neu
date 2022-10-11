@@ -746,6 +746,20 @@ public static partial class CodeGenFunctions {
 
         switch (stmt) {
 
+            case CheckedContinueStatement _: {
+
+                output.Append("continue;");
+                
+                break;
+            }
+
+            case CheckedBreakStatement _: {
+
+                output.Append("break;");
+                
+                break;
+            }
+
             case CheckedForStatement f: {
                 
                 output.Append("{ auto&& _range = ");

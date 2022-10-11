@@ -578,6 +578,24 @@ public static partial class StatementFunctions {
             ///
 
             case var _ when
+                l is BreakStatement lb
+                && r is BreakStatement rb: {
+
+                return BreakStatementFunctions.Eq(lb, rb);
+            }
+
+            ///
+
+            case var _ when
+                l is ContinueStatement lc
+                && r is ContinueStatement rc: {
+
+                return ContinueStatementFunctions.Eq(lc, rc);
+            }
+
+            ///
+
+            case var _ when
                 l is ReturnStatement retL
                 && r is ReturnStatement retR:
 
@@ -935,6 +953,60 @@ public static partial class ForStatementFunctions {
             _l.IteratorName == _r.IteratorName
             && ExpressionFunctions.Eq(_l.Range, _r.Range)
             && BlockFunctions.Eq(_l.Block, _r.Block);
+    }
+}
+
+///
+
+public partial class BreakStatement: Statement {
+
+    public BreakStatement() { }
+}
+
+public static partial class BreakStatementFunctions {
+
+    public static bool Eq(
+        BreakStatement? l,
+        BreakStatement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        return true;
+    }
+}
+
+///
+
+public partial class ContinueStatement: Statement {
+
+    public ContinueStatement() { }
+}
+
+public static partial class ContinueStatementFunctions {
+
+    public static bool Eq(
+        ContinueStatement? l,
+        ContinueStatement? r) {
+
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        return true;
     }
 }
 
@@ -3091,6 +3163,28 @@ public static partial class ParserFunctions {
             case NameToken nt when nt.Value == "if": {
 
                 return ParseIfStatement(tokens, ref index);
+            }
+
+            case NameToken nt when nt.Value == "break": {
+
+                Trace("parsing break");
+
+                index += 1;
+
+                return (
+                    new BreakStatement(),
+                    null);
+            }
+
+            case NameToken nt when nt.Value == "continue": {
+
+                Trace("parsing continue");
+
+                index += 1;
+
+                return (
+                    new ContinueStatement(),
+                    null);
             }
 
             case NameToken nt when nt.Value == "loop": {
