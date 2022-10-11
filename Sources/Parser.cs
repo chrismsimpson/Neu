@@ -1202,6 +1202,23 @@ public partial class Expression {
         }
     }
 
+    public partial class DictionaryExpression: Expression {
+
+        public List<(Expression, Expression)> Entries { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public DictionaryExpression(
+            List<(Expression, Expression)> entries,
+            Span span) {
+
+            this.Entries = entries;
+            this.Span = span;
+        }
+    }
+
     public partial class IndexedExpression: Expression {
 
         public Expression Expression { get; init; }
@@ -1525,6 +1542,11 @@ public static partial class ExpressionFunctions {
                 return ve.Span;
             }
 
+            case DictionaryExpression de: {
+
+                return de.Span;
+            }
+
             case TupleExpression te: {
 
                 return te.Span;
@@ -1625,6 +1647,295 @@ public static partial class ExpressionFunctions {
 
         switch (true) {
 
+            // case var _ when
+            //     l is BooleanExpression lb
+            //     && r is BooleanExpression rb: {
+
+            //     return lb.Value == rb.Value
+            //         && SpanFunctions.Eq(lb.Span, rb.Span);
+            // }
+
+            // case var _ when 
+            //     l is NumericConstantExpression ln
+            //     && r is NumericConstantExpression rn: {
+
+            //     return NumericConstantFunctions.Eq(ln.Value, rn.Value)
+            //         && SpanFunctions.Eq(ln.Span, rn.Span);
+            // }
+
+            // case var _ when
+            //     l is QuotedStringExpression ls
+            //     && r is QuotedStringExpression rs: {
+
+            //     return Equals(ls.Value, rs.Value)
+            //         && SpanFunctions.Eq(ls.Span, rs.Span);
+            // }
+
+            // case var _ when 
+            //     l is CharacterLiteralExpression lc
+            //     && r is CharacterLiteralExpression rc: {
+
+            //     return lc.Char == rc.Char
+            //         && SpanFunctions.Eq(lc.Span, rc.Span);
+            // }
+
+            // case var _ when 
+            //     l is ArrayExpression la
+            //     && r is ArrayExpression ra: {
+                
+            //     if (la.Expressions.Count != ra.Expressions.Count) {
+
+            //         return false;
+            //     }
+
+            //     for (var i = 0; i < la.Expressions.Count; i++) {
+
+            //         if (!ExpressionFunctions.Eq(la.Expressions[i], ra.Expressions[i])) {
+
+            //             return false;
+            //         }
+            //     }
+
+            //     if (!ExpressionFunctions.Eq(la.FillSize, ra.FillSize)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(la.Span, ra.Span);
+            // }
+
+            // case var _ when
+            //     l is DictionaryExpression ld
+            //     && r is DictionaryExpression rd: {
+
+            //     if (ld.Entries.Count != rd.Entries.Count) {
+
+            //         return false;
+            //     }
+
+            //     for (var i = 0; i < ld.Entries.Count; i++) {
+
+            //         if (!ExpressionFunctions.Eq(ld.Entries[i].Item1, rd.Entries[i].Item1)) {
+
+            //             return false;
+            //         }
+
+            //         if (!ExpressionFunctions.Eq(ld.Entries[i].Item2, rd.Entries[i].Item2)) {
+
+            //             return false;
+            //         }
+            //     }
+
+            //     return SpanFunctions.Eq(ld.Span, rd.Span);
+            // }
+
+            // case var _ when 
+            //     l is UnaryOpExpression lu
+            //     && r is UnaryOpExpression ru: {
+
+            //     if (!ExpressionFunctions.Eq(lu.Expression, ru.Expression)) {
+
+            //         return false;
+            //     }
+
+            //     if (!UnaryOperatorFunctions.Eq(lu.Operator, ru.Operator)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lu.Span, ru.Span);
+            // }
+
+            // case var _ when
+            //     l is BinaryOpExpression lbo
+            //     && r is BinaryOpExpression rbo: {
+
+            //     if (!ExpressionFunctions.Eq(lbo.Lhs, rbo.Lhs)) {
+
+            //         return false;
+            //     }
+
+            //     if (lbo.Operator != rbo.Operator) {
+
+            //         return false;
+            //     }
+
+            //     if (!ExpressionFunctions.Eq(lbo.Rhs, rbo.Rhs)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lbo.Span, rbo.Span);
+            // }
+
+            // case var _ when
+            //     l is VarExpression lv
+            //     && r is VarExpression rv: {
+
+            //     if (lv.Value != rv.Value) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lv.Span, rv.Span);
+            // }
+
+            // case var _ when
+            //     l is TupleExpression lt
+            //     && r is TupleExpression rt: {
+
+            //     if (lt.Expressions.Count != rt.Expressions.Count) {
+
+            //         return false;
+            //     }
+
+            //     for (var i = 0; i < lt.Expressions.Count; i++) {
+
+            //         if (!ExpressionFunctions.Eq(lt.Expressions[i], rt.Expressions[i])) {
+
+            //             return false;
+            //         }
+            //     }
+
+            //     return SpanFunctions.Eq(lt.Span, rt.Span);
+            // }
+
+            // case var _ when
+            //     l is RangeExpression lr
+            //     && r is RangeExpression rr: {
+
+            //     if (!ExpressionFunctions.Eq(lr.Start, rr.Start)) {
+
+            //         return false;
+            //     }
+
+            //     if (!ExpressionFunctions.Eq(lr.End, rr.End)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lr.Span, rr.Span);
+            // }
+
+            // case var _ when
+            //     l is IndexedTupleExpression lt
+            //     && r is IndexedTupleExpression rt: {
+
+            //     if (!ExpressionFunctions.Eq(lt.Expression, rt.Expression)) {
+
+            //         return false;
+            //     }
+
+            //     if (lt.Index != rt.Index) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lt.Span, rt.Span);
+            // }
+
+            // case var _ when
+            //     l is IndexedStructExpression ls
+            //     && r is IndexedStructExpression rs: {
+
+            //     if (!ExpressionFunctions.Eq(ls.Expression, rs.Expression)) {
+
+            //         return false;
+            //     }
+
+            //     if (!Equals(ls.Name, rs.Name)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(ls.Span, rs.Span);
+            // }
+
+            // case var _ when
+            //     l is CallExpression lc
+            //     && r is CallExpression rc: {
+
+            //     if (!CallFunctions.Eq(lc.Call, rc.Call)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lc.Span, rc.Span);
+            // }
+
+            // case var _ when
+            //     l is MethodCallExpression lm
+            //     && r is MethodCallExpression rm: {
+
+            //     if (!ExpressionFunctions.Eq(lm.Expression, rm.Expression)) {
+
+            //         return false;
+            //     }
+
+            //     if (!CallFunctions.Eq(lm.Call, rm.Call)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lm.Span, rm.Span);
+            // }
+
+            // case var _ when
+            //     l is ForcedUnwrapExpression lf
+            //     && r is ForcedUnwrapExpression rf: {
+
+            //     if (!ExpressionFunctions.Eq(lf.Expression, rf.Expression)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lf.Span, rf.Span);
+            // }
+
+            // case var _ when
+            //     l is OptionalNoneExpression ln
+            //     && r is OptionalNoneExpression rn: {
+
+            //     return SpanFunctions.Eq(ln.Span, rn.Span);
+            // }
+
+            // case var _ when
+            //     l is OptionalSomeExpression ls
+            //     && r is OptionalSomeExpression rs: {
+
+            //     if (!ExpressionFunctions.Eq(ls.Expression, rs.Expression)) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(ls.Span, rs.Span);
+            // }
+
+            // case var _ when
+            //     l is OperatorExpression lo
+            //     && r is OperatorExpression ro: {
+
+            //     if (lo.Operator != ro.Operator) {
+
+            //         return false;
+            //     }
+
+            //     return SpanFunctions.Eq(lo.Span, ro.Span);
+            // }
+
+            // case var _ when
+            //     l is GarbageExpression lg
+            //     && r is GarbageExpression rg: {
+
+            //     return SpanFunctions.Eq(lg.Span, rg.Span);
+            // }
+
+            // default: {
+
+            //     return false;
+            // }
+
+
             case var _ when
                 l is BooleanExpression boolL
                 && r is BooleanExpression boolR:
@@ -1657,14 +1968,6 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case var _ when 
-                l is CharacterLiteralExpression lc
-                && r is CharacterLiteralExpression rc:
-
-                return Equals(lc.Char, rc.Char);
-            
-            ///
-
             case var _ when
                 l is BinaryOpExpression lbo
                 && r is BinaryOpExpression rbo: 
@@ -1673,6 +1976,14 @@ public static partial class ExpressionFunctions {
                     && lbo.Operator == rbo.Operator
                     && ExpressionFunctions.Eq(lbo.Rhs, rbo.Rhs);
 
+            ///
+
+            // case var _ when 
+            //     l is CharacterLiteralExpression lc
+            //     && r is CharacterLiteralExpression rc:
+
+            //     return Equals(lc.Char, rc.Char);
+            
             ///
 
             case var _ when
@@ -3981,7 +4292,7 @@ public static partial class ParserFunctions {
 
             case LSquareToken _: {
 
-                var (_expr, exprErr) = ParseVector(tokens, ref index);
+                var (_expr, exprErr) = ParseArray(tokens, ref index);
 
                 error = error ?? exprErr;
 
@@ -5254,13 +5565,17 @@ public static partial class ParserFunctions {
 
     ///
 
-    public static (Expression, Error?) ParseVector(
+    public static (Expression, Error?) ParseArray(
         List<Token> tokens,
         ref int index) {
 
         Error? error = null;
 
         var output = new List<Expression>();
+
+        var dictionaryOutput = new List<(Expression, Expression)>();
+
+        var isDictionary = false;
 
         var start = index;
 
@@ -5373,7 +5688,52 @@ public static partial class ParserFunctions {
 
                     error = error ?? err;
 
-                    output.Add(expr);
+                    // output.Add(expr);
+
+                    if (index < tokens.Count) {
+
+                        if (tokens[index] is ColonToken) {
+
+                            if (output.Any()) {
+
+                                error = error ??
+                                    new ParserError(
+                                        "mixing dictionary and array values",
+                                        tokens[index].Span);
+                            }
+
+                            isDictionary = true;
+
+                            index += 1;
+
+                            if (index < tokens.Count) {
+
+                                var (value, parseValErr) = ParseExpression(
+                                    tokens, 
+                                    ref index, 
+                                    ExpressionKind.ExpressionWithoutAssignment);
+
+                                error = err ?? parseValErr;
+
+                                dictionaryOutput.Add((expr, value));
+                            }
+                            else {
+
+                                error = error ??
+                                    new ParserError(
+                                        "key missing value in dictionary",
+                                        tokens[index - 1].Span);
+                            }
+                        }
+                        else if (!isDictionary) {
+
+                            output.Append(expr);
+                        }
+                    }
+                    else if (isDictionary) {
+
+                        output.Append(expr);
+                    }
 
                     break;
                 }
@@ -5386,15 +5746,29 @@ public static partial class ParserFunctions {
 
         ///
 
-        return (
-            new ArrayExpression(
-                expressions: output,
-                fillSizeExpr,
-                new Span(
-                    fileId: tokens.ElementAt(start).Span.FileId,
-                    start: tokens.ElementAt(start).Span.Start,
-                    end: tokens.ElementAt(end).Span.End)),
-            error);
+        if (isDictionary) {
+
+            return (
+                new DictionaryExpression(
+                    dictionaryOutput,
+                    new Span(
+                        fileId: tokens.ElementAt(start).Span.FileId,
+                        start: tokens.ElementAt(start).Span.Start,
+                        end: tokens.ElementAt(end).Span.End)),
+                error);
+        }
+        else {
+
+            return (
+                new ArrayExpression(
+                    expressions: output,
+                    fillSizeExpr,
+                    new Span(
+                        fileId: tokens.ElementAt(start).Span.FileId,
+                        start: tokens.ElementAt(start).Span.Start,
+                        end: tokens.ElementAt(end).Span.End)),
+                error);
+        }
     }
 
     ///
