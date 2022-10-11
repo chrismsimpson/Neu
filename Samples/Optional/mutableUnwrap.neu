@@ -1,0 +1,20 @@
+class Foo {
+    x: Int64
+
+    func set(var this, value: Int64) {
+        this.x = value
+    }
+
+    func get(this) {
+        return this.x
+    }
+}
+
+func main() {
+    var foo = Foo(x: 1)
+    var optFoo: Foo? = foo
+
+    optFoo!.set(value: 2)
+
+    printLine(optFoo!.get())
+}

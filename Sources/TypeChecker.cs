@@ -2045,6 +2045,12 @@ public static partial class CheckedExpressionFunctions {
 
             case CheckedIndexedExpression ie: return ie.Expression.IsMutable();
 
+            case CheckedIndexedTupleExpression te: return te.Expression.IsMutable();
+            
+            case CheckedIndexedDictionaryExpression te: return te.Expression.IsMutable();
+            
+            case CheckedForceUnwrapExpression fue: return fue.Expression.IsMutable();
+
             default: return false;
         }
     }
