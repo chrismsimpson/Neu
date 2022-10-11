@@ -1,0 +1,8 @@
+func main() {
+    
+    var item = Dictionary<String, Int64>()
+
+    item.set(key: "bob", value: 123)
+
+    printLine(item.get("bob")!)
+}

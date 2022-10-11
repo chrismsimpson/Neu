@@ -217,6 +217,7 @@ extern class Dictionary<K, V> {
     func get(this, anon key: K) -> V?
     func contains(this, anon key: K) -> Bool
     func set(var this, key: K, value: V)
+    func Dictionary<A, B>() -> Dictionary<A, B>
 }
 
 extern class Tuple { }

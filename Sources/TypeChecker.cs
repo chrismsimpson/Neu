@@ -4125,7 +4125,7 @@ public static partial class TypeCheckerFunctions {
 
         var linkage = FunctionLinkage.Internal;
 
-        var genericInferences = new Dictionary<Int32, Int32>();
+        var genericSubstitutions = new Dictionary<Int32, Int32>();
 
         var typeArgs = new List<Int32>();
 
@@ -4173,6 +4173,23 @@ public static partial class TypeCheckerFunctions {
                 calleDefType = _calleDefType;
 
                 if (callee != null) {
+
+                    // If the user gave us explicit type arguments, let's use them in our substitutions
+
+                    for (var idx = 0; idx < call.TypeArgs.Count; idx++) {
+
+                        var typeArg = call.TypeArgs[idx];
+
+                        var (checkedTypeArg, argErr) = TypeCheckTypeName(typeArg, scopeId, project);
+
+                        error = error ?? argErr;
+
+                        // Find the associated type variable for this parameter, we'll use it in substitution
+
+                        var typeVarTypeId = callee.GenericParameters[idx];
+
+                        genericSubstitutions[typeVarTypeId] = checkedTypeArg;
+                    }
 
                     returnType = callee.ReturnType;
 
@@ -4238,7 +4255,7 @@ public static partial class TypeCheckerFunctions {
                             if (CheckTypesForCompat(
                                 callee.Parameters[idx].Variable.Type, 
                                 rhsTypeId,
-                                genericInferences, 
+                                genericSubstitutions, 
                                 call.Args[idx].Item2.GetSpan(), 
                                 project) is Error compatErr1) {
 
@@ -4254,13 +4271,13 @@ public static partial class TypeCheckerFunctions {
                     // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
                     // type variable. For the moment, we'll just checked to see if it's a type variable.
 
-                    returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
+                    returnType = SubstituteTypeVarsInType(returnType, genericSubstitutions, project);
 
                     foreach (var genericTypeVar in callee.GenericParameters) {
 
-                        if (genericInferences.ContainsKey(genericTypeVar)) {
+                        if (genericSubstitutions.ContainsKey(genericTypeVar)) {
 
-                            typeArgs.Add(genericInferences[genericTypeVar]);
+                            typeArgs.Add(genericSubstitutions[genericTypeVar]);
                         }
                         else {
 

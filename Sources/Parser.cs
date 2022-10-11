@@ -22,19 +22,23 @@ public partial class Call {
 
     public List<(String, Expression)> Args { get; init; }
 
+    public List<UncheckedType> TypeArgs { get; set; }
+
     ///
 
     public Call()
-        : this(new List<String>(), String.Empty, new List<(string, Expression)>()) { }
+        : this(new List<String>(), String.Empty, new List<(string, Expression)>(), new List<UncheckedType>()) { }
 
     public Call(
         List<String> ns,
         String name,
-        List<(String, Expression)> args) {
+        List<(String, Expression)> args,
+        List<UncheckedType> typeArgs) {
 
         this.Namespace = ns;
         this.Name = name;
         this.Args = args;
+        this.TypeArgs = typeArgs;
     }
 }
 
@@ -54,6 +58,11 @@ public static partial class CallFunctions {
             return false;
         }
 
+        if (l.TypeArgs.Count != r.TypeArgs.Count) {
+
+            return false;
+        }
+
         for (var i = 0; i < l.Args.Count; ++i) {
 
             var argL = l.Args[i];
@@ -66,6 +75,14 @@ public static partial class CallFunctions {
             }
 
             if (!ExpressionFunctions.Eq(argL.Item2, argR.Item2)) {
+
+                return false;
+            }
+        }
+
+        for (var t = 0; t < l.TypeArgs.Count; t++) {
+
+            if (!UncheckedTypeFunctions.Eq(l.TypeArgs[t], r.TypeArgs[t])) {
 
                 return false;
             }
@@ -3849,7 +3866,40 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        ///
+                        case LessThanToken _: {
+
+                            // We *try* to see if it's a generic, but the parse errors, we back up and try something else
+
+                            var (call, err) = ParseCall(tokens, ref index);
+
+                            if (err is not null) {
+
+                                switch (nt.Value) {
+
+                                    case "none": {
+
+                                        expr = new OptionalNoneExpression(span);
+
+                                        break;
+                                    }
+
+                                    default: {
+
+                                        expr = new VarExpression(nt.Value, span);
+
+                                        break;
+                                    }
+                                }
+                            }
+                            else {
+
+                                error = error ?? err;
+
+                                expr = new CallExpression(call, span);
+                            }
+
+                            break;
+                        }
 
                         default: {
 
@@ -5726,66 +5776,81 @@ public static partial class ParserFunctions {
                         end: tokens.ElementAt(index).Span.End));
             }
 
-            if (index + 1 < tokens.Count
-                && tokens[index + 1] is LessThanToken) {
+            if (index + 1 < tokens.Count) {
 
-                // Generic type
+                if (tokens[index + 1] is LessThanToken) {
+
+                    // Generic type
                 
-                index += 2;
+                    index += 2;
 
-                var innerTypes = new List<UncheckedType>();
+                    var innerTypes = new List<UncheckedType>();
 
-                var contInnerTypes = true;
+                    var contInnerTypes = true;
 
-                while (contInnerTypes && index < tokens.Count) {
+                    while (contInnerTypes && index < tokens.Count) {
 
-                    switch (tokens[index]) {
+                        switch (tokens[index]) {
 
-                        case GreaterThanToken _: {
+                            case GreaterThanToken _: {
 
-                            index += 1;
+                                index += 1;
 
-                            contInnerTypes = false;
+                                contInnerTypes = false;
 
-                            break;
-                        }
+                                break;
+                            }
 
-                        case CommaToken _: {
+                            case CommaToken _: {
 
-                            index += 1;
+                                index += 1;
 
-                            break;
-                        }
+                                break;
+                            }
 
-                        case EolToken _: {
+                            case EolToken _: {
 
-                            index += 1;
+                                index += 1;
 
-                            break;
-                        }
+                                break;
+                            }
 
-                        default: {
+                            default: {
 
-                            var (innerType, innerTypeNameErr) = ParseTypeName(tokens, ref index);
+                                var (innerType, innerTypeNameErr) = ParseTypeName(tokens, ref index);
 
-                            error = error ??innerTypeNameErr;
+                                error = error ??innerTypeNameErr;
 
-                            index += 1;
+                                index += 1;
 
-                            innerTypes.Add(innerType);
+                                innerTypes.Add(innerType);
 
-                            break;
+                                break;
+                            }
                         }
                     }
-                }
 
-                uncheckedType = new UncheckedGenericType(
-                    typename,
-                    innerTypes,
-                    new Span(
-                        fileId: start.FileId,
-                        start: start.Start,
-                        end: tokens[index].Span.End));
+                    if (index >= tokens.Count) {
+
+                        uncheckedType = new UncheckedGenericType(
+                            typename,
+                            innerTypes,
+                            new Span(
+                                fileId: start.FileId,
+                                start: start.Start,
+                                end: tokens[index - 1].Span.End));
+                    }
+                    else {
+
+                        uncheckedType = new UncheckedGenericType(
+                            typename,
+                            innerTypes,
+                            new Span(
+                                fileId: start.FileId,
+                                start: start.Start,
+                                end: tokens[index].Span.End));
+                    }
+                }
             }
         }
 
@@ -5834,6 +5899,69 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
+                // this is to allow the lookahead. Without it, we may see something like
+                // foo < Bar, think the start of a generic call when it actually isn't
+
+                var indexReset = index;
+
+                if (index < tokens.Count) {
+
+                    if (tokens[index] is LessThanToken) {
+
+                        // Generic type
+
+                        index += 1;
+
+                        var innerTypes = new List<UncheckedType>();
+
+                        var contInnerTypes = true;
+
+                        while (contInnerTypes && index < tokens.Count) {
+
+                            switch (tokens[index]) {
+
+                                case GreaterThanToken _: {
+
+                                    index += 1;
+
+                                    contInnerTypes = false;
+
+                                    break;
+                                }
+
+                                case CommaToken _: {
+
+                                    index += 1;
+
+                                    break;
+                                }
+
+                                case EolToken _: {
+
+                                    index += 1;
+
+                                    break;
+                                }
+
+                                default: {
+
+                                    var (innerTy, innerErr) = ParseTypeName(tokens, ref index);
+
+                                    error = error ?? innerErr;
+
+                                    index += 1;
+
+                                    innerTypes.Add(innerTy);
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        call.TypeArgs = innerTypes;
+                    }
+                }
+
                 if (index < tokens.Count) {
 
                     switch (tokens.ElementAt(index)) {
@@ -5851,6 +5979,8 @@ public static partial class ParserFunctions {
 
                             Trace("ERROR: expected '('");
 
+                            index = indexReset;
+
                             return (
                                 call,
                                 new ParserError("expected '('", t.Span));
@@ -5860,6 +5990,8 @@ public static partial class ParserFunctions {
                 else {
 
                     Trace("ERROR: incomplete function");
+
+                    index = indexReset;
 
                     return (
                         call,
