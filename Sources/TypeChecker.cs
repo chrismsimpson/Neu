@@ -175,6 +175,8 @@ public static partial class NeuTypeFunctions {
 
         switch (typeId) {
 
+            case Compiler.CCharTypeId:
+            case Compiler.CIntTypeId:
             case Compiler.Int8TypeId:
             case Compiler.Int16TypeId:
             case Compiler.Int32TypeId:
