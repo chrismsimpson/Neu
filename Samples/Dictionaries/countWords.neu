@@ -5,8 +5,9 @@ func main() {
     var counts = Dictionary<String, Int64>();
 
     for i in 0..words.size() {
-        counts.set(key: words[i], value: counts[words[i]].valueOr(0) + 1)
+        
+        counts.set(key: words[i], value: counts.get(words[i]).valueOr(0) + 1)
     }
 
-    printLine("the: {}", counts["the"]!)
+    printLine("the: {}", counts["the"])
 }

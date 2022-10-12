@@ -2566,7 +2566,7 @@ public static partial class TypeCheckerFunctions {
 
         if (funcReturnType == Compiler.UnknownTypeId) {
 
-            if (block.Stmts.FirstOrDefault() is CheckedReturnStatement ret) {
+            if (block.Stmts.LastOrDefault() is CheckedReturnStatement ret) {
 
                 returnType = ret.Expr.GetNeuType();
             }
@@ -3322,7 +3322,7 @@ public static partial class TypeCheckerFunctions {
 
             case CallExpression e: {
 
-                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, scopeId, e.Span, project, safetyMode);
+                var (checkedCall, checkedCallErr) = TypeCheckCall(e.Call, scopeId, e.Span, project, null, null, safetyMode);
 
                 var ty = checkedCall.Type;
 
@@ -3577,23 +3577,27 @@ public static partial class TypeCheckerFunctions {
 
                     case GenericInstance gd when gd.StructId == dictStructId: {
 
-                        var valueTy = gd.TypeIds[1];
+                        // var valueTy = gd.TypeIds[1];
 
-                        var optionalStructId = project
-                            .FindStructInScope(0, "Optional")
-                            ?? throw new Exception("internal error: Optional builtin definition not found");
+                        // var optionalStructId = project
+                        //     .FindStructInScope(0, "Optional")
+                        //     ?? throw new Exception("internal error: Optional builtin definition not found");
 
-                        var innerTy = project.FindOrAddTypeId(
-                            new GenericInstance(
-                                optionalStructId, 
-                                new List<Int32>(new [] { valueTy })));
+                        // var innerTy = project.FindOrAddTypeId(
+                        //     new GenericInstance(
+                        //         optionalStructId, 
+                        //         new List<Int32>(new [] { valueTy })));
+
+                        var innerTy = gd.TypeIds[1];
+
+                        exprType = innerTy;
 
                         return (
                             new CheckedIndexedDictionaryExpression(
                                 checkedExpr, 
                                 checkedIdx, 
                                 ie.Span, 
-                                innerTy),
+                                exprType),
                             error);
                     }
 
@@ -3770,7 +3774,7 @@ public static partial class TypeCheckerFunctions {
 
                         case Int32 structId: {
 
-                            var (checkedCall, err) = TypeCheckMethodCall(
+                            var (checkedCall, err) = TypeCheckCall(
                                 mce.Call,
                                 scopeId,
                                 mce.Span,
@@ -3805,7 +3809,7 @@ public static partial class TypeCheckerFunctions {
 
                         case StructType st: {
 
-                            var (checkedCall, err) = TypeCheckMethodCall(
+                            var (checkedCall, err) = TypeCheckCall(
                                 mce.Call, 
                                 scopeId, 
                                 mce.Span, 
@@ -3825,7 +3829,7 @@ public static partial class TypeCheckerFunctions {
 
                             // ignore the inner types for now, but we'll need them in the future
 
-                            var (checkedCall, err) = TypeCheckMethodCall(
+                            var (checkedCall, err) = TypeCheckCall(
                                 mce.Call,
                                 scopeId,
                                 mce.Span,
@@ -4203,9 +4207,11 @@ public static partial class TypeCheckerFunctions {
 
     public static (CheckedCall, Error?) TypeCheckCall(
         Call call, 
-        Int32 scopeId,
+        Int32 callerScopeId,
         Span span,
         Project project,
+        CheckedExpression? thisExpr,
+        Int32? structId,
         SafetyMode safetyMode) {
 
         var checkedArgs = new List<(String, CheckedExpression)>();
@@ -4224,24 +4230,43 @@ public static partial class TypeCheckerFunctions {
 
         var calleeThrows = false;
 
+        var calleeScopeId = structId switch {
+            
+            Int32 s => project.Structs[s].ScopeId,
+            _ => callerScopeId
+        };
+
+
+
+
+
+
+
+
+
+
+
+
         switch (call.Name) {
 
-            case "printLine":
-            case "warnLine": {
+            case "printLine" when structId == null:
+            case "warnLine" when structId == null: {
 
                 // FIXME: This is a hack since printLine() and warnLine() are hard-coded into codegen at the moment
 
                 foreach (var arg in call.Args) {
 
-                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, scopeId, project, safetyMode);
+                    var (checkedArg, checkedArgErr) = TypeCheckExpression(arg.Item2, callerScopeId, project, safetyMode);
 
                     error = error ?? checkedArgErr;
 
-                    if (checkedArg.GetNeuType() == Compiler.VoidTypeId) {
+                    var resultTy = SubstituteTypeVarsInType(checkedArg.GetNeuType(), genericSubstitutions, project);
+
+                    if (resultTy == Compiler.VoidTypeId) {
 
                         error = error ??
                             new TypeCheckError(
-                                "printLine/warnLine can't take void value",
+                                "printLine/warnLine can't take void values",
                                 span);
                     }
 
@@ -4260,7 +4285,7 @@ public static partial class TypeCheckerFunctions {
                 var (callee, _calleDefType, resolveErr) = ResolveCall(
                     call, 
                     span,
-                    scopeId, 
+                    calleeScopeId, 
                     project);
 
                 error = error ?? resolveErr;
@@ -4271,13 +4296,17 @@ public static partial class TypeCheckerFunctions {
 
                     calleeThrows = callee.Throws;
 
+                    returnType = callee.ReturnType;
+                    
+                    linkage = callee.Linkage;
+
                     // If the user gave us explicit type arguments, let's use them in our substitutions
 
                     for (var idx = 0; idx < call.TypeArgs.Count; idx++) {
 
                         var typeArg = call.TypeArgs[idx];
 
-                        var (checkedTypeArg, argErr) = TypeCheckTypeName(typeArg, scopeId, project);
+                        var (checkedTypeArg, argErr) = TypeCheckTypeName(typeArg, callerScopeId, project);
 
                         error = error ?? argErr;
 
@@ -4288,13 +4317,52 @@ public static partial class TypeCheckerFunctions {
                         genericSubstitutions[typeVarTypeId] = checkedTypeArg;
                     }
 
-                    returnType = callee.ReturnType;
 
-                    linkage = callee.Linkage;
+                    // If this is a method, let's also add the types we know from our 'this' pointer
+
+                    if (thisExpr is CheckedExpression _thisExpr) {
+
+                        var typeId = _thisExpr.GetNeuType();
+
+                        var paramType = project.Types[typeId];
+
+                        switch (paramType) {
+
+                            case GenericInstance gi: {
+
+                                var structure = project.Structs[gi.StructId];
+
+                                var idx = 0;
+
+                                while (idx < structure.GenericParameters.Count) {
+
+                                    genericSubstitutions[structure.GenericParameters[idx]] = gi.TypeIds[idx];
+
+                                    idx += 1;
+                                }
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+
+                    // This will be 0 for functions or 1 for instance methods, because of the
+                    // 'this' ptr
+
+                    var argOffset = thisExpr != null ? 1 : 0;
+
+
+
+
 
                     // Check that we have the right number of arguments
 
-                    if (callee.Parameters.Count != call.Args.Count) {
+                    if (callee.Parameters.Count != (call.Args.Count + argOffset)) {
 
                         error = error ?? new ParserError(
                             "wrong number of arguments", 
@@ -4306,20 +4374,24 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
-                            var (checkedArg, checkedArgErr) = TypeCheckExpression(call.Args[idx].Item2, scopeId, project, safetyMode);
+                            var (checkedArg, checkedArgErr) = TypeCheckExpression(
+                                call.Args[idx].Item2, 
+                                callerScopeId, 
+                                project, 
+                                safetyMode);
 
                             error = error ?? checkedArgErr;
 
-                            var (_callee, _, _) = ResolveCall(call, span, scopeId, project); // need to do something with defType here?
+                            var (_callee, _, _) = ResolveCall(call, span, calleeScopeId, project); // need to do something with defType here?
 
                             callee = _callee ??
                                 throw new Exception("internal error: previously resolved call is now unresolved");
 
                             if (call.Args[idx].Item2 is VarExpression ve) {
 
-                                if (ve.Value != callee.Parameters[idx].Variable.Name
-                                    && callee.Parameters[idx].RequiresLabel
-                                    && call.Args[idx].Item1 != callee.Parameters[idx].Variable.Name) {
+                                if (ve.Value != callee.Parameters[idx + argOffset].Variable.Name
+                                    && callee.Parameters[idx + argOffset].RequiresLabel
+                                    && call.Args[idx].Item1 != callee.Parameters[idx + argOffset].Variable.Name) {
 
                                     error = error ?? 
                                         new TypeCheckError(
@@ -4327,8 +4399,8 @@ public static partial class TypeCheckerFunctions {
                                             call.Args[idx].Item2.GetSpan());
                                 }
                             }
-                            else if (callee.Parameters[idx].RequiresLabel
-                                && call.Args[idx].Item1 != callee.Parameters[idx].Variable.Name) {
+                            else if (callee.Parameters[idx + argOffset].RequiresLabel
+                                && call.Args[idx].Item1 != callee.Parameters[idx + argOffset].Variable.Name) {
 
                                 error = error ?? 
                                     new TypeCheckError(
@@ -4336,11 +4408,13 @@ public static partial class TypeCheckerFunctions {
                                         call.Args[idx].Item2.GetSpan());
                             }
 
-                            var lhsTypeId = callee.Parameters[idx].Variable.Type;
+                            var lhsTypeId = callee.Parameters[idx + argOffset].Variable.Type;
 
                             var (promoted, promoteErr) = TryPromoteConstantExprToType(lhsTypeId, checkedArg, span);
 
                             error = error ?? promoteErr;
+
+                            lhsTypeId = callee.Parameters[idx + argOffset].Variable.Type;
 
                             if (promoted is not null) {
 
@@ -4350,7 +4424,7 @@ public static partial class TypeCheckerFunctions {
                             var rhsTypeId = checkedArg.GetNeuType();
 
                             if (CheckTypesForCompat(
-                                callee.Parameters[idx].Variable.Type, 
+                                lhsTypeId, 
                                 rhsTypeId,
                                 genericSubstitutions, 
                                 call.Args[idx].Item2.GetSpan(), 
@@ -4403,192 +4477,220 @@ public static partial class TypeCheckerFunctions {
             error);
     }
 
-    public static (CheckedCall, Error?) TypeCheckMethodCall(
-        Call call,
-        Int32 scopeId,
-        Span span,
-        Project project,
-        CheckedExpression thisExpr,
-        Int32 structId,
-        SafetyMode safetyMode) {
+    // public static (CheckedCall, Error?) TypeCheckMethodCall(
+    //     Call call,
+    //     Int32 scopeId,
+    //     Span span,
+    //     Project project,
+    //     CheckedExpression thisExpr,
+    //     Int32 structId,
+    //     SafetyMode safetyMode) {
 
-        var checkedArgs = new List<(String, CheckedExpression)>();
+    //     var checkedArgs = new List<(String, CheckedExpression)>();
 
-        Error? error = null;
+    //     Error? error = null;
 
-        var returnType = Compiler.UnknownTypeId;
+    //     var returnType = Compiler.UnknownTypeId;
 
-        var linkage = FunctionLinkage.Internal;
+    //     var linkage = FunctionLinkage.Internal;
 
-        var typeArgs = new List<Int32>();
+    //     var typeArgs = new List<Int32>();
 
-        var calleeThrows = false;
+    //     var calleeThrows = false;
 
-        var genericInferences = new Dictionary<Int32, Int32>();
+    //     var genericInferences = new Dictionary<Int32, Int32>();
 
-        var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, project.Structs[structId].ScopeId, project);
+    //     var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, project.Structs[structId].ScopeId, project);
 
-        error = error ?? resolveCallErr;
+    //     error = error ?? resolveCallErr;
 
-        if (_callee is CheckedFunction callee) {
+    //     if (_callee is CheckedFunction callee) {
 
-            returnType = callee.ReturnType;
+    //         returnType = callee.ReturnType;
 
-            linkage = callee.Linkage;
+    //         linkage = callee.Linkage;
 
-            calleeThrows = callee.Throws;
+    //         calleeThrows = callee.Throws;
 
-            if (callee.Parameters.FirstOrDefault() is CheckedParameter checkedParam) {
+    //         if (callee.Parameters.FirstOrDefault() is CheckedParameter checkedParam) {
 
-                if (checkedParam.Variable.Mutable && !thisExpr.IsMutable()) {
+    //             if (checkedParam.Variable.Mutable && !thisExpr.IsMutable()) {
 
-                    error = error ??
-                        new TypeCheckError(
-                            "call requires 'this' to be mutable",
-                            thisExpr.GetSpan());
-                }
-            }
+    //                 error = error ??
+    //                     new TypeCheckError(
+    //                         "call requires 'this' to be mutable",
+    //                         thisExpr.GetSpan());
+    //             }
+    //         }
 
-            // Before we check the method, let's go ahead and make sure we know any instantiated generic types
-            // This will make it easier later to know how to create the proper return type
+    //         // Before we check the method, let's go ahead and make sure we know any instantiated generic types
+    //         // This will make it easier later to know how to create the proper return type
 
-            var typeId = thisExpr.GetNeuType();
+    //         var typeId = thisExpr.GetNeuType();
 
-            var paramType = project.Types[typeId];
+    //         var paramType = project.Types[typeId];
 
-            switch (paramType) {
+    //         switch (paramType) {
 
-                case GenericInstance gi: {
+    //             case GenericInstance gi: {
 
-                    var structure = project.Structs[gi.StructId];
+    //                 var structure = project.Structs[gi.StructId];
 
-                    var idx = 0;
+    //                 var idx = 0;
 
-                    while (idx < structure.GenericParameters.Count) {
+    //                 while (idx < structure.GenericParameters.Count) {
 
-                        genericInferences[structure.GenericParameters[idx]] = gi.TypeIds[idx];
+    //                     genericInferences[structure.GenericParameters[idx]] = gi.TypeIds[idx];
 
-                        idx += 1;
-                    }
+    //                     idx += 1;
+    //                 }
 
-                    break;
-                }
+    //                 break;
+    //             }
 
-                default: {
+    //             default: {
                     
-                    break;
-                }
-            }
+    //                 break;
+    //             }
+    //         }
 
-            // Check that we have the right number of arguments
+    //         // Check that we have the right number of arguments
 
-            if (callee.Parameters.Count != (call.Args.Count + 1)) {
+    //         if (callee.Parameters.Count != (call.Args.Count + 1)) {
                 
-                error = error ??
-                    new TypeCheckError(
-                        "wrong number of arguments",
-                        span);
+    //             error = error ??
+    //                 new TypeCheckError(
+    //                     "wrong number of arguments",
+    //                     span);
+    //         }
+    //         else {
+
+    //             var idx = 0;
+
+    //             while (idx < call.Args.Count) {
+
+    //                 var (checkedArg, chkExprErr) = TypeCheckExpression(call.Args[idx].Item2, scopeId, project, safetyMode);
+
+    //                 error = error ?? chkExprErr;
+
+    //                 var (_callee2, _, _) = ResolveCall(call, span, project.Structs[structId].ScopeId, project); // do something with defType here?
+
+    //                 callee = _callee2
+    //                     ?? throw new Exception("internal error: previously resolved call is now unresolved");
+
+    //                 if (call.Args[idx].Item2 is VarExpression ve) {
+
+    //                     if (ve.Value != callee.Parameters[idx + 1].Variable.Name
+    //                         && callee.Parameters[idx + 1].RequiresLabel
+    //                         && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
+
+    //                         error = error ?? 
+    //                             new TypeCheckError(
+    //                                 "Wrong parameter name in argument label",
+    //                                 call.Args[idx].Item2.GetSpan());
+    //                     }
+    //                 }
+    //                 else if (callee.Parameters[idx + 1].RequiresLabel
+    //                     && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
+
+    //                     error = error ??
+    //                         new TypeCheckError(
+    //                             "Wrong parameter name in argument label",
+    //                             call.Args[idx].Item2.GetSpan());
+    //                 }
+
+    //                 var lhsTypeId = callee.Parameters[idx + 1].Variable.Type;
+
+    //                 var (promoted, promoteErr) = TryPromoteConstantExprToType(lhsTypeId, checkedArg, span);
+
+    //                 error = error ?? promoteErr;
+
+    //                 if (promoted is not null) {
+
+    //                     checkedArg = promoted;
+    //                 }
+
+    //                 var rhsTypeId = checkedArg.GetNeuType();
+
+    //                 if (CheckTypesForCompat(
+    //                     lhsTypeId, 
+    //                     rhsTypeId, 
+    //                     genericInferences, 
+    //                     call.Args[idx].Item2.GetSpan(), 
+    //                     project) is Error compatErr) {
+
+    //                     error = error ?? compatErr;
+    //                 }
+
+    //                 checkedArgs.Add((call.Args[idx].Item1, checkedArg));
+
+    //                 idx += 1;
+    //             }
+    //         }
+
+    //         // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
+    //         // type variable. For the moment, we'll just checked to see if it's a type variable.
+
+    //         returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
+        
+    //         foreach (var genericTypeVar in callee.GenericParameters) {
+
+    //             if (genericInferences.ContainsKey(genericTypeVar)) {
+
+    //                 typeArgs.Add(genericInferences[genericTypeVar]);
+    //             }
+    //             else {
+
+    //                 error = error ??
+    //                     new TypeCheckError(
+    //                         "not all generic parameters have known types",
+    //                         span);
+    //             }
+    //         }
+    //     }
+
+    //     return (
+    //         new CheckedCall(
+    //             ns: new List<String>(),
+    //             name: call.Name,
+    //             calleeThrows,
+    //             args: checkedArgs,
+    //             typeArgs,
+    //             linkage,
+    //             type: returnType,
+    //             calleeDefType),
+    //         error);
+    // }
+
+    public static Int32 SubstituteTypeVarsInType(
+        Int32 typeId,
+        Dictionary<Int32, Int32> genericInferences,
+        Project project) {
+
+        var result = SubstituteTypeVarsInTypeHelper(typeId, genericInferences, project);
+
+        var cont = true;
+
+        while (cont) {
+
+            var fixedPoint = SubstituteTypeVarsInTypeHelper(typeId, genericInferences, project);
+
+            if (fixedPoint == result) {
+
+                cont = false;
+
+                break;
             }
             else {
 
-                var idx = 0;
-
-                while (idx < call.Args.Count) {
-
-                    var (checkedArg, chkExprErr) = TypeCheckExpression(call.Args[idx].Item2, scopeId, project, safetyMode);
-
-                    error = error ?? chkExprErr;
-
-                    var (_callee2, _, _) = ResolveCall(call, span, project.Structs[structId].ScopeId, project); // do something with defType here?
-
-                    callee = _callee2
-                        ?? throw new Exception("internal error: previously resolved call is now unresolved");
-
-                    if (call.Args[idx].Item2 is VarExpression ve) {
-
-                        if (ve.Value != callee.Parameters[idx + 1].Variable.Name
-                            && callee.Parameters[idx + 1].RequiresLabel
-                            && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
-
-                            error = error ?? 
-                                new TypeCheckError(
-                                    "Wrong parameter name in argument label",
-                                    call.Args[idx].Item2.GetSpan());
-                        }
-                    }
-                    else if (callee.Parameters[idx + 1].RequiresLabel
-                        && call.Args[idx].Item1 != callee.Parameters[idx + 1].Variable.Name) {
-
-                        error = error ??
-                            new TypeCheckError(
-                                "Wrong parameter name in argument label",
-                                call.Args[idx].Item2.GetSpan());
-                    }
-
-                    var lhsTypeId = callee.Parameters[idx + 1].Variable.Type;
-
-                    var (promoted, promoteErr) = TryPromoteConstantExprToType(lhsTypeId, checkedArg, span);
-
-                    error = error ?? promoteErr;
-
-                    if (promoted is not null) {
-
-                        checkedArg = promoted;
-                    }
-
-                    var rhsTypeId = checkedArg.GetNeuType();
-
-                    if (CheckTypesForCompat(
-                        lhsTypeId, 
-                        rhsTypeId, 
-                        genericInferences, 
-                        call.Args[idx].Item2.GetSpan(), 
-                        project) is Error compatErr) {
-
-                        error = error ?? compatErr;
-                    }
-
-                    checkedArgs.Add((call.Args[idx].Item1, checkedArg));
-
-                    idx += 1;
-                }
-            }
-
-            // We've now seen all the arguments and should be able to substitute the return type, if it's contains a
-            // type variable. For the moment, we'll just checked to see if it's a type variable.
-
-            returnType = SubstituteTypeVarsInType(returnType, genericInferences, project);
-        
-            foreach (var genericTypeVar in callee.GenericParameters) {
-
-                if (genericInferences.ContainsKey(genericTypeVar)) {
-
-                    typeArgs.Add(genericInferences[genericTypeVar]);
-                }
-                else {
-
-                    error = error ??
-                        new TypeCheckError(
-                            "not all generic parameters have known types",
-                            span);
-                }
+                result = fixedPoint;
             }
         }
 
-        return (
-            new CheckedCall(
-                ns: new List<String>(),
-                name: call.Name,
-                calleeThrows,
-                args: checkedArgs,
-                typeArgs,
-                linkage,
-                type: returnType,
-                calleeDefType),
-            error);
+        return result;
     }
 
-    public static Int32 SubstituteTypeVarsInType(
+    public static Int32 SubstituteTypeVarsInTypeHelper(
         Int32 typeId,
         Dictionary<Int32, Int32> genericInferences,
         Project project) {

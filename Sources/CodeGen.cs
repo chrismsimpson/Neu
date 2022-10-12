@@ -2006,7 +2006,7 @@ public static partial class CodeGenFunctions {
                 output.Append(CodeGenExpr(indent, ide.Expression, project));
                 output.Append(").get(");
                 output.Append(CodeGenExpr(indent, ide.Index, project));
-                output.Append("))");
+                output.Append(").value())");
 
                 break;
             }
