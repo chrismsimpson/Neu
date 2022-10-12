@@ -191,6 +191,6 @@ public partial class Compiler {
 
     public static byte[] Prelude() {
 
-        return ReadAllBytes("./Runtime/prelude.neu");
+        return ReadAllBytes("./Prelude/prelude.neu");
     }
 }
