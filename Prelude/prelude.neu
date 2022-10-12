@@ -51,3 +51,9 @@ extern class Dictionary<K, V> {
 extern class Tuple { }
 
 extern class Range { }
+
+extern class Error {
+
+    func fromError(anon code: Int32)
+}
+
