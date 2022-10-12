@@ -4063,7 +4063,13 @@ public static partial class TypeCheckerFunctions {
         switch (op) {
 
             case BinaryOperator.LogicalAnd:
-            case BinaryOperator.LogicalOr: {
+            case BinaryOperator.LogicalOr:
+            case BinaryOperator.LessThan:
+            case BinaryOperator.LessThanOrEqual:
+            case BinaryOperator.GreaterThan:
+            case BinaryOperator.GreaterThanOrEqual:
+            case BinaryOperator.Equal:
+            case BinaryOperator.NotEqual: {
 
                 ty = Compiler.BoolTypeId;
 
