@@ -1,4 +1,4 @@
-extern class String {
+extern struct String {
     func split(this, anon c: CChar) -> [String]
     func characters(this) -> raw CChar
     func reverse(this) -> String
@@ -16,7 +16,7 @@ extern class String {
     func length(this) -> UInt
 }
 
-extern class Array<T> {
+extern struct Array<T> {
     func isEmpty(this) -> Bool
     func size(this) -> UInt
     func capacity(this) -> UInt
@@ -27,14 +27,14 @@ extern class Array<T> {
     func pop(var this) -> T?
 }
 
-extern class Optional<T> {
+extern struct Optional<T> {
     func hasValue(this) -> Bool
     func value(this) -> T
     func valueOr(this, anon x: T) -> T
     func Optional<S>(anon x: S) -> Optional<S>
 }
 
-extern class Dictionary<K, V> {
+extern struct Dictionary<K, V> {
     func get(this, anon key: K) -> V?
     func contains(this, anon key: K) -> Bool
     func set(var this, key: K, value: V)
@@ -48,11 +48,11 @@ extern class Dictionary<K, V> {
     func Dictionary<A, B>() -> Dictionary<A, B>
 }
 
-extern class Tuple { }
+extern struct Tuple { }
 
-extern class Range { }
+extern struct Range { }
 
-extern class Error {
+extern struct Error {
 
     func fromError(anon code: Int32)
 }
