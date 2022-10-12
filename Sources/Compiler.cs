@@ -191,61 +191,6 @@ public partial class Compiler {
 
     public static byte[] Prelude() {
 
-        return UTF8.GetBytes(@"
-extern class String {
-    func split(this, anon c: CChar) -> [String]
-    func characters(this) -> raw CChar
-    func reverse(this) -> String
-    func toLowercase(this) -> String
-    func toUppercase(this) -> String
-    func toSnakecase(this) -> String
-    func toTitlecase(this) -> String
-    func toInt(this) -> Int32?
-    func toUInt(this) -> UInt32?
-    func isWhitespace(this) -> Bool
-    func hash(this) -> UInt32
-    func substring(this, start: UInt, length: UInt) -> String
-    func repeated(character: CChar, count: UInt) -> String
-    func isEmpty(this) -> Bool
-    func length(this) -> UInt
-}
-
-extern class Array<T> {
-    func isEmpty(this) -> Bool
-    func size(this) -> UInt
-    func capacity(this) -> UInt
-    func ensureCapacity(this, anon capacity: UInt)
-    func addCapacity(this, anon capacity: UInt)
-    func resize(var this, anon size: UInt)
-    func push(var this, anon value: T)
-    func pop(var this) -> T?
-}
-
-extern class Optional<T> {
-    func hasValue(this) -> Bool
-    func value(this) -> T
-    func valueOr(this, anon x: T) -> T
-    func Optional<S>(anon x: S) -> Optional<S>
-}
-
-extern class Dictionary<K, V> {
-    func get(this, anon key: K) -> V?
-    func contains(this, anon key: K) -> Bool
-    func set(var this, key: K, value: V)
-    func remove(var this, anon key: K) -> Bool
-    func ensureCapacity(var this, anon capacity: UInt)
-    func clear(var this)
-    func size(this) -> UInt
-    func capacity(this) -> UInt
-    func keys(this) -> [K]
-    func hash(this) -> UInt32
-    func Dictionary<A, B>() -> Dictionary<A, B>
-}
-
-extern class Tuple { }
-
-extern class Range { }
-
-");
+        return ReadAllBytes("./Runtime/prelude.neu");
     }
 }
