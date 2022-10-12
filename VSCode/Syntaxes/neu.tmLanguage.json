@@ -1,0 +1,121 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "neu",
+    "patterns": [
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#comment"
+        },
+        {
+            "include": "#constant"
+        },
+        {
+            "include": "#number"
+        },
+        {
+            "include": "#strings"
+        }
+    ],
+    "repository": {
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.control.neu",
+                    "match": "\\b(if|else|while|for|return|defer|unsafe)\\b"
+                },
+                {
+                    "name": "keyword.neu",
+                    "match": "\\b(print|this)\\b"
+                },
+                {
+                    "name": "keyword.neu",
+                    "match": "\\b(func|extern|struct|class)\\b"
+                },
+                {
+                    "name": "keyword.neu",
+                    "match": "\\b(var|let|anon|raw)\\b"
+                },
+                {
+                    "name": "keyword.operator.new.neu",
+                    "match": "\\b(not|and|or)\\b"
+                },
+                {
+                    "name": "support.type",
+                    "match": "\\b(String|Int8|Int16|Int32|Int64|UInt8|UInt16|UInt32|UInt64|Float|Double|Bool|CInt|CChar)\\b"
+                }
+            ]
+        },
+        "constant": {
+            "match": "\\b(?:true|false)\\b",
+            "name": "constant.language.neu"
+        },
+        "number": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.neu",
+                    "match": "\\b(?<!\\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.neu"
+                        }
+                    }
+                },
+                {
+                    "name": "constant.numeric.binary.neu",
+                    "match": "\\b(?<!\\$)0(?:b|B)[01][01_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.neu"
+                        }
+                    }
+                },
+                {
+                    "name": "constant.numeric.octal.neu",
+                    "match": "\\b(?<!\\$)0(?:o|O)?[0-7][0-7_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.neu"
+                        }
+                    }
+                },
+                {
+                    "name": "constant.numeric.neu",
+                    "match": "\\b(?<!\\$)[0-9][0-9_]*(n)?\\b(?!\\$)",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.numeric.bigint.neu"
+                        }
+                    }
+                }
+            ],
+            "name": "constant.numeric.neu"
+        },
+        "comment": {
+            "patterns": [
+                {
+                    "captures": {
+                        "1": {
+                            "name": "punctuation.definition.comment.neu"
+                        }
+                    },
+                    "match": "(//).*$\\n?",
+					"name": "comment.line.double-slash.neu"
+                }
+            ]
+        },
+        "strings": {
+            "name": "string.quoted.double.neu",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.neu",
+                    "match": "\\\\."
+                }
+            ]
+        }
+    },
+    "scopeName": "source.neu"
+}

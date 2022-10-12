@@ -1,0 +1,25 @@
+{
+    "name": "neu",
+    "displayName": "neu",
+    "description": "Neu language support",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.72.1"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "neu",
+            "aliases": ["neu", "neu"],
+            "extensions": [".neu"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "neu",
+            "scopeName": "source.neu",
+            "path": "./Syntaxes/neu.tmLanguage.json"
+        }]
+    }
+}
