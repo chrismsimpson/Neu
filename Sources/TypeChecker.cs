@@ -2774,7 +2774,7 @@ public static partial class TypeCheckerFunctions {
                     error = error ?? e;
                 }
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(fs.Block, iteratorScopeId, project, SafetyMode.Unsafe);
+                var (checkedBlock, blockErr) = TypeCheckBlock(fs.Block, iteratorScopeId, project, safetyMode);
 
                 error = error ?? blockErr;
 
