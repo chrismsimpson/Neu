@@ -3,9 +3,15 @@ namespace NeuTests;
 
 public static partial class Program {
 
+    public static Int32 SuccesfulTests = 0;
+
     public static void Main() {
 
         Compiler.CleanTests();
+
+        ///
+
+        SuccesfulTests = 0;
 
         ///
 
@@ -30,11 +36,17 @@ public static partial class Program {
         TestDictionaries();
         TestGenerics();
 
-        WriteLine($"\nCompleted in {start.Elapsed()}");
+        WriteLine($"\nCompleted {SuccesfulTests} tests in {start.Elapsed()}");
+
+        ///
+
+        SuccesfulTests = 0;
     }
 }
 
 public static partial class IntFunctions {
+
+    public static double SecondCutOff = 90;
 
     public static double ElapsedSeconds(
         this int start) {
@@ -51,11 +63,11 @@ public static partial class IntFunctions {
 
             return $"{(seconds * 1000.0).ToString("G1")}ms";
         }
-        else if (seconds > 90) {
+        else if (seconds > SecondCutOff) {
 
-            var r = seconds % 60;
+            var r = seconds % SecondCutOff;
 
-            var m = ToInt32(Math.Floor(seconds / 60));
+            var m = ToInt32(Math.Floor(seconds / SecondCutOff));
 
             return $"{m}m {r.ToString("G1")}s";
         }
@@ -284,6 +296,10 @@ public static partial class Program {
                     Write($" Success\n");
 
                     Console.ForegroundColor = og;
+
+                    ///
+
+                    SuccesfulTests += 1;
                 }
             }
         }
