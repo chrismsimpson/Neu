@@ -17,24 +17,24 @@ public static partial class Program {
 
         var start = System.Environment.TickCount;
 
-        TestScratchpad();
+        // TestScratchpad();
 
-        // TestBasics();
-        // TestControlFlow();
-        // TestFunctions();
-        // TestMath();
-        // TestVariables();
-        // TestStrings();
-        // TestArrays();
-        // TestOptional();
-        // TestTuples();
-        // TestStructs();
-        // TestPointers();
-        // TestClasses();
-        // TestBoolean();
-        // TestRanges();
-        // TestDictionaries();
-        // TestGenerics();
+        TestBasics();
+        TestControlFlow();
+        TestFunctions();
+        TestMath();
+        TestVariables();
+        TestStrings();
+        TestArrays();
+        TestOptional();
+        TestTuples();
+        TestStructs();
+        TestPointers();
+        TestClasses();
+        TestBoolean();
+        TestRanges();
+        TestDictionaries();
+        TestGenerics();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -59,7 +59,7 @@ public static partial class IntFunctions {
 
         if (seconds < 1) {
 
-            return $"{(seconds * 1000.0).ToString("G1")}ms";
+            return $"{(seconds * 1000.0).ToString("G3")}ms";
         }
         else if (seconds > 60) {
 
@@ -67,11 +67,11 @@ public static partial class IntFunctions {
 
             var m = ToInt32(Math.Floor(seconds / 60));
 
-            return $"{m}m {r.ToString("G1")}s";
+            return $"{m}m {r.ToString("G3")}s";
         }
         else {
 
-            return $"{seconds.ToString("G2")}s";
+            return $"{seconds.ToString("G3")}s";
         }
     }
 }

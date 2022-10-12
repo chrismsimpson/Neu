@@ -578,7 +578,12 @@ public static partial class CodeGenFunctions {
                         output.Append(param.Variable.Name);
                     }
 
-                    output.Append("): ");
+                    output.Append(") ");
+
+                    if (func.Parameters.Any()) {
+
+                        output.Append(':');
+                    }
 
                     first = true;
 

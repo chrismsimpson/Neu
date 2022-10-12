@@ -1,0 +1,6 @@
+struct EmptyStruct { }
+
+func main() {
+    let e = EmptyStruct()
+    printLine("Compiled!")
+}

@@ -16,22 +16,27 @@ func toss(anon value: Int32) throws {
 func main() {
     
     try toss(1234) catch error {
+
         printLine("Caught {}", error.code())
     }
 
     try {
+
         toss(6969)
     } 
     catch error {
+
         printLine("Caught {}", error.code())
     }
 
     try {
+
         noToss()
         toss(5252)
         printLine("FAIL")
     }
     catch error {
+        
         printLine("Caught {}", error.code())
     }
 }
