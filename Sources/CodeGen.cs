@@ -307,11 +307,22 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main") {
 
-            output.Append("int");
+            output.Append("ErrorOr<int>");
         }
         else {
 
-            output.Append(CodeGenType(fun.ReturnType, project));
+            String returnType;
+
+            if (fun.Throws) {
+
+                returnType = $"ErrorOr<{CodeGenType(fun.ReturnType, project)}>";
+            }
+            else {
+
+                returnType = CodeGenType(fun.ReturnType, project);
+            }
+
+            output.Append(returnType);
         }
 
         output.Append(' ');
@@ -387,18 +398,29 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main") {
 
-            output.Append("int");
+            output.Append("ErrorOr<int>");
         }
         else {
 
-            output.Append(CodeGenType(fun.ReturnType, project));
+            String returnType;
+
+            if (fun.Throws) {
+
+                returnType = $"ErrorOr<{CodeGenType(fun.ReturnType, project)}>";
+            }
+            else {
+
+                returnType = CodeGenType(fun.ReturnType, project);
+            }
+
+            output.Append(returnType);
         }
 
         output.Append(' ');
 
         if (fun.Name == "main") {
 
-            output.Append("__neu_main");
+            output.Append("_neu_main");
         }
         else {
 
@@ -735,6 +757,15 @@ public static partial class CodeGenFunctions {
         ///
 
         switch (stmt) {
+
+            case CheckedThrowStatement t: {
+
+                output.Append("return ");
+                output.Append(CodeGenExpr(indent, t.Expression, project));
+                output.Append(";");
+                
+                break;
+            }
 
             case CheckedContinueStatement _: {
 
@@ -1122,18 +1153,14 @@ public static partial class CodeGenFunctions {
 
             case CheckedCallExpression ce: {
 
+                if (ce.Call.CalleeThrows) {
+
+                    output.Append("TRY(");
+                }
+
                 switch (ce.Call.Name) {
 
                     case "printLine": {
-
-                        // output.Append("outLine(\"{}\", ");
-                        
-                        // foreach (var param in ce.Call.Args) {
-
-                        //     output.Append(CodeGenExpr(indent, param.Item2, project));
-                        // }
-                        
-                        // output.Append(")");
 
                         output.Append("outLine(");
                         
@@ -1155,15 +1182,6 @@ public static partial class CodeGenFunctions {
                     }
 
                     case "warnLine": {
-
-                        // output.Append("warnLine(\"{}\", ");
-                        
-                        // foreach (var param in ce.Call.Args) {
-
-                        //     output.Append(CodeGenExpr(indent, param.Item2, project));
-                        // }
-                        
-                        // output.Append(")");
 
                         output.Append("warnLine(");
 
@@ -1305,10 +1323,20 @@ public static partial class CodeGenFunctions {
                     }
                 }
 
+                if (ce.Call.CalleeThrows) {
+
+                    output.Append(")");
+                }
+
                 break;
             }
 
             case CheckedMethodCallExpression mce: {
+
+                if (mce.Call.CalleeThrows) {
+
+                    output.Append("TRY(");
+                }
 
                 output.Append('(');
 
@@ -1384,6 +1412,11 @@ public static partial class CodeGenFunctions {
                 }
 
                 output.Append("))");
+
+                if (mce.Call.CalleeThrows) {
+
+                    output.Append(")");
+                }
 
                 break;
             }

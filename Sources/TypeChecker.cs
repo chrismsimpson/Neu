@@ -569,6 +569,8 @@ public partial class CheckedParameter {
 public partial class CheckedFunction { 
 
     public String Name { get; init; }
+
+    public bool Throws { get; init; }
     
     public Int32 ReturnType { get; set; }
     
@@ -586,6 +588,7 @@ public partial class CheckedFunction {
 
     public CheckedFunction(
         String name,
+        bool throws,
         Int32 returnType,
         List<CheckedParameter> parameters,
         List<Int32> genericParameters,
@@ -594,6 +597,7 @@ public partial class CheckedFunction {
         FunctionLinkage linkage) { 
 
         this.Name = name;
+        this.Throws = throws;
         this.ReturnType = returnType;
         this.Parameters = parameters;
         this.GenericParameters = genericParameters;
@@ -844,6 +848,19 @@ public partial class CheckedStatement {
     public partial class CheckedContinueStatement: CheckedStatement {
 
         public CheckedContinueStatement() { }
+    }
+
+    public partial class CheckedThrowStatement: CheckedStatement {
+
+        public CheckedExpression Expression { get; init; }
+
+        ///
+
+        public CheckedThrowStatement(
+            CheckedExpression expression) {
+
+            this.Expression = expression;
+        }
     }
 
     public partial class CheckedGarbageStatement: CheckedStatement {
@@ -2065,6 +2082,8 @@ public partial class CheckedCall {
     public List<String> Namespace { get; init; }
     
     public String Name { get; init; }
+
+    public bool CalleeThrows { get; init; }
     
     public List<(String, CheckedExpression)> Args { get; init; }
 
@@ -2081,6 +2100,7 @@ public partial class CheckedCall {
     public CheckedCall(
         List<String> ns,
         String name,
+        bool calleeThrows,
         List<(String, CheckedExpression)> args,
         List<Int32> typeArgs,
         FunctionLinkage linkage,
@@ -2089,6 +2109,7 @@ public partial class CheckedCall {
 
         this.Namespace = ns;
         this.Name = name;
+        this.CalleeThrows = calleeThrows;
         this.Args = args;
         this.TypeArgs = typeArgs;
         this.Linkage = linkage;
@@ -2258,6 +2279,7 @@ public static partial class TypeCheckerFunctions {
 
             var checkedFunction = new CheckedFunction(
                 name: func.Name,
+                throws: false,
                 parameters: new List<CheckedParameter>(),
                 genericParameters: genericParameters,
                 funcScopeId: methodScopeId,
@@ -2373,6 +2395,7 @@ public static partial class TypeCheckerFunctions {
 
             var checkedConstructor = new CheckedFunction(
                 name: structure.Name,
+                throws: false,
                 returnType: structTypeId,
                 parameters: constructorParams,
                 genericParameters: new List<Int32>(),
@@ -2421,6 +2444,7 @@ public static partial class TypeCheckerFunctions {
 
         var checkedFunction = new CheckedFunction(
             name: func.Name,
+            throws: func.Throws,
             returnType: Compiler.UnknownTypeId,
             parameters: new List<CheckedParameter>(),
             genericParameters: new List<Int32>(),
@@ -2642,6 +2666,19 @@ public static partial class TypeCheckerFunctions {
         Error? error = null;
 
         switch (stmt) {
+
+            case ThrowStatement ts: {
+
+                var (checkedExpr, err) = TypeCheckExpression(ts.Expr, scopeId, project, safetyMode);
+
+                error = error ?? err;
+
+                // FIXME: Verify that the expression produces an Error
+
+                return (
+                    new CheckedThrowStatement(checkedExpr),
+                    error);
+            }
 
             case ForStatement fs: {
 
@@ -4131,6 +4168,8 @@ public static partial class TypeCheckerFunctions {
 
         var typeArgs = new List<Int32>();
 
+        var calleeThrows = false;
+
         switch (call.Name) {
 
             case "printLine":
@@ -4175,6 +4214,8 @@ public static partial class TypeCheckerFunctions {
                 calleDefType = _calleDefType;
 
                 if (callee != null) {
+
+                    calleeThrows = callee.Throws;
 
                     // If the user gave us explicit type arguments, let's use them in our substitutions
 
@@ -4299,6 +4340,7 @@ public static partial class TypeCheckerFunctions {
             new CheckedCall(
                 ns: call.Namespace,
                 call.Name, 
+                calleeThrows,
                 checkedArgs,
                 typeArgs,
                 linkage,
@@ -4326,6 +4368,8 @@ public static partial class TypeCheckerFunctions {
 
         var typeArgs = new List<Int32>();
 
+        var calleeThrows = false;
+
         var genericInferences = new Dictionary<Int32, Int32>();
 
         var (_callee, calleeDefType, resolveCallErr) = ResolveCall(call, span, project.Structs[structId].ScopeId, project);
@@ -4337,6 +4381,8 @@ public static partial class TypeCheckerFunctions {
             returnType = callee.ReturnType;
 
             linkage = callee.Linkage;
+
+            calleeThrows = callee.Throws;
 
             if (callee.Parameters.FirstOrDefault() is CheckedParameter checkedParam) {
 
@@ -4479,6 +4525,7 @@ public static partial class TypeCheckerFunctions {
             new CheckedCall(
                 ns: new List<String>(),
                 name: call.Name,
+                calleeThrows,
                 args: checkedArgs,
                 typeArgs,
                 linkage,

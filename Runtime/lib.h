@@ -97,7 +97,7 @@ inline String runtimeHelperNumberToString(Int64 number) {
     return String::number(number);
 }
 
-int __neu_main(Array<String>);
+ErrorOr<int> _neu_main(Array<String>);
 
 template<typename T>
 inline constexpr T __arithmeticShiftRight(T value, size_t steps) {
@@ -152,7 +152,17 @@ int main(int argc, char** argv) {
         args.push(argv[i]);
     }
 
-    return __neu_main(move(args));
+    auto result = _neu_main(move(args));
+
+    if (result.isError()) {
+
+        warnLine("Runtime error: {}", result.error());
+
+        return 1;
+    }
+
+    return result.value();
+
 }
 
 static_assert(sizeof(Float) == 4);

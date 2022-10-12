@@ -416,6 +416,8 @@ public partial class Function {
 
     public Block Block { get; init; }
 
+    public bool Throws { get; init; }
+
     public UncheckedType ReturnType { get; init; }
 
     public FunctionLinkage Linkage { get; init; }
@@ -433,6 +435,7 @@ public partial class Function {
             new List<Parameter>(), 
             new List<(String, Span)>(),
             new Block(), 
+            throws: false,
             returnType: 
                 new UncheckedEmptyType(),
             linkage) { }
@@ -443,6 +446,7 @@ public partial class Function {
         List<Parameter> parameters,
         List<(String, Span)> genericParameters,
         Block block,
+        bool throws,
         UncheckedType returnType,
         FunctionLinkage linkage) {
 
@@ -451,6 +455,7 @@ public partial class Function {
         this.Parameters = parameters;
         this.GenericParameters = genericParameters;
         this.Block = block;
+        this.Throws = throws;
         this.ReturnType = returnType;
         this.Linkage = linkage;
     }
@@ -617,6 +622,15 @@ public static partial class StatementFunctions {
                 && r is ReturnStatement retR:
 
                 return ReturnStatementFunctions.Eq(retL, retR);
+
+            ///
+
+            case var _ when
+                l is ThrowStatement lt
+                && r is ThrowStatement rt:
+
+                return ThrowStatementFunctions.Eq(lt, rt);
+
 
             ///
 
@@ -1047,6 +1061,31 @@ public static partial class ReturnStatementFunctions {
     public static bool Eq(
         ReturnStatement? l,
         ReturnStatement? r) {
+
+        return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
+    }
+}
+
+///
+
+public partial class ThrowStatement: Statement {
+
+    public Expression Expr { get; init; }
+
+    ///
+
+    public ThrowStatement(
+        Expression expr) {
+
+        this.Expr = expr;
+    }
+}
+
+public static partial class ThrowStatementFunctions {
+
+    public static bool Eq(
+        ThrowStatement? l,
+        ThrowStatement? r) {
 
         return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
     }
@@ -2902,6 +2941,44 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
+
+
+
+
+
+
+
+                    var throws = false;
+
+                    if (index + 1 < tokens.Count) {
+
+                        switch (tokens[index]) {
+
+                            case NameToken throwName when throwName.Value == "throws": {
+
+                                index += 1;
+
+                                throws = true;
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
+                            }
+                        }
+                    }
+
+
+
+
+
+
+
+
+
+
                     UncheckedType returnType = new UncheckedEmptyType();
 
                     Expression? fatArrowExpr = null;
@@ -3019,6 +3096,7 @@ public static partial class ParserFunctions {
                                 parameters,
                                 genericParameters,
                                 block: new Block(),
+                                throws,
                                 returnType,
                                 linkage),
                             error);
@@ -3058,6 +3136,7 @@ public static partial class ParserFunctions {
                             parameters,
                             genericParameters,
                             block,
+                            throws,
                             returnType,
                             linkage),
                         error);
@@ -3168,6 +3247,21 @@ public static partial class ParserFunctions {
         Error? error = null;
 
         switch (tokens.ElementAt(index)) {
+
+            case NameToken nt when nt.Value == "throws": {
+
+                Trace("parsing throw");
+
+                index += 1;
+
+                var (expr, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                error = error ?? err;
+
+                return (
+                    new ThrowStatement(expr),
+                    error);
+            }
 
             case NameToken nt when nt.Value == "defer": {
 
