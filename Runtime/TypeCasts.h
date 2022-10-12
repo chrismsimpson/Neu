@@ -68,25 +68,38 @@ ALWAYS_INLINE Optional<OutputType> fallibleIntegerCast(InputType input) {
     return static_cast<OutputType>(input);
 }
 
+template<typename... Ts>
+void compileTimeFail(Ts...) { }
+
 template<typename OutputType, typename InputType>
-ALWAYS_INLINE OutputType infallibleIntegerCast(InputType input) {
+ALWAYS_INLINE constexpr OutputType infallibleIntegerCast(InputType input) {
 
     static_assert(IsIntegral<InputType>);
-    
-    VERIFY(isWithinRange<OutputType>(input));
-    
+
+    if (isConstantEvaluated()) {
+
+        if (!isWithinRange<OutputType>(input)) {
+
+            compileTimeFail("Integer cast out of range");
+        }
+    } 
+    else {
+
+        VERIFY(isWithinRange<OutputType>(input));
+    }
+
     return static_cast<OutputType>(input);
 }
 
 template<typename OutputType, typename InputType>
-ALWAYS_INLINE OutputType saturatingIntegerCast(InputType input) {
+ALWAYS_INLINE constexpr OutputType saturatingIntegerCast(InputType input) {
 
     static_assert(IsIntegral<InputType>);
-    
+
     if (!isWithinRange<OutputType>(input)) {
-    
+
         if constexpr (IsSigned<InputType>) {
-    
+
             if (input < 0) {
 
                 return NumericLimits<OutputType>::min();
@@ -100,9 +113,9 @@ ALWAYS_INLINE OutputType saturatingIntegerCast(InputType input) {
 }
 
 template<typename OutputType, typename InputType>
-ALWAYS_INLINE OutputType truncatingIntegerCast(InputType input) {
-    
+ALWAYS_INLINE constexpr OutputType truncatingIntegerCast(InputType input) {
+
     static_assert(IsIntegral<InputType>);
-    
+
     return static_cast<OutputType>(input);
 }
