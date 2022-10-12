@@ -20,10 +20,10 @@ extern class Array<T> {
     func isEmpty(this) -> Bool
     func size(this) -> UInt
     func capacity(this) -> UInt
-    func ensureCapacity(this, anon capacity: UInt)
-    func addCapacity(this, anon capacity: UInt)
-    func resize(var this, anon size: UInt)
-    func push(var this, anon value: T)
+    func ensureCapacity(this, anon capacity: UInt) throws
+    func addCapacity(this, anon capacity: UInt) throws
+    func resize(var this, anon size: UInt) throws
+    func push(var this, anon value: T) throws
     func pop(var this) -> T?
 }
 

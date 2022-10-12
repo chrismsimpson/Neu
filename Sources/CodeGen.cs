@@ -1855,13 +1855,13 @@ public static partial class CodeGenFunctions {
 
                 if (ve.FillSize is CheckedExpression fillSize) {
 
-                    output.Append("(Array<");
+                    output.Append("(TRY(Array<");
                     output.Append(CodeGenType(ve.Expressions.First().GetNeuType(), project));
                     output.Append(">::filled(");
                     output.Append(CodeGenExpr(indent, fillSize, project));
                     output.Append(", ");
                     output.Append(CodeGenExpr(indent, ve.Expressions.First(), project));
-                    output.Append("))");
+                    output.Append(")))");
                 }
                 else {
 
