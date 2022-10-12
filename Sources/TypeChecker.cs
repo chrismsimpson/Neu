@@ -2881,6 +2881,14 @@ public static partial class TypeCheckerFunctions {
                 
                 error = error ?? exprErr;
 
+                if (checkedCond.GetNeuType() != Compiler.BoolTypeId) {
+                    
+                    error = error ?? 
+                        new TypeCheckError(
+                            "Condition must be a boolean expression",
+                            checkedCond.GetSpan());
+                }
+
                 var (checkedBlock, blockErr) = TypeCheckBlock(ifStmt.Block, scopeId, project, safetyMode);
                 
                 error = error ?? blockErr;
@@ -2921,6 +2929,14 @@ public static partial class TypeCheckerFunctions {
                 var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, scopeId, project, safetyMode);
                 
                 error = error ?? exprErr;
+
+                if (checkedCond.GetNeuType() != Compiler.BoolTypeId) {
+
+                    error = error ?? 
+                        new TypeCheckError(
+                            "Condition must be a boolean expression",
+                            checkedCond.GetSpan());
+                }
 
                 var (checkedBlock, blockErr) = TypeCheckBlock(ws.Block, scopeId, project, safetyMode);
                 
