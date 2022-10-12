@@ -1,0 +1,37 @@
+func noToss() throws -> Int32 {
+
+    if not true {
+
+        throw Error.fromError(123456)
+    }
+
+    return 5
+}
+
+func toss(anon value: Int32) throws {
+    
+    throw Error.fromError(value)
+}
+
+func main() {
+    
+    try toss(1234) catch error {
+        printLine("Caught {}", error.code())
+    }
+
+    try {
+        toss(6969)
+    } 
+    catch error {
+        printLine("Caught {}", error.code())
+    }
+
+    try {
+        noToss()
+        toss(5252)
+        printLine("FAIL")
+    }
+    catch error {
+        printLine("Caught {}", error.code())
+    }
+}

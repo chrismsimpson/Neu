@@ -863,6 +863,27 @@ public partial class CheckedStatement {
         }
     }
 
+    public partial class CheckedTryStatement: CheckedStatement {
+
+        public CheckedStatement Statement { get; init; }
+
+        public String Name { get; init; }
+
+        public CheckedBlock Block { get; init; }
+        
+        ///
+
+        public CheckedTryStatement(
+            CheckedStatement statement,
+            String name,
+            CheckedBlock block) {
+
+            this.Statement = statement;
+            this.Name = name;
+            this.Block = block;
+        }
+    }
+
     public partial class CheckedGarbageStatement: CheckedStatement {
 
         public CheckedGarbageStatement() { }
@@ -1755,7 +1776,6 @@ public partial class CheckedExpression {
             this.Type = type;
         }
     }
-
 
     public partial class CheckedVarExpression: CheckedExpression {
         
@@ -2666,6 +2686,40 @@ public static partial class TypeCheckerFunctions {
         Error? error = null;
 
         switch (stmt) {
+
+            case TryStatement tryStmt: {
+
+                var (checkedStmt, err) = TypeCheckStatement(tryStmt.Statement, scopeId, project, safetyMode);
+
+                error = error ?? err;
+
+                var errorStructId = project
+                    .FindStructInScope(0, "Error")
+                    ?? throw new Exception("internal error: Error builtin definition not found");
+
+                var errorDecl = new CheckedVariable(
+                    name: tryStmt.Name,
+                    type: project.FindOrAddTypeId(new StructType(errorStructId)),
+                    mutable: false);
+
+                var catchScopeId = project.CreateScope(scopeId);
+
+                if (project.AddVarToScope(catchScopeId, errorDecl, tryStmt.Span).Error is Error e) {
+
+                    error = error ?? e;
+                }
+
+                var (checkedCatchBlock, catchBlockErr) = TypeCheckBlock(tryStmt.Block, catchScopeId, project, safetyMode);
+
+                error = error ?? catchBlockErr;
+
+                return (
+                    new CheckedTryStatement(
+                        checkedStmt, 
+                        tryStmt.Name, 
+                        checkedCatchBlock),
+                    error);
+            }
 
             case ThrowStatement ts: {
 

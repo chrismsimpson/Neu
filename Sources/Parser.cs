@@ -201,6 +201,7 @@ public partial class UncheckedType {
         public UncheckedEmptyType() { }
     }
 
+///
 
 public static partial class UncheckedTypeFunctions {
 
@@ -630,7 +631,6 @@ public static partial class StatementFunctions {
                 && r is ThrowStatement rt:
 
                 return ThrowStatementFunctions.Eq(lt, rt);
-
 
             ///
 
@@ -1088,6 +1088,68 @@ public static partial class ThrowStatementFunctions {
         ThrowStatement? r) {
 
         return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
+    }
+}
+
+///
+
+public partial class TryStatement: Statement {
+
+    public Statement Statement { get; init; }
+
+    public String Name { get; init; }
+
+    public Span Span { get; init; }
+
+    public Block Block { get; init; }
+
+    ///
+
+    public TryStatement(
+        Statement statement,
+        String name,
+        Span span,
+        Block block) {
+
+        this.Statement = statement;
+        this.Name = name;
+        this.Span = span;
+        this.Block = block;
+    }
+}
+
+public static partial class TryStatementFunctions {
+
+    public static bool Eq(
+        TryStatement? l,
+        TryStatement? r) {
+
+        if (l is null && r is null) {
+
+            return true;
+        }
+
+        if (l is null || r is null) {
+
+            return false;
+        }
+
+        if (!StatementFunctions.Eq(l.Statement, r.Statement)) {
+
+            return false;
+        }
+
+        if (!Equals(l.Name, r.Name)) {
+
+            return false;
+        }
+
+        if (!SpanFunctions.Eq(l.Span, r.Span)) {
+
+            return false;
+        }
+
+        return BlockFunctions.Eq(l.Block, r.Block);
     }
 }
 
@@ -2086,7 +2148,6 @@ public static partial class UnaryOperatorFunctions {
             case var _ when l is TypeCastUnaryOperator lt && r is TypeCastUnaryOperator rt:
                 return TypeCastFunctions.Eq(lt.TypeCast, rt.TypeCast);
 
-
             case var _ when l is IsUnaryOperator li && r is IsUnaryOperator ri:
                 return UncheckedTypeFunctions.Eq(li.Type, ri.Type);
 
@@ -2943,13 +3004,6 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
-
-
-
-
-
-
-
                     var throws = false;
 
                     if (index + 1 < tokens.Count) {
@@ -2971,15 +3025,6 @@ public static partial class ParserFunctions {
                             }
                         }
                     }
-
-
-
-
-
-
-
-
-
 
                     UncheckedType returnType = new UncheckedEmptyType();
 
@@ -3250,7 +3295,7 @@ public static partial class ParserFunctions {
 
         switch (tokens.ElementAt(index)) {
 
-            case NameToken nt when nt.Value == "throws": {
+            case NameToken nt when nt.Value == "throw": {
 
                 Trace("parsing throw");
 
@@ -3355,6 +3400,72 @@ public static partial class ParserFunctions {
                     new WhileStatement(condExpr, block),
                     error
                 );
+            }
+
+            case NameToken nt when nt.Value == "try": {
+
+                Trace("parsing try");
+
+                index += 1;
+
+                var (stmt, err) = ParseStatement(tokens, ref index);
+
+                error = error ?? err;
+
+                while (tokens[index] is EolToken) {
+
+                    index += 1;
+                }
+
+                var errorName = String.Empty;
+
+                var errorSpan = tokens[index].Span;
+
+                switch (tokens[index]) {
+
+                    case NameToken nt2 when nt2.Value == "catch": {
+
+                        index += 1;
+
+                        switch (tokens[index]) {
+
+                            case NameToken nt3: {
+
+                                errorSpan = tokens[index].Span;
+
+                                errorName = nt3.Value;
+
+                                index += 1;
+
+                                break;
+                            }
+
+                            default: {
+
+                                // FIXME: Error about missing error binding
+
+                                break;
+                            }
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        // FIXME: Error about missing "catch"
+
+                        break;
+                    }
+                }
+
+                var (catchBlock, blockErr) = ParseBlock(tokens, ref index);
+
+                error = error ?? blockErr;
+
+                return (
+                    new TryStatement(stmt, errorName, errorSpan, catchBlock),
+                    error);
             }
 
             case NameToken nt when nt.Value == "for": {

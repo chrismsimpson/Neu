@@ -758,6 +758,25 @@ public static partial class CodeGenFunctions {
 
         switch (stmt) {
 
+            case CheckedTryStatement ts: {
+
+                output.Append('{');
+                output.Append("auto _neu_tryResult = [&]() -> ErrorOr<void> {");
+                output.Append(CodeGenStatement(indent, ts.Statement, project));
+                output.Append(';');
+                output.Append("return {};");
+                output.Append("}();");
+                output.Append("if (_neu_tryResult.isError()) {");
+                output.Append("auto ");
+                output.Append(ts.Name);
+                output.Append(" = _neu_tryResult.releaseError();");
+                output.Append(CodeGenBlock(indent, ts.Block, project));
+                output.Append("}");
+                output.Append('}');
+
+                break;
+            }
+
             case CheckedThrowStatement t: {
 
                 output.Append("return ");

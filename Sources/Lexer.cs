@@ -478,8 +478,7 @@ public static partial class TokenFunctions {
     }
 }
 
-    ///
-
+///
 
 public static partial class LexerFunctions {
 
