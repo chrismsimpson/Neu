@@ -1857,7 +1857,8 @@ public static partial class ExpressionFunctions {
             ///
 
             case OperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.LogicalOr:
+                opExpr.Operator == BinaryOperator.LogicalOr
+                || opExpr.Operator == BinaryOperator.NoneCoalescing:
 
                 return 69;
 
@@ -2129,7 +2130,8 @@ public enum BinaryOperator {
     BitwiseOrAssign,
     BitwiseXorAssign,
     BitwiseLeftShiftAssign,
-    BitwiseRightShiftAssign
+    BitwiseRightShiftAssign,
+    NoneCoalescing
 }
 
 ///
@@ -4001,7 +4003,7 @@ public static partial class ParserFunctions {
 
                             switch (nt.Value) {
 
-                                case "None": {
+                                case "none": {
 
                                     expr = new OptionalNoneExpression(span);
 
@@ -4877,6 +4879,15 @@ public static partial class ParserFunctions {
 
         switch (tokens.ElementAt(index)) {
 
+            case QuestionQuestionToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.NoneCoalescing, span),
+                    null);
+            }
+
             case NameToken nt when nt.Value == "and": {
 
                 index += 1;
@@ -5188,6 +5199,15 @@ public static partial class ParserFunctions {
         var span = tokens.ElementAt(index).Span;
 
         switch (tokens.ElementAt(index)) {
+
+            case QuestionQuestionToken _: {
+
+                index += 1;
+
+                return (
+                    new OperatorExpression(BinaryOperator.NoneCoalescing, span),
+                    null);
+            }
 
             case PlusToken _: {
 

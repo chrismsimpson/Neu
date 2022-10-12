@@ -102,14 +102,11 @@ public partial class Token {
 
     public partial class NumberToken: Token {
 
-        // public Int64 Value { get; init; }
-
         public NumericConstant Value { get; init; }
 
         ///
 
         public NumberToken(
-            // Int64 value,
             NumericConstant value,
             Span span)
             : base(span) {
@@ -383,6 +380,13 @@ public partial class Token {
     public partial class QuestionToken: Token {
 
         public QuestionToken(
+            Span span)
+            : base(span) { }
+    }
+
+    public partial class QuestionQuestionToken: Token {
+
+        public QuestionQuestionToken(
             Span span)
             : base(span) { }
     }
@@ -919,6 +923,18 @@ public static partial class LexerFunctions {
                     var start = index;
 
                     index += 1;
+
+                    if (index < bytes.Length) {
+
+                        if (ToChar(bytes[index]) == '?') {
+
+                            index += 1;
+
+                            output.Add(new QuestionQuestionToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
+                    }
 
                     output.Add(new QuestionToken(new Span(fileId, start, start + 1)));
 

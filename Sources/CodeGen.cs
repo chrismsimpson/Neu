@@ -1607,6 +1607,16 @@ public static partial class CodeGenFunctions {
 
                 switch (binOp.Operator) {
 
+                    case BinaryOperator.NoneCoalescing: {
+
+                        output.Append(CodeGenExpr(indent, binOp.Lhs, project));
+                        output.Append(".valueOrLazyEvaluated([&] { return ");
+                        output.Append(CodeGenExpr(indent, binOp.Rhs, project));
+                        output.Append("; })");
+
+                        break;
+                    }
+
                     case BinaryOperator.ArithmeticRightShift: {
 
                         output.Append("__arithmeticShiftRight(");

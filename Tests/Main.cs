@@ -36,7 +36,7 @@ public static partial class Program {
         TestDictionaries();
         TestGenerics();
 
-        WriteLine($"\nCompleted {SuccesfulTests} tests in {start.Elapsed()}");
+        WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
         ///
 
@@ -45,8 +45,6 @@ public static partial class Program {
 }
 
 public static partial class IntFunctions {
-
-    public static double SecondCutOff = 90;
 
     public static double ElapsedSeconds(
         this int start) {
@@ -63,11 +61,11 @@ public static partial class IntFunctions {
 
             return $"{(seconds * 1000.0).ToString("G1")}ms";
         }
-        else if (seconds > SecondCutOff) {
+        else if (seconds > 60) {
 
-            var r = seconds % SecondCutOff;
+            var r = seconds % 60;
 
-            var m = ToInt32(Math.Floor(seconds / SecondCutOff));
+            var m = ToInt32(Math.Floor(seconds / 60));
 
             return $"{m}m {r.ToString("G1")}s";
         }

@@ -1,0 +1,15 @@
+func main() {
+
+    let x: String? = "PASS"
+    printLine("{}", x ?? "FAIL")
+
+    let y: String? = none
+    printLine("{}", y ?? "PASS")
+
+    // The right hand side is lazily evaluated.
+    var zero = 0
+    let z: Int64? = 69
+    let q = z ?? ++zero
+
+    printLine("zero: {}", zero)
+}
