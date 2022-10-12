@@ -23,7 +23,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.neu",
-                    "match": "\\b(if|else|while|for|return|defer|unsafe)\\b"
+                    "match": "\\b(if|else|while|for|return|defer|unsafe|loop|throw|continue|break)\\b"
                 },
                 {
                     "name": "keyword.neu",
@@ -31,7 +31,7 @@
                 },
                 {
                     "name": "keyword.neu",
-                    "match": "\\b(func|extern|struct|class)\\b"
+                    "match": "\\b(func|extern|struct|class|throws)\\b"
                 },
                 {
                     "name": "keyword.neu",
@@ -43,7 +43,7 @@
                 },
                 {
                     "name": "support.type",
-                    "match": "\\b(String|Int8|Int16|Int32|Int64|Int|UInt8|UInt16|UInt32|UInt64|UInt|Float|Double|Bool|CInt|CChar)\\b"
+                    "match": "\\b(String|Int8|Int16|Int32|Int64|UInt8|UInt16|UInt32|UInt64|Float|Double|Bool|CInt|CChar|Int|UInt)\\b"
                 }
             ]
         },
