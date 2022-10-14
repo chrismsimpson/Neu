@@ -19,22 +19,22 @@ public static partial class Program {
 
         // TestScratchpad();
 
-        // TestBasics();
-        // TestControlFlow();
-        // TestFunctions();
-        // TestMath();
-        // TestVariables();
-        // TestStrings();
-        // TestArrays();
-        // TestOptional();
-        // TestTuples();
-        // TestStructs();
-        // TestPointers();
-        // TestClasses();
-        // TestBoolean();
-        // TestRanges();
-        // TestDictionaries();
-        // TestGenerics();
+        TestBasics();
+        TestControlFlow();
+        TestFunctions();
+        TestMath();
+        TestVariables();
+        TestStrings();
+        TestArrays();
+        TestOptional();
+        TestTuples();
+        TestStructs();
+        TestPointers();
+        TestClasses();
+        TestBoolean();
+        TestRanges();
+        TestDictionaries();
+        TestGenerics();
         TestEnums();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");

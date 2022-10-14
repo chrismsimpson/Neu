@@ -1,0 +1,60 @@
+enum BetterOptional<T> {
+    some: T
+    none
+}
+
+enum BetterResult<T, E> {
+    imFineHowAreYou: T
+    theWorldIsBurning: E
+}
+
+func makeResult(okay: Bool) -> BetterResult<Int64, String> {
+
+    if okay {
+
+        return BetterResult.imFineHowAreYou(42)
+    }
+
+    return BetterResult.theWorldIsBurning("666")
+}
+
+func betterOptionalFrom<T>(anon optional: T?) -> BetterOptional<T> {
+
+    if optional.hasValue() {
+
+        return BetterOptional.some(optional!)
+    }
+
+    return BetterOptional.none()
+}
+
+func main() {
+
+    when makeResult(okay: true) {
+
+        imFineHowAreYou(x) => {
+
+            let a: Int64? = x
+            
+            when betterOptionalFrom(a) {
+
+                some(x) => printLine("Success! we're fine and there's a {} in our optional", x)
+                none => printLine("What??????")
+            }
+        }
+        
+        theWorldIsBurning => printLine("What do you mean the world is burning, it's perfectly fine")
+    }
+
+    let str = when makeResult(okay: false) {
+        imFineHowAreYou => "No you're not!!!!111One!"
+        theWorldIsBurning => "So it is..."
+    }
+    
+    if str == "So it is..." {
+
+        return 0
+    }
+
+    return 1
+}

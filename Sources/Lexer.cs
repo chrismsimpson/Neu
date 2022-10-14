@@ -1297,10 +1297,6 @@ public static partial class LexerFunctions {
 
             if (Int64.TryParse(str, out number)) {
 
-                // return (
-                //     new NumberToken(number, new Span(fileId, start, index)),
-                //     null);
-
                 return (
                     MakeNumberToken(null, null, number, new Span(fileId, start, index)),
                     null);

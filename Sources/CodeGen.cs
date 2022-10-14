@@ -244,7 +244,7 @@ public static partial class CodeGenFunctions {
 
                     output.Append("    struct ");
                     output.Append(u.Name);
-                    output.Append(" {};\n");
+                    output.Append(" { };\n");
 
                     break;
                 }
@@ -269,7 +269,7 @@ public static partial class CodeGenFunctions {
                     output.Append("        ");
                     output.Append(t.Name);
                     output.Append("(Args&&... args): ");
-                    output.Append(" value { forward<Args>(args)... } {}\n");
+                    output.Append(" value { forward<Args>(args)... } { }\n");
                     output.Append("    };\n");
 
                     break;
@@ -299,7 +299,7 @@ public static partial class CodeGenFunctions {
 
         var variantArgs = new StringBuilder();
 
-        var first = false;
+        var first = true;
 
         var variantNames = new List<String>();
 
@@ -847,11 +847,6 @@ public static partial class CodeGenFunctions {
             output.Append(new String(' ', INDENT_SIZE));
         }
 
-
-
-
-
-
         if (fun.Name == "main") {
 
             output.Append("using _NeuCurrentFunctionReturnType = ErrorOr<int>;\n");
@@ -876,16 +871,6 @@ public static partial class CodeGenFunctions {
                 output.Append($"using _NeuCurrentFunctionReturnType = {CodeGenType(fun.ReturnType, project)};\n");
             }
         }
-
-
-
-
-
-
-
-
-
-
 
         var block = CodeGenBlock(INDENT_SIZE, fun.Block, project);
 
@@ -1206,7 +1191,7 @@ public static partial class CodeGenFunctions {
                 output.Append("auto _neu_tryResult = [&]() -> ErrorOr<void> {");
                 output.Append(CodeGenStatement(indent, ts.Statement, project));
                 output.Append(';');
-                output.Append("return {};");
+                output.Append("return { };");
                 output.Append("}();");
                 output.Append("if (_neu_tryResult.isError()) {");
                 output.Append("auto ");
@@ -1673,9 +1658,15 @@ public static partial class CodeGenFunctions {
 
                             // hack warning: this is to get around C++'s limitation that a constructor
                             // can't be called like other static methods
+
                             if (idx == ce.Call.Namespace.Count - 1 && ns.Name == ce.Call.Name) {
                                 
                                 break;
+                            }
+
+                            if (ce.Call.Linkage == FunctionLinkage.ImplicitEnumConstructor) {
+
+                                output.Append("typename ");
                             }
 
                             output.Append(ns.Name);
@@ -1902,8 +1893,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-
-
             case CheckedWhenExpression we: {
 
                 var exprType = project.Types[we.Expression.GetNeuType()];
@@ -2054,7 +2043,6 @@ public static partial class CodeGenFunctions {
 
                                             throw new Exception("TODO");
                                         }
-
                                     }
 
                                     switch (evwc.Body) {
@@ -2076,7 +2064,7 @@ public static partial class CodeGenFunctions {
                                                 output.Append("   return (");
                                                 output.Append(CodeGenExpr(
                                                     indent + 1,
-                                                    expr,
+                                                    e.Expression,
                                                     project));
                                                 output.Append("), _NeuExplicitValue<void>();\n");
                                             }
@@ -2085,7 +2073,7 @@ public static partial class CodeGenFunctions {
                                                 output.Append("   return _NeuExplicitValue(");
                                                 output.Append(CodeGenExpr(
                                                     indent + 1,
-                                                    expr,
+                                                    e.Expression,
                                                     project));
                                                 output.Append(");\n");
                                             }
@@ -2120,23 +2108,6 @@ public static partial class CodeGenFunctions {
 
                 break;
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
             case CheckedUnaryOpExpression unaryOp: {
 

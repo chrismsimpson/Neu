@@ -3,3 +3,33 @@ enum Simple {
     b
     c
 }
+
+enum SimpleWithType {
+    a: Int32
+    b: Int32
+}
+
+enum SimpleWithStructType {
+    a { a: Int32, b: UInt32 }
+    b: Int32
+}
+
+enum SimpleWithTypeParameter<T> {
+    a: T
+    b
+}
+
+enum SimpleWithMultipleTypeParameters<T, U> {
+    a: T
+    b: U
+}
+
+enum IntegralWithUnderlyingType: Int32 {
+    zero
+    one = 2
+    two
+}
+
+func main() {
+
+}

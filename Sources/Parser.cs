@@ -1314,7 +1314,7 @@ public partial class Block {
     ///
 
     public Block()
-        : this(new List<Statement>()) {}
+        : this(new List<Statement>()) { }
 
     public Block(
         List<Statement> statements) {
@@ -2700,7 +2700,7 @@ public static partial class ParserFunctions {
                 start: tokens[startIndex].Span.Start,
                 end: tokens[index].Span.End),
             definitionLinkage,
-            underlyingType: new UncheckedType());
+            underlyingType: new UncheckedEmptyType());
 
         index += 1;
 
@@ -2846,10 +2846,10 @@ public static partial class ParserFunctions {
 
                         var members = new List<VarDecl>();
 
-                        SkipNewLines(tokens, ref index);
-
                         while (index < tokens.Count
                             && !(tokens[index] is RCurlyToken)) {
+                            
+                            SkipNewLines(tokens, ref index);
 
                             var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index);
 
@@ -3067,16 +3067,6 @@ public static partial class ParserFunctions {
         return (genericParameters, null);
     }
 
-
-
-
-
-
-
-
-
-
-
     public static (Struct, Error?) ParseStruct(
         List<Token> tokens, 
         ref int index,
@@ -3102,73 +3092,6 @@ public static partial class ParserFunctions {
                     index += 1;
 
                     // Check for generic
-
-                    // if (index < tokens.Count) {
-
-                    //     switch (tokens[index]) {
-
-                    //         case LessThanToken _: {
-
-                    //             index += 1;
-
-                    //             var contGenerics = true;
-
-                    //             while (contGenerics && index < tokens.Count) {
-
-                    //                 switch (tokens[index]) {
-
-                    //                     case GreaterThanToken _: {
-
-                    //                         index += 1;
-
-                    //                         contGenerics = false;
-
-                    //                         break;
-                    //                     }
-
-                    //                     case CommaToken _:
-                    //                     case EolToken _:
-
-                    //                         // Treat comma as whitespace? Might require them in the future
-
-                    //                         index += 1;
-
-                    //                         break;
-
-                    //                     case NameToken nt2: {
-
-                    //                         index += 1;
-
-                    //                         genericParameters.Add((nt2.Value, tokens[index].Span));
-
-                    //                         break;
-                    //                     }
-
-                    //                     default: {
-
-                    //                         Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
-
-                    //                         error = error ??
-                    //                             new ParserError(
-                    //                                 "expected generic parameter",
-                    //                                 tokens[index].Span);
-
-                    //                         contGenerics = false;
-
-                    //                         break;
-                    //                     }
-                    //                 }
-                    //             }
-
-                    //             break;
-                    //         }
-
-                    //         default: {
-
-                    //             break;
-                    //         }
-                    //     }
-                    // }
 
                     var (genParams, genParamsParseErr) = ParseGenericParameters(tokens, ref index);
 
@@ -3273,7 +3196,6 @@ public static partial class ParserFunctions {
                                 
                                 varDecl.Mutable = false;
 
-                                // if (IsNullOrWhiteSpace(varDecl.Type.Name)) {
                                 if (varDecl.Type is UncheckedEmptyType) {
 
                                     Trace("ERROR: parameter missing type");
@@ -3381,7 +3303,6 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
-        // var genericParameters = new List<(String, Span)>();
         List<(String, Span)>? genericParameters = null;
 
         index += 1;
@@ -3399,74 +3320,6 @@ public static partial class ParserFunctions {
                     index += 1;
 
                     // Check for generic
-
-                    // if (index < tokens.Count) {
-
-                    //     switch (tokens[index]) {
-
-                    //         case LessThanToken _: {
-
-                    //             index += 1;
-
-                    //             var contGenerics = true;
-
-                    //             while (contGenerics && index < tokens.Count) {
-
-                    //                 switch (tokens[index]) {
-
-                    //                     case GreaterThanToken _: {
-
-                    //                         index += 1;
-
-                    //                         contGenerics = false;
-
-                    //                         break;
-                    //                     }
-
-                    //                     case CommaToken _:
-                    //                     case EolToken _: {
-
-                    //                         // Treat comma as whitespace? Might require them in the future
-                                            
-                    //                         index += 1;
-
-                    //                         break;
-                    //                     }
-
-                    //                     case NameToken nt2: {
-
-                    //                         index += 1;
-
-                    //                         genericParameters.Add((nt2.Value, tokens[index].Span));
-
-                    //                         break;
-                    //                     }
-
-                    //                     default: {
-
-                    //                         Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
-
-                    //                         error = error ??
-                    //                             new ParserError(
-                    //                                 "expected generic parameter",
-                    //                                 tokens[index].Span);
-
-                    //                         contGenerics = false;
-
-                    //                         break;
-                    //                     }
-                    //                 }
-                    //             }
-
-                    //             break;
-                    //         }
-
-                    //         default: {
-
-                    //             break;
-                    //         }
-                    //     }
-                    // }
 
                     var (genParams, genParamParseErr) = ParseGenericParameters(tokens, ref index);
 
@@ -3665,48 +3518,6 @@ public static partial class ParserFunctions {
 
                         switch (tokens.ElementAt(index)) {
 
-                            // case EqualToken _: {
-
-                            //     index += 1;
-
-                            //     switch (tokens.ElementAt(index)) {
-
-                            //         case GreaterThanToken _: {
-
-                            //             index += 1;
-
-                            //             var (_fatArrowExpr, fatArrowExprErr) = ParseExpression(
-                            //                 tokens, 
-                            //                 ref index, 
-                            //                 ExpressionKind.ExpressionWithoutAssignment);
-
-                            //             returnType = new UncheckedEmptyType();
-
-                            //             fatArrowExpr = _fatArrowExpr;
-
-                            //             error = error ?? fatArrowExprErr;
-
-                            //             index += 1;
-
-                            //             break;
-                            //         }
-
-                            //         default: {
-
-                            //             Trace("ERROR: expected =>");
-
-                            //             error = error ?? 
-                            //                 new ParserError(
-                            //                     "expected =>",
-                            //                     tokens.ElementAt(index - 1).Span);
-                                        
-                            //             break;
-                            //         }
-                            //     }
-
-                            //     break;
-                            // }
-
                             case FatArrowToken _: {
 
                                 index += 1;
@@ -3896,8 +3707,6 @@ public static partial class ParserFunctions {
                     return (block, error);
                 }
 
-                ///
-
                 case SemicolonToken _: {
 
                     index += 1;
@@ -3905,16 +3714,12 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
-
                 case EolToken _: {
 
                     index += 1;
 
                     break;
                 }
-
-                ///
 
                 default: {
 
@@ -4572,8 +4377,6 @@ public static partial class ParserFunctions {
 
             var _lhs = exprStack.Pop();
 
-            // exprStack.Add(new BinaryOpExpression(_lhs, _op, _rhs));
-
             switch (_op) {
 
                 case OperatorExpression oe: {
@@ -4601,9 +4404,6 @@ public static partial class ParserFunctions {
 
         return (output, error);
     }
-
-
-
 
     public static (WhenCase, Error?) ParsePatternCase(
         List<Token> tokens,
@@ -4794,11 +4594,6 @@ public static partial class ParserFunctions {
         }
     }
 
-
-
-
-
-
     public static (List<WhenCase>, Error?) ParsePatterns(
         List<Token> tokens,
         ref int index) {
@@ -4823,9 +4618,9 @@ public static partial class ParserFunctions {
 
         index += 1;
 
-        SkipNewLines(tokens, ref index);
-
         while (!(tokens.ElementAtOrDefault(index) is RCurlyToken)) {
+
+            SkipNewLines(tokens, ref index);
 
             var (pattern, err) = ParsePatternCase(tokens, ref index);
 
@@ -4854,9 +4649,6 @@ public static partial class ParserFunctions {
 
         return (cases, error);
     }
-
-
-
 
     public static (Expression, Error?) ParseOperand(
         List<Token> tokens, 
@@ -5703,15 +5495,6 @@ public static partial class ParserFunctions {
                                         }
                                         else {
 
-                                            // index += 1;
-
-                                            // error = error ?? 
-                                            //     new ParserError(
-                                            //         "Unsupported static method call",
-                                            //         tokens.ElementAt(index).Span);
-
-                                            // contNS = false;
-
                                             var _span = new Span(
                                                 fileId: expr.GetSpan().FileId,
                                                 start: expr.GetSpan().Start,
@@ -6229,8 +6012,6 @@ public static partial class ParserFunctions {
                     null);
             }
 
-            ///
-
             default: {
 
                 Trace("ERROR: unsupported operator (possibly just the end of an expression)");
@@ -6477,8 +6258,6 @@ public static partial class ParserFunctions {
                 return (new OperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
             }
 
-            ///
-
             default: {
 
                 Trace("ERROR: unsupported operator (possibly just the end of an expression)");
@@ -6515,8 +6294,6 @@ public static partial class ParserFunctions {
 
                     break;
                 }
-
-                ///
 
                 default: {
 
@@ -6722,8 +6499,6 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        ///
-                        
                         default: {
 
                             return (
