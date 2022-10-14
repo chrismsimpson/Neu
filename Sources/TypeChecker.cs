@@ -5800,6 +5800,16 @@ public static partial class TypeCheckerFunctions {
                         }
                     }
 
+                    // Make sure that our call doesn't have a 'this' pointer to a static callee
+
+                    if (thisExpr is not null && callee.IsStatic()) {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "Cannot call static method on an instance of an object",
+                                span);
+                    }
+
                     // This will be 0 for functions or 1 for instance methods, because of the
                     // 'this' ptr
 

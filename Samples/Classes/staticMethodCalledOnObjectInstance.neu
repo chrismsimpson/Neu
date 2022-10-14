@@ -1,0 +1,10 @@
+class Foo {
+    func bar() {
+        printLine("I am a static method")
+    }
+}
+
+func main() {
+    let foo = Foo()
+    foo.bar()
+}
