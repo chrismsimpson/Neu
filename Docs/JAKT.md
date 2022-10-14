@@ -11,6 +11,8 @@
 
 16/05/22: 415eb56f5dac2a80f7426ea7112de4cfdbb9a929 more generics
 
+20/05/22: abac592fd95152bd560fa2d4d08fb6685a87bf9b enums
+
 
 
 
