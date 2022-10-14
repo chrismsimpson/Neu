@@ -21,3 +21,5 @@ C's `char` and `int` are mapped to `CChar` and `CInt`, respectively.
 Instead of literal suffixes (e.g. `0u8`), there are literal casts (e.g. `UInt8(0)`), more like Swift.
 
 There is no `usize`, instead there is `UInt` & `Int` that map to `size_t` & `ssize_t`, respectively.
+
+For pattern matching, I have opted to use the word `when` rather than `match`. Felt cute, might delete later.
