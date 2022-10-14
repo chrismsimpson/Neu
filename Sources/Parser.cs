@@ -331,17 +331,21 @@ public partial class ParsedFile {
 
     public List<Struct> Structs { get; init; }
 
+    public List<Enum> Enums { get; init; }
+
     ///
 
     public ParsedFile()
-        : this(new List<Function>(), new List<Struct>()) { }
+        : this(new List<Function>(), new List<Struct>(), new List<Enum>()) { }
 
     public ParsedFile(
         List<Function> functions,
-        List<Struct> structs) {
+        List<Struct> structs,
+        List<Enum> enums) {
 
         this.Functions = functions;
         this.Structs = structs;
+        this.Enums = enums; 
     }
 }
 
@@ -386,11 +390,132 @@ public partial class Struct {
 
 ///
 
-public enum FunctionLinkage { 
+public partial class EnumVariant {
+
+    public EnumVariant() { }
+}
+
+    public partial class UntypedEnumVariant: EnumVariant {
+
+        public String Name { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public UntypedEnumVariant(
+            String name,
+            Span span) {
+
+            this.Name = name;
+            this.Span = span;
+        }
+    }
+
+    public partial class WithValueEnumVariant: EnumVariant {
+
+        public String Name { get; init; }
+
+        public Expression Expression { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public WithValueEnumVariant(
+            String name,
+            Expression expression,
+            Span span) {
+
+            this.Name = name;
+            this.Expression = expression;
+            this.Span = span;
+        }
+    }
+
+    public partial class StructLikeEnumVariant: EnumVariant {
+
+        public String Name { get; init; }
+
+        public List<VarDecl> Declarations { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public StructLikeEnumVariant(
+            String name,
+            List<VarDecl> declarations,
+            Span span) {
+
+            this.Name = name;
+            this.Declarations = declarations;
+            this.Span = span;
+        }
+    }
+
+    public partial class TypedEnumVariant: EnumVariant {
+
+        public String Name { get; init; }
+
+        public UncheckedType Type { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public TypedEnumVariant(
+            String name,
+            UncheckedType type,
+            Span span) {
+
+            this.Name = name;
+            this.Type = type;
+            this.Span = span;
+        }
+    }
+
+public partial class Enum {
+
+    public String Name { get; set; }
+
+    public List<(String, Span)> GenericParameters { get; set; }
+
+    public List<EnumVariant> Variants { get; init; }
+
+    public Span Span { get; init; }
+
+    public DefinitionLinkage DefinitionLinkage { get; init; }
+
+    public UncheckedType UnderlyingType { get; set; }
+
+    ///
+
+    public Enum(
+        String name,
+        List<(String, Span)> genericParameters,
+        List<EnumVariant> variants,
+        Span span,
+        DefinitionLinkage definitionLinkage,
+        UncheckedType underlyingType) {
+
+        this.Name = name;
+        this.GenericParameters = genericParameters;
+        this.Variants = variants;
+        this.Span = span;
+        this.DefinitionLinkage = definitionLinkage;
+        this.UnderlyingType = underlyingType;
+    }
+}
+
+///
+
+public enum FunctionLinkage {
 
     Internal,
     External,
-    ImplicitConstructor
+    ImplicitConstructor,
+    ImplicitEnumConstructor
 }
 
 public enum DefinitionLinkage {
@@ -1223,6 +1348,69 @@ public static partial class BlockFunctions {
 
 ///
 
+public partial class WhenBody {
+
+    public WhenBody() { }
+}
+
+    public partial class ExpressionWhenBody: WhenBody {
+
+        public Expression Expression { get; init; }
+
+        ///
+
+        public ExpressionWhenBody(
+            Expression expression) {
+
+            this.Expression = expression;
+        }
+    }
+
+    public partial class BlockWhenBody: WhenBody {
+
+        public Block Block { get; init; }
+
+        ///
+
+        public BlockWhenBody(
+            Block block) {
+
+            this.Block = block;
+        }
+    }
+
+public partial class WhenCase {
+
+    public WhenCase() { }
+}
+
+    public partial class EnumVariantWhenCase: WhenCase {
+
+        public List<(String, Span)> VariantName { get; init; }
+        
+        public List<(String?, String)> VariantArguments { get; init; }
+
+        public Span ArgumentsSpan { get; init; }
+        
+        public WhenBody Body { get; init; }
+
+        ///
+
+        public EnumVariantWhenCase(
+            List<(String, Span)> variantName,
+            List<(String?, String)> variantArguments,
+            Span argumentsSpan,
+            WhenBody body) {
+
+            this.VariantName = variantName;
+            this.VariantArguments = variantArguments;
+            this.ArgumentsSpan = argumentsSpan;
+            this.Body = body;
+        }
+    }
+
+///
+
 public partial class Expression {
 
     public Expression() : base() { }
@@ -1456,6 +1644,27 @@ public partial class Expression {
 
             this.Start = start;
             this.End = end;
+            this.Span = span;
+        }
+    }
+
+    public partial class WhenExpression: Expression {
+
+        public Expression Expression { get; init; }
+
+        public List<WhenCase> Cases { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public WhenExpression(
+            Expression expression,
+            List<WhenCase> cases,
+            Span span) {
+
+            this.Expression = expression;
+            this.Cases = cases;
             this.Span = span;
         }
     }
@@ -1733,6 +1942,11 @@ public static partial class ExpressionFunctions {
             case ForcedUnwrapExpression forceUnwrapExpr: {
 
                 return forceUnwrapExpr.Span;
+            }
+
+            case WhenExpression whenExpression: {
+
+                return whenExpression.Span;
             }
 
             case GarbageExpression ge: {
@@ -2259,7 +2473,16 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        ///
+                        case "enum": {
+
+                            var (_enum, err) = ParseEnum(tokens, ref index, DefinitionLinkage.Internal);
+
+                            error = error ?? err;
+
+                            parsedFile.Enums.Add(_enum);
+
+                            break;
+                        }
 
                         case "struct": {
 
@@ -2276,8 +2499,6 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        ///
-
                         case "class": {
 
                             var (structure, err) = ParseStruct(
@@ -2292,8 +2513,6 @@ public static partial class ParserFunctions {
                             
                             break;
                         }
-
-                        ///
 
                         case "extern": {
 
@@ -2321,8 +2540,6 @@ public static partial class ParserFunctions {
                                                 break;
                                             }
 
-                                            ///
-
                                             case "struct": {
 
                                                 index += 1;
@@ -2339,8 +2556,6 @@ public static partial class ParserFunctions {
 
                                                 break;
                                             }
-
-                                            ///
 
                                             case "class": {
 
@@ -2359,8 +2574,6 @@ public static partial class ParserFunctions {
                                                 break;
                                             }
 
-                                            ///
-
                                             default: {
 
                                                 Trace("ERROR: unexpected keyword");
@@ -2376,8 +2589,6 @@ public static partial class ParserFunctions {
 
                                         break;
                                     }
-
-                                    ///
 
                                     default: {
 
@@ -2396,8 +2607,6 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        ///
-
                         default: {
 
                             Trace("ERROR: unexpected keyword");
@@ -2415,8 +2624,6 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
-
                 case EolToken _: {
 
                     // ignore
@@ -2426,16 +2633,12 @@ public static partial class ParserFunctions {
                     break;
                 }
 
-                ///
-
                 case EofToken _: {
 
                     cont = false;
 
                     break;
                 }
-
-                ///
 
                 case var t: {
 
@@ -2455,7 +2658,424 @@ public static partial class ParserFunctions {
         return (parsedFile, error);
     }
 
-    ///
+
+
+
+
+
+
+
+
+    public static void SkipNewLines(
+        List<Token> tokens,
+        ref int index) {
+
+        while (tokens[index] is EolToken) {
+
+            index += 1;
+        }
+    }
+
+
+
+
+
+    public static (Enum, Error?) ParseEnum(
+        List<Token> tokens,
+        ref int index,
+        DefinitionLinkage definitionLinkage) {
+
+        Trace($"parse_enum({tokens[index]})");
+
+        Error? error = null;
+        
+        var startIndex = index;
+
+        var _enum = new Enum(
+            name: String.Empty,
+            genericParameters: new List<(String, Span)>(),
+            variants: new List<EnumVariant>(),
+            span: new Span(
+                fileId: tokens[startIndex].Span.FileId,
+                start: tokens[startIndex].Span.Start,
+                end: tokens[index].Span.End),
+            definitionLinkage,
+            underlyingType: new UncheckedType());
+
+        index += 1;
+
+        SkipNewLines(tokens, ref index);
+
+        if (tokens.ElementAtOrDefault(index) is NameToken nt) {
+
+            Trace($"enum name: {nt.Value}");
+
+            index += 1;
+
+            _enum.Name = nt.Value;
+
+            // Following the name can either be a `:` to denote the underlying type, a `<` to denote generic parameters, or nothing.
+
+            SkipNewLines(tokens, ref index);
+
+            switch (tokens.ElementAtOrDefault(index)) {
+
+                case ColonToken _: {
+
+                    Trace("enum with underlying type");
+                    
+                    index += 1;
+                    
+                    var (_type, parseErr) = ParseTypeName(tokens, ref index);
+
+                    _enum.UnderlyingType = _type;
+                    
+                    error = error ?? parseErr;
+
+                    Trace($"next token: {tokens[index]}");
+
+                    index += 1;
+
+                    break;
+                }
+
+                case LessThanToken _: {
+
+                    Trace("enum with generic parameters");
+
+                    var (_params, parseErr) = ParseGenericParameters(tokens, ref index);
+                    
+                    _enum.GenericParameters = _params;
+
+                    error = error ?? parseErr;
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
+            }
+
+            // Now parse the body of the enum, starting with the `{`
+
+            SkipNewLines(tokens, ref index);
+
+            if (!(tokens.ElementAtOrDefault(index) is LCurlyToken)) {
+
+                error = error ?? 
+                    new ParserError(
+                        "expected `{` to start the enum body",
+                        tokens[index].Span);
+            }
+            else {
+
+                index += 1;
+            }
+
+            Trace($"enum body: {tokens[index]}");
+
+            // Variants in one of the following forms:
+            // - Ident(name) Colon Type
+            // - Ident(name) LCurly struct_body RCurly
+            // - Ident(name) Equal Expression
+            //    expression should evaluate to the underlying type (not allowed if no underlying type)
+            // - Ident(name)
+
+            SkipNewLines(tokens, ref index);
+
+            var cont = true;
+
+            while (cont 
+                && index < tokens.Count 
+                && !(tokens[index] is RCurlyToken)) {
+
+                Trace($"parse_enum_variant({tokens[index]})");
+
+                var _startIndex = index;
+                
+                var variantName = tokens.ElementAtOrDefault(index);
+
+                if (!(variantName is NameToken)) {
+
+                    error = error ?? 
+                        new ParserError(
+                            "expected variant name",
+                            tokens[index].Span);
+
+                    cont = false;
+
+                    break;
+                }
+
+                var name = (variantName as NameToken)?.Value 
+                    ?? throw new Exception();
+
+                index += 1;
+
+                switch (tokens.ElementAtOrDefault(index)) {
+
+                    case ColonToken _: {
+
+                        Trace("variant with type");
+
+                        index += 1;
+
+                        var (varType, typeErr) = ParseTypeName(tokens, ref index);
+                        
+                        index += 1;
+                        
+                        error = error ?? typeErr;
+                        
+                        _enum.Variants.Add(
+                            new TypedEnumVariant(
+                                name,
+                                varType,
+                                new Span(
+                                    fileId: tokens[index].Span.FileId,
+                                    start: tokens[startIndex].Span.Start,
+                                    end: tokens[index].Span.End)));
+
+                        break;
+                    }
+
+                    case LCurlyToken _: {
+
+                        index += 1;
+
+                        var members = new List<VarDecl>();
+
+                        SkipNewLines(tokens, ref index);
+
+                        while (index < tokens.Count
+                            && !(tokens[index] is RCurlyToken)) {
+
+                            var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index);
+
+                            error = error ?? varDeclParseErr;
+
+                            members.Add(decl);
+
+                            // Allow a comma or a newline after each member
+
+                            if (tokens[index] is CommaToken
+                                || tokens[index] is EolToken) {
+
+                                index += 1;
+                            }
+                        }
+
+                        index += 1;
+
+                        _enum.Variants.Add(
+                            new StructLikeEnumVariant(
+                                name,
+                                members,
+                                new Span(
+                                    fileId: tokens[index].Span.FileId,
+                                    start: tokens[startIndex].Span.Start,
+                                    end: tokens[index].Span.End)));
+
+                        break;
+                    }
+
+                    case EqualToken _: {
+
+                        if (_enum.UnderlyingType is UncheckedEmptyType) {
+
+                            error = error ??
+                                new ParserError(
+                                    "enums with explicit values must have an underlying type",
+                                    tokens[index].Span);
+                        }
+
+                        index += 1;
+
+                        var (expr, parseErr) = ParseExpression(
+                            tokens, 
+                            ref index, 
+                            ExpressionKind.ExpressionWithoutAssignment);
+
+                        error = error ?? parseErr;
+
+                        _enum.Variants.Add(
+                            new WithValueEnumVariant(
+                                name,
+                                expr,
+                                new Span(
+                                    fileId: tokens[index].Span.FileId,
+                                    start: tokens[index].Span.Start,
+                                    end: tokens[index].Span.End)));
+
+                        break;
+                    }
+
+                    case RCurlyToken _: {
+
+                        cont = false;
+
+                        break;
+                    }
+
+                    default: {
+
+                        _enum.Variants.Add(
+                            new UntypedEnumVariant(
+                                name,
+                                new Span(
+                                    fileId: tokens[index].Span.FileId,
+                                    start: tokens[index].Span.Start,
+                                    end: tokens[index].Span.End)));
+
+                        break;
+                    }
+                }
+
+                // Require a comma or a newline after each variant
+
+                if (tokens.ElementAtOrDefault(index) is CommaToken
+                    || tokens.ElementAtOrDefault(index) is EolToken) {
+
+                    index += 1;
+                }
+                else {
+
+                    Trace($"Expected comma or newline after enum variant, found {tokens.ElementAtOrDefault(index)}");
+
+                    error = error ??
+                        new ParserError(
+                            "expected comma or newline after enum variant",
+                            tokens[index].Span);
+                }
+            }
+
+            if (tokens.Count == index) {
+
+                error = error ??
+                    new ParserError(
+                        "expected `}` to end the enum body",
+                        tokens[index].Span);
+            }
+            else {
+
+                index += 1;
+            }
+        }
+        else {
+
+            error = error ??
+                new ParserError(
+                    "expected enum name",
+                    tokens[index].Span);
+        }
+
+        return (_enum, error);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static (List<(String, Span)>, Error?) ParseGenericParameters(
+        List<Token> tokens,
+        ref int index) {
+
+        if (!(tokens[index] is LessThanToken)) {
+
+            return (new List<(String, Span)>(), null);
+        }
+
+        index += 1;
+
+        var genericParameters = new List<(String, Span)>();
+
+        while (index < tokens.Count 
+            && !(tokens[index] is GreaterThanToken)) {
+
+            SkipNewLines(tokens, ref index);
+
+            switch (tokens.ElementAtOrDefault(index)) {
+
+                case NameToken nt: {
+
+                    genericParameters.Add((nt.Value, nt.Span));
+
+                    index += 1;
+
+                    switch (tokens.ElementAtOrDefault(index)) {
+
+                        case CommaToken _:
+                        case EolToken _: {
+
+                            index += 1;
+
+                            break;
+                        }
+
+                        default: {
+
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+
+                default: {
+
+                    return (
+                        genericParameters,
+                        new ParserError(
+                            "expected generic parameter name",
+                            tokens[index].Span));
+                }
+            }
+        }
+
+        if (tokens.ElementAtOrDefault(index) is GreaterThanToken) {
+            
+            index += 1;
+        }
+        else {
+
+            return (
+                genericParameters,
+                new ParserError(
+                    "expected `>` to end the generic parameters",
+                    tokens[index].Span));
+        }
+
+        return (genericParameters, null);
+    }
+
+
+
+
+
+
+
+
+
+
 
     public static (Struct, Error?) ParseStruct(
         List<Token> tokens, 
@@ -2483,72 +3103,78 @@ public static partial class ParserFunctions {
 
                     // Check for generic
 
-                    if (index < tokens.Count) {
+                    // if (index < tokens.Count) {
 
-                        switch (tokens[index]) {
+                    //     switch (tokens[index]) {
 
-                            case LessThanToken _: {
+                    //         case LessThanToken _: {
 
-                                index += 1;
+                    //             index += 1;
 
-                                var contGenerics = true;
+                    //             var contGenerics = true;
 
-                                while (contGenerics && index < tokens.Count) {
+                    //             while (contGenerics && index < tokens.Count) {
 
-                                    switch (tokens[index]) {
+                    //                 switch (tokens[index]) {
 
-                                        case GreaterThanToken _: {
+                    //                     case GreaterThanToken _: {
 
-                                            index += 1;
+                    //                         index += 1;
 
-                                            contGenerics = false;
+                    //                         contGenerics = false;
 
-                                            break;
-                                        }
+                    //                         break;
+                    //                     }
 
-                                        case CommaToken _:
-                                        case EolToken _:
+                    //                     case CommaToken _:
+                    //                     case EolToken _:
 
-                                            // Treat comma as whitespace? Might require them in the future
+                    //                         // Treat comma as whitespace? Might require them in the future
 
-                                            index += 1;
+                    //                         index += 1;
 
-                                            break;
+                    //                         break;
 
-                                        case NameToken nt2: {
+                    //                     case NameToken nt2: {
 
-                                            index += 1;
+                    //                         index += 1;
 
-                                            genericParameters.Add((nt2.Value, tokens[index].Span));
+                    //                         genericParameters.Add((nt2.Value, tokens[index].Span));
 
-                                            break;
-                                        }
+                    //                         break;
+                    //                     }
 
-                                        default: {
+                    //                     default: {
 
-                                            Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
+                    //                         Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
 
-                                            error = error ??
-                                                new ParserError(
-                                                    "expected generic parameter",
-                                                    tokens[index].Span);
+                    //                         error = error ??
+                    //                             new ParserError(
+                    //                                 "expected generic parameter",
+                    //                                 tokens[index].Span);
 
-                                            contGenerics = false;
+                    //                         contGenerics = false;
 
-                                            break;
-                                        }
-                                    }
-                                }
+                    //                         break;
+                    //                     }
+                    //                 }
+                    //             }
 
-                                break;
-                            }
+                    //             break;
+                    //         }
 
-                            default: {
+                    //         default: {
 
-                                break;
-                            }
-                        }
-                    }
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+
+                    var (genParams, genParamsParseErr) = ParseGenericParameters(tokens, ref index);
+
+                    genericParameters = genParams;
+
+                    error = error ?? genParamsParseErr;
 
                     // Read in definition
 
@@ -2746,8 +3372,6 @@ public static partial class ParserFunctions {
         }
     }
 
-    ///
-
     public static (Function, Error?) ParseFunction(
         List<Token> tokens,
         ref int index,
@@ -2757,7 +3381,8 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
-        var genericParameters = new List<(String, Span)>();
+        // var genericParameters = new List<(String, Span)>();
+        List<(String, Span)>? genericParameters = null;
 
         index += 1;
 
@@ -2775,73 +3400,79 @@ public static partial class ParserFunctions {
 
                     // Check for generic
 
-                    if (index < tokens.Count) {
+                    // if (index < tokens.Count) {
 
-                        switch (tokens[index]) {
+                    //     switch (tokens[index]) {
 
-                            case LessThanToken _: {
+                    //         case LessThanToken _: {
 
-                                index += 1;
+                    //             index += 1;
 
-                                var contGenerics = true;
+                    //             var contGenerics = true;
 
-                                while (contGenerics && index < tokens.Count) {
+                    //             while (contGenerics && index < tokens.Count) {
 
-                                    switch (tokens[index]) {
+                    //                 switch (tokens[index]) {
 
-                                        case GreaterThanToken _: {
+                    //                     case GreaterThanToken _: {
 
-                                            index += 1;
+                    //                         index += 1;
 
-                                            contGenerics = false;
+                    //                         contGenerics = false;
 
-                                            break;
-                                        }
+                    //                         break;
+                    //                     }
 
-                                        case CommaToken _:
-                                        case EolToken _: {
+                    //                     case CommaToken _:
+                    //                     case EolToken _: {
 
-                                            // Treat comma as whitespace? Might require them in the future
+                    //                         // Treat comma as whitespace? Might require them in the future
                                             
-                                            index += 1;
+                    //                         index += 1;
 
-                                            break;
-                                        }
+                    //                         break;
+                    //                     }
 
-                                        case NameToken nt2: {
+                    //                     case NameToken nt2: {
 
-                                            index += 1;
+                    //                         index += 1;
 
-                                            genericParameters.Add((nt2.Value, tokens[index].Span));
+                    //                         genericParameters.Add((nt2.Value, tokens[index].Span));
 
-                                            break;
-                                        }
+                    //                         break;
+                    //                     }
 
-                                        default: {
+                    //                     default: {
 
-                                            Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
+                    //                         Trace($"ERROR: expected generic parameter, found: {tokens[index]}");
 
-                                            error = error ??
-                                                new ParserError(
-                                                    "expected generic parameter",
-                                                    tokens[index].Span);
+                    //                         error = error ??
+                    //                             new ParserError(
+                    //                                 "expected generic parameter",
+                    //                                 tokens[index].Span);
 
-                                            contGenerics = false;
+                    //                         contGenerics = false;
 
-                                            break;
-                                        }
-                                    }
-                                }
+                    //                         break;
+                    //                     }
+                    //                 }
+                    //             }
 
-                                break;
-                            }
+                    //             break;
+                    //         }
 
-                            default: {
+                    //         default: {
 
-                                break;
-                            }
-                        }
-                    }
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+
+                    var (genParams, genParamParseErr) = ParseGenericParameters(tokens, ref index);
+
+                    error = error ?? genParamParseErr;
+
+                    genericParameters = genParams;
 
                     // Read in definition
 
@@ -3034,49 +3665,67 @@ public static partial class ParserFunctions {
 
                         switch (tokens.ElementAt(index)) {
 
-                            case EqualToken _: {
+                            // case EqualToken _: {
+
+                            //     index += 1;
+
+                            //     switch (tokens.ElementAt(index)) {
+
+                            //         case GreaterThanToken _: {
+
+                            //             index += 1;
+
+                            //             var (_fatArrowExpr, fatArrowExprErr) = ParseExpression(
+                            //                 tokens, 
+                            //                 ref index, 
+                            //                 ExpressionKind.ExpressionWithoutAssignment);
+
+                            //             returnType = new UncheckedEmptyType();
+
+                            //             fatArrowExpr = _fatArrowExpr;
+
+                            //             error = error ?? fatArrowExprErr;
+
+                            //             index += 1;
+
+                            //             break;
+                            //         }
+
+                            //         default: {
+
+                            //             Trace("ERROR: expected =>");
+
+                            //             error = error ?? 
+                            //                 new ParserError(
+                            //                     "expected =>",
+                            //                     tokens.ElementAt(index - 1).Span);
+                                        
+                            //             break;
+                            //         }
+                            //     }
+
+                            //     break;
+                            // }
+
+                            case FatArrowToken _: {
 
                                 index += 1;
 
-                                switch (tokens.ElementAt(index)) {
+                                var (arrowExpr, arrowExprErr) = ParseExpression(
+                                    tokens,
+                                    ref index,
+                                    ExpressionKind.ExpressionWithoutAssignment);
 
-                                    case GreaterThanToken _: {
+                                returnType = new UncheckedEmptyType();
 
-                                        index += 1;
+                                fatArrowExpr = arrowExpr;
 
-                                        var (_fatArrowExpr, fatArrowExprErr) = ParseExpression(
-                                            tokens, 
-                                            ref index, 
-                                            ExpressionKind.ExpressionWithoutAssignment);
+                                error = error ?? arrowExprErr;
 
-                                        returnType = new UncheckedEmptyType();
-
-                                        fatArrowExpr = _fatArrowExpr;
-
-                                        error = error ?? fatArrowExprErr;
-
-                                        index += 1;
-
-                                        break;
-                                    }
-
-                                    default: {
-
-                                        Trace("ERROR: expected =>");
-
-                                        error = error ?? 
-                                            new ParserError(
-                                                "expected =>",
-                                                tokens.ElementAt(index - 1).Span);
-                                        
-                                        break;
-                                    }
-                                }
+                                index += 1;
 
                                 break;
                             }
-
-                            ///
 
                             case MinusToken _: {
 
@@ -3116,8 +3765,6 @@ public static partial class ParserFunctions {
                                 break;
                             }
 
-                            ///
-
                             default: {
 
                                 break;
@@ -3131,7 +3778,7 @@ public static partial class ParserFunctions {
 
                         error = error ?? new ParserError(
                             "incomplete function", 
-                            tokens.ElementAt(index - 1).Span);
+                            tokens.ElementAt(tokens.Count - 1).Span);
                     }
 
                     if (linkage == FunctionLinkage.External) {
@@ -3215,8 +3862,6 @@ public static partial class ParserFunctions {
         }
     }
 
-    ///
-
     public static (Block, Error?) ParseBlock(List<Token> tokens, ref int index) {
 
         Trace($"ParseBlock: {tokens.ElementAt(index)}");
@@ -3224,6 +3869,17 @@ public static partial class ParserFunctions {
         var block = new Block();
 
         Error? error = null;
+
+        if (tokens.ElementAtOrDefault(index) is null) {
+
+            Trace("ERROR: incomplete block");
+
+            error = new ParserError(
+                "incomplete block",
+                tokens[tokens.Count - 1].Span);
+
+            return (block, error);
+        }
 
         var start = tokens.ElementAt(index).Span;
 
@@ -3284,8 +3940,6 @@ public static partial class ParserFunctions {
                     start: start.Start,
                     end: tokens.ElementAt(index - 1).Span.End)));
     }
-    
-    ///
 
     public static (Statement, Error?) ParseStatement(List<Token> tokens, ref int index) {
 
@@ -3638,8 +4292,6 @@ public static partial class ParserFunctions {
         }
     }
 
-    ///
-
     public static (Statement, Error?) ParseIfStatement(
         List<Token> tokens,
         ref int index) {
@@ -3769,8 +4421,6 @@ public static partial class ParserFunctions {
         return (new IfStatement(cond, block, elseStmt), error);
     }
 
-    ///
-
     public static (Expression, Error?) ParseExpression(
         List<Token> tokens, 
         ref int index, 
@@ -3800,7 +4450,7 @@ public static partial class ParserFunctions {
 
             // Test to see if the next token is an operator
 
-            while (tokens[index] is EolToken) {
+            if (tokens[index] is EolToken) {
 
                 break;
             }
@@ -3952,7 +4602,261 @@ public static partial class ParserFunctions {
         return (output, error);
     }
 
-    ///
+
+
+
+    public static (WhenCase, Error?) ParsePatternCase(
+        List<Token> tokens,
+        ref int index) {
+
+        // case:
+        // QualifiedName('(' ((name ':')? expression),* ')')? '=>' (expression | block)
+
+        Error? error = null;
+
+        var pattern = new List<(String, Span)>();
+
+        while (tokens.ElementAtOrDefault(index) is NameToken nt) {
+
+            index += 1;
+
+            if (tokens.ElementAtOrDefault(index) is PeriodToken) {
+
+                index += 1;
+            }
+            else {
+
+                pattern.Add((nt.Value, nt.Span));
+
+                break;
+            }
+
+            pattern.Add((nt.Value, nt.Span));
+        }
+
+        var arguments = new List<(String?, String)>();
+        
+        var hasParens = false;
+
+        var argsStart = index;
+
+        if (tokens.ElementAtOrDefault(index) is LParenToken) {
+
+            hasParens = true;
+            
+            index += 1;
+
+            var cont = true;
+
+            while (cont 
+                && index < tokens.Count
+                && !(tokens.ElementAtOrDefault(index) is RParenToken)) {
+
+                if (tokens.ElementAtOrDefault(index) is NameToken nt) {
+
+                    if (tokens.ElementAtOrDefault(index + 1) is ColonToken) {
+
+                        index += 1;
+
+                        if (tokens.ElementAtOrDefault(index) is ColonToken) {
+
+                            index += 1;
+                        }
+                        else {
+
+                            error = new ParserError(
+                                "expected ':' after explicit pattern argument name",
+                                tokens.ElementAtOrDefault(index)!.Span);
+
+                            cont = false;
+                        
+                            break;
+                        }
+
+                        if (tokens.ElementAtOrDefault(index) is NameToken binding) {
+
+                            index += 1;
+
+                            arguments.Add((nt.Value, binding.Value));
+                        }
+                        else {
+
+                            error = new ParserError(
+                                "expected pattern argument name",
+                                tokens.ElementAtOrDefault(index)!.Span);
+
+                            cont = false;
+
+                            break;
+                        }
+                    }
+                    else {
+
+                        if (tokens.ElementAtOrDefault(index) is NameToken binding) {
+
+                            index += 1;
+
+                            arguments.Add((null, binding.Value));
+                        }
+                        else {
+
+                            error = new ParserError(
+                                "expected pattern argument name",
+                                tokens.ElementAtOrDefault(index)!.Span);
+
+                            cont = false;
+
+                            break;
+                        }
+
+                        if (tokens.ElementAtOrDefault(index) is CommaToken) {
+
+                            index += 1;
+                        }
+                    }
+                }
+                else {
+
+                    if (tokens.ElementAtOrDefault(index) is NameToken binding) {
+
+                        index += 1;
+
+                        arguments.Add((null, binding.Value));
+                    }
+                    else {
+
+                        error = new ParserError(
+                            "expected pattern argument name",
+                            tokens.ElementAtOrDefault(index)!.Span);
+
+                        cont = false;
+
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        if (hasParens) {
+
+            index += 1;
+        }
+
+        var argsEnd = index;
+
+        if (tokens.ElementAtOrDefault(index) is FatArrowToken) {
+
+            index += 1;
+        }
+        else {
+
+            error = new ParserError(
+                "expected '=>' after pattern case",
+                tokens.ElementAtOrDefault(index)!.Span);
+        }
+
+        if (tokens.ElementAtOrDefault(index) is LCurlyToken) {
+
+            index += 1;
+
+            var (block, err) = ParseBlock(tokens, ref index);
+
+            error = error ?? err;
+
+            return (
+                new EnumVariantWhenCase(
+                    variantName: pattern,
+                    variantArguments: arguments,
+                    argumentsSpan: new Span(
+                        fileId: tokens[argsStart].Span.FileId,
+                        start: tokens[argsStart].Span.Start,
+                        end: tokens[argsEnd - 1].Span.End),
+                    body: new BlockWhenBody(block)),
+                error);
+        }
+        else {
+
+            var (expr, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+            error = error ?? err;
+
+            return (
+                new EnumVariantWhenCase(
+                    variantName: pattern,
+                    variantArguments: arguments,
+                    argumentsSpan: new Span(
+                        fileId: tokens[argsStart].Span.FileId,
+                        start: tokens[argsStart].Span.Start,
+                        end: tokens[argsEnd - 1].Span.End),
+                    body: new ExpressionWhenBody(expr)),
+                error);
+        }
+    }
+
+
+
+
+
+
+    public static (List<WhenCase>, Error?) ParsePatterns(
+        List<Token> tokens,
+        ref int index) {
+
+        var cases = new List<WhenCase>();
+    
+        Error? error = null;
+
+        SkipNewLines(tokens, ref index);
+
+        if (!(tokens.ElementAtOrDefault(index) is LCurlyToken)) {
+
+            SkipNewLines(tokens, ref index);
+
+            error = error ?? 
+                new ParserError(
+                    "expected '{'",
+                    tokens[index].Span);
+
+            return (cases, error);
+        }
+
+        index += 1;
+
+        SkipNewLines(tokens, ref index);
+
+        while (!(tokens.ElementAtOrDefault(index) is RCurlyToken)) {
+
+            var (pattern, err) = ParsePatternCase(tokens, ref index);
+
+            error = error ?? err;
+
+            cases.Add(pattern);
+
+            if (tokens[index] is EolToken
+                || tokens[index] is CommaToken) {
+
+                index += 1;
+            }
+        }
+
+        SkipNewLines(tokens, ref index);
+
+        if (!(tokens.ElementAtOrDefault(index) is RCurlyToken)) {
+
+            error = error ?? 
+                new ParserError(
+                    "expected '}'",
+                    tokens[index].Span);
+        }
+
+        index += 1;
+
+        return (cases, error);
+    }
+
+
+
 
     public static (Expression, Error?) ParseOperand(
         List<Token> tokens, 
@@ -4025,6 +4929,30 @@ public static partial class ParserFunctions {
                     end: _expr.GetSpan().End);
 
                 expr = new UnaryOpExpression(_expr, new LogicalNotUnaryOperator(), _span);
+
+                break;
+            }
+
+            case NameToken nt when nt.Value == "when": {
+
+                var startSpan = tokens[index].Span;
+
+                index += 1;
+
+                var (operand, operandErr) = ParseOperand(tokens, ref index);
+
+                error = error ?? operandErr;
+
+                var (patterns, patternsErr) = ParsePatterns(tokens, ref index);
+
+                error = error ?? patternsErr;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: operand.GetSpan().End);
+
+                expr = new WhenExpression(operand, patterns, _span);
 
                 break;
             }
@@ -4459,8 +5387,6 @@ public static partial class ParserFunctions {
                 break;
             }
 
-            ///
-
             default: {
 
                 Trace("ERROR: unsupported expression");
@@ -4756,6 +5682,25 @@ public static partial class ParserFunctions {
 
                                             index += 1;
                                         }
+                                        else if (tokens.ElementAt(index) is LessThanToken) {
+
+                                            index -= 1;
+
+                                            var (call, parseCallErr) = ParseCall(tokens, ref index);
+
+                                            if (parseCallErr is not null) {
+
+                                                error = error ?? parseCallErr;
+                                            }
+                                            else {
+
+                                                call.Namespace = ns;
+
+                                                expr = new CallExpression(call, span);
+                                            }
+
+                                            contNS = false;
+                                        }
                                         else {
 
                                             // index += 1;
@@ -4977,8 +5922,6 @@ public static partial class ParserFunctions {
 
         return (expr, error);
     }
-
-    ///
 
     public static (Expression, Error?) ParseOperator(
         List<Token> tokens, 
@@ -5549,8 +6492,6 @@ public static partial class ParserFunctions {
         }
     }
 
-    ///
-
     public static (Expression, Error?) ParseArray(
         List<Token> tokens,
         ref int index) {
@@ -5754,8 +6695,6 @@ public static partial class ParserFunctions {
         }
     }
 
-    ///
-
     public static (VarDecl, Error?) ParseVariableDeclaration(
         List<Token> tokens,
         ref int index) {
@@ -5877,8 +6816,6 @@ public static partial class ParserFunctions {
         }
     }
 
-    ///
-
     public static (UncheckedType, Error?) ParseArrayType(
         List<Token> tokens,
         ref int index) {
@@ -5914,8 +6851,6 @@ public static partial class ParserFunctions {
 
         return (new UncheckedEmptyType(), null);
     }
-
-    ///
 
     public static (UncheckedType, Error?) ParseTypeName(
         List<Token> tokens, 
@@ -6063,7 +6998,7 @@ public static partial class ParserFunctions {
                             new Span(
                                 fileId: start.FileId,
                                 start: start.Start,
-                                end: tokens[index - 1].Span.End));
+                                end: tokens[tokens.Count - 1].Span.End));
                     }
                     else {
 
@@ -6081,8 +7016,6 @@ public static partial class ParserFunctions {
 
         return (uncheckedType, error);
     }
-
-    ///
 
     public static (String, Error?) ParseCallParameterName(List<Token> tokens, ref int index) {
 
@@ -6105,8 +7038,6 @@ public static partial class ParserFunctions {
             String.Empty,
             null);
     }
-
-    ///
 
     public static (Call, Error?) ParseCall(List<Token> tokens, ref int index) {
 

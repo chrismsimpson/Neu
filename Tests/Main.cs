@@ -19,22 +19,23 @@ public static partial class Program {
 
         // TestScratchpad();
 
-        TestBasics();
-        TestControlFlow();
-        TestFunctions();
-        TestMath();
-        TestVariables();
-        TestStrings();
-        TestArrays();
-        TestOptional();
-        TestTuples();
-        TestStructs();
-        TestPointers();
-        TestClasses();
-        TestBoolean();
-        TestRanges();
-        TestDictionaries();
-        TestGenerics();
+        // TestBasics();
+        // TestControlFlow();
+        // TestFunctions();
+        // TestMath();
+        // TestVariables();
+        // TestStrings();
+        // TestArrays();
+        // TestOptional();
+        // TestTuples();
+        // TestStructs();
+        // TestPointers();
+        // TestClasses();
+        // TestBoolean();
+        // TestRanges();
+        // TestDictionaries();
+        // TestGenerics();
+        TestEnums();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -390,5 +391,10 @@ public static partial class Program {
     public static ErrorOrVoid TestGenerics() {
 
         return TestSamples("./Samples/Generics");
+    }
+
+    public static ErrorOrVoid TestEnums() {
+
+        return TestSamples("./Samples/Enums");
     }
 }

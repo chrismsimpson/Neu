@@ -421,6 +421,12 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class FatArrowToken: Token {
+
+        public FatArrowToken(Span span)
+            : base(span) { }
+    }
+
     public partial class UnknownToken: Token {
 
         public UnknownToken(Span span) 
@@ -673,6 +679,14 @@ public static partial class LexerFunctions {
                             index += 1;
 
                             output.Add(new DoubleEqualToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
+                        else if (ToChar(bytes[index]) == '>') {
+
+                            index += 1;
+
+                            output.Add(new FatArrowToken(new Span(fileId, start, start + 2)));
 
                             continue;
                         }
