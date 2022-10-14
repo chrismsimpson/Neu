@@ -5643,14 +5643,14 @@ public static partial class ParserFunctions {
 
                                             index -= 1;
 
-                                            var (method, err) = ParseCall(tokens, ref index);
-                                            
-                                            error = error ?? err;
-
                                             var _span = new Span(
                                                 fileId: expr.GetSpan().FileId,
                                                 start: expr.GetSpan().Start,
                                                 end: tokens.ElementAt(index).Span.End);
+
+                                            var (method, err) = ParseCall(tokens, ref index);
+                                            
+                                            error = error ?? err;
 
                                             expr = new MethodCallExpression(expr, method, _span);
                                         }
