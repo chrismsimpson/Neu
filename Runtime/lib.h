@@ -259,7 +259,10 @@ struct _NeuExplicitValueOrReturn {
     _NeuExplicitValueOrReturn(void) requires(IsVoid<Return>)
         : value(Empty { }) { }
 
-    bool isReturn() const { return value.template has<Return>(); }
+    bool isReturn() const { 
+        
+        return value.template has<Conditional<IsVoid<Return>, Empty, Return>>();
+    }
 
     Return releaseReturn() {
 
