@@ -1,0 +1,7 @@
+func main() {
+    unsafe {
+        cpp {
+            "printf(\"\\\"test\\\"\n\");"
+        }
+    }
+}

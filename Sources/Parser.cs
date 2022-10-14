@@ -760,6 +760,14 @@ public static partial class StatementFunctions {
             ///
 
             case var _ when
+                l is InlineCPPStatement li
+                && r is InlineCPPStatement ri:
+
+                return InlineCPPStatementFunctions.Eq(li, ri);
+
+            ///
+
+            case var _ when
                 l is GarbageStatement gL
                 && r is GarbageStatement gR:
 
@@ -1275,6 +1283,50 @@ public static partial class TryStatementFunctions {
         }
 
         return BlockFunctions.Eq(l.Block, r.Block);
+    }
+}
+
+///
+
+public partial class InlineCPPStatement: Statement {
+
+    public Block Block { get; init; }
+
+    public Span Span { get; init; }
+
+    ///
+
+    public InlineCPPStatement(
+        Block block,
+        Span span) {
+
+        this.Block = block;
+        this.Span = span;
+    }
+}
+
+public static partial class InlineCPPStatementFunctions {
+
+    public static bool Eq(
+        InlineCPPStatement? l,
+        InlineCPPStatement? r) {
+        
+        if (l == null && r == null) {
+
+            return true;
+        }
+
+        if (l == null || r == null) {
+
+            return false;
+        }
+
+        if (!BlockFunctions.Eq(l.Block, r.Block)) {
+
+            return false;
+        }
+
+        return SpanFunctions.Eq(l.Span, r.Span);
     }
 }
 
@@ -4057,6 +4109,28 @@ public static partial class ParserFunctions {
                             "expected initializer", 
                             tokens.ElementAt(index - 1).Span));
                 }
+            }
+
+            case NameToken nt when nt.Value == "cpp": {
+
+                Trace("parsing inline cpp block");
+
+                index += 1;
+
+                var startSpan = tokens[index].Span;
+
+                var (block, blockErr) = ParseBlock(tokens, ref index);
+
+                error = error ?? blockErr;
+
+                var _span = new Span(
+                    fileId: startSpan.FileId,
+                    start: startSpan.Start,
+                    end: tokens[index].Span.End);
+                    
+                return (
+                    new InlineCPPStatement(block, _span),
+                    error);
             }
 
             case LCurlyToken _: {

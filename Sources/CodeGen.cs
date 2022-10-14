@@ -1363,6 +1363,29 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
+            case CheckedInlineCppStatement i: {
+
+                var first = true;
+
+                foreach (var str in i.Lines) {
+
+                    if (!first) {
+
+                        output.Append(new String(' ', indent));
+                    }
+                    else {
+
+                        first = false;
+                    }
+
+                    output.Append(str.Replace("\\\"", "\"").Replace("\\\\", "\\"));
+
+                    output.Append("\n");
+                }
+
+                break;
+            }
+
             case CheckedGarbageStatement _: {
 
                 // Incorrect parse/typecheck

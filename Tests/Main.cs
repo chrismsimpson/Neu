@@ -36,6 +36,7 @@ public static partial class Program {
         TestDictionaries();
         TestGenerics();
         TestEnums();
+        TestInlineCPP();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -396,5 +397,10 @@ public static partial class Program {
     public static ErrorOrVoid TestEnums() {
 
         return TestSamples("./Samples/Enums");
+    }
+
+    public static ErrorOrVoid TestInlineCPP() {
+
+        return TestSamples("./Samples/InlineCPP");
     }
 }

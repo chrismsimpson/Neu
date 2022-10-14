@@ -1151,6 +1151,19 @@ public partial class CheckedStatement {
         }
     }
 
+    public partial class CheckedInlineCppStatement: CheckedStatement {
+
+        public List<String> Lines { get; init; }
+
+        ///
+
+        public CheckedInlineCppStatement(
+            List<String> lines) {
+
+            this.Lines = lines;
+        }
+    }
+
     public partial class CheckedGarbageStatement: CheckedStatement {
 
         public CheckedGarbageStatement() { }
@@ -3836,6 +3849,46 @@ public static partial class TypeCheckerFunctions {
                 return (
                     new CheckedBlockStatement(checkedBlock),
                     checkedBlockErr);
+            }
+
+            case InlineCPPStatement i: {
+
+                if (safetyMode == SafetyMode.Safe) {
+
+                    return (
+                        new CheckedInlineCppStatement(new List<String>()),
+                        new TypeCheckError(
+                            "Use of inline cpp block outside of unsafe block",
+                            i.Span));
+                }
+
+                var strings = new List<String>();
+
+                foreach (var statement in i.Block.Statements) {
+
+                    switch (statement) {
+
+                        case ExpressionStatement es when es.Expression is QuotedStringExpression qs: {
+
+                            strings.Add(qs.Value);
+
+                            break;
+                        }
+
+                        default: {
+
+                            return (
+                                new CheckedInlineCppStatement(new List<String>()),
+                                new TypeCheckError(
+                                    "Expected block of strings",
+                                    i.Span));
+                        }
+                    }
+                }
+
+                return (
+                    new CheckedInlineCppStatement(strings),
+                    null);
             }
             
             case GarbageStatement _: {

@@ -1,0 +1,21 @@
+func main() {
+
+    var i: Int32? = none
+
+    unsafe {
+        cpp {
+            "i = 32;"
+        }
+    }
+
+    let x = 3
+
+    unsafe {
+        cpp {
+            "auto const y = 7;"
+            "*i += (x + y);"
+        }
+    }
+
+    printLine("{}", i!)
+}
