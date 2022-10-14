@@ -3161,7 +3161,7 @@ public static partial class TypeCheckerFunctions {
 
             var checkedFunction = new CheckedFunction(
                 name: func.Name,
-                throws: false,
+                throws: func.Throws,
                 parameters: new List<CheckedParameter>(),
                 genericParameters: genericParameters,
                 funcScopeId: methodScopeId,

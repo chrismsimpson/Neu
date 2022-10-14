@@ -1,0 +1,17 @@
+class Foo {
+
+    func toss(this) throws {
+
+        throw Error.fromError(0)
+    }
+}
+
+func main() {
+
+    let foo = Foo()
+
+    try foo.toss() catch error {
+
+        printLine("PASS")
+    }
+}
