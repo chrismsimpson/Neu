@@ -23,7 +23,7 @@
             "patterns": [
                 {
                     "name": "keyword.control.neu",
-                    "match": "\\b(if|else|while|for|return|defer|unsafe|loop|throw|continue|break|try|catch)\\b"
+                    "match": "\\b(if|else|while|for|return|defer|unsafe|loop|throw|continue|break|try|catch|when)\\b"
                 },
                 {
                     "name": "keyword.neu",
@@ -31,7 +31,7 @@
                 },
                 {
                     "name": "keyword.neu",
-                    "match": "\\b(func|extern|struct|class|throws)\\b"
+                    "match": "\\b(func|extern|struct|class|throws|enum)\\b"
                 },
                 {
                     "name": "keyword.neu",

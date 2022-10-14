@@ -143,6 +143,251 @@ inline constexpr T __arithmeticShiftRight(T value, size_t steps) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename Value>
+struct _NeuExplicitValue {
+
+    _NeuExplicitValue(Value&& v)
+        : value(move(v)) { }
+
+    _NeuExplicitValue(Value const& v)
+        : value(v) { }
+
+    Value value;
+};
+
+template<>
+struct _NeuExplicitValue<void> {
+
+    _NeuExplicitValue() { }
+};
+
+template<typename Value, typename Return>
+struct _NeuExplicitValueOrReturn {
+
+    _NeuExplicitValueOrReturn(_NeuExplicitValue<Value>&& v)
+        : value(move(v)) { }
+
+    template<typename U>
+    _NeuExplicitValueOrReturn(U&& v) requires(!IsVoid<Return>)
+        : value(Return { forward<U>(v) }) { }
+
+    _NeuExplicitValueOrReturn(void) requires(IsVoid<Return>)
+        : value(Empty { }) { }
+
+    bool isReturn() const { return value.template has<Return>(); }
+
+    Return releaseReturn() {
+
+        if constexpr (IsVoid<Return>) {
+
+            return;
+        }
+        else {
+
+            return move(value).template get<Return>();
+        }
+    }
+
+    Value releaseValue() {
+
+        if constexpr (IsVoid<Value>) {
+
+            return;
+        }
+        else {
+
+            return move(value).template get<_NeuExplicitValue<Value>>().value;
+        }
+    }
+
+    Variant<Conditional<IsVoid<Return>, Empty, Return>, _NeuExplicitValue<Value>> value;
+};
+
+#define NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(x) ({  \
+    auto&& _neu_value = x;                          \
+    if (_neu_value.isReturn()) {                    \
+        return _neu_value.releaseReturn();          \
+    }                                               \
+    _neu_value.releaseValue();                      \
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main(int argc, char** argv) {
 
     Array<String> args;

@@ -35,6 +35,7 @@ public static partial class Program {
         TestRanges();
         TestDictionaries();
         TestGenerics();
+        TestEnums();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -390,5 +391,10 @@ public static partial class Program {
     public static ErrorOrVoid TestGenerics() {
 
         return TestSamples("./Samples/Generics");
+    }
+
+    public static ErrorOrVoid TestEnums() {
+
+        return TestSamples("./Samples/Enums");
     }
 }
