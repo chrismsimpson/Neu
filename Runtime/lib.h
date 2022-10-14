@@ -249,8 +249,13 @@ struct _NeuExplicitValue<void> {
 template<typename Value, typename Return>
 struct _NeuExplicitValueOrReturn {
 
-    _NeuExplicitValueOrReturn(_NeuExplicitValue<Value>&& v)
-        : value(move(v)) { }
+    template<typename U>
+    _NeuExplicitValueOrReturn(_NeuExplicitValue<U>&& v)
+        : value(_NeuExplicitValue<Value> { move(v.value) }) { }
+
+    _NeuExplicitValueOrReturn(_NeuExplicitValue<void>&&)
+        : value(_NeuExplicitValue<void> { }) { }
+
 
     template<typename U>
     _NeuExplicitValueOrReturn(U&& v) requires(!IsVoid<Return>)
