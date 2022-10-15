@@ -3986,7 +3986,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case ReturnStatement rs: {
+            case ParsedReturnStatement rs: {
 
                 Int32? _retType = null;
 

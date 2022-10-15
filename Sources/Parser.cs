@@ -761,10 +761,10 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when
-                l is ReturnStatement retL
-                && r is ReturnStatement retR:
+                l is ParsedReturnStatement retL
+                && r is ParsedReturnStatement retR:
 
-                return ReturnStatementFunctions.Eq(retL, retR);
+                return ParsedReturnStatementFunctions.Eq(retL, retR);
 
             ///
 
@@ -1193,24 +1193,24 @@ public static partial class ParsedContinueStatementFunctions {
 
 ///
 
-public partial class ReturnStatement: ParsedStatement {
+public partial class ParsedReturnStatement: ParsedStatement {
 
     public ParsedExpression Expr { get; init; }
 
     ///
 
-    public ReturnStatement(
+    public ParsedReturnStatement(
         ParsedExpression expr) {
 
         this.Expr = expr;
     }
 }
 
-public static partial class ReturnStatementFunctions {
+public static partial class ParsedReturnStatementFunctions {
 
     public static bool Eq(
-        ReturnStatement? l,
-        ReturnStatement? r) {
+        ParsedReturnStatement? l,
+        ParsedReturnStatement? r) {
 
         return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
     }
@@ -3672,7 +3672,7 @@ public static partial class ParserFunctions {
 
                             var _block = new ParsedBlock();
 
-                            _block.Statements.Add(new ReturnStatement(fae));
+                            _block.Statements.Add(new ParsedReturnStatement(fae));
 
                             block = _block;
 
@@ -4033,7 +4033,7 @@ public static partial class ParserFunctions {
                 error = error ?? exprErr;
 
                 return (
-                    new ReturnStatement(expr),
+                    new ParsedReturnStatement(expr),
                     error
                 );
             }
