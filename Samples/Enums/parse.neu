@@ -10,7 +10,7 @@ enum SimpleWithType {
 }
 
 enum SimpleWithStructType {
-    a { a: Int32, b: UInt32 }
+    a { aa: Int32, ab: UInt32 }
     b: Int32
 }
 

@@ -2880,7 +2880,7 @@ public static partial class TypeCheckerFunctions {
                             variants.Add(new CheckedUntypedEnumVariant(u.Name, u.Span));
                         }
 
-                        if (project.FindFuncInScope(parentScopeId, u.Name) is null) {
+                        if (project.FindFuncInScope(enumScopeId, u.Name) is null) {
 
                             var funcScopeId = project.CreateScope(parentScopeId);
 
@@ -2900,7 +2900,7 @@ public static partial class TypeCheckerFunctions {
                             project.Functions.Add(checkedConstructor);
 
                             if (project.AddFuncToScope(
-                                parentScopeId, 
+                                enumScopeId, 
                                 u.Name, 
                                 project.Functions.Count - 1, 
                                 u.Span).Error is Error e1) {
@@ -3011,7 +3011,47 @@ public static partial class TypeCheckerFunctions {
                                 checkedMembers,
                                 s.Span));
                                 
-                        // FIXME: Generate a constructor
+                        if (project.FindFuncInScope(enumScopeId, s.Name) is null) {
+
+                            // Generate a constructor
+
+                            var constructorParams = checkedMembers
+                                .Select(member => 
+                                    new CheckedParameter(
+                                        requiresLabel: true, 
+                                        variable: new CheckedVariable(
+                                            name: member.Name,
+                                            type: member.Type,
+                                            mutable: false)))
+                                .ToList();
+
+                            var funcScopeId = project.CreateScope(parentScopeId);
+
+                            var checkedConstructor = new CheckedFunction(
+                                name: s.Name,
+                                throws: false,
+                                returnType: enumTypeId,
+                                parameters: constructorParams,
+                                genericParameters: _enum
+                                    .GenericParameters
+                                    .Select(x => 
+                                        new InferenceGuideFunctionGenericParameter(project.FindTypeInScope(enumScopeId, x.Item1)!.Value) as FunctionGenericParameter)
+                                    .ToList(),
+                                funcScopeId: funcScopeId,
+                                block: new CheckedBlock(),
+                                linkage: FunctionLinkage.ImplicitEnumConstructor);
+                            
+                            project.Functions.Add(checkedConstructor);
+
+                            if (project.AddFuncToScope(
+                                enumScopeId, 
+                                s.Name, 
+                                project.Functions.Count - 1, 
+                                s.Span).Error is Error e) {
+
+                                error = error ?? e;
+                            }
+                        }
                     }
 
                     break;
@@ -3049,7 +3089,7 @@ public static partial class TypeCheckerFunctions {
                                     checkedType,
                                     t.Span));
 
-                            if (project.FindFuncInScope(parentScopeId, t.Name) == null) {
+                            if (project.FindFuncInScope(enumScopeId, t.Name) == null) {
 
                                 // Generate a constructor
 
@@ -3082,7 +3122,7 @@ public static partial class TypeCheckerFunctions {
                                 project.Functions.Add(checkedConstructor);
 
                                 if (project.AddFuncToScope(
-                                    parentScopeId, 
+                                    enumScopeId, 
                                     t.Name, 
                                     project.Functions.Count - 1, 
                                     t.Span).Error is Error e) {
@@ -4865,11 +4905,90 @@ public static partial class TypeCheckerFunctions {
                                                         break;
                                                     }
 
-                                                    default: {
+                                                    // default: {
 
-                                                        // TODO
+                                                    //     // TODO
+
+                                                    //     break;
+                                                    // }
+
+                                                    case CheckedStructLikeEnumVariant s: {
+
+                                                        var variantName = s.Name;
+
+                                                        var fields = s.Decls.ToList();
+
+                                                        var namesSeen = new HashSet<String>();
+
+                                                        foreach (var arg in evwc.VariantArguments) {
+
+                                                            var argName = arg.Item1;
+
+                                                            if (IsNullOrWhiteSpace(argName)) {
+
+                                                                error = error ?? 
+                                                                    new TypeCheckError(
+                                                                        $"when case argument '{arg.Item2}' for struct-like enum variant cannot be anonymous",
+                                                                        evwc.ArgumentsSpan);
+                                                            }
+                                                            else {
+
+                                                                if (namesSeen.Contains(argName)) {
+
+                                                                    error = error ?? 
+                                                                        new TypeCheckError(
+                                                                            $"when case argument '{argName}' is already defined",
+                                                                            evwc.ArgumentsSpan);
+                                                                }
+                                                                else {
+
+                                                                    namesSeen.Add(argName);
+
+                                                                    var fieldType = fields
+                                                                        .FirstOrDefault(x => x.Name == argName)?
+                                                                        .Type;
+
+                                                                    if (fieldType is not null) {
+
+                                                                        fieldType = SubstituteTypeVarsInType(fieldType.Value, genericParams, project);
+                                                                    }
+
+                                                                    switch (fieldType) {
+
+                                                                        case Int32 _fieldType: {
+
+                                                                            vars.Add((
+                                                                                new CheckedVariable(
+                                                                                    name: arg.Item2,
+                                                                                    _fieldType,
+                                                                                    mutable: false),
+                                                                                we.Span));
+
+                                                                            break;
+                                                                        }
+
+                                                                        default: {
+
+                                                                            error = error ?? 
+                                                                                new TypeCheckError(
+                                                                                    $"when case argument '{argName}' does not exist in struct-like enum variant '{s.Name}'",
+                                                                                    evwc.ArgumentsSpan);
+
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
 
                                                         break;
+                                                    }
+
+                                                    default: {
+
+                                                        // break;
+
+                                                        throw new Exception();
                                                     }
 
                                                 }

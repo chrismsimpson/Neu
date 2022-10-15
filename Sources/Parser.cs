@@ -6678,35 +6678,6 @@ public static partial class ParserFunctions {
 
         // [T] is shorthand for Array<T>
 
-        // if (index + 2 >= tokens.Count) {
-
-        //     return (new UncheckedEmptyType(), null);
-        // }
-
-        // var start = tokens.ElementAt(index).Span;
-
-        // if (tokens.ElementAt(index) is LSquareToken) {
-
-        //     if (tokens.ElementAt(index + 2) is RSquareToken) {
-
-        //         if (tokens.ElementAt(index + 1) is NameToken nt) {
-
-        //             var uncheckedType = new UncheckedArrayType(
-        //                 new UncheckedNameType(nt.Value, nt.Span),
-        //                 new Span(
-        //                     fileId: start.FileId,
-        //                     start: start.Start,
-        //                     end: tokens.ElementAt(index + 2).Span.End));
-
-        //             index += 2;
-
-        //             return (uncheckedType, null);                    
-        //         }
-        //     }
-        // }
-
-        // return (new UncheckedEmptyType(), null);
-
         if (index + 2 >= tokens.Count) {
 
             return (new UncheckedEmptyType(), null);

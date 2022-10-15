@@ -228,7 +228,63 @@ public static partial class CodeGenFunctions {
                         output.Append(";\n");
                     }
 
-                    output.Append("    };\n");
+                    // output.Append("    };\n");
+
+                    output.Append("        template<");
+
+                    for (var i = 0; i < s.Decls.Count; i++) {
+
+                        if (i > 0) {
+
+                            output.Append(", ");
+                        }
+
+                        output.Append("typename _MemberT");
+                        output.Append($"{i}");
+                    }
+                    output.Append(">\n");
+                    output.Append("        ");
+                    output.Append(s.Name);
+                    output.Append("(");
+
+                    for (var i = 0; i < s.Decls.Count; i++) {
+                        
+                        if (i > 0) {
+                        
+                            output.Append(", ");
+                        }
+                        
+                        output.Append("_MemberT");
+                        output.Append($"{i}");
+                        output.Append("&& member_");
+                        output.Append($"{i}");
+                    }
+                    output.Append("):\n");
+
+                    for (var i = 0; i < s.Decls.Count; i++) {
+
+                        var member = s.Decls[i];
+
+                        output.Append("            ");
+                        output.Append(member.Name);
+                        output.Append("{ forward<_MemberT");
+                        output.Append($"{i}");
+                        output.Append(">(member_");
+                        output.Append($"{i}");
+                        output.Append(")}");
+
+                        if (i < s.Decls.Count - 1) {
+                            
+                            output.Append(",\n");
+                        } 
+                        else {
+                            
+                            output.Append("\n");
+                        }
+                    }
+
+                    output.Append("    { }\n");
+                    output.Append("};\n");
 
                     break;
                 }
@@ -2017,10 +2073,11 @@ public static partial class CodeGenFunctions {
 
                                         case CheckedTypedEnumVariant t: {
 
+                                            output.Append("typename ");
                                             output.Append(CodeGenType(evwc.SubjectTypeId, project));
                                             output.Append("::");
                                             output.Append(t.Name);
-                                            output.Append(" const& value) -> _NeuExplicitValueOrReturn<");
+                                            output.Append(" const& __neu_match_value) -> _NeuExplicitValueOrReturn<");
                                             output.Append(CodeGenType(we.TypeId, project));
                                             output.Append(", ");
                                             output.Append("_NeuCurrentFunctionReturnType");
@@ -2037,7 +2094,7 @@ public static partial class CodeGenFunctions {
                                                 output.Append(CodeGenType(v.Type, project));
                                                 output.Append(" const& ");
                                                 output.Append(evwc.VariantArguments[0].Item2);
-                                                output.Append(" = value.value;\n");
+                                                output.Append(" = __neu_match_value.value;\n");
                                             }
 
                                             break;
@@ -2045,15 +2102,49 @@ public static partial class CodeGenFunctions {
 
                                         case CheckedUntypedEnumVariant u: {
 
+                                            output.Append("typename ");
                                             output.Append(CodeGenType(evwc.SubjectTypeId, project));
                                             output.Append("::");
                                             output.Append(u.Name);
-                                            output.Append(" const& value) -> _NeuExplicitValueOrReturn<");
+                                            output.Append(" const& __neu_match_value) -> _NeuExplicitValueOrReturn<");
                                             output.Append(CodeGenType(we.TypeId, project));
                                             output.Append(", ");
                                             output.Append("_NeuCurrentFunctionReturnType");
                                             output.Append(">");
                                             output.Append(" {\n");
+
+                                            break;
+                                        }
+
+                                        case CheckedStructLikeEnumVariant s: {
+
+                                            output.Append("typename ");
+                                            output.Append(CodeGenType(evwc.SubjectTypeId, project));
+                                            output.Append("::");
+                                            output.Append(s.Name);
+                                            output.Append(" const& __neu_match_value) -> _NeuExplicitValueOrReturn<");
+                                            output.Append(CodeGenType(we.TypeId, project));
+                                            output.Append(", ");
+                                            output.Append("_NeuCurrentFunctionReturnType");
+                                            output.Append(">");
+                                            output.Append(" {\n");
+
+                                            if (evwc.VariantArguments.Any()) {
+
+                                                foreach (var arg in evwc.VariantArguments) {
+
+                                                    var v = project
+                                                        .FindVarInScope(evwc.ScopeId, arg.Item2)
+                                                        ?? throw new Exception();
+
+                                                    output.Append(CodeGenType(v.Type, project));
+                                                    output.Append(" const& ");
+                                                    output.Append(arg.Item2);
+                                                    output.Append(" = __neu_match_value.");
+                                                    output.Append(arg.Item1 ?? throw new Exception());
+                                                    output.Append(";\n");
+                                                }
+                                            }
 
                                             break;
                                         }
@@ -2065,7 +2156,7 @@ public static partial class CodeGenFunctions {
 
                                         default: {
 
-                                            throw new Exception("TODO");
+                                            throw new Exception();
                                         }
                                     }
 
