@@ -688,48 +688,48 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when
-                l is UnsafeBlockStatement lu
-                && r is UnsafeBlockStatement ru:
+                l is ParsedUnsafeBlockStatement lu
+                && r is ParsedUnsafeBlockStatement ru:
 
-                return UnsafeBlockStatementFunctions.Eq(lu, ru);
-
-            ///
-
-            case var _ when 
-                l is VarDeclStatement vdsL
-                && r is VarDeclStatement vdsR:
-
-                return VarDeclStatementFunctions.Eq(vdsL, vdsR);
-
-            ///
-
-            case var _ when
-                l is IfStatement ifL
-                && r is IfStatement ifR:
-
-                return IfStatementFunctions.Eq(ifL, ifR);
-
-            ///
-
-            case var _ when
-                l is BlockStatement blockL
-                && r is BlockStatement blockR:
-
-                return BlockStatementFunctions.Eq(blockL, blockR);
+                return ParsedUnsafeBlockStatementFunctions.Eq(lu, ru);
 
             ///
 
             case var _ when 
-                l is LoopStatement ll
-                && r is LoopStatement rl:
+                l is ParsedVarDeclStatement vdsL
+                && r is ParsedVarDeclStatement vdsR:
+
+                return ParsedVarDeclStatementFunctions.Eq(vdsL, vdsR);
+
+            ///
+
+            case var _ when
+                l is ParsedIfStatement ifL
+                && r is ParsedIfStatement ifR:
+
+                return ParsedIfStatementFunctions.Eq(ifL, ifR);
+
+            ///
+
+            case var _ when
+                l is ParsedBlockStatement blockL
+                && r is ParsedBlockStatement blockR:
+
+                return ParsedBlockStatementFunctions.Eq(blockL, blockR);
+
+            ///
+
+            case var _ when 
+                l is ParsedLoopStatement ll
+                && r is ParsedLoopStatement rl:
                 
-                return LoopStatementFunctions.Eq(ll, rl);
+                return ParsedLoopStatementFunctions.Eq(ll, rl);
 
             case var _ when
-                l is WhileStatement whileL
-                && r is WhileStatement whileR:
+                l is ParsedWhileStatement whileL
+                && r is ParsedWhileStatement whileR:
 
-                return WhileStatementFunctions.Eq(whileL, whileR);
+                return ParsedWhileStatementFunctions.Eq(whileL, whileR);
 
             ///
 
@@ -870,24 +870,24 @@ public static partial class ParsedDeferStatementFunctions {
 
 ///
 
-public partial class UnsafeBlockStatement: ParsedStatement {
+public partial class ParsedUnsafeBlockStatement: ParsedStatement {
 
     public ParsedBlock Block { get; init; }
 
     ///
 
-    public UnsafeBlockStatement(
+    public ParsedUnsafeBlockStatement(
         ParsedBlock block) {
 
         this.Block = block;
     }
 }
 
-public static partial class UnsafeBlockStatementFunctions {
+public static partial class ParsedUnsafeBlockStatementFunctions {
 
     public static bool Eq(
-        UnsafeBlockStatement? l,
-        UnsafeBlockStatement? r) {
+        ParsedUnsafeBlockStatement? l,
+        ParsedUnsafeBlockStatement? r) {
 
         return ParsedBlockFunctions.Eq(l?.Block, r?.Block);
     }
@@ -895,7 +895,7 @@ public static partial class UnsafeBlockStatementFunctions {
 
 ///
 
-public partial class VarDeclStatement: ParsedStatement {
+public partial class ParsedVarDeclStatement: ParsedStatement {
 
     public ParsedVarDecl Decl { get; init; }
 
@@ -903,7 +903,7 @@ public partial class VarDeclStatement: ParsedStatement {
 
     ///
 
-    public VarDeclStatement(
+    public ParsedVarDeclStatement(
         ParsedVarDecl decl,
         ParsedExpression expr) {
 
@@ -912,11 +912,11 @@ public partial class VarDeclStatement: ParsedStatement {
     }
 }
 
-public static partial class VarDeclStatementFunctions {
+public static partial class ParsedVarDeclStatementFunctions {
 
     public static bool Eq(
-        VarDeclStatement? l,
-        VarDeclStatement? r) {
+        ParsedVarDeclStatement? l,
+        ParsedVarDeclStatement? r) {
 
         if (l == null && r == null) {
 
@@ -928,8 +928,8 @@ public static partial class VarDeclStatementFunctions {
             return false;
         }
 
-        VarDeclStatement _l = l!;
-        VarDeclStatement _r = r!;
+        ParsedVarDeclStatement _l = l!;
+        ParsedVarDeclStatement _r = r!;
 
         ///
 
@@ -944,7 +944,7 @@ public static partial class VarDeclStatementFunctions {
 
 ///
 
-public partial class IfStatement: ParsedStatement {
+public partial class ParsedIfStatement: ParsedStatement {
 
     public ParsedExpression Expr { get; init; }
 
@@ -954,7 +954,7 @@ public partial class IfStatement: ParsedStatement {
 
     ///
 
-    public IfStatement(
+    public ParsedIfStatement(
         ParsedExpression expr,
         ParsedBlock block,
         ParsedStatement? trailing)
@@ -966,11 +966,11 @@ public partial class IfStatement: ParsedStatement {
     }
 }
 
-public static partial class IfStatementFunctions {
+public static partial class ParsedIfStatementFunctions {
 
     public static bool Eq(
-        IfStatement? l,
-        IfStatement? r) {
+        ParsedIfStatement? l,
+        ParsedIfStatement? r) {
 
         if (l == null && r == null) {
 
@@ -982,8 +982,8 @@ public static partial class IfStatementFunctions {
             return false;
         }
 
-        IfStatement _l = l!;
-        IfStatement _r = r!;
+        ParsedIfStatement _l = l!;
+        ParsedIfStatement _r = r!;
 
         ///
 
@@ -995,11 +995,11 @@ public static partial class IfStatementFunctions {
 
 ///
 
-public partial class BlockStatement: ParsedStatement {
+public partial class ParsedBlockStatement: ParsedStatement {
 
     public ParsedBlock Block { get; init; }
 
-    public BlockStatement(
+    public ParsedBlockStatement(
         ParsedBlock block) 
         : base() {
 
@@ -1007,11 +1007,11 @@ public partial class BlockStatement: ParsedStatement {
     }
 }
 
-public static partial class BlockStatementFunctions {
+public static partial class ParsedBlockStatementFunctions {
 
     public static bool Eq(
-        BlockStatement? l,
-        BlockStatement? r) {
+        ParsedBlockStatement? l,
+        ParsedBlockStatement? r) {
 
         return ParsedBlockFunctions.Eq(l?.Block, r?.Block);
     }
@@ -1019,22 +1019,22 @@ public static partial class BlockStatementFunctions {
 
 ///
 
-public partial class LoopStatement: ParsedStatement {
+public partial class ParsedLoopStatement: ParsedStatement {
 
     public ParsedBlock Block { get; init; }
 
-    public LoopStatement(
+    public ParsedLoopStatement(
         ParsedBlock block) {
 
         this.Block = block;
     }
 }
 
-public static partial class LoopStatementFunctions {
+public static partial class ParsedLoopStatementFunctions {
 
     public static bool Eq(
-        LoopStatement? l,
-        LoopStatement? r) {
+        ParsedLoopStatement? l,
+        ParsedLoopStatement? r) {
 
         return ParsedBlockFunctions.Eq(l?.Block, r?.Block);
     }
@@ -1042,7 +1042,7 @@ public static partial class LoopStatementFunctions {
 
 ///
 
-public partial class WhileStatement: ParsedStatement {
+public partial class ParsedWhileStatement: ParsedStatement {
 
     public ParsedExpression Expr { get; init; }
 
@@ -1050,7 +1050,7 @@ public partial class WhileStatement: ParsedStatement {
 
     ///
 
-    public WhileStatement(
+    public ParsedWhileStatement(
         ParsedExpression expr,
         ParsedBlock block) 
         : base() {
@@ -1060,11 +1060,11 @@ public partial class WhileStatement: ParsedStatement {
     }
 }
 
-public static partial class WhileStatementFunctions {
+public static partial class ParsedWhileStatementFunctions {
 
     public static bool Eq(
-        WhileStatement? l,
-        WhileStatement? r) {
+        ParsedWhileStatement? l,
+        ParsedWhileStatement? r) {
 
         if (l == null && r == null) {
 
@@ -1076,8 +1076,8 @@ public static partial class WhileStatementFunctions {
             return false;
         }
 
-        WhileStatement _l = l!;
-        WhileStatement _r = r!;
+        ParsedWhileStatement _l = l!;
+        ParsedWhileStatement _r = r!;
 
         ///
 
@@ -3852,7 +3852,7 @@ public static partial class ParserFunctions {
                 error = error ?? blockErr;
 
                 return (
-                    new UnsafeBlockStatement(block),
+                    new ParsedUnsafeBlockStatement(block),
                     error);
             }
 
@@ -3894,7 +3894,7 @@ public static partial class ParserFunctions {
                 error = error ?? blockErr;
                 
                 return (
-                    new LoopStatement(block),
+                    new ParsedLoopStatement(block),
                     error);
             }
 
@@ -3913,7 +3913,7 @@ public static partial class ParserFunctions {
                 error = error ?? blockErr;
 
                 return (
-                    new WhileStatement(condExpr, block),
+                    new ParsedWhileStatement(condExpr, block),
                     error
                 );
             }
@@ -4069,7 +4069,7 @@ public static partial class ParserFunctions {
                                 error = error ?? exprErr;
 
                                 return (
-                                    new VarDeclStatement(varDecl, expr),
+                                    new ParsedVarDeclStatement(varDecl, expr),
                                     error
                                 );
                             }
@@ -4136,7 +4136,7 @@ public static partial class ParserFunctions {
             
                 error = error ?? blockErr;
 
-                return (new BlockStatement(block), error);
+                return (new ParsedBlockStatement(block), error);
             }
 
             case var t: {
@@ -4250,7 +4250,7 @@ public static partial class ParserFunctions {
                                         startingSpan);
                                 }
 
-                                elseStmt = new BlockStatement(elseBlock);
+                                elseStmt = new ParsedBlockStatement(elseBlock);
 
                                 error = error ?? elseBlockErr;
 
@@ -4289,7 +4289,7 @@ public static partial class ParserFunctions {
             // try to parse an if statement again if we see an else
         }
 
-        return (new IfStatement(cond, block, elseStmt), error);
+        return (new ParsedIfStatement(cond, block, elseStmt), error);
     }
 
     public static (ParsedExpression, Error?) ParseExpression(

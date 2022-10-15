@@ -3854,7 +3854,7 @@ public static partial class TypeCheckerFunctions {
                     err);
             }
 
-            case UnsafeBlockStatement us: {
+            case ParsedUnsafeBlockStatement us: {
 
                 var (checkedBlock, blockErr) = TypeCheckBlock(us.Block, scopeId, project, SafetyMode.Unsafe);
 
@@ -3863,7 +3863,7 @@ public static partial class TypeCheckerFunctions {
                     blockErr);
             }
 
-            case VarDeclStatement vds: {
+            case ParsedVarDeclStatement vds: {
 
                 var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, scopeId, project, safetyMode, null);
 
@@ -3914,7 +3914,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case IfStatement ifStmt: {
+            case ParsedIfStatement ifStmt: {
 
                 var (checkedCond, exprErr) = TypeCheckExpression(ifStmt.Expr, scopeId, project, safetyMode, null);
                 
@@ -3952,7 +3952,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case LoopStatement ls: {
+            case ParsedLoopStatement ls: {
 
                 var (checkedBlock, blockErr) = TypeCheckBlock(ls.Block, scopeId, project, safetyMode);
 
@@ -3963,7 +3963,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case WhileStatement ws: {
+            case ParsedWhileStatement ws: {
 
                 var (checkedCond, exprErr) = TypeCheckExpression(ws.Expr, scopeId, project, safetyMode, null);
                 
@@ -4007,7 +4007,7 @@ public static partial class TypeCheckerFunctions {
                     outputErr);
             }
 
-            case BlockStatement bs: {
+            case ParsedBlockStatement bs: {
 
                 var (checkedBlock, checkedBlockErr) = TypeCheckBlock(bs.Block, scopeId, project, safetyMode);
 
