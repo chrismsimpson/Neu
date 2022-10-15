@@ -975,15 +975,17 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
-                    if (index < bytes.Length 
-                        && ToChar(bytes[index]) == '.') {
+                    if (index < bytes.Length) {
 
-                        index += 1;
+                        if (ToChar(bytes[index]) == '.') {
 
-                        output.Add(new PeriodPeriodToken(new Span(fileId, start, start + 2)));
+                            index += 1;
 
-                        continue;
-                    }
+                            output.Add(new PeriodPeriodToken(new Span(fileId, start, start + 2)));
+
+                            continue;
+                        }
+                    }   
 
                     output.Add(new PeriodToken(new Span(fileId, start, start + 1)));
 

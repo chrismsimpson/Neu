@@ -37,6 +37,7 @@ public static partial class Program {
         TestGenerics();
         TestEnums();
         TestInlineCPP();
+        TestParser();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -402,5 +403,10 @@ public static partial class Program {
     public static ErrorOrVoid TestInlineCPP() {
 
         return TestSamples("./Samples/InlineCPP");
+    }
+
+    public static ErrorOrVoid TestParser() {
+
+        return TestSamples("./Samples/Parser");
     }
 }
