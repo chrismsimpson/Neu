@@ -3829,7 +3829,7 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
 
-            case BreakStatement bs: {
+            case ParsedBreakStatement bs: {
 
                 return (
                     new CheckedBreakStatement(),

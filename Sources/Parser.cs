@@ -743,10 +743,10 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when
-                l is BreakStatement lb
-                && r is BreakStatement rb: {
+                l is ParsedBreakStatement lb
+                && r is ParsedBreakStatement rb: {
 
-                return BreakStatementFunctions.Eq(lb, rb);
+                return ParsedBreakStatementFunctions.Eq(lb, rb);
             }
 
             ///
@@ -1139,16 +1139,16 @@ public static partial class ParsedForStatementFunctions {
 
 ///
 
-public partial class BreakStatement: ParsedStatement {
+public partial class ParsedBreakStatement: ParsedStatement {
 
-    public BreakStatement() { }
+    public ParsedBreakStatement() { }
 }
 
-public static partial class BreakStatementFunctions {
+public static partial class ParsedBreakStatementFunctions {
 
     public static bool Eq(
-        BreakStatement? l,
-        BreakStatement? r) {
+        ParsedBreakStatement? l,
+        ParsedBreakStatement? r) {
 
         if (l == null && r == null) {
 
@@ -3868,7 +3868,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new BreakStatement(),
+                    new ParsedBreakStatement(),
                     null);
             }
 
