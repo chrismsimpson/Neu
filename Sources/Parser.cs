@@ -348,17 +348,17 @@ public partial class ParsedFile {
 
     public List<ParsedStruct> Structs { get; init; }
 
-    public List<Enum> Enums { get; init; }
+    public List<ParsedEnum> Enums { get; init; }
 
     ///
 
     public ParsedFile()
-        : this(new List<Function>(), new List<ParsedStruct>(), new List<Enum>()) { }
+        : this(new List<Function>(), new List<ParsedStruct>(), new List<ParsedEnum>()) { }
 
     public ParsedFile(
         List<Function> functions,
         List<ParsedStruct> structs,
-        List<Enum> enums) {
+        List<ParsedEnum> enums) {
 
         this.Functions = functions;
         this.Structs = structs;
@@ -492,7 +492,7 @@ public partial class EnumVariant {
         }
     }
 
-public partial class Enum {
+public partial class ParsedEnum {
 
     public String Name { get; set; }
 
@@ -508,7 +508,7 @@ public partial class Enum {
 
     ///
 
-    public Enum(
+    public ParsedEnum(
         String name,
         List<(String, Span)> genericParameters,
         List<EnumVariant> variants,
@@ -2759,7 +2759,7 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (Enum, Error?) ParseEnum(
+    public static (ParsedEnum, Error?) ParseEnum(
         List<Token> tokens,
         ref int index,
         DefinitionLinkage definitionLinkage) {
@@ -2770,7 +2770,7 @@ public static partial class ParserFunctions {
         
         var startIndex = index;
 
-        var _enum = new Enum(
+        var _enum = new ParsedEnum(
             name: String.Empty,
             genericParameters: new List<(String, Span)>(),
             variants: new List<EnumVariant>(),

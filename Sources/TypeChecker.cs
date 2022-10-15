@@ -2854,7 +2854,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static Error? TypeCheckEnumPredecl(
-        Enum _enum,
+        ParsedEnum _enum,
         Int32 enumId,
         Int32 parentScopeId,
         Project project) {
@@ -2927,7 +2927,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static Error? TypeCheckEnum(
-        Enum _enum,
+        ParsedEnum _enum,
         Int32 enumId,
         Int32 enumTypeId,
         Int32 enumScopeId,
