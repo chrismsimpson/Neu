@@ -6904,7 +6904,7 @@ public static partial class TypeCheckerFunctions {
 
         switch (uncheckedType) {
 
-            case UncheckedNameType nt: {
+            case ParsedNameType nt: {
 
                 switch (nt.Name) {
 
@@ -7084,7 +7084,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case UncheckedGenericType gt: {
+            case ParsedGenericType gt: {
 
                 var checkedInnerTypes = new List<Int32>();
 

@@ -107,7 +107,7 @@ public partial class ParsedType {
     public ParsedType() { }
 }
 
-    public partial class UncheckedNameType: ParsedType {
+    public partial class ParsedNameType: ParsedType {
 
         public String Name { get; init; }
 
@@ -115,7 +115,7 @@ public partial class ParsedType {
 
         ///
 
-        public UncheckedNameType(
+        public ParsedNameType(
             String name,
             Span span) {
 
@@ -124,7 +124,7 @@ public partial class ParsedType {
         }
     }
 
-    public partial class UncheckedGenericType: ParsedType {
+    public partial class ParsedGenericType: ParsedType {
 
         public String Name { get; init; }
 
@@ -134,7 +134,7 @@ public partial class ParsedType {
 
         ///
 
-        public UncheckedGenericType(
+        public ParsedGenericType(
             String name,
             List<ParsedType> types,
             Span span) { 
@@ -227,16 +227,16 @@ public static partial class ParsedTypeFunctions {
         switch (true) {
 
             case var _ when
-                l is UncheckedNameType ln
-                && r is UncheckedNameType rn: {
+                l is ParsedNameType ln
+                && r is ParsedNameType rn: {
 
                 return ln.Name == rn.Name
                     && SpanFunctions.Eq(ln.Span, rn.Span);
             }
 
             case var _ when
-                l is UncheckedGenericType lg
-                && r is UncheckedGenericType rg: {
+                l is ParsedGenericType lg
+                && r is ParsedGenericType rg: {
 
                 if (lg.Name != rg.Name) {
 
@@ -6904,7 +6904,7 @@ public static partial class ParserFunctions {
 
                     typename = nt.Value;
 
-                    uncheckedType = new UncheckedNameType(nt.Value, tokens.ElementAt(index).Span);
+                    uncheckedType = new ParsedNameType(nt.Value, tokens.ElementAt(index).Span);
 
                     index += 1;
                 }
@@ -7010,7 +7010,7 @@ public static partial class ParserFunctions {
 
                     if (index >= tokens.Count) {
 
-                        uncheckedType = new UncheckedGenericType(
+                        uncheckedType = new ParsedGenericType(
                             typename,
                             innerTypes,
                             new Span(
@@ -7020,7 +7020,7 @@ public static partial class ParserFunctions {
                     }
                     else {
 
-                        uncheckedType = new UncheckedGenericType(
+                        uncheckedType = new ParsedGenericType(
                             typename,
                             innerTypes,
                             new Span(
