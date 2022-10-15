@@ -1487,7 +1487,7 @@ public partial class ParsedExpression {
 
     // Standalone
 
-    public partial class BooleanExpression: ParsedExpression {
+    public partial class ParsedBooleanExpression: ParsedExpression {
 
         public bool Value { get; init; }
 
@@ -1495,7 +1495,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public BooleanExpression(
+        public ParsedBooleanExpression(
             bool value,
             Span span) {
 
@@ -1930,7 +1930,7 @@ public static partial class ExpressionFunctions {
 
         switch (expr) {
 
-            case BooleanExpression be: {
+            case ParsedBooleanExpression be: {
 
                 return be.Span;
             }
@@ -2071,8 +2071,8 @@ public static partial class ExpressionFunctions {
         switch (true) {
 
             case var _ when
-                l is BooleanExpression boolL
-                && r is BooleanExpression boolR:
+                l is ParsedBooleanExpression boolL
+                && r is ParsedBooleanExpression boolR:
 
                 return boolL.Value == boolR.Value;
 
@@ -4744,7 +4744,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new BooleanExpression(true, span);
+                expr = new ParsedBooleanExpression(true, span);
 
                 break;
             }
@@ -4753,7 +4753,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new BooleanExpression(false, span);
+                expr = new ParsedBooleanExpression(false, span);
 
                 break;
             }

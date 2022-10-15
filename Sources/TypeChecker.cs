@@ -4459,7 +4459,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case BooleanExpression e: {
+            case ParsedBooleanExpression e: {
 
                 return (
                     new CheckedBooleanExpression(e.Value, e.Span),
