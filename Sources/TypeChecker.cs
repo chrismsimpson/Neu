@@ -7054,7 +7054,7 @@ public static partial class TypeCheckerFunctions {
                 return (typeId, error);
             }
 
-            case UncheckedOptionalType opt: {
+            case ParsedOptionalType opt: {
 
                 var (innerType, err) = TypeCheckTypeName(opt.Type, scopeId, project);
 
@@ -7071,7 +7071,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case UncheckedRawPointerType rp: {
+            case ParsedRawPointerType rp: {
 
                 var (innerType, err) = TypeCheckTypeName(rp.Type, scopeId, project);
 

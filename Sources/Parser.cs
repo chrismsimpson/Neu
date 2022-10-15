@@ -179,7 +179,7 @@ public partial class ParsedType {
         }
     }
 
-    public partial class UncheckedOptionalType: ParsedType {
+    public partial class ParsedOptionalType: ParsedType {
 
         public ParsedType Type { get; init; }
 
@@ -187,7 +187,7 @@ public partial class ParsedType {
 
         ///
 
-        public UncheckedOptionalType(
+        public ParsedOptionalType(
             ParsedType type,
             Span span) {
 
@@ -196,7 +196,7 @@ public partial class ParsedType {
         }
     }
     
-    public partial class UncheckedRawPointerType: ParsedType {
+    public partial class ParsedRawPointerType: ParsedType {
 
         public ParsedType Type { get; init; }
 
@@ -204,7 +204,7 @@ public partial class ParsedType {
 
         ///
 
-        public UncheckedRawPointerType(
+        public ParsedRawPointerType(
             ParsedType type,
             Span span) {
 
@@ -268,16 +268,16 @@ public static partial class ParsedTypeFunctions {
             }
             
             case var _ when 
-                l is UncheckedOptionalType lo
-                && r is UncheckedOptionalType ro: {
+                l is ParsedOptionalType lo
+                && r is ParsedOptionalType ro: {
 
                 return Eq(lo.Type, ro.Type)
                     && SpanFunctions.Eq(lo.Span, ro.Span);
             }
 
             case var _ when 
-                l is UncheckedRawPointerType lp
-                && r is UncheckedRawPointerType rp: {
+                l is ParsedRawPointerType lp
+                && r is ParsedRawPointerType rp: {
 
                 return Eq(lp.Type, rp.Type)
                     && SpanFunctions.Eq(lp.Span, rp.Span);
@@ -6892,7 +6892,7 @@ public static partial class ParserFunctions {
 
                         error = error ?? err;
 
-                        uncheckedType = new UncheckedRawPointerType(
+                        uncheckedType = new ParsedRawPointerType(
                             childType,
                             new Span(
                                 fileId: start.FileId,
@@ -6931,7 +6931,7 @@ public static partial class ParserFunctions {
 
                 // T? is shorthand for Optional<T>
 
-                uncheckedType = new UncheckedOptionalType(
+                uncheckedType = new ParsedOptionalType(
                     type: uncheckedType,
                     new Span(
                         fileId: start.FileId,
