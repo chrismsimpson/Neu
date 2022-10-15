@@ -861,6 +861,7 @@ public static partial class CodeGenFunctions {
             }
 
             output.Append("{\n");
+            output.Append(new String(' ', INDENT_SIZE));
 
             if (fun.Throws) {
 
