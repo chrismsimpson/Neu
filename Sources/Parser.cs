@@ -213,9 +213,9 @@ public partial class ParsedType {
         }
     }
 
-    public partial class UncheckedEmptyType: ParsedType {
+    public partial class ParsedEmptyType: ParsedType {
 
-        public UncheckedEmptyType() { }
+        public ParsedEmptyType() { }
     }
 
 ///
@@ -284,8 +284,8 @@ public static partial class ParsedTypeFunctions {
             }
 
             case var _ when 
-                l is UncheckedEmptyType le
-                && r is UncheckedEmptyType re: {
+                l is ParsedEmptyType le
+                && r is ParsedEmptyType re: {
 
                 return true; // ?
             }
@@ -313,7 +313,7 @@ public partial class ParsedVarDecl {
     ///
 
     public ParsedVarDecl(Span span)
-        : this(String.Empty, new UncheckedEmptyType(), false, span) { }
+        : this(String.Empty, new ParsedEmptyType(), false, span) { }
 
     public ParsedVarDecl(
         String name,
@@ -580,7 +580,7 @@ public partial class ParsedFunction {
             new ParsedBlock(), 
             throws: false,
             returnType: 
-                new UncheckedEmptyType(),
+                new ParsedEmptyType(),
             linkage) { }
 
     public ParsedFunction(
@@ -653,7 +653,7 @@ public partial class ParsedStatement {
     public ParsedStatement() { }
 }
 
-public static partial class StatementFunctions {
+public static partial class ParsedStatementFunctions {
 
     public static bool Eq(
         ParsedStatement? l,
@@ -809,7 +809,7 @@ public static partial class StatementFunctions {
 
         for (var i = 0; i < l.Count; ++i) {
 
-            if (!StatementFunctions.Eq(l.ElementAt(i), r.ElementAt(i))) {
+            if (!ParsedStatementFunctions.Eq(l.ElementAt(i), r.ElementAt(i))) {
 
                 return false;
             }
@@ -864,7 +864,7 @@ public static partial class DeferStatementFunctions {
         DeferStatement? l,
         DeferStatement? r) {
 
-        return StatementFunctions.Eq(l?.Statement, r?.Statement);
+        return ParsedStatementFunctions.Eq(l?.Statement, r?.Statement);
     }
 }
 
@@ -989,7 +989,7 @@ public static partial class IfStatementFunctions {
 
         return ExpressionFunctions.Eq(_l.Expr, _r.Expr)
             && ParsedBlockFunctions.Eq(_l.Block, _r.Block)
-            && StatementFunctions.Eq(_l.Trailing, _r.Trailing);
+            && ParsedStatementFunctions.Eq(_l.Trailing, _r.Trailing);
     }
 }
 
@@ -1284,7 +1284,7 @@ public static partial class TryStatementFunctions {
             return false;
         }
 
-        if (!StatementFunctions.Eq(l.Statement, r.Statement)) {
+        if (!ParsedStatementFunctions.Eq(l.Statement, r.Statement)) {
 
             return false;
         }
@@ -1411,7 +1411,7 @@ public static partial class ParsedBlockFunctions {
         ParsedBlock _l = l!;
         ParsedBlock _r = r!;
 
-        return StatementFunctions.Eq(_l.Statements, _r.Statements);
+        return ParsedStatementFunctions.Eq(_l.Statements, _r.Statements);
     }
 }
 
@@ -2779,7 +2779,7 @@ public static partial class ParserFunctions {
                 start: tokens[startIndex].Span.Start,
                 end: tokens[index].Span.End),
             definitionLinkage,
-            underlyingType: new UncheckedEmptyType());
+            underlyingType: new ParsedEmptyType());
 
         index += 1;
 
@@ -2961,7 +2961,7 @@ public static partial class ParserFunctions {
 
                     case EqualToken _: {
 
-                        if (_enum.UnderlyingType is UncheckedEmptyType) {
+                        if (_enum.UnderlyingType is ParsedEmptyType) {
 
                             error = error ??
                                 new ParserError(
@@ -3253,7 +3253,7 @@ public static partial class ParserFunctions {
                                 
                                 varDecl.Mutable = false;
 
-                                if (varDecl.Type is UncheckedEmptyType) {
+                                if (varDecl.Type is ParsedEmptyType) {
 
                                     Trace("ERROR: parameter missing type");
 
@@ -3486,7 +3486,7 @@ public static partial class ParserFunctions {
                                         requiresLabel: false,
                                         variable: new Variable(
                                             name: "this",
-                                            ty: new UncheckedEmptyType(),
+                                            ty: new ParsedEmptyType(),
                                             mutable: currentParamIsMutable)));
 
                                 break;
@@ -3500,7 +3500,7 @@ public static partial class ParserFunctions {
 
                                 error = error ?? varDeclErr;
 
-                                if (varDecl.Type is UncheckedEmptyType) {
+                                if (varDecl.Type is ParsedEmptyType) {
 
                                     Trace("ERROR: parameter missing type");
 
@@ -3567,7 +3567,7 @@ public static partial class ParserFunctions {
                         }
                     }
 
-                    ParsedType returnType = new UncheckedEmptyType();
+                    ParsedType returnType = new ParsedEmptyType();
 
                     ParsedExpression? fatArrowExpr = null;
 
@@ -3584,7 +3584,7 @@ public static partial class ParserFunctions {
                                     ref index,
                                     ExpressionKind.ExpressionWithoutAssignment);
 
-                                returnType = new UncheckedEmptyType();
+                                returnType = new ParsedEmptyType();
 
                                 fatArrowExpr = arrowExpr;
 
@@ -5418,7 +5418,7 @@ public static partial class ParserFunctions {
                                     "Invalid cast syntax",
                                     _span);
 
-                            cast = new TruncatingTypeCast(new UncheckedEmptyType());
+                            cast = new TruncatingTypeCast(new ParsedEmptyType());
 
                             break;
                         }
@@ -6688,7 +6688,7 @@ public static partial class ParserFunctions {
                             return (
                                 new ParsedVarDecl(
                                     name: nt.Value, 
-                                    type: new UncheckedEmptyType(),
+                                    type: new ParsedEmptyType(),
                                     mutable: false,
                                     span: tokens.ElementAt(index - 1).Span),
                                 null);
@@ -6700,7 +6700,7 @@ public static partial class ParserFunctions {
                     return (
                         new ParsedVarDecl(
                             name: nt.Value, 
-                            type: new UncheckedEmptyType(), 
+                            type: new ParsedEmptyType(), 
                             mutable: false, 
                             span: tokens.ElementAt(index - 1).Span), 
                         null);
@@ -6753,7 +6753,7 @@ public static partial class ParserFunctions {
                     return (
                         new ParsedVarDecl(
                             nt.Value, 
-                            type: new UncheckedEmptyType(),
+                            type: new ParsedEmptyType(),
                             mutable: false,
                             span: tokens.ElementAt(index - 2).Span), 
                         new ParserError(
@@ -6783,7 +6783,7 @@ public static partial class ParserFunctions {
 
         if (index + 2 >= tokens.Count) {
 
-            return (new UncheckedEmptyType(), null);
+            return (new ParsedEmptyType(), null);
         }
 
         var start = tokens.ElementAt(index).Span;
@@ -6811,7 +6811,7 @@ public static partial class ParserFunctions {
             }
 
             return (
-                new UncheckedEmptyType(),
+                new ParsedEmptyType(),
                 new ParserError(
                     "expected ]",
                     tokens[index].Span));
@@ -6841,7 +6841,7 @@ public static partial class ParserFunctions {
             // TODO: Add {K:V} shorthand for Dictionary<K,V>?
 
             return (
-                new UncheckedEmptyType(),
+                new ParsedEmptyType(),
                 err ?? 
                     new ParserError(
                         "expected ]",
@@ -6849,7 +6849,7 @@ public static partial class ParserFunctions {
         }
         else {
 
-            return (new UncheckedEmptyType(), null);
+            return (new ParsedEmptyType(), null);
         }
     }
 
@@ -6857,7 +6857,7 @@ public static partial class ParserFunctions {
         List<Token> tokens, 
         ref int index) {
 
-        ParsedType uncheckedType = new UncheckedEmptyType();
+        ParsedType uncheckedType = new ParsedEmptyType();
 
         Error? error = null;
 
@@ -6873,7 +6873,7 @@ public static partial class ParserFunctions {
 
         error = error ?? parseShorthandTypeErr;
 
-        if (!(shorthandType is UncheckedEmptyType)) {
+        if (!(shorthandType is ParsedEmptyType)) {
 
             return (shorthandType, error);
         }

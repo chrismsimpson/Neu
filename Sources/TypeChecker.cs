@@ -3187,7 +3187,7 @@ public static partial class TypeCheckerFunctions {
 
                 case TypedEnumVariant t: {
 
-                    if (!(_enum.UnderlyingType is UncheckedEmptyType)) {
+                    if (!(_enum.UnderlyingType is ParsedEmptyType)) {
 
                         error = error ?? 
                             new TypeCheckError(
@@ -7017,7 +7017,7 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case UncheckedEmptyType _: {
+            case ParsedEmptyType _: {
 
                 return (Compiler.UnknownTypeId, null);
             }
