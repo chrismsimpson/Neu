@@ -3760,7 +3760,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case ThrowStatement ts: {
+            case ParsedThrowStatement ts: {
 
                 var (checkedExpr, err) = TypeCheckExpression(ts.Expr, scopeId, project, safetyMode, null);
 

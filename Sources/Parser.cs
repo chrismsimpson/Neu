@@ -769,10 +769,10 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when
-                l is ThrowStatement lt
-                && r is ThrowStatement rt:
+                l is ParsedThrowStatement lt
+                && r is ParsedThrowStatement rt:
 
-                return ThrowStatementFunctions.Eq(lt, rt);
+                return ParsedThrowStatementFunctions.Eq(lt, rt);
 
             ///
 
@@ -1218,24 +1218,24 @@ public static partial class ParsedReturnStatementFunctions {
 
 ///
 
-public partial class ThrowStatement: ParsedStatement {
+public partial class ParsedThrowStatement: ParsedStatement {
 
     public ParsedExpression Expr { get; init; }
 
     ///
 
-    public ThrowStatement(
+    public ParsedThrowStatement(
         ParsedExpression expr) {
 
         this.Expr = expr;
     }
 }
 
-public static partial class ThrowStatementFunctions {
+public static partial class ParsedThrowStatementFunctions {
 
     public static bool Eq(
-        ThrowStatement? l,
-        ThrowStatement? r) {
+        ParsedThrowStatement? l,
+        ParsedThrowStatement? r) {
 
         return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
     }
@@ -3822,7 +3822,7 @@ public static partial class ParserFunctions {
                 error = error ?? err;
 
                 return (
-                    new ThrowStatement(expr),
+                    new ParsedThrowStatement(expr),
                     error);
             }
 
