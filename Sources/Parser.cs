@@ -674,16 +674,16 @@ public static partial class ParsedStatementFunctions {
         switch (true) {
 
             case var _ when
-                l is ExpressionStatement le
-                && r is ExpressionStatement re:
+                l is ParsedExpressionStatement le
+                && r is ParsedExpressionStatement re:
 
-                return ExpressionStatementFunctions.Eq(le, re);
+                return ParsedExpressionStatementFunctions.Eq(le, re);
 
             case var _ when
-                l is DeferStatement deferL
-                && r is DeferStatement deferR:
+                l is ParsedDeferStatement deferL
+                && r is ParsedDeferStatement deferR:
 
-                return DeferStatementFunctions.Eq(deferL, deferR);
+                return ParsedDeferStatementFunctions.Eq(deferL, deferR);
 
             ///
 
@@ -821,22 +821,22 @@ public static partial class ParsedStatementFunctions {
 
 ///
 
-public partial class ExpressionStatement: ParsedStatement {
+public partial class ParsedExpressionStatement: ParsedStatement {
 
     public ParsedExpression Expression { get; init; }
 
     ///
 
-    public ExpressionStatement(
+    public ParsedExpressionStatement(
         ParsedExpression expression) {
 
         this.Expression = expression;
     }
 }
 
-public static partial class ExpressionStatementFunctions {
+public static partial class ParsedExpressionStatementFunctions {
 
-    public static bool Eq(ExpressionStatement le, ExpressionStatement re) {
+    public static bool Eq(ParsedExpressionStatement le, ParsedExpressionStatement re) {
 
         return ExpressionFunctions.Eq(le.Expression, re.Expression);
     }
@@ -844,13 +844,13 @@ public static partial class ExpressionStatementFunctions {
 
 ///
 
-public partial class DeferStatement: ParsedStatement {
+public partial class ParsedDeferStatement: ParsedStatement {
 
     public ParsedStatement Statement { get; init; }
 
     ///
 
-    public DeferStatement(
+    public ParsedDeferStatement(
         ParsedStatement statement)
         : base() { 
 
@@ -858,11 +858,11 @@ public partial class DeferStatement: ParsedStatement {
     }
 }
 
-public static partial class DeferStatementFunctions {
+public static partial class ParsedDeferStatementFunctions {
 
     public static bool Eq(
-        DeferStatement? l,
-        DeferStatement? r) {
+        ParsedDeferStatement? l,
+        ParsedDeferStatement? r) {
 
         return ParsedStatementFunctions.Eq(l?.Statement, r?.Statement);
     }
@@ -3837,7 +3837,7 @@ public static partial class ParserFunctions {
                 error = error ?? err;
 
                 return (
-                    new DeferStatement(stmt), 
+                    new ParsedDeferStatement(stmt), 
                     error);
             }
 
@@ -4157,7 +4157,7 @@ public static partial class ParserFunctions {
                 }
 
                 return (
-                    new ExpressionStatement(expr),
+                    new ParsedExpressionStatement(expr),
                     error);
             }
         }

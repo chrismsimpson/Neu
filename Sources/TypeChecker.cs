@@ -3836,7 +3836,7 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
 
-            case ExpressionStatement es: {
+            case ParsedExpressionStatement es: {
 
                 var (checkedExpr, exprErr) = TypeCheckExpression(es.Expression, scopeId, project, safetyMode, null);
 
@@ -3845,7 +3845,7 @@ public static partial class TypeCheckerFunctions {
                     exprErr);
             }
 
-            case DeferStatement ds: {
+            case ParsedDeferStatement ds: {
 
                 var (checkedStmt, err) = TypeCheckStatement(ds.Statement, scopeId, project, safetyMode);
 
@@ -4033,7 +4033,7 @@ public static partial class TypeCheckerFunctions {
 
                     switch (statement) {
 
-                        case ExpressionStatement es when es.Expression is QuotedStringExpression qs: {
+                        case ParsedExpressionStatement es when es.Expression is QuotedStringExpression qs: {
 
                             strings.Add(qs.Value);
 
