@@ -2944,7 +2944,7 @@ public static partial class TypeCheckerFunctions {
 
         var seenNames = new HashSet<String>();
 
-        Func<Expression, Project, (CheckedExpression, Error?)> castToUnderlying = (x, project) => {
+        Func<ParsedExpression, Project, (CheckedExpression, Error?)> castToUnderlying = (x, project) => {
 
             var span = x.GetSpan();
 
@@ -3693,7 +3693,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (CheckedBlock, Error?) TypeCheckBlock(
-        Block block,
+        ParsedBlock block,
         Int32 parentScopeId,
         Project project,
         SafetyMode safetyMode) {
@@ -4104,7 +4104,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (CheckedExpression, Error?) TypeCheckExpression(
-        Expression expr,
+        ParsedExpression expr,
         Int32 scopeId,
         Project project,
         SafetyMode safetyMode,
@@ -4540,7 +4540,7 @@ public static partial class TypeCheckerFunctions {
 
                 CheckedExpression? checkedFillSizeExpr = null;
 
-                if (ve.FillSize is Expression fillSize) {
+                if (ve.FillSize is ParsedExpression fillSize) {
 
                     var (chkFillSizeExpr, chkFillSizeErr) = TypeCheckExpression(fillSize, scopeId, project, safetyMode, null);
 

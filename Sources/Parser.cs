@@ -20,19 +20,19 @@ public partial class ParsedCall {
 
     public String Name { get; set; }
 
-    public List<(String, Expression)> Args { get; init; }
+    public List<(String, ParsedExpression)> Args { get; init; }
 
     public List<ParsedType> TypeArgs { get; set; }
 
     ///
 
     public ParsedCall()
-        : this(new List<String>(), String.Empty, new List<(string, Expression)>(), new List<ParsedType>()) { }
+        : this(new List<String>(), String.Empty, new List<(String, ParsedExpression)>(), new List<ParsedType>()) { }
 
     public ParsedCall(
         List<String> ns,
         String name,
-        List<(String, Expression)> args,
+        List<(String, ParsedExpression)> args,
         List<ParsedType> typeArgs) {
 
         this.Namespace = ns;
@@ -433,7 +433,7 @@ public partial class EnumVariant {
 
         public String Name { get; init; }
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
         public Span Span { get; init; }
 
@@ -441,7 +441,7 @@ public partial class EnumVariant {
 
         public WithValueEnumVariant(
             String name,
-            Expression expression,
+            ParsedExpression expression,
             Span span) {
 
             this.Name = name;
@@ -557,7 +557,7 @@ public partial class ParsedFunction {
 
     public List<(String, Span)> GenericParameters { get; init; }
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     public bool Throws { get; init; }
 
@@ -577,7 +577,7 @@ public partial class ParsedFunction {
                 end: 0),
             new List<ParsedParameter>(), 
             new List<(String, Span)>(),
-            new Block(), 
+            new ParsedBlock(), 
             throws: false,
             returnType: 
                 new UncheckedEmptyType(),
@@ -588,7 +588,7 @@ public partial class ParsedFunction {
         Span nameSpan,
         List<ParsedParameter> parameters,
         List<(String, Span)> genericParameters,
-        Block block,
+        ParsedBlock block,
         bool throws,
         ParsedType returnType,
         FunctionLinkage linkage) {
@@ -823,12 +823,12 @@ public static partial class StatementFunctions {
 
 public partial class ExpressionStatement: ParsedStatement {
 
-    public Expression Expression { get; init; }
+    public ParsedExpression Expression { get; init; }
 
     ///
 
     public ExpressionStatement(
-        Expression expression) {
+        ParsedExpression expression) {
 
         this.Expression = expression;
     }
@@ -872,12 +872,12 @@ public static partial class DeferStatementFunctions {
 
 public partial class UnsafeBlockStatement: ParsedStatement {
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     ///
 
     public UnsafeBlockStatement(
-        Block block) {
+        ParsedBlock block) {
 
         this.Block = block;
     }
@@ -889,7 +889,7 @@ public static partial class UnsafeBlockStatementFunctions {
         UnsafeBlockStatement? l,
         UnsafeBlockStatement? r) {
 
-        return BlockFunctions.Eq(l?.Block, r?.Block);
+        return ParsedBlockFunctions.Eq(l?.Block, r?.Block);
     }
 }
 
@@ -899,13 +899,13 @@ public partial class VarDeclStatement: ParsedStatement {
 
     public ParsedVarDecl Decl { get; init; }
 
-    public Expression Expr { get; init; }
+    public ParsedExpression Expr { get; init; }
 
     ///
 
     public VarDeclStatement(
         ParsedVarDecl decl,
-        Expression expr) {
+        ParsedExpression expr) {
 
         this.Decl = decl;
         this.Expr = expr;
@@ -946,17 +946,17 @@ public static partial class VarDeclStatementFunctions {
 
 public partial class IfStatement: ParsedStatement {
 
-    public Expression Expr { get; init; }
+    public ParsedExpression Expr { get; init; }
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     public ParsedStatement? Trailing { get; init; }
 
     ///
 
     public IfStatement(
-        Expression expr,
-        Block block,
+        ParsedExpression expr,
+        ParsedBlock block,
         ParsedStatement? trailing)
         : base() {
 
@@ -988,7 +988,7 @@ public static partial class IfStatementFunctions {
         ///
 
         return ExpressionFunctions.Eq(_l.Expr, _r.Expr)
-            && BlockFunctions.Eq(_l.Block, _r.Block)
+            && ParsedBlockFunctions.Eq(_l.Block, _r.Block)
             && StatementFunctions.Eq(_l.Trailing, _r.Trailing);
     }
 }
@@ -997,10 +997,10 @@ public static partial class IfStatementFunctions {
 
 public partial class BlockStatement: ParsedStatement {
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     public BlockStatement(
-        Block block) 
+        ParsedBlock block) 
         : base() {
 
         this.Block = block;
@@ -1013,7 +1013,7 @@ public static partial class BlockStatementFunctions {
         BlockStatement? l,
         BlockStatement? r) {
 
-        return BlockFunctions.Eq(l?.Block, r?.Block);
+        return ParsedBlockFunctions.Eq(l?.Block, r?.Block);
     }
 }
 
@@ -1021,10 +1021,10 @@ public static partial class BlockStatementFunctions {
 
 public partial class LoopStatement: ParsedStatement {
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     public LoopStatement(
-        Block block) {
+        ParsedBlock block) {
 
         this.Block = block;
     }
@@ -1036,7 +1036,7 @@ public static partial class LoopStatementFunctions {
         LoopStatement? l,
         LoopStatement? r) {
 
-        return BlockFunctions.Eq(l?.Block, r?.Block);
+        return ParsedBlockFunctions.Eq(l?.Block, r?.Block);
     }
 }
 
@@ -1044,15 +1044,15 @@ public static partial class LoopStatementFunctions {
 
 public partial class WhileStatement: ParsedStatement {
 
-    public Expression Expr { get; init; }
+    public ParsedExpression Expr { get; init; }
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     ///
 
     public WhileStatement(
-        Expression expr,
-        Block block) 
+        ParsedExpression expr,
+        ParsedBlock block) 
         : base() {
 
         this.Expr = expr;
@@ -1082,7 +1082,7 @@ public static partial class WhileStatementFunctions {
         ///
 
         return ExpressionFunctions.Eq(_l.Expr, _r.Expr) 
-            && BlockFunctions.Eq(_l.Block, _r.Block);
+            && ParsedBlockFunctions.Eq(_l.Block, _r.Block);
     }
 }
 
@@ -1092,16 +1092,16 @@ public partial class ForStatement: ParsedStatement {
 
     public String IteratorName { get; init; }
 
-    public Expression Range { get; init; }
+    public ParsedExpression Range { get; init; }
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     ///
 
     public ForStatement(
         String iteratorName,
-        Expression range,
-        Block block) {
+        ParsedExpression range,
+        ParsedBlock block) {
 
         this.IteratorName = iteratorName;
         this.Range = range;
@@ -1133,7 +1133,7 @@ public static partial class ForStatementFunctions {
         return 
             _l.IteratorName == _r.IteratorName
             && ExpressionFunctions.Eq(_l.Range, _r.Range)
-            && BlockFunctions.Eq(_l.Block, _r.Block);
+            && ParsedBlockFunctions.Eq(_l.Block, _r.Block);
     }
 }
 
@@ -1195,12 +1195,12 @@ public static partial class ContinueStatementFunctions {
 
 public partial class ReturnStatement: ParsedStatement {
 
-    public Expression Expr { get; init; }
+    public ParsedExpression Expr { get; init; }
 
     ///
 
     public ReturnStatement(
-        Expression expr) {
+        ParsedExpression expr) {
 
         this.Expr = expr;
     }
@@ -1220,12 +1220,12 @@ public static partial class ReturnStatementFunctions {
 
 public partial class ThrowStatement: ParsedStatement {
 
-    public Expression Expr { get; init; }
+    public ParsedExpression Expr { get; init; }
 
     ///
 
     public ThrowStatement(
-        Expression expr) {
+        ParsedExpression expr) {
 
         this.Expr = expr;
     }
@@ -1251,7 +1251,7 @@ public partial class TryStatement: ParsedStatement {
 
     public Span Span { get; init; }
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     ///
 
@@ -1259,7 +1259,7 @@ public partial class TryStatement: ParsedStatement {
         ParsedStatement statement,
         String name,
         Span span,
-        Block block) {
+        ParsedBlock block) {
 
         this.Statement = statement;
         this.Name = name;
@@ -1299,7 +1299,7 @@ public static partial class TryStatementFunctions {
             return false;
         }
 
-        return BlockFunctions.Eq(l.Block, r.Block);
+        return ParsedBlockFunctions.Eq(l.Block, r.Block);
     }
 }
 
@@ -1307,14 +1307,14 @@ public static partial class TryStatementFunctions {
 
 public partial class InlineCPPStatement: ParsedStatement {
 
-    public Block Block { get; init; }
+    public ParsedBlock Block { get; init; }
 
     public Span Span { get; init; }
 
     ///
 
     public InlineCPPStatement(
-        Block block,
+        ParsedBlock block,
         Span span) {
 
         this.Block = block;
@@ -1338,7 +1338,7 @@ public static partial class InlineCPPStatementFunctions {
             return false;
         }
 
-        if (!BlockFunctions.Eq(l.Block, r.Block)) {
+        if (!ParsedBlockFunctions.Eq(l.Block, r.Block)) {
 
             return false;
         }
@@ -1376,27 +1376,27 @@ public static partial class GarbageStatementFunctions {
 
 ///
 
-public partial class Block {
+public partial class ParsedBlock {
 
     public List<ParsedStatement> Statements { get; init; }
 
     ///
 
-    public Block()
+    public ParsedBlock()
         : this(new List<ParsedStatement>()) { }
 
-    public Block(
+    public ParsedBlock(
         List<ParsedStatement> statements) {
 
         this.Statements = statements;
     }
 }
 
-public static partial class BlockFunctions {
+public static partial class ParsedBlockFunctions {
 
     public static bool Eq(
-        Block? l,
-        Block? r) {
+        ParsedBlock? l,
+        ParsedBlock? r) {
 
         if (l == null && r == null) {
 
@@ -1408,8 +1408,8 @@ public static partial class BlockFunctions {
             return false;
         }
 
-        Block _l = l!;
-        Block _r = r!;
+        ParsedBlock _l = l!;
+        ParsedBlock _r = r!;
 
         return StatementFunctions.Eq(_l.Statements, _r.Statements);
     }
@@ -1424,12 +1424,12 @@ public partial class WhenBody {
 
     public partial class ExpressionWhenBody: WhenBody {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
         ///
 
         public ExpressionWhenBody(
-            Expression expression) {
+            ParsedExpression expression) {
 
             this.Expression = expression;
         }
@@ -1437,12 +1437,12 @@ public partial class WhenBody {
 
     public partial class BlockWhenBody: WhenBody {
 
-        public Block Block { get; init; }
+        public ParsedBlock Block { get; init; }
 
         ///
 
         public BlockWhenBody(
-            Block block) {
+            ParsedBlock block) {
 
             this.Block = block;
         }
@@ -1480,14 +1480,14 @@ public partial class WhenCase {
 
 ///
 
-public partial class Expression {
+public partial class ParsedExpression {
 
-    public Expression() : base() { }
+    public ParsedExpression() : base() { }
 }
 
     // Standalone
 
-    public partial class BooleanExpression: Expression {
+    public partial class BooleanExpression: ParsedExpression {
 
         public bool Value { get; init; }
 
@@ -1504,7 +1504,7 @@ public partial class Expression {
         }
     }
 
-    public partial class NumericConstantExpression: Expression {
+    public partial class NumericConstantExpression: ParsedExpression {
 
         public NumericConstant Value { get; init; }
 
@@ -1521,7 +1521,7 @@ public partial class Expression {
         }
     }
 
-    public partial class QuotedStringExpression: Expression {
+    public partial class QuotedStringExpression: ParsedExpression {
 
         public String Value { get; init; }
 
@@ -1539,7 +1539,7 @@ public partial class Expression {
         }
     }
 
-    public partial class CharacterLiteralExpression: Expression {
+    public partial class CharacterLiteralExpression: ParsedExpression {
 
         public Char Char { get; init; }
 
@@ -1556,19 +1556,19 @@ public partial class Expression {
         }
     }
 
-    public partial class ArrayExpression: Expression {
+    public partial class ArrayExpression: ParsedExpression {
 
-        public List<Expression> Expressions { get; init; }
+        public List<ParsedExpression> Expressions { get; init; }
 
-        public Expression? FillSize { get; init; }
+        public ParsedExpression? FillSize { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public ArrayExpression(
-            List<Expression> expressions,
-            Expression? fillSize,
+            List<ParsedExpression> expressions,
+            ParsedExpression? fillSize,
             Span span) {
 
             this.Expressions = expressions;
@@ -1577,16 +1577,16 @@ public partial class Expression {
         }
     }
 
-    public partial class DictionaryExpression: Expression {
+    public partial class DictionaryExpression: ParsedExpression {
 
-        public List<(Expression, Expression)> Entries { get; init; }
+        public List<(ParsedExpression, ParsedExpression)> Entries { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public DictionaryExpression(
-            List<(Expression, Expression)> entries,
+            List<(ParsedExpression, ParsedExpression)> entries,
             Span span) {
 
             this.Entries = entries;
@@ -1594,16 +1594,16 @@ public partial class Expression {
         }
     }
 
-    public partial class SetExpression: Expression {
+    public partial class SetExpression: ParsedExpression {
 
-        public List<Expression> Items { get; init; }
+        public List<ParsedExpression> Items { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public SetExpression(
-            List<Expression> items,
+            List<ParsedExpression> items,
             Span span) {
 
             this.Items = items;
@@ -1611,19 +1611,19 @@ public partial class Expression {
         }
     }
 
-    public partial class IndexedExpression: Expression {
+    public partial class IndexedExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
-        public Expression Index { get; init; }
+        public ParsedExpression Index { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public IndexedExpression(
-            Expression expression,
-            Expression index,
+            ParsedExpression expression,
+            ParsedExpression index,
             Span span) {
 
             this.Expression = expression;
@@ -1632,9 +1632,9 @@ public partial class Expression {
         }
     }
 
-    public partial class UnaryOpExpression: Expression {
+    public partial class UnaryOpExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
         
         public UnaryOperator Operator { get; init; }
         
@@ -1643,7 +1643,7 @@ public partial class Expression {
         ///
 
         public UnaryOpExpression(
-            Expression expression,
+            ParsedExpression expression,
             UnaryOperator op,
             Span Span) {
 
@@ -1653,22 +1653,22 @@ public partial class Expression {
         }
     }
 
-    public partial class BinaryOpExpression: Expression {
+    public partial class BinaryOpExpression: ParsedExpression {
 
-        public Expression Lhs { get; init; }
+        public ParsedExpression Lhs { get; init; }
         
         public BinaryOperator Operator { get; init; }
         
-        public Expression Rhs { get; init; }
+        public ParsedExpression Rhs { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public BinaryOpExpression(
-            Expression lhs,
+            ParsedExpression lhs,
             BinaryOperator op,
-            Expression rhs,
+            ParsedExpression rhs,
             Span span) {
 
             this.Lhs = lhs;
@@ -1678,7 +1678,7 @@ public partial class Expression {
         }
     }
 
-    public partial class VarExpression: Expression {
+    public partial class VarExpression: ParsedExpression {
 
         public String Value { get; init; }
         
@@ -1696,16 +1696,16 @@ public partial class Expression {
         }
     }
     
-    public partial class TupleExpression: Expression {
+    public partial class TupleExpression: ParsedExpression {
 
-        public List<Expression> Expressions { get; init; }
+        public List<ParsedExpression> Expressions { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public TupleExpression(
-            List<Expression> expressions,
+            List<ParsedExpression> expressions,
             Span span) {
 
             this.Expressions = expressions;
@@ -1713,19 +1713,19 @@ public partial class Expression {
         }
     }
 
-    public partial class RangeExpression: Expression {
+    public partial class RangeExpression: ParsedExpression {
 
-        public Expression Start { get; init; }
+        public ParsedExpression Start { get; init; }
 
-        public Expression End { get; init; }
+        public ParsedExpression End { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public RangeExpression(
-            Expression start,
-            Expression end,
+            ParsedExpression start,
+            ParsedExpression end,
             Span span) {
 
             this.Start = start;
@@ -1734,9 +1734,9 @@ public partial class Expression {
         }
     }
 
-    public partial class WhenExpression: Expression {
+    public partial class WhenExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
         public List<WhenCase> Cases { get; init; }
 
@@ -1745,7 +1745,7 @@ public partial class Expression {
         ///
 
         public WhenExpression(
-            Expression expression,
+            ParsedExpression expression,
             List<WhenCase> cases,
             Span span) {
 
@@ -1755,9 +1755,9 @@ public partial class Expression {
         }
     }
 
-    public partial class IndexedTupleExpression: Expression {
+    public partial class IndexedTupleExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
         public Int64 Index { get; init; }
 
@@ -1766,7 +1766,7 @@ public partial class Expression {
         ///
 
         public IndexedTupleExpression(
-            Expression expression,
+            ParsedExpression expression,
             Int64 index,
             Span span) {
 
@@ -1776,9 +1776,9 @@ public partial class Expression {
         }
     }
 
-    public partial class IndexedStructExpression: Expression {
+    public partial class IndexedStructExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
         
         public String Name { get; init; }
         
@@ -1787,7 +1787,7 @@ public partial class Expression {
         ///
 
         public IndexedStructExpression(
-            Expression expression,
+            ParsedExpression expression,
             String name,
             Span span) {
 
@@ -1797,7 +1797,7 @@ public partial class Expression {
         }
     }
 
-    public partial class CallExpression: Expression {
+    public partial class CallExpression: ParsedExpression {
 
         public ParsedCall Call { get; init; }
 
@@ -1815,9 +1815,9 @@ public partial class Expression {
         }
     }
 
-    public partial class MethodCallExpression: Expression {
+    public partial class MethodCallExpression: ParsedExpression {
         
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
         
         public ParsedCall Call { get; init; }
         
@@ -1826,7 +1826,7 @@ public partial class Expression {
         ///
 
         public MethodCallExpression(
-            Expression expression, 
+            ParsedExpression expression, 
             ParsedCall call, 
             Span span) {
 
@@ -1836,16 +1836,16 @@ public partial class Expression {
         }
     }
 
-    public partial class ForcedUnwrapExpression: Expression {
+    public partial class ForcedUnwrapExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public ForcedUnwrapExpression(
-            Expression expression,
+            ParsedExpression expression,
             Span span) {
 
             this.Expression = expression;
@@ -1855,7 +1855,7 @@ public partial class Expression {
 
     // FIXME: These should be implemented as `enum` variant values once available.
 
-    public partial class OptionalNoneExpression: Expression {
+    public partial class OptionalNoneExpression: ParsedExpression {
 
         public Span Span { get; init; }
         
@@ -1868,16 +1868,16 @@ public partial class Expression {
         }
     }
 
-    public partial class OptionalSomeExpression: Expression {
+    public partial class OptionalSomeExpression: ParsedExpression {
 
-        public Expression Expression { get; init; }
+        public ParsedExpression Expression { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public OptionalSomeExpression(
-            Expression expression,
+            ParsedExpression expression,
             Span span) {
 
             this.Expression = expression;
@@ -1887,7 +1887,7 @@ public partial class Expression {
 
     // Not standalone
 
-    public partial class OperatorExpression: Expression {
+    public partial class OperatorExpression: ParsedExpression {
 
         public BinaryOperator Operator { get; init; }
         
@@ -1907,7 +1907,7 @@ public partial class Expression {
     
     // Parsing error
 
-    public partial class GarbageExpression: Expression {
+    public partial class GarbageExpression: ParsedExpression {
 
         public Span Span { get; init; }
 
@@ -1926,7 +1926,7 @@ public partial class Expression {
 public static partial class ExpressionFunctions {
 
     public static Span GetSpan(
-        this Expression expr) {
+        this ParsedExpression expr) {
 
         switch (expr) {
 
@@ -2053,8 +2053,8 @@ public static partial class ExpressionFunctions {
     }
 
     public static bool Eq(
-        Expression? l, 
-        Expression? r) {
+        ParsedExpression? l, 
+        ParsedExpression? r) {
 
         if (l == null && r == null) {
 
@@ -2152,7 +2152,7 @@ public static partial class ExpressionFunctions {
     }
 
     public static UInt64 Precedence(
-        this Expression expr) {
+        this ParsedExpression expr) {
 
         switch (expr) {
 
@@ -3569,7 +3569,7 @@ public static partial class ParserFunctions {
 
                     ParsedType returnType = new UncheckedEmptyType();
 
-                    Expression? fatArrowExpr = null;
+                    ParsedExpression? fatArrowExpr = null;
 
                     if ((index + 2) < tokens.Count) {
 
@@ -3657,20 +3657,20 @@ public static partial class ParserFunctions {
                                 nameSpan,
                                 parameters,
                                 genericParameters,
-                                block: new Block(),
+                                block: new ParsedBlock(),
                                 throws,
                                 returnType,
                                 linkage),
                             error);
                     }
 
-                    Block? block = null;
+                    ParsedBlock? block = null;
 
                     switch (fatArrowExpr) {
 
-                        case Expression fae: {
+                        case ParsedExpression fae: {
 
-                            var _block = new Block();
+                            var _block = new ParsedBlock();
 
                             _block.Statements.Add(new ReturnStatement(fae));
 
@@ -3730,11 +3730,11 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (Block, Error?) ParseBlock(List<Token> tokens, ref int index) {
+    public static (ParsedBlock, Error?) ParseBlock(List<Token> tokens, ref int index) {
 
         Trace($"ParseBlock: {tokens.ElementAt(index)}");
 
-        var block = new Block();
+        var block = new ParsedBlock();
 
         Error? error = null;
 
@@ -3794,7 +3794,7 @@ public static partial class ParserFunctions {
         Trace("ERROR: expected complete block");
 
         return (
-            new Block(),
+            new ParsedBlock(),
             new ParserError(
                 "expected complete block", 
                 new Span(
@@ -4243,7 +4243,7 @@ public static partial class ParserFunctions {
                                 // Before we continue, quickly lint that the else block and the if block are not
                                 // the same. This helps prevent a copy/paste error
 
-                                if (BlockFunctions.Eq(block, elseBlock)) {
+                                if (ParsedBlockFunctions.Eq(block, elseBlock)) {
 
                                     error = error ?? new ValidationError(
                                         "if and else have identical blocks",
@@ -4292,7 +4292,7 @@ public static partial class ParserFunctions {
         return (new IfStatement(cond, block, elseStmt), error);
     }
 
-    public static (Expression, Error?) ParseExpression(
+    public static (ParsedExpression, Error?) ParseExpression(
         List<Token> tokens, 
         ref int index, 
         ExpressionKind exprKind) {
@@ -4305,7 +4305,7 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
-        var exprStack = new List<Expression>();
+        var exprStack = new List<ParsedExpression>();
 
         UInt64 lastPrecedence = 1000000;
 
@@ -4721,7 +4721,7 @@ public static partial class ParserFunctions {
         return (cases, error);
     }
 
-    public static (Expression, Error?) ParseOperand(
+    public static (ParsedExpression, Error?) ParseOperand(
         List<Token> tokens, 
         ref int index) {
 
@@ -4736,7 +4736,7 @@ public static partial class ParserFunctions {
             index += 1;
         }
 
-        Expression? expr = null;
+        ParsedExpression? expr = null;
 
         switch (tokens.ElementAt(index)) {
 
@@ -4961,7 +4961,7 @@ public static partial class ParserFunctions {
 
                         // We have a tuple
 
-                        var exprs = new List<Expression>(new [] { _expr });
+                        var exprs = new List<ParsedExpression>(new [] { _expr });
 
                         index += 1;
 
@@ -5786,7 +5786,7 @@ public static partial class ParserFunctions {
         return (expr, error);
     }
 
-    public static (Expression, Error?) ParseOperator(
+    public static (ParsedExpression, Error?) ParseOperator(
         List<Token> tokens, 
         ref int index) {
 
@@ -6105,7 +6105,7 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (Expression, Error?) ParseOperatorWithAssignment(
+    public static (ParsedExpression, Error?) ParseOperatorWithAssignment(
         List<Token> tokens, 
         ref int index) {
 
@@ -6351,13 +6351,13 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (Expression, Error?) ParseSet(
+    public static (ParsedExpression, Error?) ParseSet(
         List<Token> tokens,
         ref int index) {
 
         Error? error = null;
 
-        var output = new List<Expression>();
+        var output = new List<ParsedExpression>();
 
         Int32 start;
 
@@ -6455,14 +6455,14 @@ public static partial class ParserFunctions {
             error);
     } 
 
-    public static (Expression, Error?) ParseArray(
+    public static (ParsedExpression, Error?) ParseArray(
         List<Token> tokens,
         ref int index) {
 
         Error? error = null;
 
-        var output = new List<Expression>();
-        var dictOutput = new List<(Expression, Expression)>();
+        var output = new List<ParsedExpression>();
+        var dictOutput = new List<(ParsedExpression, ParsedExpression)>();
 
         var isDictionary = false;
 
@@ -6506,7 +6506,7 @@ public static partial class ParserFunctions {
 
         ///
 
-        Expression? fillSizeExpr = null;
+        ParsedExpression? fillSizeExpr = null;
 
         ///
 
