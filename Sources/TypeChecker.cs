@@ -4606,15 +4606,12 @@ public static partial class TypeCheckerFunctions {
 
                         innerTy = checkedValue.GetNeuType();
                     }
-                    else {
+                    else if (innerTy != checkedValue.GetNeuType()) {
 
-                        if (innerTy != checkedValue.GetNeuType()) {
-
-                            error = error ?? 
-                                new TypeCheckError(
-                                    "does not match type of previous values in set",
-                                    value.GetSpan());
-                        }
+                        error = error ?? 
+                            new TypeCheckError(
+                                "does not match type of previous values in set",
+                                value.GetSpan());
                     }
 
                     output.Add(checkedValue);
