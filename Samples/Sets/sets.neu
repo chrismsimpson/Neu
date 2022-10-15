@@ -1,0 +1,7 @@
+func main() {
+    let set1 = { "a", "b" }
+    printLine("{}", set1.size())
+
+    let set2 = { 1, 2, 3, 4, 5 }
+    printLine("{}", set2.size())
+}

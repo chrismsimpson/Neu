@@ -1577,6 +1577,23 @@ public partial class Expression {
         }
     }
 
+    public partial class SetExpression: Expression {
+
+        public List<Expression> Items { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public SetExpression(
+            List<Expression> items,
+            Span span) {
+
+            this.Items = items;
+            this.Span = span;
+        }
+    }
+
     public partial class IndexedExpression: Expression {
 
         public Expression Expression { get; init; }
@@ -1924,6 +1941,11 @@ public static partial class ExpressionFunctions {
             case DictionaryExpression de: {
 
                 return de.Span;
+            }
+
+            case SetExpression se: {
+
+                return se.Span;
             }
 
             case TupleExpression te: {
@@ -2710,14 +2732,6 @@ public static partial class ParserFunctions {
         return (parsedFile, error);
     }
 
-
-
-
-
-
-
-
-
     public static void SkipNewLines(
         List<Token> tokens,
         ref int index) {
@@ -2727,10 +2741,6 @@ public static partial class ParserFunctions {
             index += 1;
         }
     }
-
-
-
-
 
     public static (Enum, Error?) ParseEnum(
         List<Token> tokens,
@@ -3024,28 +3034,6 @@ public static partial class ParserFunctions {
 
         return (_enum, error);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public static (List<(String, Span)>, Error?) ParseGenericParameters(
         List<Token> tokens,
@@ -5068,6 +5056,17 @@ public static partial class ParserFunctions {
                 break;
             }
 
+            case LCurlyToken _: {
+
+                var (setExpr, err) = ParseSet(tokens, ref index);
+
+                error = error ?? err;
+
+                expr = setExpr;
+
+                break;
+            }
+
             case PlusPlusToken _: {
                 
                 var startSpan = tokens.ElementAt(index).Span;
@@ -6349,6 +6348,110 @@ public static partial class ParserFunctions {
             }
         }
     }
+
+    public static (Expression, Error?) ParseSet(
+        List<Token> tokens,
+        ref int index) {
+
+        Error? error = null;
+
+        var output = new List<Expression>();
+
+        Int32 start;
+
+        if (index < tokens.Count) {
+
+            start = index;
+
+            switch (tokens[index]) {
+
+                case LCurlyToken _: {
+
+                    index += 1;
+
+                    break;
+                }
+
+                default: {
+
+                    error = error ??
+                        new ParserError(
+                            "expected '{'",
+                            tokens[index].Span);
+
+                    break;
+                }
+            }
+        }
+        else {
+
+            start = index - 1;
+
+            Trace("ERROR: incomplete set");
+
+            error = error ?? 
+                new ParserError(
+                    "incomplete set",
+                    tokens[index - 1].Span);
+        }
+
+        var cont = true;
+
+        while (cont && index < tokens.Count) {
+
+            switch (tokens[index]) {
+
+                case RCurlyToken _: {
+
+                    index += 1;
+
+                    cont = false;
+
+                    break;
+                }
+
+                case CommaToken _: {
+
+                    // Treat comma as whitespace? Might require them in the future
+                
+                    index += 1;
+
+                    break;
+                }
+
+                case EolToken _: {
+
+                    // Treat comma as whitespace? Might require them in the future
+                
+                    index += 1;
+
+                    break;
+                }
+
+                default: {
+
+                    var (expr, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+
+                    error = error ?? err;
+
+                    output.Add(expr);
+
+                    break;
+                }
+            }
+        }
+
+        var end = index - 1;
+
+        return (
+            new SetExpression(
+                output,
+                new Span(
+                    fileId: tokens[start].Span.FileId,
+                    start: tokens[start].Span.Start,
+                    end: tokens[end].Span.End)),
+            error);
+    } 
 
     public static (Expression, Error?) ParseArray(
         List<Token> tokens,

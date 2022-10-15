@@ -2079,6 +2079,27 @@ public partial class CheckedExpression {
         }
     }
 
+    public partial class CheckedSetExpression: CheckedExpression {
+
+        public List<CheckedExpression> Items { get; init; }
+
+        public Span Span { get; init; }
+
+        public Int32 TypeId { get; init; }
+
+        ///
+
+        public CheckedSetExpression(
+            List<CheckedExpression> items,
+            Span span,
+            Int32 typeId) {
+
+            this.Items = items;
+            this.Span = span;
+            this.TypeId = typeId;
+        }
+    }
+
     public partial class CheckedIndexedExpression: CheckedExpression {
 
         public CheckedExpression Expression { get; init; }
@@ -2397,6 +2418,11 @@ public static partial class CheckedExpressionFunctions {
                 return de.TypeId;
             }
 
+            case CheckedSetExpression se: {
+
+                return se.TypeId;
+            }
+
             case CheckedTupleExpression tupleExpr: {
 
                 return tupleExpr.Type;
@@ -2496,6 +2522,9 @@ public static partial class CheckedExpressionFunctions {
 
             case CheckedDictionaryExpression d:
                 return d.Span;
+
+            case CheckedSetExpression s:
+                return s.Span;
 
             case CheckedArrayExpression a:
                 return a.Span;
@@ -4559,6 +4588,48 @@ public static partial class TypeCheckerFunctions {
                         checkedFillSizeExpr,
                         ve.Span,
                         unifyWithTypeHint(project, typeId)),
+                    error);
+            }
+
+            case SetExpression se: {
+
+                var innerTy = Compiler.UnknownTypeId;
+
+                var output = new List<CheckedExpression>();
+
+                foreach (var value in se.Items) {
+
+                    var (checkedValue, err) = TypeCheckExpression(value, scopeId, project, safetyMode, null);
+
+                    error = error ?? err;
+
+                    if (innerTy == Compiler.UnknownTypeId) {
+
+                        innerTy = checkedValue.GetNeuType();
+                    }
+                    else {
+
+                        if (innerTy != checkedValue.GetNeuType()) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "does not match type of previous values in set",
+                                    value.GetSpan());
+                        }
+                    }
+
+                    output.Add(checkedValue);
+                }
+
+                var setStructId = project
+                    .FindStructInScope(0, "Set")
+                    ?? throw new Exception("internal error: Set builtin definition not found");
+
+                var typeId = project
+                    .FindOrAddTypeId(new GenericInstance(setStructId, new List<Int32>(new [] { innerTy })));
+
+                return (
+                    new CheckedSetExpression(output, se.Span, unifyWithTypeHint(project, typeId)),
                     error);
             }
 

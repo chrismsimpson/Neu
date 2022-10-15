@@ -1,0 +1,8 @@
+func main() {
+    let nums = [1, 2, 1, 2, 1, 2, 3, 4, 5, 1, 2]
+    var set = { nums[0] }
+    for i in 0..nums.size() {
+        set.add(nums[i])
+    }
+    printLine("{}", set.size())
+}

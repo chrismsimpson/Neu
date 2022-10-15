@@ -40,6 +40,7 @@ public static partial class Program {
         TestEnums();
         TestInlineCPP();
         TestParser();
+        TestSets();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -415,5 +416,10 @@ public static partial class Program {
     public static ErrorOrVoid TestParser() {
 
         return TestSamples("./Samples/Parser");
+    }
+
+    public static ErrorOrVoid TestSets() {
+
+        return TestSamples("./Samples/Sets");
     }
 }

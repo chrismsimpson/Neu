@@ -22,7 +22,7 @@ public:
 
     Set(std::initializer_list<T> list) {
 
-        MUST(ensure_capacity(list.size()));
+        MUST(ensureCapacity(list.size()));
 
         for (auto& item : list) {
 

@@ -1,0 +1,9 @@
+func main() {
+    var set = { "b", "c" }
+    set.add("a")
+    printLine("{}", set.size())
+
+    set.add("b")
+    set.add("c")
+    printLine("{}", set.size())
+}

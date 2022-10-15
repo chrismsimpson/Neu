@@ -50,8 +50,8 @@ extern struct Dictionary<K, V> {
 
 extern struct Set<V> {
     func contains(this, anon value: V) -> Bool
-    func add(mutable this, anon value: V) throws
-    func remove(mutable this, anon value: V) -> Bool
+    func add(var this, anon value: V) throws
+    func remove(var this, anon value: V) -> Bool
     func ensureCapacity(var this, anon capacity: UInt) throws
     func clear(var this)
     func size(this) -> UInt

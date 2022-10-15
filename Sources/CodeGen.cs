@@ -2738,6 +2738,35 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
+            case CheckedSetExpression se: {
+
+                // (Set({1, 2, 3}))
+
+                var valueTypeId = se.Items.First().GetNeuType();
+
+                output.Append($"(Set<{CodeGenType(valueTypeId, project)}>({{");
+
+                var first = true;
+
+                foreach (var value in se.Items) {
+
+                    if (!first) {
+
+                        output.Append(", ");
+                    }
+                    else {
+
+                        first = false;
+                    }
+
+                    output.Append(CodeGenExpr(indent, value, project));
+                }
+                
+                output.Append("}))");
+
+                break;
+            }
+
             case CheckedTupleExpression te: {
 
                 // (Tuple{1, 2, 3})
