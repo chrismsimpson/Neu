@@ -346,18 +346,18 @@ public partial class ParsedFile {
 
     public List<Function> Functions { get; init; }
 
-    public List<Struct> Structs { get; init; }
+    public List<ParsedStruct> Structs { get; init; }
 
     public List<Enum> Enums { get; init; }
 
     ///
 
     public ParsedFile()
-        : this(new List<Function>(), new List<Struct>(), new List<Enum>()) { }
+        : this(new List<Function>(), new List<ParsedStruct>(), new List<Enum>()) { }
 
     public ParsedFile(
         List<Function> functions,
-        List<Struct> structs,
+        List<ParsedStruct> structs,
         List<Enum> enums) {
 
         this.Functions = functions;
@@ -368,7 +368,7 @@ public partial class ParsedFile {
 
 ///
 
-public partial class Struct {
+public partial class ParsedStruct {
     
     public String Name { get; init; }
 
@@ -386,7 +386,7 @@ public partial class Struct {
 
     ///
 
-    public Struct(
+    public ParsedStruct(
         String name,
         List<(String, Span)> genericParameters,
         List<ParsedVarDecl> fields,
@@ -3124,7 +3124,7 @@ public static partial class ParserFunctions {
         return (genericParameters, null);
     }
 
-    public static (Struct, Error?) ParseStruct(
+    public static (ParsedStruct, Error?) ParseStruct(
         List<Token> tokens, 
         ref int index,
         DefinitionLinkage definitionLinkage,
@@ -3295,7 +3295,7 @@ public static partial class ParserFunctions {
                     }
 
                     return (
-                        new Struct(
+                        new ParsedStruct(
                             name: nt.Value,
                             genericParameters,
                             fields: fields,
@@ -3317,7 +3317,7 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                 
                     return (
-                        new Struct(
+                        new ParsedStruct(
                             name: String.Empty,
                             genericParameters,
                             fields: new List<ParsedVarDecl>(),
@@ -3339,7 +3339,7 @@ public static partial class ParserFunctions {
                     tokens.ElementAt(index).Span);
 
             return (
-                new Struct(
+                new ParsedStruct(
                     name: String.Empty, 
                     genericParameters,
                     fields: new List<ParsedVarDecl>(),

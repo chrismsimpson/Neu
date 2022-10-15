@@ -3274,7 +3274,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static Error? TypeCheckStructPredecl(
-        Struct structure,
+        ParsedStruct structure,
         Int32 structTypeId,
         Int32 structId,
         Int32 parentScopeId,
@@ -3392,7 +3392,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static Error? TypeCheckStruct(
-        Struct structure,
+        ParsedStruct structure,
         Int32 structId,
         Int32 parentScopeId,
         Project project) {
