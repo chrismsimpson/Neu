@@ -2530,10 +2530,10 @@ public static partial class IListFunctions {
 
 public static partial class ParserFunctions {
 
-    public static (ParsedNamespace, Error?) ParseFile(
+    public static (ParsedNamespace, Error?) ParseNamespace(
         List<Token> tokens) {
 
-        Trace($"ParseFile");
+        Trace($"ParseNamespace");
 
         Error? error = null;
 
