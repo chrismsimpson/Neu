@@ -2537,7 +2537,7 @@ public static partial class ParserFunctions {
 
         Error? error = null;
 
-        var parsedFile = new ParsedNamespace();
+        var parsedNamespace = new ParsedNamespace();
 
         var index = 0;
 
@@ -2559,7 +2559,7 @@ public static partial class ParserFunctions {
 
                             error = error ?? err;
 
-                            parsedFile.Functions.Add(fun);
+                            parsedNamespace.Functions.Add(fun);
 
                             break;
                         }
@@ -2570,7 +2570,7 @@ public static partial class ParserFunctions {
 
                             error = error ?? err;
 
-                            parsedFile.Enums.Add(_enum);
+                            parsedNamespace.Enums.Add(_enum);
 
                             break;
                         }
@@ -2585,7 +2585,7 @@ public static partial class ParserFunctions {
 
                             error = error ?? err;
 
-                            parsedFile.Structs.Add(structure);
+                            parsedNamespace.Structs.Add(structure);
 
                             break;
                         }
@@ -2600,7 +2600,7 @@ public static partial class ParserFunctions {
 
                             err = error ?? err;
 
-                            parsedFile.Structs.Add(structure);
+                            parsedNamespace.Structs.Add(structure);
                             
                             break;
                         }
@@ -2626,7 +2626,7 @@ public static partial class ParserFunctions {
 
                                                 error = error ?? err;
 
-                                                parsedFile.Functions.Add(fun);
+                                                parsedNamespace.Functions.Add(fun);
 
                                                 break;
                                             }
@@ -2643,7 +2643,7 @@ public static partial class ParserFunctions {
 
                                                 error = error ?? err;
 
-                                                parsedFile.Structs.Add(structure);
+                                                parsedNamespace.Structs.Add(structure);
 
                                                 break;
                                             }
@@ -2660,7 +2660,7 @@ public static partial class ParserFunctions {
 
                                                 error = error ?? err;
 
-                                                parsedFile.Structs.Add(structure);
+                                                parsedNamespace.Structs.Add(structure);
 
                                                 break;
                                             }
@@ -2746,7 +2746,7 @@ public static partial class ParserFunctions {
             }
         }
 
-        return (parsedFile, error);
+        return (parsedNamespace, error);
     }
 
     public static void SkipNewLines(
