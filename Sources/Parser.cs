@@ -162,6 +162,23 @@ public partial class UncheckedType {
         }
     }
 
+    public partial class UncheckedSetType: UncheckedType {
+
+        public UncheckedType Type { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public UncheckedSetType(
+            UncheckedType type,
+            Span span) {
+
+            this.Type = type;
+            this.Span = span;
+        }
+    }
+
     public partial class UncheckedOptionalType: UncheckedType {
 
         public UncheckedType Type { get; init; }
@@ -6760,11 +6777,10 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (UncheckedType, Error?) ParseArrayType(
+    // public static (UncheckedType, Error?) ParseArrayType(
+    public static (UncheckedType, Error?) ParseShorthandType(
         List<Token> tokens,
         ref int index) {
-
-        // [T] is shorthand for Array<T>
 
         if (index + 2 >= tokens.Count) {
 
@@ -6774,6 +6790,8 @@ public static partial class ParserFunctions {
         var start = tokens.ElementAt(index).Span;
 
         if (tokens[index] is LSquareToken) {
+
+            // [T] is shorthand for Array<T>
 
             index += 1;
 
@@ -6799,6 +6817,37 @@ public static partial class ParserFunctions {
                     "expected ]",
                     tokens[index].Span));
         }
+        else if (tokens[index] is LCurlyToken) {
+
+            // {T} is shorthand for Set<T>
+
+            index += 1;
+
+            var (ty, err) = ParseTypeName(tokens, ref index);
+
+            if (tokens[index] is RCurlyToken){
+
+                index += 1;
+
+                return (
+                    new UncheckedSetType(
+                        ty,
+                        new Span(
+                            fileId: start.FileId,
+                            start: start.Start,
+                            end: tokens[index - 1].Span.End)),
+                    err);
+            }
+
+            // TODO: Add {K:V} shorthand for Dictionary<K,V>?
+
+            return (
+                new UncheckedEmptyType(),
+                err ?? 
+                    new ParserError(
+                        "expected ]",
+                        tokens[index].Span));
+        }
         else {
 
             return (new UncheckedEmptyType(), null);
@@ -6819,13 +6868,15 @@ public static partial class ParserFunctions {
 
         Trace($"ParseTypeName: {tokens.ElementAt(index)}");
 
-        var (vectorType, parseVectorTypeErr) = ParseArrayType(tokens, ref index);
+        // var (vectorType, parseVectorTypeErr) = ParseArrayType(tokens, ref index);
 
-        error = error ?? parseVectorTypeErr;
+        var (shorthandType, parseShorthandTypeErr) = ParseShorthandType(tokens, ref index);
 
-        if (vectorType is UncheckedArrayType vt) {
+        error = error ?? parseShorthandTypeErr;
 
-            return (vt, error);
+        if (!(shorthandType is UncheckedEmptyType)) {
+
+            return (shorthandType, error);
         }
 
         switch (tokens.ElementAt(index)) {

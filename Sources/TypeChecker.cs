@@ -7039,6 +7039,21 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
+            case UncheckedSetType st: {
+
+                var (innerTy, err) = TypeCheckTypeName(st.Type, scopeId, project);
+
+                error = error ?? err;
+
+                var setStructId = project
+                    .FindStructInScope(0, "Set")
+                    ?? throw new Exception("internal error: Set builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(new GenericInstance(setStructId, new List<Int32>(new [] { innerTy })));
+
+                return (typeId, error);
+            }
+
             case UncheckedOptionalType opt: {
 
                 var (innerType, err) = TypeCheckTypeName(opt.Type, scopeId, project);

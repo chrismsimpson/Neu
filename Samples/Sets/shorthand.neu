@@ -1,0 +1,13 @@
+func getUnique(nums: [Int64]) throws -> {Int64} {
+    var set = { nums[0] }
+    for i in 1..nums.size() {
+        set.add(nums[i])
+    }
+    return set
+}
+
+func main() {
+    let nums = [1, 2, 3, 4, 5, 5]
+    let set = getUnique(nums)
+    printLine("{}", set.size())
+}
