@@ -108,6 +108,7 @@ private:
 
 ///
 
+// Partial specialization for void value type
 template<typename ErrorType>
 class [[nodiscard]] ErrorOr<void, ErrorType> {
 

@@ -5,8 +5,8 @@
 
 #include "AllOf.h"
 #include "AnyOf.h"
-#include "Assertions.h"
 #include "Array.h"
+#include "Assertions.h"
 #include "Atomic.h"
 #include "Badge.h"
 #include "BitCast.h"
@@ -15,8 +15,8 @@
 #include "CharacterTypes.h"
 #include "Checked.h"
 #include "CheckedFormatString.h"
+#include "Concepts.h"
 #include "Debug.h"
-#include "Detail.h"
 #include "Dictionary.h"
 #include "Error.h"
 #include "Find.h"
@@ -45,6 +45,7 @@
 #include "ReverseIterator.h"
 #include "ScopeGuard.h"
 #include "Span.h"
+#include "Detail.h"
 #include "std.h"
 #include "String.h"
 #include "StringBuilder.h"
@@ -56,6 +57,7 @@
 #include "Try.h"
 #include "Tuple.h"
 #include "TypeCasts.h"
+#include "TypeList.h"
 #include "TypedTransfer.h"
 #include "Types.h"
 #include "UnicodeUtils.h"
@@ -64,7 +66,6 @@
 #include "Vector.h"
 #include "WeakPointer.h"
 #include "Weakable.h"
-
 #include "kmalloc.h"
 #include "kstdio.h"
 

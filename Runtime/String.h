@@ -302,7 +302,7 @@ public:
     template<typename BufferType>
     [[nodiscard]] static String copy(BufferType const& buffer, ShouldChomp shouldChomp = NoChomp) {
 
-        if (buffer.is_empty()) {
+        if (buffer.isEmpty()) {
 
             return empty();
         }

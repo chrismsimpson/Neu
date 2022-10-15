@@ -247,6 +247,59 @@ public static partial class NeuTypeFunctions {
         }
     }
 
+    public static bool IsSigned(
+        Int32 typeId) {
+
+        switch (typeId) {
+
+            case Compiler.CCharTypeId:
+
+                // We're gonna assume false here because we don't
+                // have direct access to C's char type and C#'s
+                // byte type is unsigned
+
+                return false;
+            
+            case Compiler.UIntTypeId:
+            case Compiler.UInt8TypeId:
+            case Compiler.UInt16TypeId:
+            case Compiler.UInt32TypeId:
+            case Compiler.UInt64TypeId:
+                return false;
+
+            default:
+                return true;
+        }
+    }
+
+    public static UInt32 GetBits(
+        Int32 typeId) {
+
+        switch (typeId) {
+
+            case Compiler.BoolTypeId:       return 8;
+            case Compiler.Int8TypeId:       return 8;
+            case Compiler.Int16TypeId:      return 16;
+            case Compiler.Int32TypeId:      return 32;
+            case Compiler.Int64TypeId:      return 64;
+            case Compiler.UInt8TypeId:      return 8;
+            case Compiler.UInt16TypeId:     return 16;
+            case Compiler.UInt32TypeId:     return 32;
+            case Compiler.UInt64TypeId:     return 64;
+            
+            case Compiler.FloatTypeId:      return 32;
+            case Compiler.DoubleTypeId:     return 64;
+            
+            case Compiler.CCharTypeId:      return 8;
+            case Compiler.CIntTypeId:       return 64;
+
+            case Compiler.IntTypeId:        return 64;
+            case Compiler.UIntTypeId:       return 64;
+
+            default: throw new Exception($"GetBits not supported for type {typeId}");
+        }
+    }
+
     public static bool CanFitInteger(
         Int32 typeId,
         IntegerConstant value) {
@@ -256,6 +309,9 @@ public static partial class NeuTypeFunctions {
             case SignedIntegerConstant si: {
 
                 switch (typeId) {
+
+                    case Compiler.CCharTypeId: return si.Value >= byte.MinValue && si.Value <= byte.MaxValue;
+                    case Compiler.CIntTypeId: return si.Value >= int.MinValue && si.Value <= int.MaxValue;
 
                     case Compiler.Int8TypeId: return si.Value >= sbyte.MinValue && si.Value <= sbyte.MaxValue;
                     case Compiler.Int16TypeId: return si.Value >= short.MinValue && si.Value <= short.MaxValue;
@@ -1235,33 +1291,74 @@ public static partial class IntegerConstantFunctions {
             return (null, Compiler.UnknownTypeId);
         }
 
+        var bits = NeuTypeFunctions.GetBits(typeId);
+
+        var signed = NeuTypeFunctions.IsSigned(typeId);
+
+
+
+        // NumericConstant newConstant = i switch {
+        //     SignedIntegerConstant si => typeId switch {      
+        //         Compiler.Int8TypeId => new Int8Constant(ToSByte(si.Value)),
+        //         Compiler.Int16TypeId => new Int16Constant(ToInt16(si.Value)),
+        //         Compiler.Int32TypeId => new Int32Constant(ToInt32(si.Value)),
+        //         Compiler.Int64TypeId => new Int64Constant(si.Value),
+        //         Compiler.IntTypeId => new IntConstant(si.Value),
+        //         Compiler.UInt8TypeId => new UInt8Constant(ToByte(si.Value)),
+        //         Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(si.Value)),
+        //         Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(si.Value)),
+        //         Compiler.UInt64TypeId => new UInt64Constant(ToUInt64(si.Value)),
+        //         Compiler.UIntTypeId => new UIntConstant(ToUInt64(si.Value)),
+        //         _ => throw new Exception("Bogus state in IntegerConstant.promote")
+        //     },
+        //     UnsignedIntegerConstant ui => typeId switch {
+        //         Compiler.Int8TypeId => new Int8Constant(ToSByte(ui.Value)),
+        //         Compiler.Int16TypeId => new Int16Constant(ToInt16(ui.Value)),
+        //         Compiler.Int32TypeId => new Int32Constant(ToInt32(ui.Value)),
+        //         Compiler.Int64TypeId => new Int64Constant(System.Convert.ToInt64(ui.Value)),
+        //         Compiler.IntTypeId => new IntConstant(System.Convert.ToInt64(ui.Value)),
+        //         Compiler.UInt8TypeId => new UInt8Constant(ToByte(ui.Value)),
+        //         Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(ui.Value)),
+        //         Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(ui.Value)),
+        //         Compiler.UInt64TypeId => new UInt64Constant(ui.Value),
+        //         Compiler.UIntTypeId => new UIntConstant(ui.Value),
+        //         _ => throw new Exception("Bogus state in IntegerConstant.promote")
+        //     },
+        //     _ => throw new Exception()
+        // };
+
         NumericConstant newConstant = i switch {
-            SignedIntegerConstant si => typeId switch {      
-                Compiler.Int8TypeId => new Int8Constant(ToSByte(si.Value)),
-                Compiler.Int16TypeId => new Int16Constant(ToInt16(si.Value)),
-                Compiler.Int32TypeId => new Int32Constant(ToInt32(si.Value)),
-                Compiler.Int64TypeId => new Int64Constant(si.Value),
-                Compiler.IntTypeId => new IntConstant(si.Value),
-                Compiler.UInt8TypeId => new UInt8Constant(ToByte(si.Value)),
-                Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(si.Value)),
-                Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(si.Value)),
-                Compiler.UInt64TypeId => new UInt64Constant(ToUInt64(si.Value)),
-                Compiler.UIntTypeId => new UIntConstant(ToUInt64(si.Value)),
-                _ => throw new Exception("Bogus state in IntegerConstant.promote")
+
+            SignedIntegerConstant si => (bits, signed) switch {
+
+                (8, false) => new UInt8Constant(ToByte(si.Value)),
+                (16, false) => new UInt16Constant(ToUInt16(si.Value)),
+                (32, false) => new UInt32Constant(ToUInt32(si.Value)),
+                (64, false) => new UInt64Constant(ToUInt64(si.Value)),
+                
+                (8, true) => new Int8Constant(ToSByte(si.Value)),
+                (16, true) => new Int16Constant(ToInt16(si.Value)),
+                (32, true) => new Int32Constant(ToInt32(si.Value)),
+                (64, true) => new Int64Constant(si.Value),
+
+                _ => throw new Exception("Numeric constants can only be 8, 16, 32, or 64 bits long")
             },
-            UnsignedIntegerConstant ui => typeId switch {
-                Compiler.Int8TypeId => new Int8Constant(ToSByte(ui.Value)),
-                Compiler.Int16TypeId => new Int16Constant(ToInt16(ui.Value)),
-                Compiler.Int32TypeId => new Int32Constant(ToInt32(ui.Value)),
-                Compiler.Int64TypeId => new Int64Constant(System.Convert.ToInt64(ui.Value)),
-                Compiler.IntTypeId => new IntConstant(System.Convert.ToInt64(ui.Value)),
-                Compiler.UInt8TypeId => new UInt8Constant(ToByte(ui.Value)),
-                Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(ui.Value)),
-                Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(ui.Value)),
-                Compiler.UInt64TypeId => new UInt64Constant(ui.Value),
-                Compiler.UIntTypeId => new UIntConstant(ui.Value),
-                _ => throw new Exception("Bogus state in IntegerConstant.promote")
+
+            UnsignedIntegerConstant ui => (bits, signed) switch {
+
+                (8, false) => new UInt8Constant(ToByte(ui.Value)),
+                (16, false) => new UInt16Constant(ToUInt16(ui.Value)),
+                (32, false) => new UInt32Constant(ToUInt32(ui.Value)),
+                (64, false) => new UInt64Constant(ui.Value),
+                
+                (8, true) => new Int8Constant(ToSByte(ui.Value)),
+                (16, true) => new Int16Constant(ToInt16(ui.Value)),
+                (32, true) => new Int32Constant(ToInt32(ui.Value)),
+                (64, true) => new Int64Constant(System.Convert.ToInt64(ui.Value)),
+                
+                _ => throw new Exception("Numeric constants can only be 8, 16, 32, or 64 bits long")
             },
+
             _ => throw new Exception()
         };
 

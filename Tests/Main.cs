@@ -17,27 +17,29 @@ public static partial class Program {
 
         var start = System.Environment.TickCount;
 
-        // TestScratchpad();
+        TestScratchpad();
 
-        TestBasics();
-        TestControlFlow();
-        TestFunctions();
-        TestMath();
-        TestVariables();
-        TestStrings();
-        TestArrays();
-        TestOptional();
-        TestTuples();
-        TestStructs();
-        TestPointers();
-        TestClasses();
-        TestBoolean();
-        TestRanges();
-        TestDictionaries();
-        TestGenerics();
-        TestEnums();
-        TestInlineCPP();
-        TestParser();
+        // TestApps();
+
+        // TestBasics();
+        // TestControlFlow();
+        // TestFunctions();
+        // TestMath();
+        // TestVariables();
+        // TestStrings();
+        // TestArrays();
+        // TestOptional();
+        // TestTuples();
+        // TestStructs();
+        // TestPointers();
+        // TestClasses();
+        // TestBoolean();
+        // TestRanges();
+        // TestDictionaries();
+        // TestGenerics();
+        // TestEnums();
+        // TestInlineCPP();
+        // TestParser();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -313,6 +315,11 @@ public static partial class Program {
     public static ErrorOrVoid TestScratchpad() {
 
         return TestSamples("./Samples/Scratchpad");
+    }
+
+    public static ErrorOrVoid TestApps() {
+
+        return TestSamples("./Samples/Apps");
     }
 
     public static ErrorOrVoid TestBasics() {

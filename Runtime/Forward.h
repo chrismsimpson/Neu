@@ -18,9 +18,9 @@ using ByteBuffer = Detail::ByteBuffer<32>;
 class Error;
 class GenericLexer;
 class String;
-class StringView;
-class StringImpl;
 class StringBuilder;
+class StringImpl;
+class StringView;
 class Utf8CodePointIterator;
 class Utf8View;
 
