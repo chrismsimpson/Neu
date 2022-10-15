@@ -344,7 +344,7 @@ public static partial class ParsedVarDeclFunctions {
 
 public partial class ParsedFile {
 
-    public List<Function> Functions { get; init; }
+    public List<ParsedFunction> Functions { get; init; }
 
     public List<ParsedStruct> Structs { get; init; }
 
@@ -353,10 +353,10 @@ public partial class ParsedFile {
     ///
 
     public ParsedFile()
-        : this(new List<Function>(), new List<ParsedStruct>(), new List<ParsedEnum>()) { }
+        : this(new List<ParsedFunction>(), new List<ParsedStruct>(), new List<ParsedEnum>()) { }
 
     public ParsedFile(
-        List<Function> functions,
+        List<ParsedFunction> functions,
         List<ParsedStruct> structs,
         List<ParsedEnum> enums) {
 
@@ -376,7 +376,7 @@ public partial class ParsedStruct {
 
     public List<ParsedVarDecl> Fields { get; init; }
 
-    public List<Function> Methods { get; init; }
+    public List<ParsedFunction> Methods { get; init; }
 
     public Span Span { get; init; }
 
@@ -390,7 +390,7 @@ public partial class ParsedStruct {
         String name,
         List<(String, Span)> genericParameters,
         List<ParsedVarDecl> fields,
-        List<Function> methods,
+        List<ParsedFunction> methods,
         Span span,
         DefinitionLinkage definitionLinkage,
         DefinitionType definitionType) {
@@ -547,7 +547,7 @@ public enum DefinitionType {
     Struct
 }
 
-public partial class Function {
+public partial class ParsedFunction {
 
     public String Name { get; init; }
 
@@ -567,7 +567,7 @@ public partial class Function {
 
     ///
 
-    public Function(
+    public ParsedFunction(
         FunctionLinkage linkage)
         : this(
             String.Empty,
@@ -583,7 +583,7 @@ public partial class Function {
                 new UncheckedEmptyType(),
             linkage) { }
 
-    public Function(
+    public ParsedFunction(
         String name,
         Span nameSpan,
         List<Parameter> parameters,
@@ -3194,7 +3194,7 @@ public static partial class ParserFunctions {
 
                     var fields = new List<ParsedVarDecl>();
 
-                    var methods = new List<Function>();
+                    var methods = new List<ParsedFunction>();
 
                     var contFields = true;
 
@@ -3321,7 +3321,7 @@ public static partial class ParserFunctions {
                             name: String.Empty,
                             genericParameters,
                             fields: new List<ParsedVarDecl>(),
-                            methods: new List<Function>(),
+                            methods: new List<ParsedFunction>(),
                             span: tokens.ElementAt(index).Span,
                             definitionLinkage,
                             definitionType),
@@ -3343,7 +3343,7 @@ public static partial class ParserFunctions {
                     name: String.Empty, 
                     genericParameters,
                     fields: new List<ParsedVarDecl>(),
-                    methods: new List<Function>(),
+                    methods: new List<ParsedFunction>(),
                     span: tokens.ElementAt(index).Span,
                     definitionLinkage,
                     definitionType),
@@ -3351,7 +3351,7 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (Function, Error?) ParseFunction(
+    public static (ParsedFunction, Error?) ParseFunction(
         List<Token> tokens,
         ref int index,
         FunctionLinkage linkage) {
@@ -3652,7 +3652,7 @@ public static partial class ParserFunctions {
                     if (linkage == FunctionLinkage.External) {
 
                         return (
-                            new Function(
+                            new ParsedFunction(
                                 name: funNameToken.Value,
                                 nameSpan,
                                 parameters,
@@ -3692,7 +3692,7 @@ public static partial class ParserFunctions {
                     }
 
                     return (
-                        new Function(
+                        new ParsedFunction(
                             name: funNameToken.Value,
                             nameSpan,
                             parameters,
@@ -3711,7 +3711,7 @@ public static partial class ParserFunctions {
                     Trace("ERROR: expected function name");
 
                     return (
-                        new Function(FunctionLinkage.Internal),
+                        new ParsedFunction(FunctionLinkage.Internal),
                         new ParserError(
                             "expected function name", 
                             tokens.ElementAt(index).Span));
@@ -3723,7 +3723,7 @@ public static partial class ParserFunctions {
             Trace("ERROR: incomplete function definition");
 
             return (
-                new Function(FunctionLinkage.Internal),
+                new ParsedFunction(FunctionLinkage.Internal),
                 new ParserError(
                     "incomplete function definition", 
                     tokens.ElementAt(index).Span));
