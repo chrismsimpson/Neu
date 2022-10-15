@@ -6007,7 +6007,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
-        Call call,
+        ParsedCall call,
         List<ResolvedNamespace> namespaces,
         Span span,
         Int32 scopeId,
@@ -6120,7 +6120,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (CheckedCall, Error?) TypeCheckCall(
-        Call call, 
+        ParsedCall call, 
         Int32 callerScopeId,
         Span span,
         Project project,
@@ -6896,7 +6896,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (Int32, Error?) TypeCheckTypeName(
-        UncheckedType uncheckedType,
+        ParsedType uncheckedType,
         Int32 scopeId,
         Project project) {
 

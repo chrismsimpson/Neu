@@ -14,7 +14,7 @@ public static partial class TraceFunctions {
     }
 }
 
-public partial class Call {
+public partial class ParsedCall {
 
     public List<String> Namespace { get; set; }
 
@@ -22,18 +22,18 @@ public partial class Call {
 
     public List<(String, Expression)> Args { get; init; }
 
-    public List<UncheckedType> TypeArgs { get; set; }
+    public List<ParsedType> TypeArgs { get; set; }
 
     ///
 
-    public Call()
-        : this(new List<String>(), String.Empty, new List<(string, Expression)>(), new List<UncheckedType>()) { }
+    public ParsedCall()
+        : this(new List<String>(), String.Empty, new List<(string, Expression)>(), new List<ParsedType>()) { }
 
-    public Call(
+    public ParsedCall(
         List<String> ns,
         String name,
         List<(String, Expression)> args,
-        List<UncheckedType> typeArgs) {
+        List<ParsedType> typeArgs) {
 
         this.Namespace = ns;
         this.Name = name;
@@ -42,11 +42,11 @@ public partial class Call {
     }
 }
 
-public static partial class CallFunctions {
+public static partial class ParsedCallFunctions {
 
     public static bool Eq(
-        Call l, 
-        Call r) {
+        ParsedCall l, 
+        ParsedCall r) {
 
         if (!Equals(l.Name, r.Name)) {
 
@@ -82,7 +82,7 @@ public static partial class CallFunctions {
 
         for (var t = 0; t < l.TypeArgs.Count; t++) {
 
-            if (!UncheckedTypeFunctions.Eq(l.TypeArgs[t], r.TypeArgs[t])) {
+            if (!ParsedTypeFunctions.Eq(l.TypeArgs[t], r.TypeArgs[t])) {
 
                 return false;
             }
@@ -102,12 +102,12 @@ public enum ExpressionKind {
 
 ///
 
-public partial class UncheckedType {
+public partial class ParsedType {
 
-    public UncheckedType() { }
+    public ParsedType() { }
 }
 
-    public partial class UncheckedNameType: UncheckedType {
+    public partial class UncheckedNameType: ParsedType {
 
         public String Name { get; init; }
 
@@ -124,11 +124,11 @@ public partial class UncheckedType {
         }
     }
 
-    public partial class UncheckedGenericType: UncheckedType {
+    public partial class UncheckedGenericType: ParsedType {
 
         public String Name { get; init; }
 
-        public List<UncheckedType> Types { get; init; }
+        public List<ParsedType> Types { get; init; }
 
         public Span Span { get; init; }
 
@@ -136,7 +136,7 @@ public partial class UncheckedType {
 
         public UncheckedGenericType(
             String name,
-            List<UncheckedType> types,
+            List<ParsedType> types,
             Span span) { 
 
             this.Name = name;
@@ -145,16 +145,16 @@ public partial class UncheckedType {
         }
     }
 
-    public partial class UncheckedArrayType: UncheckedType {
+    public partial class UncheckedArrayType: ParsedType {
 
-        public UncheckedType Type { get; init; }
+        public ParsedType Type { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public UncheckedArrayType(
-            UncheckedType type,
+            ParsedType type,
             Span span) {
 
             this.Type = type;
@@ -162,16 +162,16 @@ public partial class UncheckedType {
         }
     }
 
-    public partial class UncheckedSetType: UncheckedType {
+    public partial class UncheckedSetType: ParsedType {
 
-        public UncheckedType Type { get; init; }
+        public ParsedType Type { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public UncheckedSetType(
-            UncheckedType type,
+            ParsedType type,
             Span span) {
 
             this.Type = type;
@@ -179,16 +179,16 @@ public partial class UncheckedType {
         }
     }
 
-    public partial class UncheckedOptionalType: UncheckedType {
+    public partial class UncheckedOptionalType: ParsedType {
 
-        public UncheckedType Type { get; init; }
+        public ParsedType Type { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public UncheckedOptionalType(
-            UncheckedType type,
+            ParsedType type,
             Span span) {
 
             this.Type = type;
@@ -196,16 +196,16 @@ public partial class UncheckedType {
         }
     }
     
-    public partial class UncheckedRawPointerType: UncheckedType {
+    public partial class UncheckedRawPointerType: ParsedType {
 
-        public UncheckedType Type { get; init; }
+        public ParsedType Type { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public UncheckedRawPointerType(
-            UncheckedType type,
+            ParsedType type,
             Span span) {
 
             this.Type = type;
@@ -213,16 +213,16 @@ public partial class UncheckedType {
         }
     }
 
-    public partial class UncheckedEmptyType: UncheckedType {
+    public partial class UncheckedEmptyType: ParsedType {
 
         public UncheckedEmptyType() { }
     }
 
 ///
 
-public static partial class UncheckedTypeFunctions {
+public static partial class ParsedTypeFunctions {
 
-    public static bool Eq(UncheckedType l, UncheckedType r) {
+    public static bool Eq(ParsedType l, ParsedType r) {
 
         switch (true) {
 
@@ -250,7 +250,7 @@ public static partial class UncheckedTypeFunctions {
 
                 for (var i = 0; i < lg.Types.Count; i++) {
 
-                    if (!UncheckedTypeFunctions.Eq(lg.Types[i], rg.Types[i])) {
+                    if (!ParsedTypeFunctions.Eq(lg.Types[i], rg.Types[i])) {
 
                         return false;
                     }
@@ -263,7 +263,7 @@ public static partial class UncheckedTypeFunctions {
                 l is UncheckedArrayType la
                 && r is UncheckedArrayType ra: {
 
-                return UncheckedTypeFunctions.Eq(la.Type, ra.Type)
+                return ParsedTypeFunctions.Eq(la.Type, ra.Type)
                     && SpanFunctions.Eq(la.Span, ra.Span);
             }
             
@@ -304,7 +304,7 @@ public partial class VarDecl {
 
     public String Name { get; init; }
 
-    public UncheckedType Type { get; set; }
+    public ParsedType Type { get; set; }
 
     public bool Mutable { get; set; }
 
@@ -317,7 +317,7 @@ public partial class VarDecl {
 
     public VarDecl(
         String name,
-        UncheckedType type,
+        ParsedType type,
         bool mutable,
         Span span) {
 
@@ -335,7 +335,7 @@ public static partial class VarDeclFunctions {
         VarDecl r) {
 
         return l.Name == r.Name 
-            && UncheckedTypeFunctions.Eq(l.Type, r.Type)
+            && ParsedTypeFunctions.Eq(l.Type, r.Type)
             && l.Mutable == r.Mutable;
     }
 }
@@ -475,7 +475,7 @@ public partial class EnumVariant {
 
         public String Name { get; init; }
 
-        public UncheckedType Type { get; init; }
+        public ParsedType Type { get; init; }
 
         public Span Span { get; init; }
 
@@ -483,7 +483,7 @@ public partial class EnumVariant {
 
         public TypedEnumVariant(
             String name,
-            UncheckedType type,
+            ParsedType type,
             Span span) {
 
             this.Name = name;
@@ -504,7 +504,7 @@ public partial class Enum {
 
     public DefinitionLinkage DefinitionLinkage { get; init; }
 
-    public UncheckedType UnderlyingType { get; set; }
+    public ParsedType UnderlyingType { get; set; }
 
     ///
 
@@ -514,7 +514,7 @@ public partial class Enum {
         List<EnumVariant> variants,
         Span span,
         DefinitionLinkage definitionLinkage,
-        UncheckedType underlyingType) {
+        ParsedType underlyingType) {
 
         this.Name = name;
         this.GenericParameters = genericParameters;
@@ -561,7 +561,7 @@ public partial class Function {
 
     public bool Throws { get; init; }
 
-    public UncheckedType ReturnType { get; init; }
+    public ParsedType ReturnType { get; init; }
 
     public FunctionLinkage Linkage { get; init; }
 
@@ -590,7 +590,7 @@ public partial class Function {
         List<(String, Span)> genericParameters,
         Block block,
         bool throws,
-        UncheckedType returnType,
+        ParsedType returnType,
         FunctionLinkage linkage) {
 
         this.Name = name;
@@ -610,7 +610,7 @@ public partial class Variable {
 
     public String Name { get; init; }
 
-    public UncheckedType Type { get; init; }
+    public ParsedType Type { get; init; }
 
     public bool Mutable { get; init; }
 
@@ -618,7 +618,7 @@ public partial class Variable {
 
     public Variable(
         String name,
-        UncheckedType ty,
+        ParsedType ty,
         bool mutable) {
 
         this.Name = name;
@@ -1799,14 +1799,14 @@ public partial class Expression {
 
     public partial class CallExpression: Expression {
 
-        public Call Call { get; init; }
+        public ParsedCall Call { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public CallExpression(
-            Call call,
+            ParsedCall call,
             Span span)
             : base() {
 
@@ -1819,7 +1819,7 @@ public partial class Expression {
         
         public Expression Expression { get; init; }
         
-        public Call Call { get; init; }
+        public ParsedCall Call { get; init; }
         
         public Span Span { get; init; }
 
@@ -1827,7 +1827,7 @@ public partial class Expression {
 
         public MethodCallExpression(
             Expression expression, 
-            Call call, 
+            ParsedCall call, 
             Span span) {
 
             this.Expression = expression;
@@ -2082,7 +2082,7 @@ public static partial class ExpressionFunctions {
                 l is CallExpression callL
                 && r is CallExpression callR:
 
-                return CallFunctions.Eq(callL.Call, callR.Call);
+                return ParsedCallFunctions.Eq(callL.Call, callR.Call);
 
             ///
 
@@ -2257,12 +2257,12 @@ public static partial class ExpressionFunctions {
 
 public partial class TypeCast {
 
-    public UncheckedType Type { get; init; }
+    public ParsedType Type { get; init; }
 
     ///
 
     public TypeCast(
-        UncheckedType type) {
+        ParsedType type) {
 
         this.Type = type;
     }
@@ -2270,25 +2270,25 @@ public partial class TypeCast {
 
     public partial class FallibleTypeCast: TypeCast {
 
-        public FallibleTypeCast(UncheckedType type)
+        public FallibleTypeCast(ParsedType type)
             : base(type) { }
     }
 
     public partial class InfallibleTypeCast: TypeCast {
 
-        public InfallibleTypeCast(UncheckedType type)
+        public InfallibleTypeCast(ParsedType type)
             : base(type) { }
     }
 
     public partial class SaturatingTypeCast: TypeCast {
 
-        public SaturatingTypeCast(UncheckedType type)
+        public SaturatingTypeCast(ParsedType type)
             : base(type) { }
     }
     
     public partial class TruncatingTypeCast: TypeCast {
 
-        public TruncatingTypeCast(UncheckedType type)
+        public TruncatingTypeCast(ParsedType type)
             : base(type) { }
     }
 
@@ -2299,23 +2299,23 @@ public static partial class TypeCastFunctions {
         switch (true) {
 
             case var _ when l is FallibleTypeCast lf && r is FallibleTypeCast rf:
-                return UncheckedTypeFunctions.Eq(lf.Type, rf.Type);
+                return ParsedTypeFunctions.Eq(lf.Type, rf.Type);
 
             case var _ when l is InfallibleTypeCast li && r is InfallibleTypeCast ri:
-                return UncheckedTypeFunctions.Eq(li.Type, ri.Type);
+                return ParsedTypeFunctions.Eq(li.Type, ri.Type);
 
             case var _ when l is SaturatingTypeCast ls && r is SaturatingTypeCast rs:
-                return UncheckedTypeFunctions.Eq(ls.Type, rs.Type);
+                return ParsedTypeFunctions.Eq(ls.Type, rs.Type);
 
             case var _ when l is TruncatingTypeCast lt && r is TruncatingTypeCast rt:
-                return UncheckedTypeFunctions.Eq(lt.Type, rt.Type);
+                return ParsedTypeFunctions.Eq(lt.Type, rt.Type);
 
             default:
                 return false;
         }
     }
 
-    public static UncheckedType GetUncheckedType(
+    public static ParsedType GetUncheckedType(
         this TypeCast typeCast) {
 
         switch (typeCast) {
@@ -2412,12 +2412,12 @@ public partial class UnaryOperator {
 
     public partial class IsUnaryOperator: UnaryOperator {
 
-        public UncheckedType Type { get; init; }
+        public ParsedType Type { get; init; }
 
         ///
 
         public IsUnaryOperator(
-            UncheckedType type) {
+            ParsedType type) {
 
             this.Type = type;
         }
@@ -2454,7 +2454,7 @@ public static partial class UnaryOperatorFunctions {
                 return TypeCastFunctions.Eq(lt.TypeCast, rt.TypeCast);
 
             case var _ when l is IsUnaryOperator li && r is IsUnaryOperator ri:
-                return UncheckedTypeFunctions.Eq(li.Type, ri.Type);
+                return ParsedTypeFunctions.Eq(li.Type, ri.Type);
 
             default:
                 return false;
@@ -3567,7 +3567,7 @@ public static partial class ParserFunctions {
                         }
                     }
 
-                    UncheckedType returnType = new UncheckedEmptyType();
+                    ParsedType returnType = new UncheckedEmptyType();
 
                     Expression? fatArrowExpr = null;
 
@@ -6777,8 +6777,7 @@ public static partial class ParserFunctions {
         }
     }
 
-    // public static (UncheckedType, Error?) ParseArrayType(
-    public static (UncheckedType, Error?) ParseShorthandType(
+    public static (ParsedType, Error?) ParseShorthandType(
         List<Token> tokens,
         ref int index) {
 
@@ -6854,11 +6853,11 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (UncheckedType, Error?) ParseTypeName(
+    public static (ParsedType, Error?) ParseTypeName(
         List<Token> tokens, 
         ref int index) {
 
-        UncheckedType uncheckedType = new UncheckedEmptyType();
+        ParsedType uncheckedType = new UncheckedEmptyType();
 
         Error? error = null;
 
@@ -6952,7 +6951,7 @@ public static partial class ParserFunctions {
                 
                     index += 1;
 
-                    var innerTypes = new List<UncheckedType>();
+                    var innerTypes = new List<ParsedType>();
 
                     var contInnerTypes = true;
 
@@ -7063,11 +7062,11 @@ public static partial class ParserFunctions {
             null);
     }
 
-    public static (Call, Error?) ParseCall(List<Token> tokens, ref int index) {
+    public static (ParsedCall, Error?) ParseCall(List<Token> tokens, ref int index) {
 
         Trace($"ParseCall: {tokens.ElementAt(index)}");
 
-        var call = new Call();
+        var call = new ParsedCall();
 
         Error? error = null;
 
@@ -7092,7 +7091,7 @@ public static partial class ParserFunctions {
 
                         index += 1;
 
-                        var innerTypes = new List<UncheckedType>();
+                        var innerTypes = new List<ParsedType>();
 
                         var contInnerTypes = true;
 
