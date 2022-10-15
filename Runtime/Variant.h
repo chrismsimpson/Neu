@@ -221,8 +221,8 @@ namespace Detail {
 
             // Warning: Internal type shenanigans - VariantsConstrutors<T, Base> <- Base
             //          Not the other way around, so be _really_ careful not to cause issues.
-
-            return *reinterpret_cast<Base*>(this);
+            
+            return *static_cast<Base*>(this);
         }
     };
 
