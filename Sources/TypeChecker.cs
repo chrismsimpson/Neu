@@ -3717,7 +3717,7 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (CheckedStatement, Error?) TypeCheckStatement(
-        Statement stmt,
+        ParsedStatement stmt,
         Int32 scopeId,
         Project project,
         SafetyMode safetyMode) {
@@ -3934,7 +3934,7 @@ public static partial class TypeCheckerFunctions {
 
                 CheckedStatement? elseOutput = null;
 
-                if (ifStmt.Trailing is Statement elseStmt) {
+                if (ifStmt.Trailing is ParsedStatement elseStmt) {
 
                     var (checkedElseStmt, checkedElseStmtErr) = TypeCheckStatement(elseStmt, scopeId, project, safetyMode);
 

@@ -648,16 +648,16 @@ public partial class ParsedParameter {
 
 ///
 
-public partial class Statement {
+public partial class ParsedStatement {
 
-    public Statement() { }
+    public ParsedStatement() { }
 }
 
 public static partial class StatementFunctions {
 
     public static bool Eq(
-        Statement? l,
-        Statement? r) {
+        ParsedStatement? l,
+        ParsedStatement? r) {
 
         if (l == null && r == null) {
 
@@ -799,8 +799,8 @@ public static partial class StatementFunctions {
     }
 
     public static bool Eq(
-        List<Statement> l,
-        List<Statement> r) {
+        List<ParsedStatement> l,
+        List<ParsedStatement> r) {
 
         if (l.Count != r.Count) {
 
@@ -821,7 +821,7 @@ public static partial class StatementFunctions {
 
 ///
 
-public partial class ExpressionStatement: Statement {
+public partial class ExpressionStatement: ParsedStatement {
 
     public Expression Expression { get; init; }
 
@@ -844,14 +844,14 @@ public static partial class ExpressionStatementFunctions {
 
 ///
 
-public partial class DeferStatement: Statement {
+public partial class DeferStatement: ParsedStatement {
 
-    public Statement Statement { get; init; }
+    public ParsedStatement Statement { get; init; }
 
     ///
 
     public DeferStatement(
-        Statement statement)
+        ParsedStatement statement)
         : base() { 
 
         this.Statement = statement;
@@ -870,7 +870,7 @@ public static partial class DeferStatementFunctions {
 
 ///
 
-public partial class UnsafeBlockStatement: Statement {
+public partial class UnsafeBlockStatement: ParsedStatement {
 
     public Block Block { get; init; }
 
@@ -895,7 +895,7 @@ public static partial class UnsafeBlockStatementFunctions {
 
 ///
 
-public partial class VarDeclStatement: Statement {
+public partial class VarDeclStatement: ParsedStatement {
 
     public ParsedVarDecl Decl { get; init; }
 
@@ -944,20 +944,20 @@ public static partial class VarDeclStatementFunctions {
 
 ///
 
-public partial class IfStatement: Statement {
+public partial class IfStatement: ParsedStatement {
 
     public Expression Expr { get; init; }
 
     public Block Block { get; init; }
 
-    public Statement? Trailing { get; init; }
+    public ParsedStatement? Trailing { get; init; }
 
     ///
 
     public IfStatement(
         Expression expr,
         Block block,
-        Statement? trailing)
+        ParsedStatement? trailing)
         : base() {
 
         this.Expr = expr;
@@ -995,7 +995,7 @@ public static partial class IfStatementFunctions {
 
 ///
 
-public partial class BlockStatement: Statement {
+public partial class BlockStatement: ParsedStatement {
 
     public Block Block { get; init; }
 
@@ -1019,7 +1019,7 @@ public static partial class BlockStatementFunctions {
 
 ///
 
-public partial class LoopStatement: Statement {
+public partial class LoopStatement: ParsedStatement {
 
     public Block Block { get; init; }
 
@@ -1042,7 +1042,7 @@ public static partial class LoopStatementFunctions {
 
 ///
 
-public partial class WhileStatement: Statement {
+public partial class WhileStatement: ParsedStatement {
 
     public Expression Expr { get; init; }
 
@@ -1088,7 +1088,7 @@ public static partial class WhileStatementFunctions {
 
 ///
 
-public partial class ForStatement: Statement {
+public partial class ForStatement: ParsedStatement {
 
     public String IteratorName { get; init; }
 
@@ -1139,7 +1139,7 @@ public static partial class ForStatementFunctions {
 
 ///
 
-public partial class BreakStatement: Statement {
+public partial class BreakStatement: ParsedStatement {
 
     public BreakStatement() { }
 }
@@ -1166,7 +1166,7 @@ public static partial class BreakStatementFunctions {
 
 ///
 
-public partial class ContinueStatement: Statement {
+public partial class ContinueStatement: ParsedStatement {
 
     public ContinueStatement() { }
 }
@@ -1193,7 +1193,7 @@ public static partial class ContinueStatementFunctions {
 
 ///
 
-public partial class ReturnStatement: Statement {
+public partial class ReturnStatement: ParsedStatement {
 
     public Expression Expr { get; init; }
 
@@ -1218,7 +1218,7 @@ public static partial class ReturnStatementFunctions {
 
 ///
 
-public partial class ThrowStatement: Statement {
+public partial class ThrowStatement: ParsedStatement {
 
     public Expression Expr { get; init; }
 
@@ -1243,9 +1243,9 @@ public static partial class ThrowStatementFunctions {
 
 ///
 
-public partial class TryStatement: Statement {
+public partial class TryStatement: ParsedStatement {
 
-    public Statement Statement { get; init; }
+    public ParsedStatement Statement { get; init; }
 
     public String Name { get; init; }
 
@@ -1256,7 +1256,7 @@ public partial class TryStatement: Statement {
     ///
 
     public TryStatement(
-        Statement statement,
+        ParsedStatement statement,
         String name,
         Span span,
         Block block) {
@@ -1305,7 +1305,7 @@ public static partial class TryStatementFunctions {
 
 ///
 
-public partial class InlineCPPStatement: Statement {
+public partial class InlineCPPStatement: ParsedStatement {
 
     public Block Block { get; init; }
 
@@ -1349,7 +1349,7 @@ public static partial class InlineCPPStatementFunctions {
 
 ///
 
-public partial class GarbageStatement: Statement {
+public partial class GarbageStatement: ParsedStatement {
 
     public GarbageStatement() { }
 }
@@ -1378,15 +1378,15 @@ public static partial class GarbageStatementFunctions {
 
 public partial class Block {
 
-    public List<Statement> Statements { get; init; }
+    public List<ParsedStatement> Statements { get; init; }
 
     ///
 
     public Block()
-        : this(new List<Statement>()) { }
+        : this(new List<ParsedStatement>()) { }
 
     public Block(
-        List<Statement> statements) {
+        List<ParsedStatement> statements) {
 
         this.Statements = statements;
     }
@@ -3803,7 +3803,7 @@ public static partial class ParserFunctions {
                     end: tokens.ElementAt(index - 1).Span.End)));
     }
 
-    public static (Statement, Error?) ParseStatement(List<Token> tokens, ref int index) {
+    public static (ParsedStatement, Error?) ParseStatement(List<Token> tokens, ref int index) {
 
         Trace($"ParseStatement: {tokens.ElementAt(index)}");
 
@@ -4163,7 +4163,7 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (Statement, Error?) ParseIfStatement(
+    public static (ParsedStatement, Error?) ParseIfStatement(
         List<Token> tokens,
         ref int index) {
 
@@ -4202,7 +4202,7 @@ public static partial class ParserFunctions {
 
         error = error ?? blockErr;
 
-        Statement? elseStmt = null;
+        ParsedStatement? elseStmt = null;
 
         if (index < tokens.Count) {
 
