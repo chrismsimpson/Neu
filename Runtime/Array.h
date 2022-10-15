@@ -67,6 +67,18 @@ public:
         return { };
     }
 
+    ErrorOr<void> addSize(size_t size) {
+
+        if (Checked<size_t>::additionWouldOverflow(m_size, size)) {
+
+            return Error::fromError(EOVERFLOW);
+        }
+
+        TRY(resize(m_size + size));
+
+        return { };
+    }
+
     ErrorOr<void> resize(size_t size) {
 
         TRY(ensureCapacity(size));
@@ -115,6 +127,8 @@ public:
 
         return { };
     }
+
+    T* unsafeData() { return m_elements; }
 
 private:
 
@@ -178,7 +192,6 @@ public:
     T const& operator[](size_t index) const { return at(index); }
     
     T& operator[](size_t index) { return at(index); }
-
 
 private:
     
@@ -269,6 +282,15 @@ public:
         return { };
     }
 
+    ErrorOr<void> addSize(size_t size) {
+
+        auto* storage = TRY(ensureStorage());
+        
+        TRY(storage->addSize(size));
+        
+        return { };
+    }
+
     ArraySlice<T> slice(size_t offset, size_t size) {
 
         if (!m_storage) {
@@ -327,6 +349,16 @@ public:
 
             MUST(push(move(value)));
         }
+    }
+
+    T* unsafeData() {
+
+        if (!m_storage) {
+
+            return nullptr;
+        }
+
+        return m_storage->unsafeData();
     }
 
 private:

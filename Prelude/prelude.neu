@@ -57,3 +57,12 @@ extern struct Error {
     func fromError(anon code: Int32)
 }
 
+extern class File {
+    func openForReading(anon path: String) throws -> File
+    func openForWriting(anon path: String) throws -> File
+
+    func read(var this, anon buffer: [UInt8]) throws -> UInt
+    func write(var this, anon data: [UInt8]) throws -> UInt
+
+    func readAll(var this) throws -> [UInt8]
+}

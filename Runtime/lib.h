@@ -81,6 +81,10 @@
 using Float = float; // 32-bit
 using Double = double; // 64-bit
 
+#include "File.h"
+
+#include "File.cpp"
+
 template<typename T>
 struct Range {
 
