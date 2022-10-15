@@ -1,6 +1,6 @@
 # Neu
 
-An experimental programming language, designed for brevity, ergonomics and productivity.
+An experimental system designed for brevity, ergonomics and productivity.
 
 Very much inspired by https://github.com/serenityOS/jakt, with modifications:
 
