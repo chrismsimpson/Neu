@@ -3926,25 +3926,15 @@ public static partial class ParserFunctions {
 
                         index += 1;
 
-                        switch (tokens[index]) {
+                        // FIXME: Error about missing error binding
 
-                            case NameToken nt3: {
+                        if (tokens[index] is NameToken nt3) {
 
-                                errorSpan = tokens[index].Span;
-
-                                errorName = nt3.Value;
-
-                                index += 1;
-
-                                break;
-                            }
-
-                            default: {
-
-                                // FIXME: Error about missing error binding
-
-                                break;
-                            }
+                            errorSpan = tokens[index].Span;
+                            
+                            errorName = nt3.Value;
+                            
+                            index += 1;
                         }
 
                         break;
@@ -4144,12 +4134,9 @@ public static partial class ParserFunctions {
                 // This allows the parser to be more forgiving when there are errors
                 // and to ensure parsing continues to make progress.
 
-                if (error != null) {
+                if (error != null && index < tokens.Count) {
 
-                    if (index < tokens.Count) {
-
-                        index += 1;
-                    }
+                    index += 1;
                 }
 
                 return (
@@ -4957,9 +4944,7 @@ public static partial class ParserFunctions {
 
                         // We have a tuple
 
-                        var exprs = new List<Expression>();
-
-                        exprs.Add(_expr);
+                        var exprs = new List<Expression>(new [] { _expr });
 
                         index += 1;
 
@@ -6788,39 +6773,35 @@ public static partial class ParserFunctions {
 
         var start = tokens.ElementAt(index).Span;
 
-        switch (tokens[index]) {
+        if (tokens[index] is LSquareToken) {
 
-            case LSquareToken _: {
+            index += 1;
+
+            var (ty, err) = ParseTypeName(tokens, ref index);
+
+            if (tokens[index] is RSquareToken) {
 
                 index += 1;
 
-                var (ty, err) = ParseTypeName(tokens, ref index);
-
-                if (tokens[index] is RSquareToken) {
-
-                    index += 1;
-
-                    return (
-                        new UncheckedArrayType(
-                            ty, 
-                            new Span(
-                                fileId: start.FileId, 
-                                start: start.Start, 
-                                end: tokens[index - 1].Span.End)),
-                        err);
-                }
-
                 return (
-                    new UncheckedEmptyType(),
-                    new ParserError(
-                        "expected ]",
-                        tokens[index].Span));
+                    new UncheckedArrayType(
+                        ty, 
+                        new Span(
+                            fileId: start.FileId, 
+                            start: start.Start, 
+                            end: tokens[index - 1].Span.End)),
+                    err);   
             }
 
-            default: {
+            return (
+                new UncheckedEmptyType(),
+                new ParserError(
+                    "expected ]",
+                    tokens[index].Span));
+        }
+        else {
 
-                return (new UncheckedEmptyType(), null);
-            }
+            return (new UncheckedEmptyType(), null);
         }
     }
 

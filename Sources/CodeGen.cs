@@ -83,15 +83,9 @@ public static partial class CodeGenFunctions {
 
             var func = project.Functions[funcId];
 
-            if (func.Linkage == FunctionLinkage.External) {
-
-                continue;
-            }
-            else if (func.Linkage == FunctionLinkage.ImplicitConstructor) {
-
-                continue;
-            }
-            else if (func.Linkage == FunctionLinkage.ImplicitEnumConstructor) {
+            if (func.Linkage == FunctionLinkage.External
+                || func.Linkage == FunctionLinkage.ImplicitConstructor
+                || func.Linkage == FunctionLinkage.ImplicitEnumConstructor) {
 
                 continue;
             }
@@ -167,7 +161,7 @@ public static partial class CodeGenFunctions {
 
         // These are all Variant<Ts...>, make a new namespace and define the variant types first.
 
-        var isGeneric = _enum.GenericParameters.Count > 0;
+        var isGeneric = _enum.GenericParameters.Any();
 
         var genericParamNames = _enum
             .GenericParameters

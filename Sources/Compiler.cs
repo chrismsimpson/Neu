@@ -80,9 +80,9 @@ public partial class Compiler {
 
         var err = this.IncludePrelude(project);
 
-        if (err != null) {
+        if (err is Error preludeErr) {
 
-            return new ErrorOr<String>(err);
+            return new ErrorOr<String>(preludeErr);
         }
 
         var contents = ReadAllBytes(filename);
@@ -93,36 +93,16 @@ public partial class Compiler {
             this.RawFiles.Count - 1, 
             this.RawFiles[this.RawFiles.Count - 1].Item2);
 
-        switch (lexErr) {
+        if (lexErr is Error le) {
 
-            case Error e: {
-
-                return new ErrorOr<String>(e);
-            }
-
-            ///
-
-            default: {
-
-                break;
-            }
+            return new ErrorOr<String>(le);
         }
-
+        
         var (parsedFile, parseErr) = ParserFunctions.ParseFile(lexed);
 
-        switch (parseErr) {
+        if (parseErr is Error pe) {
 
-            case Error e: {
-
-                return new ErrorOr<String>(e);
-            }
-
-            ///
-
-            default: {
-
-                break;
-            }
+            return new ErrorOr<String>(pe);
         }
 
         ///

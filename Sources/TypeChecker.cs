@@ -226,25 +226,27 @@ public static partial class NeuTypeFunctions {
     public static bool IsInteger(
         Int32 typeId) {
 
-        switch (typeId) {
+        // switch (typeId) {
 
-            case Compiler.CCharTypeId:
-            case Compiler.CIntTypeId:
-            case Compiler.Int8TypeId:
-            case Compiler.Int16TypeId:
-            case Compiler.Int32TypeId:
-            case Compiler.Int64TypeId:
-            case Compiler.IntTypeId:
-            case Compiler.UInt8TypeId:
-            case Compiler.UInt16TypeId:
-            case Compiler.UInt32TypeId:
-            case Compiler.UInt64TypeId:
-            case Compiler.UIntTypeId:
-                return true;
+        //     case Compiler.CCharTypeId:
+        //     case Compiler.CIntTypeId:
+        //     case Compiler.Int8TypeId:
+        //     case Compiler.Int16TypeId:
+        //     case Compiler.Int32TypeId:
+        //     case Compiler.Int64TypeId:
+        //     case Compiler.IntTypeId:
+        //     case Compiler.UInt8TypeId:
+        //     case Compiler.UInt16TypeId:
+        //     case Compiler.UInt32TypeId:
+        //     case Compiler.UInt64TypeId:
+        //     case Compiler.UIntTypeId:
+        //         return true;
             
-            default: 
-                return false;
-        }
+        //     default: 
+        //         return false;
+        // }
+
+        return (new [] { Compiler.CCharTypeId, Compiler.CIntTypeId, Compiler.Int8TypeId, Compiler.Int16TypeId, Compiler.Int32TypeId, Compiler.Int64TypeId, Compiler.IntTypeId, Compiler.UInt8TypeId, Compiler.UInt16TypeId, Compiler.UInt32TypeId, Compiler.UInt64TypeId, Compiler.UIntTypeId }).Contains(typeId);
     }
 
     public static bool IsSigned(
@@ -3192,70 +3194,67 @@ public static partial class TypeCheckerFunctions {
                                 "Enum variants cannot have a type if the enum has an underlying type",
                                 t.Span);
                     }
+                    else if (seenNames.Contains(t.Name)) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                $"Enum variant '{t.Name}' is defined more than once",
+                                t.Span);
+                    }
                     else {
 
-                        if (seenNames.Contains(t.Name)) {
+                        seenNames.Add(t.Name);
 
-                            error = error ??
-                                new TypeCheckError(
-                                    $"Enum variant '{t.Name}' is defined more than once",
-                                    t.Span);
-                        }
-                        else {
+                        var (checkedType, typeErr) = TypeCheckTypeName(t.Type, enumScopeId, project);
 
-                            seenNames.Add(t.Name);
+                        error = error ?? typeErr;
 
-                            var (checkedType, typeErr) = TypeCheckTypeName(t.Type, enumScopeId, project);
+                        variants.Add(
+                            new CheckedTypedEnumVariant(
+                                t.Name,
+                                checkedType,
+                                t.Span));
 
-                            error = error ?? typeErr;
+                        if (project.FindFuncInScope(enumScopeId, t.Name) == null) {
 
-                            variants.Add(
-                                new CheckedTypedEnumVariant(
-                                    t.Name,
-                                    checkedType,
-                                    t.Span));
+                            // Generate a constructor
 
-                            if (project.FindFuncInScope(enumScopeId, t.Name) == null) {
+                            var constructorParams = new List<CheckedParameter>(
+                                new [] {
+                                    new CheckedParameter(
+                                        requiresLabel: false,
+                                        variable: new CheckedVariable(
+                                            name: "value",
+                                            type: checkedType,
+                                            mutable: false))
+                                });
 
-                                // Generate a constructor
+                            var funcScopeId = project.CreateScope(parentScopeId);
 
-                                var constructorParams = new List<CheckedParameter>(
-                                    new [] {
-                                        new CheckedParameter(
-                                            requiresLabel: false,
-                                            variable: new CheckedVariable(
-                                                name: "value",
-                                                type: checkedType,
-                                                mutable: false))
-                                    });
+                            var checkedConstructor = new CheckedFunction(
+                                name: t.Name,
+                                throws: false,
+                                returnType: enumTypeId,
+                                parameters: constructorParams,
+                                genericParameters: 
+                                    _enum
+                                    .GenericParameters
+                                    .Select(x => new InferenceGuideFunctionGenericParameter(project.FindTypeInScope(enumScopeId, x.Item1)!.Value) as FunctionGenericParameter)
+                                    .ToList(),
+                                funcScopeId,
+                                block: new CheckedBlock(),
+                                linkage: FunctionLinkage.ImplicitEnumConstructor);
 
-                                var funcScopeId = project.CreateScope(parentScopeId);
+                            project.Functions.Add(checkedConstructor);
 
-                                var checkedConstructor = new CheckedFunction(
-                                    name: t.Name,
-                                    throws: false,
-                                    returnType: enumTypeId,
-                                    parameters: constructorParams,
-                                    genericParameters: 
-                                        _enum
-                                        .GenericParameters
-                                        .Select(x => new InferenceGuideFunctionGenericParameter(project.FindTypeInScope(enumScopeId, x.Item1)!.Value) as FunctionGenericParameter)
-                                        .ToList(),
-                                    funcScopeId,
-                                    block: new CheckedBlock(),
-                                    linkage: FunctionLinkage.ImplicitEnumConstructor);
+                            if (project.AddFuncToScope(
+                                enumScopeId, 
+                                t.Name, 
+                                project.Functions.Count - 1, 
+                                t.Span).Error is Error e) {
 
-                                project.Functions.Add(checkedConstructor);
-
-                                if (project.AddFuncToScope(
-                                    enumScopeId, 
-                                    t.Name, 
-                                    project.Functions.Count - 1, 
-                                    t.Span).Error is Error e) {
-
-                                    error = error ?? e;
-                                }    
-                            }
+                                error = error ?? e;
+                            }    
                         }
                     }
 
@@ -4984,7 +4983,7 @@ public static partial class TypeCheckerFunctions {
                                         {
                                             var constructorName = name[1].Item1;
 
-                                            var variant = _enum.Variants.FirstOrDefault(x => {
+                                            var _variant = _enum.Variants.FirstOrDefault(x => {
 
                                                 switch (x) {
 
@@ -4999,196 +4998,400 @@ public static partial class TypeCheckerFunctions {
                                                 }
                                             });
 
-                                            if (variant is null) {
+                                            // if (variant is null) {
 
-                                                error = error ??
-                                                    new TypeCheckError(
-                                                        $"when case '{name[0].Item1}' does not match enum '{enumName}'",
-                                                        name[1].Item2);
+                                            //     error = error ??
+                                            //         new TypeCheckError(
+                                            //             $"when case '{name[0].Item1}' does not match enum '{enumName}'",
+                                            //             name[1].Item2);
 
-                                                return (
-                                                    new CheckedWhenExpression(
-                                                        checkedExpr,
-                                                        checkedCases,
-                                                        we.Span,
-                                                        // FIXME: Figure this out
-                                                        Compiler.UnknownTypeId),
-                                                    error);
-                                            }
-                                            else {
+                                            //     return (
+                                            //         new CheckedWhenExpression(
+                                            //             checkedExpr,
+                                            //             checkedCases,
+                                            //             we.Span,
+                                            //             // FIXME: Figure this out
+                                            //             Compiler.UnknownTypeId),
+                                            //         error);
+                                            // }
+                                            // else {
 
-                                                switch (variant) {
+                                            //     switch (variant) {
 
-                                                    case CheckedUntypedEnumVariant u: {
+                                            //         case CheckedUntypedEnumVariant u: {
 
-                                                        if (evwc.VariantArguments.Any()) {
+                                            //             if (evwc.VariantArguments.Any()) {
 
-                                                            error = error ??
-                                                                new TypeCheckError(
-                                                                    $"when case '{name}' cannot have arguments",
-                                                                    evwc.ArgumentsSpan);
-                                                        }
+                                            //                 error = error ??
+                                            //                     new TypeCheckError(
+                                            //                         $"when case '{name}' cannot have arguments",
+                                            //                         evwc.ArgumentsSpan);
+                                            //             }
 
-                                                        break;
-                                                    }
+                                            //             break;
+                                            //         }
 
-                                                    case CheckedTypedEnumVariant t: {
+                                            //         case CheckedTypedEnumVariant t: {
 
-                                                        if (evwc.VariantArguments.Any()) {
+                                            //             if (evwc.VariantArguments.Any()) {
 
-                                                            if (evwc.VariantArguments.Count != 1) {
+                                            //                 if (evwc.VariantArguments.Count != 1) {
+
+                                            //                     error = error ??
+                                            //                         new TypeCheckError(
+                                            //                             $"when case '{name}' must have exactly one argument",
+                                            //                             evwc.ArgumentsSpan);
+                                            //                 }
+
+                                            //                 var varTy = SubstituteTypeVarsInType(
+                                            //                     t.TypeId,
+                                            //                     genericParams,
+                                            //                     project);
+
+                                            //                 vars.Add((
+                                            //                     new CheckedVariable(
+                                            //                         name: evwc.VariantArguments[0].Item2,
+                                            //                         varTy,
+                                            //                         mutable: false),
+                                            //                     t.Span));
+                                            //             }
+
+                                            //             break;
+                                            //         }
+
+                                            //         case CheckedWithValueEnumVariant w: {
+
+                                            //             if (evwc.VariantArguments.Any()) {
+
+                                            //                 error = error ?? 
+                                            //                     new TypeCheckError(
+                                            //                         $"when case '{name}' cannot have arguments",
+                                            //                         evwc.ArgumentsSpan);
+                                            //             }
+
+                                            //             break;
+                                            //         }
+
+                                            //         // default: {
+
+                                            //         //     // TODO
+
+                                            //         //     break;
+                                            //         // }
+
+                                            //         case CheckedStructLikeEnumVariant s: {
+
+                                            //             var variantName = s.Name;
+
+                                            //             var fields = s.Decls.ToList();
+
+                                            //             var namesSeen = new HashSet<String>();
+
+                                            //             foreach (var arg in evwc.VariantArguments) {
+
+                                            //                 var argName = arg.Item1;
+
+                                            //                 if (IsNullOrWhiteSpace(argName)) {
+
+                                            //                     error = error ?? 
+                                            //                         new TypeCheckError(
+                                            //                             $"when case argument '{arg.Item2}' for struct-like enum variant cannot be anonymous",
+                                            //                             evwc.ArgumentsSpan);
+                                            //                 }
+                                            //                 else {
+
+                                            //                     if (namesSeen.Contains(argName)) {
+
+                                            //                         error = error ?? 
+                                            //                             new TypeCheckError(
+                                            //                                 $"when case argument '{argName}' is already defined",
+                                            //                                 evwc.ArgumentsSpan);
+                                            //                     }
+                                            //                     else {
+
+                                            //                         namesSeen.Add(argName);
+
+                                            //                         var fieldType = fields
+                                            //                             .FirstOrDefault(x => x.Name == argName)?
+                                            //                             .Type;
+
+                                            //                         if (fieldType is not null) {
+
+                                            //                             fieldType = SubstituteTypeVarsInType(fieldType.Value, genericParams, project);
+                                            //                         }
+
+                                            //                         switch (fieldType) {
+
+                                            //                             case Int32 _fieldType: {
+
+                                            //                                 vars.Add((
+                                            //                                     new CheckedVariable(
+                                            //                                         name: arg.Item2,
+                                            //                                         _fieldType,
+                                            //                                         mutable: false),
+                                            //                                     we.Span));
+
+                                            //                                 break;
+                                            //                             }
+
+                                            //                             default: {
+
+                                            //                                 error = error ?? 
+                                            //                                     new TypeCheckError(
+                                            //                                         $"when case argument '{argName}' does not exist in struct-like enum variant '{s.Name}'",
+                                            //                                         evwc.ArgumentsSpan);
+
+                                            //                                 break;
+                                            //                             }
+                                            //                         }
+                                            //                     }
+                                            //                 }
+                                            //             }
+
+                                            //             break;
+                                            //         }
+
+                                            //         default: {
+
+                                            //             // break;
+
+                                            //             throw new Exception();
+                                            //         }
+
+                                            //     }
+                                            
+                                            //     // Look these up again to appease the borrow checker
+
+                                            //     variant = _enum
+                                            //         .Variants
+                                            //         .FirstOrDefault(x => {
+
+                                            //             switch (x) {
+
+                                            //                 case CheckedWithValueEnumVariant w when w.Name == constructorName:
+                                            //                 case CheckedUntypedEnumVariant u when u.Name == constructorName:
+                                            //                 case CheckedTypedEnumVariant t when t.Name == constructorName:
+                                            //                 case CheckedStructLikeEnumVariant s when s.Name == constructorName:
+                                            //                     return true;
+
+                                            //                 default:
+                                            //                     return false;
+                                            //             }
+                                            //         })
+                                            //         ?? throw new Exception();
+
+                                            //     for (var i = 0; i < _enum.Variants.Count; i++) {
+
+                                            //         if (_enum.Variants[i] == variant) {
+
+                                            //             variantIndex = i;
+
+                                            //             break;
+                                            //         }
+                                            //     }
+                                            // }
+
+                                            switch (_variant) {
+
+                                                case null: {
+
+                                                    error = error ??
+                                                        new TypeCheckError(
+                                                            $"when case '{name[0].Item1}' does not match enum '{enumName}'",
+                                                            name[1].Item2);
+
+                                                    return (
+                                                        new CheckedWhenExpression(
+                                                            checkedExpr,
+                                                            checkedCases,
+                                                            we.Span,
+                                                            // FIXME: Figure this out
+                                                            Compiler.UnknownTypeId),
+                                                        error);
+                                                }
+
+                                                case CheckedEnumVariant variant: {
+
+                                                    switch (variant) {
+
+                                                        case CheckedUntypedEnumVariant u: {
+
+                                                            if (evwc.VariantArguments.Any()) {
 
                                                                 error = error ??
                                                                     new TypeCheckError(
-                                                                        $"when case '{name}' must have exactly one argument",
+                                                                        $"when case '{name}' cannot have arguments",
                                                                         evwc.ArgumentsSpan);
                                                             }
 
-                                                            var varTy = SubstituteTypeVarsInType(
-                                                                t.TypeId,
-                                                                genericParams,
-                                                                project);
-
-                                                            vars.Add((
-                                                                new CheckedVariable(
-                                                                    name: evwc.VariantArguments[0].Item2,
-                                                                    varTy,
-                                                                    mutable: false),
-                                                                t.Span));
+                                                            break;
                                                         }
 
-                                                        break;
-                                                    }
+                                                        case CheckedTypedEnumVariant t: {
 
-                                                    case CheckedWithValueEnumVariant w: {
+                                                            if (evwc.VariantArguments.Any()) {
 
-                                                        if (evwc.VariantArguments.Any()) {
+                                                                if (evwc.VariantArguments.Count != 1) {
 
-                                                            error = error ?? 
-                                                                new TypeCheckError(
-                                                                    $"when case '{name}' cannot have arguments",
-                                                                    evwc.ArgumentsSpan);
+                                                                    error = error ??
+                                                                        new TypeCheckError(
+                                                                            $"when case '{name}' must have exactly one argument",
+                                                                            evwc.ArgumentsSpan);
+                                                                }
+
+                                                                var varTy = SubstituteTypeVarsInType(
+                                                                    t.TypeId,
+                                                                    genericParams,
+                                                                    project);
+
+                                                                vars.Add((
+                                                                    new CheckedVariable(
+                                                                        name: evwc.VariantArguments[0].Item2,
+                                                                        varTy,
+                                                                        mutable: false),
+                                                                    t.Span));
+                                                            }
+
+                                                            break;
                                                         }
 
-                                                        break;
-                                                    }
+                                                        case CheckedWithValueEnumVariant w: {
 
-                                                    // default: {
-
-                                                    //     // TODO
-
-                                                    //     break;
-                                                    // }
-
-                                                    case CheckedStructLikeEnumVariant s: {
-
-                                                        var variantName = s.Name;
-
-                                                        var fields = s.Decls.ToList();
-
-                                                        var namesSeen = new HashSet<String>();
-
-                                                        foreach (var arg in evwc.VariantArguments) {
-
-                                                            var argName = arg.Item1;
-
-                                                            if (IsNullOrWhiteSpace(argName)) {
+                                                            if (evwc.VariantArguments.Any()) {
 
                                                                 error = error ?? 
                                                                     new TypeCheckError(
-                                                                        $"when case argument '{arg.Item2}' for struct-like enum variant cannot be anonymous",
+                                                                        $"when case '{name}' cannot have arguments",
                                                                         evwc.ArgumentsSpan);
                                                             }
-                                                            else {
 
-                                                                if (namesSeen.Contains(argName)) {
+                                                            break;
+                                                        }
+
+                                                        // default: {
+
+                                                        //     // TODO
+
+                                                        //     break;
+                                                        // }
+
+                                                        case CheckedStructLikeEnumVariant s: {
+
+                                                            var variantName = s.Name;
+
+                                                            var fields = s.Decls.ToList();
+
+                                                            var namesSeen = new HashSet<String>();
+
+                                                            foreach (var arg in evwc.VariantArguments) {
+
+                                                                var argName = arg.Item1;
+
+                                                                if (IsNullOrWhiteSpace(argName)) {
 
                                                                     error = error ?? 
                                                                         new TypeCheckError(
-                                                                            $"when case argument '{argName}' is already defined",
+                                                                            $"when case argument '{arg.Item2}' for struct-like enum variant cannot be anonymous",
                                                                             evwc.ArgumentsSpan);
                                                                 }
                                                                 else {
 
-                                                                    namesSeen.Add(argName);
+                                                                    if (namesSeen.Contains(argName)) {
 
-                                                                    var fieldType = fields
-                                                                        .FirstOrDefault(x => x.Name == argName)?
-                                                                        .Type;
-
-                                                                    if (fieldType is not null) {
-
-                                                                        fieldType = SubstituteTypeVarsInType(fieldType.Value, genericParams, project);
+                                                                        error = error ?? 
+                                                                            new TypeCheckError(
+                                                                                $"when case argument '{argName}' is already defined",
+                                                                                evwc.ArgumentsSpan);
                                                                     }
+                                                                    else {
 
-                                                                    switch (fieldType) {
+                                                                        namesSeen.Add(argName);
 
-                                                                        case Int32 _fieldType: {
+                                                                        var fieldType = fields
+                                                                            .FirstOrDefault(x => x.Name == argName)?
+                                                                            .Type;
 
-                                                                            vars.Add((
-                                                                                new CheckedVariable(
-                                                                                    name: arg.Item2,
-                                                                                    _fieldType,
-                                                                                    mutable: false),
-                                                                                we.Span));
+                                                                        if (fieldType is not null) {
 
-                                                                            break;
+                                                                            fieldType = SubstituteTypeVarsInType(fieldType.Value, genericParams, project);
                                                                         }
 
-                                                                        default: {
+                                                                        switch (fieldType) {
 
-                                                                            error = error ?? 
-                                                                                new TypeCheckError(
-                                                                                    $"when case argument '{argName}' does not exist in struct-like enum variant '{s.Name}'",
-                                                                                    evwc.ArgumentsSpan);
+                                                                            case Int32 _fieldType: {
 
-                                                                            break;
+                                                                                vars.Add((
+                                                                                    new CheckedVariable(
+                                                                                        name: arg.Item2,
+                                                                                        _fieldType,
+                                                                                        mutable: false),
+                                                                                    we.Span));
+
+                                                                                break;
+                                                                            }
+
+                                                                            default: {
+
+                                                                                error = error ?? 
+                                                                                    new TypeCheckError(
+                                                                                        $"when case argument '{argName}' does not exist in struct-like enum variant '{s.Name}'",
+                                                                                        evwc.ArgumentsSpan);
+
+                                                                                break;
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
                                                             }
+
+                                                            break;
                                                         }
 
-                                                        break;
+                                                        default: {
+
+                                                            // break;
+
+                                                            throw new Exception();
+                                                        }
+
+                                                    }
+                                                
+                                                    // Look these up again to appease the borrow checker
+
+                                                    variant = _enum
+                                                        .Variants
+                                                        .FirstOrDefault(x => {
+
+                                                            switch (x) {
+
+                                                                case CheckedWithValueEnumVariant w when w.Name == constructorName:
+                                                                case CheckedUntypedEnumVariant u when u.Name == constructorName:
+                                                                case CheckedTypedEnumVariant t when t.Name == constructorName:
+                                                                case CheckedStructLikeEnumVariant s when s.Name == constructorName:
+                                                                    return true;
+
+                                                                default:
+                                                                    return false;
+                                                            }
+                                                        })
+                                                        ?? throw new Exception();
+
+                                                    for (var i = 0; i < _enum.Variants.Count; i++) {
+
+                                                        if (_enum.Variants[i] == variant) {
+
+                                                            variantIndex = i;
+
+                                                            break;
+                                                        }
                                                     }
 
-                                                    default: {
-
-                                                        // break;
-
-                                                        throw new Exception();
-                                                    }
-
+                                                    break;
                                                 }
-                                            
-                                                // Look these up again to appease the borrow checker
 
-                                                variant = _enum
-                                                    .Variants
-                                                    .FirstOrDefault(x => {
+                                                default: {
 
-                                                        switch (x) {
-
-                                                            case CheckedWithValueEnumVariant w when w.Name == constructorName:
-                                                            case CheckedUntypedEnumVariant u when u.Name == constructorName:
-                                                            case CheckedTypedEnumVariant t when t.Name == constructorName:
-                                                            case CheckedStructLikeEnumVariant s when s.Name == constructorName:
-                                                                return true;
-
-                                                            default:
-                                                                return false;
-                                                        }
-                                                    })
-                                                    ?? throw new Exception();
-
-                                                for (var i = 0; i < _enum.Variants.Count; i++) {
-
-                                                    if (_enum.Variants[i] == variant) {
-
-                                                        variantIndex = i;
-
-                                                        break;
-                                                    }
+                                                    throw new Exception();
                                                 }
                                             }
                                         }
@@ -6062,27 +6265,17 @@ public static partial class TypeCheckerFunctions {
 
                         var paramType = project.Types[typeId];
 
-                        switch (paramType) {
+                        if (paramType is GenericInstance gi) {
 
-                            case GenericInstance gi: {
+                            var structure = project.Structs[gi.StructId];
 
-                                var structure = project.Structs[gi.StructId];
+                            var idx = 0;
 
-                                var idx = 0;
+                            while (idx < structure.GenericParameters.Count) {
 
-                                while (idx < structure.GenericParameters.Count) {
+                                genericSubstitutions[structure.GenericParameters[idx]] = gi.TypeIds[idx];
 
-                                    genericSubstitutions[structure.GenericParameters[idx]] = gi.TypeIds[idx];
-
-                                    idx += 1;
-                                }
-
-                                break;
-                            }
-
-                            default: {
-
-                                break;
+                                idx += 1;
                             }
                         }
                     }
@@ -6217,28 +6410,18 @@ public static partial class TypeCheckerFunctions {
 
                     foreach (var genericTypeVar in callee.GenericParameters) {
 
-                        switch (genericTypeVar) {
+                        if (genericTypeVar is ParameterFunctionGenericParameter p) {
 
-                            case ParameterFunctionGenericParameter p: {
+                            if (genericSubstitutions.ContainsKey(p.TypeId)) {
 
-                                if (genericSubstitutions.ContainsKey(p.TypeId)) {
-
-                                    typeArgs.Add(genericSubstitutions[p.TypeId]);
-                                }
-                                else {
-
-                                    error = error ??
-                                        new TypeCheckError(
-                                            "not all generic parameters have known types",
-                                            span);
-                                }
-
-                                break;
+                                typeArgs.Add(genericSubstitutions[p.TypeId]);
                             }
+                            else {
 
-                            default: {
-
-                                break;
+                                error = error ??
+                                    new TypeCheckError(
+                                        "not all generic parameters have known types",
+                                        span);
                             }
                         }
                     }
