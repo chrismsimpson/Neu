@@ -17,29 +17,29 @@ public static partial class Program {
 
         var start = System.Environment.TickCount;
 
-        TestScratchpad();
+        // TestScratchpad();
 
         // TestApps();
 
-        // TestBasics();
-        // TestControlFlow();
-        // TestFunctions();
-        // TestMath();
-        // TestVariables();
-        // TestStrings();
-        // TestArrays();
-        // TestOptional();
-        // TestTuples();
-        // TestStructs();
-        // TestPointers();
-        // TestClasses();
-        // TestBoolean();
-        // TestRanges();
-        // TestDictionaries();
-        // TestGenerics();
-        // TestEnums();
-        // TestInlineCPP();
-        // TestParser();
+        TestBasics();
+        TestControlFlow();
+        TestFunctions();
+        TestMath();
+        TestVariables();
+        TestStrings();
+        TestArrays();
+        TestOptional();
+        TestTuples();
+        TestStructs();
+        TestPointers();
+        TestClasses();
+        TestBoolean();
+        TestRanges();
+        TestDictionaries();
+        TestGenerics();
+        TestEnums();
+        TestInlineCPP();
+        TestParser();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
