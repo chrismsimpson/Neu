@@ -777,16 +777,16 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when
-                l is InlineCPPStatement li
-                && r is InlineCPPStatement ri:
+                l is ParsedInlineCPPStatement li
+                && r is ParsedInlineCPPStatement ri:
 
-                return InlineCPPStatementFunctions.Eq(li, ri);
+                return ParsedInlineCPPStatementFunctions.Eq(li, ri);
 
             ///
 
             case var _ when
-                l is GarbageStatement gL
-                && r is GarbageStatement gR:
+                l is ParsedGarbageStatement gL
+                && r is ParsedGarbageStatement gR:
 
                 return GarbageStatementFunctions.Eq(gL, gR);
 
@@ -1243,7 +1243,7 @@ public static partial class ParsedThrowStatementFunctions {
 
 ///
 
-public partial class TryStatement: ParsedStatement {
+public partial class ParsedTryStatement: ParsedStatement {
 
     public ParsedStatement Statement { get; init; }
 
@@ -1255,7 +1255,7 @@ public partial class TryStatement: ParsedStatement {
 
     ///
 
-    public TryStatement(
+    public ParsedTryStatement(
         ParsedStatement statement,
         String name,
         Span span,
@@ -1268,11 +1268,11 @@ public partial class TryStatement: ParsedStatement {
     }
 }
 
-public static partial class TryStatementFunctions {
+public static partial class ParsedTryStatementFunctions {
 
     public static bool Eq(
-        TryStatement? l,
-        TryStatement? r) {
+        ParsedTryStatement? l,
+        ParsedTryStatement? r) {
 
         if (l is null && r is null) {
 
@@ -1305,7 +1305,7 @@ public static partial class TryStatementFunctions {
 
 ///
 
-public partial class InlineCPPStatement: ParsedStatement {
+public partial class ParsedInlineCPPStatement: ParsedStatement {
 
     public ParsedBlock Block { get; init; }
 
@@ -1313,7 +1313,7 @@ public partial class InlineCPPStatement: ParsedStatement {
 
     ///
 
-    public InlineCPPStatement(
+    public ParsedInlineCPPStatement(
         ParsedBlock block,
         Span span) {
 
@@ -1322,11 +1322,11 @@ public partial class InlineCPPStatement: ParsedStatement {
     }
 }
 
-public static partial class InlineCPPStatementFunctions {
+public static partial class ParsedInlineCPPStatementFunctions {
 
     public static bool Eq(
-        InlineCPPStatement? l,
-        InlineCPPStatement? r) {
+        ParsedInlineCPPStatement? l,
+        ParsedInlineCPPStatement? r) {
         
         if (l == null && r == null) {
 
@@ -1349,16 +1349,16 @@ public static partial class InlineCPPStatementFunctions {
 
 ///
 
-public partial class GarbageStatement: ParsedStatement {
+public partial class ParsedGarbageStatement: ParsedStatement {
 
-    public GarbageStatement() { }
+    public ParsedGarbageStatement() { }
 }
 
 public static partial class GarbageStatementFunctions {
 
     public static bool Eq(
-        GarbageStatement? l,
-        GarbageStatement? r) {
+        ParsedGarbageStatement? l,
+        ParsedGarbageStatement? r) {
         
         if (l == null && r == null) {
 
@@ -3970,7 +3970,7 @@ public static partial class ParserFunctions {
                 error = error ?? blockErr;
 
                 return (
-                    new TryStatement(stmt, errorName, errorSpan, catchBlock),
+                    new ParsedTryStatement(stmt, errorName, errorSpan, catchBlock),
                     error);
             }
 
@@ -4009,7 +4009,7 @@ public static partial class ParserFunctions {
                         default: {
 
                             return (
-                                new GarbageStatement(),
+                                new ParsedGarbageStatement(),
                                 error);
                         }
                     }
@@ -4017,7 +4017,7 @@ public static partial class ParserFunctions {
                 else {
 
                     return (
-                        new GarbageStatement(),
+                        new ParsedGarbageStatement(),
                         error);
                 }
             }
@@ -4076,7 +4076,7 @@ public static partial class ParserFunctions {
                             else {
 
                                 return (
-                                    new GarbageStatement(),
+                                    new ParsedGarbageStatement(),
                                     new ParserError(
                                         "expected initializer", 
                                         tokens.ElementAt(index - 1).Span)
@@ -4089,7 +4089,7 @@ public static partial class ParserFunctions {
                         default: {
 
                             return (
-                                new GarbageStatement(),
+                                new ParsedGarbageStatement(),
                                 new ParserError(
                                     "expected initializer", 
                                     tokens.ElementAt(index - 1).Span));
@@ -4099,7 +4099,7 @@ public static partial class ParserFunctions {
                 else {
 
                     return (
-                        new GarbageStatement(),
+                        new ParsedGarbageStatement(),
                         new ParserError(
                             "expected initializer", 
                             tokens.ElementAt(index - 1).Span));
@@ -4124,7 +4124,7 @@ public static partial class ParserFunctions {
                     end: tokens[index].Span.End);
                     
                 return (
-                    new InlineCPPStatement(block, _span),
+                    new ParsedInlineCPPStatement(block, _span),
                     error);
             }
 
@@ -4183,7 +4183,7 @@ public static partial class ParserFunctions {
             default: {
 
                 return (
-                    new GarbageStatement(),
+                    new ParsedGarbageStatement(),
                     new ParserError(
                         "expected if statement",
                         tokens.ElementAt(index).Span));

@@ -3726,7 +3726,7 @@ public static partial class TypeCheckerFunctions {
 
         switch (stmt) {
 
-            case TryStatement tryStmt: {
+            case ParsedTryStatement tryStmt: {
 
                 var (checkedStmt, err) = TypeCheckStatement(tryStmt.Statement, scopeId, project, safetyMode);
 
@@ -4016,7 +4016,7 @@ public static partial class TypeCheckerFunctions {
                     checkedBlockErr);
             }
 
-            case InlineCPPStatement i: {
+            case ParsedInlineCPPStatement i: {
 
                 if (safetyMode == SafetyMode.Safe) {
 
@@ -4056,7 +4056,7 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
             
-            case GarbageStatement _: {
+            case ParsedGarbageStatement _: {
 
                 return (
                     new CheckedGarbageStatement(),
