@@ -1134,12 +1134,22 @@ public static partial class LexerFunctions {
 
             index += 2;
 
-            while (index < bytes.Length && bytes[index].IsAsciiHexDigit()) {
+            while (index < bytes.Length && bytes[index].IsAsciiHexDigit()
+                || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_')) {
 
                 index += 1;
             }
 
-            var str = UTF8.GetString(bytes[(start + 2)..index]);
+            if (ToChar(bytes[index - 1]) == '_') {
+
+                return (
+                    new UnknownToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "hex number literal cannot end with underscore",
+                        new Span(fileId, start, index)));
+            }
+
+            var str = UTF8.GetString(bytes[(start + 2)..index]).Replace("_", "");
 
             Int64 number = 0;
 
@@ -1182,9 +1192,19 @@ public static partial class LexerFunctions {
 
                 // Hex number
 
-                while (index < bytes.Length && bytes[index].IsAsciiHexDigit()) {
+                while (index < bytes.Length && bytes[index].IsAsciiHexDigit()
+                    || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_')) {
 
                     index += 1;
+                }
+
+                if (ToChar(bytes[index - 1]) == '_') {
+
+                    return (
+                        new UnknownToken(new Span(fileId, start, index)),
+                        new ParserError(
+                            "hex number literal cannot end with underscore",
+                            new Span(fileId, start, index)));
                 }
             }
             else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'x') {
@@ -1197,18 +1217,40 @@ public static partial class LexerFunctions {
 
                 // Binary number
 
-                while (index < bytes.Length && (bytes[index] == '0' || bytes[index] == '1')) {
+                while (index < bytes.Length 
+                    && (bytes[index] == '0' 
+                        || bytes[index] == '1'
+                        || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_'))) {
                     
                     index += 1;
+                }
+
+                if (ToChar(bytes[index - 1]) == '_') {
+
+                    return (
+                        new UnknownToken(new Span(fileId, start, index)),
+                        new ParserError(
+                            "binary number literal cannot end with underscore",
+                            new Span(fileId, start, index)));
                 }
             }
             else if (bytes[index].IsAsciiDigit()) {
 
                 // Number
 
-                while (index < bytes.Length && bytes[index].IsAsciiDigit()) {
+                while (index < bytes.Length && bytes[index].IsAsciiDigit()
+                    || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_')) {
 
                     index += 1;
+                }
+
+                if (ToChar(bytes[index - 1]) == '_') {
+
+                    return (
+                        new UnknownToken(new Span(fileId, start, index)),
+                        new ParserError(
+                            "number literal cannot end with underscore",
+                            new Span(fileId, start, index)));
                 }
             }
             else {
@@ -1216,7 +1258,7 @@ public static partial class LexerFunctions {
                 throw new Exception();
             }
 
-            var str = UTF8.GetString(bytes[(literalStart)..index]);
+            var str = UTF8.GetString(bytes[(literalStart)..index]).Replace("_", "");
 
             index += 1; // trailing ')'
 
@@ -1258,12 +1300,24 @@ public static partial class LexerFunctions {
             
             index += 2;
             
-            while (index < bytes.Length && (bytes[index] == '0' || bytes[index] == '1')) {
+            while (index < bytes.Length 
+                && (bytes[index] == '0' 
+                    || bytes[index] == '1'
+                    || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_'))) {
                 
                 index += 1;
             }
 
-            var str = UTF8.GetString(bytes[(start + 2)..index]);
+            if (ToChar(bytes[index - 1]) == '_') {
+
+                return (
+                    new UnknownToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "binary number literal cannot end with underscore",
+                        new Span(fileId, start, index)));
+            }
+
+            var str = UTF8.GetString(bytes[(start + 2)..index]).Replace("_", "");
 
             try {
 
@@ -1288,12 +1342,22 @@ public static partial class LexerFunctions {
 
             var start = index;
 
-            while (index < bytes.Length && bytes[index].IsAsciiDigit()) {
+            while (index < bytes.Length && bytes[index].IsAsciiDigit()
+                || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_')) {
 
                 index += 1;
             }
 
-            var str = UTF8.GetString(bytes[start..index]);
+            if (ToChar(bytes[index - 1]) == '_') {
+
+                return (
+                    new UnknownToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "number literal cannot end with underscore",
+                        new Span(fileId, start, index)));
+            }
+
+            var str = UTF8.GetString(bytes[start..index]).Replace("_", "");
 
             Int64 number = 0;
 

@@ -1,3 +1,4 @@
 func main() {
     printLine("{}", 100)
+    printLine("{}", 100_000_000)
 }
