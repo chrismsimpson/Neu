@@ -1318,7 +1318,7 @@ public static partial class CodeGenFunctions {
 
                 // NOTE: We let the preprocessor generate a unique name for the RAII helper.
                 output.Append("#define __SCOPE_GUARD_NAME __scope_guard_ ## __COUNTER__\n");
-                output.Append("ScopeGuard __SCOPE_GUARD_NAME  ([&] \n");
+                output.Append("ScopeGuard __SCOPE_GUARD_NAME ([&] \n");
                 output.Append("#undef __SCOPE_GUARD_NAME\n{");
                 output.Append(CodeGenStatement(indent, defer.Statement, project));
                 output.Append("});\n");
