@@ -145,7 +145,7 @@ public partial class ParsedType {
         }
     }
 
-    public partial class UncheckedArrayType: ParsedType {
+    public partial class ParsedArrayType: ParsedType {
 
         public ParsedType Type { get; init; }
 
@@ -153,7 +153,7 @@ public partial class ParsedType {
 
         ///
 
-        public UncheckedArrayType(
+        public ParsedArrayType(
             ParsedType type,
             Span span) {
 
@@ -162,7 +162,7 @@ public partial class ParsedType {
         }
     }
 
-    public partial class UncheckedSetType: ParsedType {
+    public partial class ParsedSetType: ParsedType {
 
         public ParsedType Type { get; init; }
 
@@ -170,7 +170,7 @@ public partial class ParsedType {
 
         ///
 
-        public UncheckedSetType(
+        public ParsedSetType(
             ParsedType type,
             Span span) {
 
@@ -260,8 +260,8 @@ public static partial class ParsedTypeFunctions {
             }
 
             case var _ when 
-                l is UncheckedArrayType la
-                && r is UncheckedArrayType ra: {
+                l is ParsedArrayType la
+                && r is ParsedArrayType ra: {
 
                 return ParsedTypeFunctions.Eq(la.Type, ra.Type)
                     && SpanFunctions.Eq(la.Span, ra.Span);
@@ -6801,7 +6801,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new UncheckedArrayType(
+                    new ParsedArrayType(
                         ty, 
                         new Span(
                             fileId: start.FileId, 
@@ -6829,7 +6829,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new UncheckedSetType(
+                    new ParsedSetType(
                         ty,
                         new Span(
                             fileId: start.FileId,

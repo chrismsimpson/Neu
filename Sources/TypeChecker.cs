@@ -7022,7 +7022,7 @@ public static partial class TypeCheckerFunctions {
                 return (Compiler.UnknownTypeId, null);
             }
 
-            case UncheckedArrayType vt: {
+            case ParsedArrayType vt: {
 
                 var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, scopeId, project);
 
@@ -7039,7 +7039,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case UncheckedSetType st: {
+            case ParsedSetType st: {
 
                 var (innerTy, err) = TypeCheckTypeName(st.Type, scopeId, project);
 
