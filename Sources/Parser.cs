@@ -300,7 +300,7 @@ public static partial class ParsedTypeFunctions {
 
 ///
 
-public partial class VarDecl {
+public partial class ParsedVarDecl {
 
     public String Name { get; init; }
 
@@ -312,10 +312,10 @@ public partial class VarDecl {
 
     ///
 
-    public VarDecl(Span span)
+    public ParsedVarDecl(Span span)
         : this(String.Empty, new UncheckedEmptyType(), false, span) { }
 
-    public VarDecl(
+    public ParsedVarDecl(
         String name,
         ParsedType type,
         bool mutable,
@@ -328,11 +328,11 @@ public partial class VarDecl {
     }
 }
 
-public static partial class VarDeclFunctions {
+public static partial class ParsedVarDeclFunctions {
 
     public static bool Eq(
-        VarDecl l,
-        VarDecl r) {
+        ParsedVarDecl l,
+        ParsedVarDecl r) {
 
         return l.Name == r.Name 
             && ParsedTypeFunctions.Eq(l.Type, r.Type)
@@ -374,7 +374,7 @@ public partial class Struct {
 
     public List<(String, Span)> GenericParameters { get; init; }
 
-    public List<VarDecl> Fields { get; init; }
+    public List<ParsedVarDecl> Fields { get; init; }
 
     public List<Function> Methods { get; init; }
 
@@ -389,7 +389,7 @@ public partial class Struct {
     public Struct(
         String name,
         List<(String, Span)> genericParameters,
-        List<VarDecl> fields,
+        List<ParsedVarDecl> fields,
         List<Function> methods,
         Span span,
         DefinitionLinkage definitionLinkage,
@@ -454,7 +454,7 @@ public partial class EnumVariant {
 
         public String Name { get; init; }
 
-        public List<VarDecl> Declarations { get; init; }
+        public List<ParsedVarDecl> Declarations { get; init; }
 
         public Span Span { get; init; }
 
@@ -462,7 +462,7 @@ public partial class EnumVariant {
 
         public StructLikeEnumVariant(
             String name,
-            List<VarDecl> declarations,
+            List<ParsedVarDecl> declarations,
             Span span) {
 
             this.Name = name;
@@ -897,14 +897,14 @@ public static partial class UnsafeBlockStatementFunctions {
 
 public partial class VarDeclStatement: Statement {
 
-    public VarDecl Decl { get; init; }
+    public ParsedVarDecl Decl { get; init; }
 
     public Expression Expr { get; init; }
 
     ///
 
     public VarDeclStatement(
-        VarDecl decl,
+        ParsedVarDecl decl,
         Expression expr) {
 
         this.Decl = decl;
@@ -933,7 +933,7 @@ public static partial class VarDeclStatementFunctions {
 
         ///
 
-        if (!VarDeclFunctions.Eq(_l.Decl, _r.Decl)) {
+        if (!ParsedVarDeclFunctions.Eq(_l.Decl, _r.Decl)) {
 
             return false;
         }
@@ -2923,7 +2923,7 @@ public static partial class ParserFunctions {
 
                         index += 1;
 
-                        var members = new List<VarDecl>();
+                        var members = new List<ParsedVarDecl>();
 
                         while (index < tokens.Count
                             && !(tokens[index] is RCurlyToken)) {
@@ -3192,7 +3192,7 @@ public static partial class ParserFunctions {
                                 tokens.ElementAt(index - 1).Span);
                     }
 
-                    var fields = new List<VarDecl>();
+                    var fields = new List<ParsedVarDecl>();
 
                     var methods = new List<Function>();
 
@@ -3320,7 +3320,7 @@ public static partial class ParserFunctions {
                         new Struct(
                             name: String.Empty,
                             genericParameters,
-                            fields: new List<VarDecl>(),
+                            fields: new List<ParsedVarDecl>(),
                             methods: new List<Function>(),
                             span: tokens.ElementAt(index).Span,
                             definitionLinkage,
@@ -3342,7 +3342,7 @@ public static partial class ParserFunctions {
                 new Struct(
                     name: String.Empty, 
                     genericParameters,
-                    fields: new List<VarDecl>(),
+                    fields: new List<ParsedVarDecl>(),
                     methods: new List<Function>(),
                     span: tokens.ElementAt(index).Span,
                     definitionLinkage,
@@ -6656,7 +6656,7 @@ public static partial class ParserFunctions {
         }
     }
 
-    public static (VarDecl, Error?) ParseVariableDeclaration(
+    public static (ParsedVarDecl, Error?) ParseVariableDeclaration(
         List<Token> tokens,
         ref int index) {
 
@@ -6686,7 +6686,7 @@ public static partial class ParserFunctions {
                         default: {
 
                             return (
-                                new VarDecl(
+                                new ParsedVarDecl(
                                     name: nt.Value, 
                                     type: new UncheckedEmptyType(),
                                     mutable: false,
@@ -6698,7 +6698,7 @@ public static partial class ParserFunctions {
                 else {
 
                     return (
-                        new VarDecl(
+                        new ParsedVarDecl(
                             name: nt.Value, 
                             type: new UncheckedEmptyType(), 
                             mutable: false, 
@@ -6736,7 +6736,7 @@ public static partial class ParserFunctions {
 
                     error = error ?? typeErr;
 
-                    var result = new VarDecl(
+                    var result = new ParsedVarDecl(
                         name: varName, 
                         type: varType, 
                         mutable: mutable,
@@ -6751,7 +6751,7 @@ public static partial class ParserFunctions {
                     Trace("ERROR: expected type");
 
                     return (
-                        new VarDecl(
+                        new ParsedVarDecl(
                             nt.Value, 
                             type: new UncheckedEmptyType(),
                             mutable: false,
@@ -6769,7 +6769,7 @@ public static partial class ParserFunctions {
                 Trace("ERROR: expected name");
 
                 return (
-                    new VarDecl(tokens.ElementAt(index).Span),
+                    new ParsedVarDecl(tokens.ElementAt(index).Span),
                     new ParserError(
                         "expected name", 
                         tokens.ElementAt(index).Span));
