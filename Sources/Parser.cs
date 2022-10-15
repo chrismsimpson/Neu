@@ -752,10 +752,10 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when
-                l is ContinueStatement lc
-                && r is ContinueStatement rc: {
+                l is ParsedContinueStatement lc
+                && r is ParsedContinueStatement rc: {
 
-                return ContinueStatementFunctions.Eq(lc, rc);
+                return ParsedContinueStatementFunctions.Eq(lc, rc);
             }
 
             ///
@@ -1166,16 +1166,16 @@ public static partial class ParsedBreakStatementFunctions {
 
 ///
 
-public partial class ContinueStatement: ParsedStatement {
+public partial class ParsedContinueStatement: ParsedStatement {
 
-    public ContinueStatement() { }
+    public ParsedContinueStatement() { }
 }
 
-public static partial class ContinueStatementFunctions {
+public static partial class ParsedContinueStatementFunctions {
 
     public static bool Eq(
-        ContinueStatement? l,
-        ContinueStatement? r) {
+        ParsedContinueStatement? l,
+        ParsedContinueStatement? r) {
 
         if (l == null && r == null) {
 
@@ -3879,7 +3879,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new ContinueStatement(),
+                    new ParsedContinueStatement(),
                     null);
             }
 

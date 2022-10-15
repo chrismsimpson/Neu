@@ -3822,7 +3822,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case ContinueStatement cs: {
+            case ParsedContinueStatement cs: {
 
                 return (
                     new CheckedContinueStatement(),
