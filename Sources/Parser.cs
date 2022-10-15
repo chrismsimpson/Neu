@@ -553,7 +553,7 @@ public partial class ParsedFunction {
 
     public Span NameSpan { get; init; }
 
-    public List<Parameter> Parameters { get; init; }
+    public List<ParsedParameter> Parameters { get; init; }
 
     public List<(String, Span)> GenericParameters { get; init; }
 
@@ -575,7 +575,7 @@ public partial class ParsedFunction {
                 fileId: 0, 
                 start: 0, 
                 end: 0),
-            new List<Parameter>(), 
+            new List<ParsedParameter>(), 
             new List<(String, Span)>(),
             new Block(), 
             throws: false,
@@ -586,7 +586,7 @@ public partial class ParsedFunction {
     public ParsedFunction(
         String name,
         Span nameSpan,
-        List<Parameter> parameters,
+        List<ParsedParameter> parameters,
         List<(String, Span)> genericParameters,
         Block block,
         bool throws,
@@ -629,7 +629,7 @@ public partial class Variable {
 
 ///
 
-public partial class Parameter {
+public partial class ParsedParameter {
 
     public bool RequiresLabel { get; init; }
 
@@ -637,7 +637,7 @@ public partial class Parameter {
 
     ///
 
-    public Parameter(
+    public ParsedParameter(
         bool requiresLabel,
         Variable variable) {
 
@@ -3420,7 +3420,7 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(index).Span);
                     }
 
-                    var parameters = new List<Parameter>();
+                    var parameters = new List<ParsedParameter>();
 
                     var currentParamRequiresLabel = true;
 
@@ -3482,7 +3482,7 @@ public static partial class ParserFunctions {
                                 index += 1;
 
                                 parameters.Add(
-                                    new Parameter(
+                                    new ParsedParameter(
                                         requiresLabel: false,
                                         variable: new Variable(
                                             name: "this",
@@ -3511,7 +3511,7 @@ public static partial class ParserFunctions {
                                 }
                                 
                                 parameters.Add(
-                                    new Parameter(
+                                    new ParsedParameter(
                                         requiresLabel: currentParamRequiresLabel,
                                         variable: new Variable(
                                             varDecl.Name, 
