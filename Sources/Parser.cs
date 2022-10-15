@@ -734,10 +734,10 @@ public static partial class ParsedStatementFunctions {
             ///
 
             case var _ when 
-                l is ForStatement lf
-                && r is ForStatement rf: {
+                l is ParsedForStatement lf
+                && r is ParsedForStatement rf: {
 
-                return ForStatementFunctions.Eq(lf, rf);
+                return ParsedForStatementFunctions.Eq(lf, rf);
             }
 
             ///
@@ -1088,7 +1088,7 @@ public static partial class ParsedWhileStatementFunctions {
 
 ///
 
-public partial class ForStatement: ParsedStatement {
+public partial class ParsedForStatement: ParsedStatement {
 
     public String IteratorName { get; init; }
 
@@ -1098,7 +1098,7 @@ public partial class ForStatement: ParsedStatement {
 
     ///
 
-    public ForStatement(
+    public ParsedForStatement(
         String iteratorName,
         ParsedExpression range,
         ParsedBlock block) {
@@ -1109,11 +1109,11 @@ public partial class ForStatement: ParsedStatement {
     }
 }
 
-public static partial class ForStatementFunctions {
+public static partial class ParsedForStatementFunctions {
 
     public static bool Eq(
-        ForStatement? l,
-        ForStatement? r) {
+        ParsedForStatement? l,
+        ParsedForStatement? r) {
 
         if (l == null && r == null) {
 
@@ -1125,8 +1125,8 @@ public static partial class ForStatementFunctions {
             return false;
         }
 
-        ForStatement _l = l!;
-        ForStatement _r = r!;
+        ParsedForStatement _l = l!;
+        ParsedForStatement _r = r!;
 
         ///
 
@@ -4002,7 +4002,7 @@ public static partial class ParserFunctions {
                             error = error ?? blockErr;
 
                             return (
-                                new ForStatement(iter.Value, rangeExpr, block),
+                                new ParsedForStatement(iter.Value, rangeExpr, block),
                                 error);
                         }
 

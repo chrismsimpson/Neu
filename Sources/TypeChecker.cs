@@ -3773,7 +3773,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case ForStatement fs: {
+            case ParsedForStatement fs: {
 
                 var (checkedExpr, err) = TypeCheckExpression(fs.Range, scopeId, project, safetyMode, null);
 
