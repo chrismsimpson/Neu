@@ -2786,7 +2786,7 @@ public static partial class ParserFunctions {
 
                     Trace($"next token: {tokens[index]}");
 
-                    index += 1;
+                    // index += 1;
 
                     break;
                 }
@@ -2876,7 +2876,7 @@ public static partial class ParserFunctions {
 
                         var (varType, typeErr) = ParseTypeName(tokens, ref index);
                         
-                        index += 1;
+                        // index += 1;
                         
                         error = error ?? typeErr;
                         
@@ -3606,7 +3606,7 @@ public static partial class ParserFunctions {
 
                                         error = error ?? retTypeErr;
 
-                                        index += 1;
+                                        // index += 1;
 
                                         break;
                                     }
@@ -4563,6 +4563,11 @@ public static partial class ParserFunctions {
 
                             break;
                         }
+
+                        if (tokens.ElementAtOrDefault(index) is CommaToken) {
+
+                            index += 1;
+                        }
                     }
                     else {
 
@@ -5331,7 +5336,7 @@ public static partial class ParserFunctions {
 
                     error = error ?? isTypeNameErr;
 
-                    index += 1;
+                    // index += 1;
 
                     expr = new UnaryOpExpression(expr, new IsUnaryOperator(isTypeName), _span);
 
@@ -6598,6 +6603,8 @@ public static partial class ParserFunctions {
             
                 if (index < tokens.Count) {
 
+                    var declSpan = tokens[index - 1].Span;
+
                     var mutable = false;
 
                     if (index + 1 < tokens.Count) {
@@ -6628,9 +6635,9 @@ public static partial class ParserFunctions {
                         name: varName, 
                         type: varType, 
                         mutable: mutable,
-                        span: tokens.ElementAt(index - 3).Span);
+                        span: declSpan);
 
-                    index += 1;
+                    // index += 1;
 
                     return (result, error);
                 }
@@ -6671,6 +6678,35 @@ public static partial class ParserFunctions {
 
         // [T] is shorthand for Array<T>
 
+        // if (index + 2 >= tokens.Count) {
+
+        //     return (new UncheckedEmptyType(), null);
+        // }
+
+        // var start = tokens.ElementAt(index).Span;
+
+        // if (tokens.ElementAt(index) is LSquareToken) {
+
+        //     if (tokens.ElementAt(index + 2) is RSquareToken) {
+
+        //         if (tokens.ElementAt(index + 1) is NameToken nt) {
+
+        //             var uncheckedType = new UncheckedArrayType(
+        //                 new UncheckedNameType(nt.Value, nt.Span),
+        //                 new Span(
+        //                     fileId: start.FileId,
+        //                     start: start.Start,
+        //                     end: tokens.ElementAt(index + 2).Span.End));
+
+        //             index += 2;
+
+        //             return (uncheckedType, null);                    
+        //         }
+        //     }
+        // }
+
+        // return (new UncheckedEmptyType(), null);
+
         if (index + 2 >= tokens.Count) {
 
             return (new UncheckedEmptyType(), null);
@@ -6678,27 +6714,40 @@ public static partial class ParserFunctions {
 
         var start = tokens.ElementAt(index).Span;
 
-        if (tokens.ElementAt(index) is LSquareToken) {
+        switch (tokens[index]) {
 
-            if (tokens.ElementAt(index + 2) is RSquareToken) {
+            case LSquareToken _: {
 
-                if (tokens.ElementAt(index + 1) is NameToken nt) {
+                index += 1;
 
-                    var uncheckedType = new UncheckedArrayType(
-                        new UncheckedNameType(nt.Value, nt.Span),
-                        new Span(
-                            fileId: start.FileId,
-                            start: start.Start,
-                            end: tokens.ElementAt(index + 2).Span.End));
+                var (ty, err) = ParseTypeName(tokens, ref index);
 
-                    index += 2;
+                if (tokens[index] is RSquareToken) {
 
-                    return (uncheckedType, null);                    
+                    index += 1;
+
+                    return (
+                        new UncheckedArrayType(
+                            ty, 
+                            new Span(
+                                fileId: start.FileId, 
+                                start: start.Start, 
+                                end: tokens[index - 1].Span.End)),
+                        err);
                 }
+
+                return (
+                    new UncheckedEmptyType(),
+                    new ParserError(
+                        "expected ]",
+                        tokens[index].Span));
+            }
+
+            default: {
+
+                return (new UncheckedEmptyType(), null);
             }
         }
-
-        return (new UncheckedEmptyType(), null);
     }
 
     public static (UncheckedType, Error?) ParseTypeName(
@@ -6751,6 +6800,8 @@ public static partial class ParserFunctions {
                     typename = nt.Value;
 
                     uncheckedType = new UncheckedNameType(nt.Value, tokens.ElementAt(index).Span);
+
+                    index += 1;
                 }
 
                 break;
@@ -6769,13 +6820,11 @@ public static partial class ParserFunctions {
             }
         }
         
-        if (index + 1 < tokens.Count) {
+        if (index < tokens.Count) {
 
-            if (tokens.ElementAt(index + 1) is QuestionToken) {
+            if (tokens.ElementAt(index) is QuestionToken) {
 
                 // T? is shorthand for Optional<T>
-
-                index += 1;
 
                 uncheckedType = new UncheckedOptionalType(
                     type: uncheckedType,
@@ -6783,15 +6832,19 @@ public static partial class ParserFunctions {
                         fileId: start.FileId,
                         start: start.Start,
                         end: tokens.ElementAt(index).Span.End));
+
+                index += 1;
             }
 
-            if (index + 1 < tokens.Count) {
+            if (index < tokens.Count) {
 
-                if (tokens[index + 1] is LessThanToken) {
+                var previousIndex = index;
+
+                if (tokens[index] is LessThanToken) {
 
                     // Generic type
                 
-                    index += 2;
+                    index += 1;
 
                     var innerTypes = new List<UncheckedType>();
 
@@ -6826,11 +6879,22 @@ public static partial class ParserFunctions {
 
                             default: {
 
+                                var i = index;
+
                                 var (innerType, innerTypeNameErr) = ParseTypeName(tokens, ref index);
 
-                                error = error ??innerTypeNameErr;
+                                if (i == index) {
 
-                                index += 1;
+                                    // This is not a generic parameter, reset and leave
+
+                                    error = error ?? innerTypeNameErr;
+
+                                    contInnerTypes = false;
+
+                                    break;
+                                }
+                                
+                                error = error ?? innerTypeNameErr;
 
                                 innerTypes.Add(innerType);
 
@@ -6858,6 +6922,11 @@ public static partial class ParserFunctions {
                                 fileId: start.FileId,
                                 start: start.Start,
                                 end: tokens[index].Span.End));
+                    }
+
+                    if (error != null) {
+
+                        index = previousIndex;
                     }
                 }
             }
@@ -6950,11 +7019,24 @@ public static partial class ParserFunctions {
 
                                 default: {
 
+                                    var i = index;
+
                                     var (innerTy, innerErr) = ParseTypeName(tokens, ref index);
+
+                                    if (i == index) {
+
+                                        // Can't parse further, this is not a generic call
+
+                                        index = indexReset;
+
+                                        contInnerTypes = false;
+
+                                        break;
+                                    }
 
                                     error = error ?? innerErr;
 
-                                    index += 1;
+                                    // index += 1;
 
                                     innerTypes.Add(innerTy);
 
