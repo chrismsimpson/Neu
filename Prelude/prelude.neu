@@ -48,6 +48,18 @@ extern struct Dictionary<K, V> {
     func Dictionary<A, B>() -> Dictionary<A, B>
 }
 
+extern struct Set<V> {
+    func contains(this, anon value: V) -> Bool
+    func add(mutable this, anon value: V) throws
+    func remove(mutable this, anon value: V) -> Bool
+    func ensureCapacity(var this, anon capacity: UInt) throws
+    func clear(var this)
+    func size(this) -> UInt
+    func capacity(this) -> UInt
+    func hash(this) -> UInt32
+    func Set<A>() -> Set<A>
+}
+
 extern struct Tuple { }
 
 extern struct Range { }

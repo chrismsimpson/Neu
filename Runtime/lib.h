@@ -44,6 +44,7 @@
 #include "Result.h"
 #include "ReverseIterator.h"
 #include "ScopeGuard.h"
+#include "Set.h"
 #include "Span.h"
 #include "Detail.h"
 #include "std.h"
