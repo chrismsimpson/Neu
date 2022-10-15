@@ -66,7 +66,7 @@ public partial class Compiler {
 
         // Scope ID 0 is the global project-level scope that all files can see
 
-        return TypeCheckerFunctions.TypeCheckFile(file, 0, project);
+        return TypeCheckerFunctions.TypeCheckNamespace(file, 0, project);
     }
 }
 
@@ -113,7 +113,7 @@ public partial class Compiler {
 
         var fileScopeId = project.Scopes.Count - 1;
 
-        var checkErr = TypeCheckerFunctions.TypeCheckFile(parsedFile, fileScopeId, project);
+        var checkErr = TypeCheckerFunctions.TypeCheckNamespace(parsedFile, fileScopeId, project);
 
         switch (checkErr) {
 

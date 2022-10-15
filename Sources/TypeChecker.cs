@@ -2743,8 +2743,8 @@ public partial class Scope {
 
 public static partial class TypeCheckerFunctions {
 
-    public static Error? TypeCheckFile(
-        ParsedNamespace parsedFile,
+    public static Error? TypeCheckNamespace(
+        ParsedNamespace parsedNamespace,
         Int32 scopeId,
         Project project) {
 
@@ -2756,11 +2756,11 @@ public static partial class TypeCheckerFunctions {
 
         var projectFunctionLength = project.Functions.Count;
 
-        for (Int32 _structId = 0; _structId < parsedFile.Structs.Count; _structId++) {
+        for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
             
             // Ensure we know the types ahead of time, so they can be recursive
 
-            var structure = parsedFile.Structs.ElementAt(_structId);
+            var structure = parsedNamespace.Structs.ElementAt(_structId);
 
             var structId = _structId + projectStructLength;
 
@@ -2779,9 +2779,9 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
-        for (Int32 _enumId = 0; _enumId < parsedFile.Enums.Count; _enumId++) {
+        for (Int32 _enumId = 0; _enumId < parsedNamespace.Enums.Count; _enumId++) {
 
-            var _enum = parsedFile.Enums[_enumId];
+            var _enum = parsedNamespace.Enums[_enumId];
 
             var enumId = _enumId + projectEnumLength;
 
@@ -2800,7 +2800,7 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
-        foreach (var fun in parsedFile.Functions) {
+        foreach (var fun in parsedNamespace.Functions) {
             
             // Ensure we know the function ahead of time, so they can be recursive
             
@@ -2809,9 +2809,9 @@ public static partial class TypeCheckerFunctions {
             error = error ?? chkFuncPredeclErr;
         }
 
-        for (Int32 structId = 0; structId < parsedFile.Structs.Count; structId++) {
+        for (Int32 structId = 0; structId < parsedNamespace.Structs.Count; structId++) {
 
-            var structure = parsedFile.Structs.ElementAt(structId);
+            var structure = parsedNamespace.Structs.ElementAt(structId);
 
             var chkStructErr = TypeCheckStruct(
                 structure, 
@@ -2822,9 +2822,9 @@ public static partial class TypeCheckerFunctions {
             error = error ?? chkStructErr;
         }
 
-        for (Int32 enumId = 0; enumId < parsedFile.Enums.Count; enumId++) {
+        for (Int32 enumId = 0; enumId < parsedNamespace.Enums.Count; enumId++) {
 
-            var _enum = parsedFile.Enums[enumId];
+            var _enum = parsedNamespace.Enums[enumId];
 
             var err = TypeCheckEnum(
                 _enum,
@@ -2837,9 +2837,9 @@ public static partial class TypeCheckerFunctions {
             error = error ?? err;
         }
 
-        for (Int32 i = 0; i < parsedFile.Functions.Count; i++) {
+        for (Int32 i = 0; i < parsedNamespace.Functions.Count; i++) {
 
-            var func = parsedFile.Functions[i];
+            var func = parsedNamespace.Functions[i];
 
             project.CurrentFunctionIndex = i + projectFunctionLength;
 
