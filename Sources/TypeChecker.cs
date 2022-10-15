@@ -2744,7 +2744,7 @@ public partial class Scope {
 public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckFile(
-        ParsedFile parsedFile,
+        ParsedNamespace parsedFile,
         Int32 scopeId,
         Project project) {
 
@@ -2948,7 +2948,7 @@ public static partial class TypeCheckerFunctions {
 
             var span = x.GetSpan();
 
-            var expr = new UnaryOpExpression(
+            var expr = new ParsedUnaryOpExpression(
                 x,
                 new TypeCastUnaryOperator(new InfallibleTypeCast(_enum.UnderlyingType)),
                 span);
@@ -2987,7 +2987,7 @@ public static partial class TypeCheckerFunctions {
                             else {
 
                                 var (checkedExpr, typeErr) = castToUnderlying(
-                                    new NumericConstantExpression(
+                                    new ParsedNumericConstantExpression(
                                         new UInt64Constant(nextConstantValue.Value),
                                         u.Span), 
                                     project);
@@ -4033,7 +4033,7 @@ public static partial class TypeCheckerFunctions {
 
                     switch (statement) {
 
-                        case ParsedExpressionStatement es when es.Expression is QuotedStringExpression qs: {
+                        case ParsedExpressionStatement es when es.Expression is ParsedQuotedStringExpression qs: {
 
                             strings.Add(qs.Value);
 
@@ -4145,7 +4145,7 @@ public static partial class TypeCheckerFunctions {
 
         switch (expr) {
 
-            case RangeExpression re: {
+            case ParsedRangeExpression re: {
 
                 var (checkedStart, startErr) = TypeCheckExpression(re.Start, scopeId, project, safetyMode, null);
 
@@ -4201,7 +4201,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case BinaryOpExpression e: {
+            case ParsedBinaryOpExpression e: {
 
                 var (checkedLhs, checkedLhsErr) = TypeCheckExpression(e.Lhs, scopeId, project, safetyMode, null);
 
@@ -4241,7 +4241,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case UnaryOpExpression u: {
+            case ParsedUnaryOpExpression u: {
 
                 var (checkedExpr, checkedExprErr) = TypeCheckExpression(u.Expression, scopeId, project, safetyMode, null);
 
@@ -4392,7 +4392,7 @@ public static partial class TypeCheckerFunctions {
                 return (_checkedExpr, error);
             }
 
-            case OptionalNoneExpression e: {
+            case ParsedOptionalNoneExpression e: {
 
                 return (
                     new CheckedOptionalNoneExpression(
@@ -4401,7 +4401,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case OptionalSomeExpression e: {
+            case ParsedOptionalSomeExpression e: {
 
                 var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, scopeId, project, safetyMode, null);
 
@@ -4414,7 +4414,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case ForcedUnwrapExpression e: {
+            case ParsedForcedUnwrapExpression e: {
 
                 var (ckdExpr, ckdExprError) = TypeCheckExpression(e.Expression, scopeId, project, safetyMode, null);
 
@@ -4466,7 +4466,7 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
 
-            case CallExpression e: {
+            case ParsedCallExpression e: {
 
                 var (checkedCall, checkedCallErr) = TypeCheckCall(
                     e.Call, 
@@ -4485,7 +4485,7 @@ public static partial class TypeCheckerFunctions {
                     error ?? checkedCallErr);
             }
 
-            case NumericConstantExpression ne: {
+            case ParsedNumericConstantExpression ne: {
 
                 return (
                     new CheckedNumericConstantExpression(
@@ -4495,21 +4495,21 @@ public static partial class TypeCheckerFunctions {
                     null);
             }
 
-            case QuotedStringExpression e: {
+            case ParsedQuotedStringExpression e: {
 
                 return (
                     new CheckedQuotedStringExpression(e.Value, e.Span),
                     null);
             }
 
-            case CharacterLiteralExpression cle: {
+            case ParsedCharacterLiteralExpression cle: {
 
                 return (
                     new CheckedCharacterConstantExpression(cle.Char, cle.Span),
                     null);
             }
 
-            case VarExpression e: {
+            case ParsedVarExpression e: {
 
                 if (project.FindVarInScope(scopeId, e.Value) is CheckedVariable v) {
 
@@ -4532,7 +4532,7 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case ArrayExpression ve: {
+            case ParsedArrayExpression ve: {
 
                 var innerType = Compiler.UnknownTypeId;
 
@@ -4590,7 +4590,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case SetExpression se: {
+            case ParsedSetExpression se: {
 
                 var innerTy = Compiler.UnknownTypeId;
 
@@ -4629,7 +4629,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case DictionaryExpression de: {
+            case ParsedDictionaryExpression de: {
 
                 var innerTy = (Compiler.UnknownTypeId, Compiler.UnknownTypeId);
 
@@ -4686,7 +4686,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case TupleExpression te: {
+            case ParsedTupleExpression te: {
 
                 var checkedItems = new List<CheckedExpression>();
 
@@ -4717,7 +4717,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case IndexedExpression ie: {
+            case ParsedIndexedExpression ie: {
 
                 var (checkedExpr, typeCheckExprErr) = TypeCheckExpression(ie.Expression, scopeId, project, safetyMode, null);
                 
@@ -4816,7 +4816,7 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case IndexedTupleExpression ite: {
+            case ParsedIndexedTupleExpression ite: {
 
                 var (checkedExpr, chkExprErr) = TypeCheckExpression(ite.Expression, scopeId, project, safetyMode, null);
 
@@ -4879,7 +4879,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case WhenExpression we: {
+            case ParsedWhenExpression we: {
 
                 var (checkedExpr, err) = TypeCheckExpression(we.Expression, scopeId, project, safetyMode, null);
 
@@ -5545,7 +5545,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case IndexedStructExpression ise: {
+            case ParsedIndexedStructExpression ise: {
 
                 var (checkedExpr, chkExprErr) = TypeCheckExpression(ise.Expression, scopeId, project, safetyMode, null);
 
@@ -5629,7 +5629,7 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
-            case MethodCallExpression mce: {
+            case ParsedMethodCallExpression mce: {
 
                 var (checkedExpr, chkExprErr) = TypeCheckExpression(mce.Expression, scopeId, project, safetyMode, null);
 
@@ -5748,7 +5748,7 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
-            case OperatorExpression e: {
+            case ParsedOperatorExpression e: {
 
                 return (
                     new CheckedGarbageExpression(e.Span),
@@ -5757,7 +5757,7 @@ public static partial class TypeCheckerFunctions {
                         e.Span));
             }
 
-            case GarbageExpression e: {
+            case ParsedGarbageExpression e: {
 
                 return (
                     new CheckedGarbageExpression(e.Span),
@@ -6325,7 +6325,7 @@ public static partial class TypeCheckerFunctions {
                             callee = _callee ??
                                 throw new Exception("internal error: previously resolved call is now unresolved");
 
-                            if (call.Args[idx].Item2 is VarExpression ve) {
+                            if (call.Args[idx].Item2 is ParsedVarExpression ve) {
 
                                 if (ve.Value != callee.Parameters[idx + argOffset].Variable.Name
                                     && callee.Parameters[idx + argOffset].RequiresLabel

@@ -74,7 +74,7 @@ public static partial class ParsedCallFunctions {
                 return false;
             }
 
-            if (!ExpressionFunctions.Eq(argL.Item2, argR.Item2)) {
+            if (!ParsedExpressionFunctions.Eq(argL.Item2, argR.Item2)) {
 
                 return false;
             }
@@ -342,7 +342,7 @@ public static partial class ParsedVarDeclFunctions {
 
 ///
 
-public partial class ParsedFile {
+public partial class ParsedNamespace {
 
     public List<ParsedFunction> Functions { get; init; }
 
@@ -352,10 +352,10 @@ public partial class ParsedFile {
 
     ///
 
-    public ParsedFile()
+    public ParsedNamespace()
         : this(new List<ParsedFunction>(), new List<ParsedStruct>(), new List<ParsedEnum>()) { }
 
-    public ParsedFile(
+    public ParsedNamespace(
         List<ParsedFunction> functions,
         List<ParsedStruct> structs,
         List<ParsedEnum> enums) {
@@ -838,7 +838,7 @@ public static partial class ParsedExpressionStatementFunctions {
 
     public static bool Eq(ParsedExpressionStatement le, ParsedExpressionStatement re) {
 
-        return ExpressionFunctions.Eq(le.Expression, re.Expression);
+        return ParsedExpressionFunctions.Eq(le.Expression, re.Expression);
     }
 }
 
@@ -938,7 +938,7 @@ public static partial class ParsedVarDeclStatementFunctions {
             return false;
         }
 
-        return ExpressionFunctions.Eq(_l.Expr, _r.Expr);
+        return ParsedExpressionFunctions.Eq(_l.Expr, _r.Expr);
     }
 }
 
@@ -987,7 +987,7 @@ public static partial class ParsedIfStatementFunctions {
 
         ///
 
-        return ExpressionFunctions.Eq(_l.Expr, _r.Expr)
+        return ParsedExpressionFunctions.Eq(_l.Expr, _r.Expr)
             && ParsedBlockFunctions.Eq(_l.Block, _r.Block)
             && ParsedStatementFunctions.Eq(_l.Trailing, _r.Trailing);
     }
@@ -1081,7 +1081,7 @@ public static partial class ParsedWhileStatementFunctions {
 
         ///
 
-        return ExpressionFunctions.Eq(_l.Expr, _r.Expr) 
+        return ParsedExpressionFunctions.Eq(_l.Expr, _r.Expr) 
             && ParsedBlockFunctions.Eq(_l.Block, _r.Block);
     }
 }
@@ -1132,7 +1132,7 @@ public static partial class ParsedForStatementFunctions {
 
         return 
             _l.IteratorName == _r.IteratorName
-            && ExpressionFunctions.Eq(_l.Range, _r.Range)
+            && ParsedExpressionFunctions.Eq(_l.Range, _r.Range)
             && ParsedBlockFunctions.Eq(_l.Block, _r.Block);
     }
 }
@@ -1212,7 +1212,7 @@ public static partial class ParsedReturnStatementFunctions {
         ParsedReturnStatement? l,
         ParsedReturnStatement? r) {
 
-        return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
+        return ParsedExpressionFunctions.Eq(l?.Expr, r?.Expr);
     }
 }
 
@@ -1237,7 +1237,7 @@ public static partial class ParsedThrowStatementFunctions {
         ParsedThrowStatement? l,
         ParsedThrowStatement? r) {
 
-        return ExpressionFunctions.Eq(l?.Expr, r?.Expr);
+        return ParsedExpressionFunctions.Eq(l?.Expr, r?.Expr);
     }
 }
 
@@ -1504,7 +1504,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class NumericConstantExpression: ParsedExpression {
+    public partial class ParsedNumericConstantExpression: ParsedExpression {
 
         public NumericConstant Value { get; init; }
 
@@ -1512,7 +1512,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public NumericConstantExpression(
+        public ParsedNumericConstantExpression(
             NumericConstant value,
             Span span) {
 
@@ -1521,7 +1521,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class QuotedStringExpression: ParsedExpression {
+    public partial class ParsedQuotedStringExpression: ParsedExpression {
 
         public String Value { get; init; }
 
@@ -1529,7 +1529,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public QuotedStringExpression(
+        public ParsedQuotedStringExpression(
             String value,
             Span span)
             : base() { 
@@ -1539,7 +1539,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class CharacterLiteralExpression: ParsedExpression {
+    public partial class ParsedCharacterLiteralExpression: ParsedExpression {
 
         public Char Char { get; init; }
 
@@ -1547,7 +1547,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public CharacterLiteralExpression(
+        public ParsedCharacterLiteralExpression(
             Char c,
             Span span) {
 
@@ -1556,7 +1556,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class ArrayExpression: ParsedExpression {
+    public partial class ParsedArrayExpression: ParsedExpression {
 
         public List<ParsedExpression> Expressions { get; init; }
 
@@ -1566,7 +1566,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public ArrayExpression(
+        public ParsedArrayExpression(
             List<ParsedExpression> expressions,
             ParsedExpression? fillSize,
             Span span) {
@@ -1577,7 +1577,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class DictionaryExpression: ParsedExpression {
+    public partial class ParsedDictionaryExpression: ParsedExpression {
 
         public List<(ParsedExpression, ParsedExpression)> Entries { get; init; }
 
@@ -1585,7 +1585,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public DictionaryExpression(
+        public ParsedDictionaryExpression(
             List<(ParsedExpression, ParsedExpression)> entries,
             Span span) {
 
@@ -1594,7 +1594,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class SetExpression: ParsedExpression {
+    public partial class ParsedSetExpression: ParsedExpression {
 
         public List<ParsedExpression> Items { get; init; }
 
@@ -1602,7 +1602,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public SetExpression(
+        public ParsedSetExpression(
             List<ParsedExpression> items,
             Span span) {
 
@@ -1611,7 +1611,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class IndexedExpression: ParsedExpression {
+    public partial class ParsedIndexedExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
 
@@ -1621,7 +1621,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public IndexedExpression(
+        public ParsedIndexedExpression(
             ParsedExpression expression,
             ParsedExpression index,
             Span span) {
@@ -1632,7 +1632,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class UnaryOpExpression: ParsedExpression {
+    public partial class ParsedUnaryOpExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
         
@@ -1642,7 +1642,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public UnaryOpExpression(
+        public ParsedUnaryOpExpression(
             ParsedExpression expression,
             UnaryOperator op,
             Span Span) {
@@ -1653,7 +1653,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class BinaryOpExpression: ParsedExpression {
+    public partial class ParsedBinaryOpExpression: ParsedExpression {
 
         public ParsedExpression Lhs { get; init; }
         
@@ -1665,7 +1665,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public BinaryOpExpression(
+        public ParsedBinaryOpExpression(
             ParsedExpression lhs,
             BinaryOperator op,
             ParsedExpression rhs,
@@ -1678,7 +1678,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class VarExpression: ParsedExpression {
+    public partial class ParsedVarExpression: ParsedExpression {
 
         public String Value { get; init; }
         
@@ -1686,7 +1686,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public VarExpression(
+        public ParsedVarExpression(
             String value,
             Span span) 
             : base() {
@@ -1696,7 +1696,7 @@ public partial class ParsedExpression {
         }
     }
     
-    public partial class TupleExpression: ParsedExpression {
+    public partial class ParsedTupleExpression: ParsedExpression {
 
         public List<ParsedExpression> Expressions { get; init; }
 
@@ -1704,7 +1704,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public TupleExpression(
+        public ParsedTupleExpression(
             List<ParsedExpression> expressions,
             Span span) {
 
@@ -1713,7 +1713,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class RangeExpression: ParsedExpression {
+    public partial class ParsedRangeExpression: ParsedExpression {
 
         public ParsedExpression Start { get; init; }
 
@@ -1723,7 +1723,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public RangeExpression(
+        public ParsedRangeExpression(
             ParsedExpression start,
             ParsedExpression end,
             Span span) {
@@ -1734,7 +1734,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class WhenExpression: ParsedExpression {
+    public partial class ParsedWhenExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
 
@@ -1744,7 +1744,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public WhenExpression(
+        public ParsedWhenExpression(
             ParsedExpression expression,
             List<WhenCase> cases,
             Span span) {
@@ -1755,7 +1755,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class IndexedTupleExpression: ParsedExpression {
+    public partial class ParsedIndexedTupleExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
 
@@ -1765,7 +1765,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public IndexedTupleExpression(
+        public ParsedIndexedTupleExpression(
             ParsedExpression expression,
             Int64 index,
             Span span) {
@@ -1776,7 +1776,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class IndexedStructExpression: ParsedExpression {
+    public partial class ParsedIndexedStructExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
         
@@ -1786,7 +1786,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public IndexedStructExpression(
+        public ParsedIndexedStructExpression(
             ParsedExpression expression,
             String name,
             Span span) {
@@ -1797,7 +1797,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class CallExpression: ParsedExpression {
+    public partial class ParsedCallExpression: ParsedExpression {
 
         public ParsedCall Call { get; init; }
 
@@ -1805,7 +1805,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public CallExpression(
+        public ParsedCallExpression(
             ParsedCall call,
             Span span)
             : base() {
@@ -1815,7 +1815,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class MethodCallExpression: ParsedExpression {
+    public partial class ParsedMethodCallExpression: ParsedExpression {
         
         public ParsedExpression Expression { get; init; }
         
@@ -1825,7 +1825,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public MethodCallExpression(
+        public ParsedMethodCallExpression(
             ParsedExpression expression, 
             ParsedCall call, 
             Span span) {
@@ -1836,7 +1836,7 @@ public partial class ParsedExpression {
         }
     }
 
-    public partial class ForcedUnwrapExpression: ParsedExpression {
+    public partial class ParsedForcedUnwrapExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
 
@@ -1844,7 +1844,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public ForcedUnwrapExpression(
+        public ParsedForcedUnwrapExpression(
             ParsedExpression expression,
             Span span) {
 
@@ -1855,20 +1855,20 @@ public partial class ParsedExpression {
 
     // FIXME: These should be implemented as `enum` variant values once available.
 
-    public partial class OptionalNoneExpression: ParsedExpression {
+    public partial class ParsedOptionalNoneExpression: ParsedExpression {
 
         public Span Span { get; init; }
         
         ///
 
-        public OptionalNoneExpression(
+        public ParsedOptionalNoneExpression(
             Span span) : base() {
 
             this.Span = span;
         }
     }
 
-    public partial class OptionalSomeExpression: ParsedExpression {
+    public partial class ParsedOptionalSomeExpression: ParsedExpression {
 
         public ParsedExpression Expression { get; init; }
 
@@ -1876,7 +1876,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public OptionalSomeExpression(
+        public ParsedOptionalSomeExpression(
             ParsedExpression expression,
             Span span) {
 
@@ -1887,7 +1887,7 @@ public partial class ParsedExpression {
 
     // Not standalone
 
-    public partial class OperatorExpression: ParsedExpression {
+    public partial class ParsedOperatorExpression: ParsedExpression {
 
         public BinaryOperator Operator { get; init; }
         
@@ -1895,7 +1895,7 @@ public partial class ParsedExpression {
 
         ///
 
-        public OperatorExpression(
+        public ParsedOperatorExpression(
             BinaryOperator op,
             Span span)
             : base() {
@@ -1907,13 +1907,13 @@ public partial class ParsedExpression {
     
     // Parsing error
 
-    public partial class GarbageExpression: ParsedExpression {
+    public partial class ParsedGarbageExpression: ParsedExpression {
 
         public Span Span { get; init; }
 
         ///
 
-        public GarbageExpression(
+        public ParsedGarbageExpression(
             Span span) 
             : base() {
 
@@ -1923,7 +1923,7 @@ public partial class ParsedExpression {
 
 ///
 
-public static partial class ExpressionFunctions {
+public static partial class ParsedExpressionFunctions {
 
     public static Span GetSpan(
         this ParsedExpression expr) {
@@ -1935,112 +1935,112 @@ public static partial class ExpressionFunctions {
                 return be.Span;
             }
 
-            case NumericConstantExpression ne: {
+            case ParsedNumericConstantExpression ne: {
 
                 return ne.Span;
             }
 
-            case QuotedStringExpression qse: {
+            case ParsedQuotedStringExpression qse: {
 
                 return qse.Span;
             }
 
-            case CharacterLiteralExpression cle: {
+            case ParsedCharacterLiteralExpression cle: {
 
                 return cle.Span;
             }
 
-            case ArrayExpression ve: {
+            case ParsedArrayExpression ve: {
 
                 return ve.Span;
             }
 
-            case DictionaryExpression de: {
+            case ParsedDictionaryExpression de: {
 
                 return de.Span;
             }
 
-            case SetExpression se: {
+            case ParsedSetExpression se: {
 
                 return se.Span;
             }
 
-            case TupleExpression te: {
+            case ParsedTupleExpression te: {
 
                 return te.Span;
             }
 
-            case RangeExpression re: {
+            case ParsedRangeExpression re: {
 
                 return re.Span;
             }
 
-            case IndexedExpression ie: {
+            case ParsedIndexedExpression ie: {
 
                 return ie.Span;
             }
 
-            case IndexedTupleExpression ite: {
+            case ParsedIndexedTupleExpression ite: {
 
                 return ite.Span;
             }
 
-            case IndexedStructExpression ise: {
+            case ParsedIndexedStructExpression ise: {
 
                 return ise.Span;
             }
 
-            case CallExpression ce: {
+            case ParsedCallExpression ce: {
 
                 return ce.Span;
             }
 
-            case MethodCallExpression mce: {
+            case ParsedMethodCallExpression mce: {
 
                 return mce.Span;
             }
 
-            case UnaryOpExpression uoe: {
+            case ParsedUnaryOpExpression uoe: {
 
                 return uoe.Span;
             }
 
-            case BinaryOpExpression boe: {
+            case ParsedBinaryOpExpression boe: {
 
                 return boe.Span;
             }
 
-            case VarExpression ve: {
+            case ParsedVarExpression ve: {
 
                 return ve.Span;
             }
 
-            case OperatorExpression oe: {
+            case ParsedOperatorExpression oe: {
 
                 return oe.Span;
             }
 
-            case OptionalNoneExpression optNoneExpr: {
+            case ParsedOptionalNoneExpression optNoneExpr: {
 
                 return optNoneExpr.Span;
             }
 
-            case OptionalSomeExpression optSomeExpr: {
+            case ParsedOptionalSomeExpression optSomeExpr: {
 
                 return optSomeExpr.Span;
             }
 
-            case ForcedUnwrapExpression forceUnwrapExpr: {
+            case ParsedForcedUnwrapExpression forceUnwrapExpr: {
 
                 return forceUnwrapExpr.Span;
             }
 
-            case WhenExpression whenExpression: {
+            case ParsedWhenExpression whenExpression: {
 
                 return whenExpression.Span;
             }
 
-            case GarbageExpression ge: {
+            case ParsedGarbageExpression ge: {
 
                 return ge.Span;
             }
@@ -2079,66 +2079,66 @@ public static partial class ExpressionFunctions {
             ///
 
             case var _ when
-                l is CallExpression callL
-                && r is CallExpression callR:
+                l is ParsedCallExpression callL
+                && r is ParsedCallExpression callR:
 
                 return ParsedCallFunctions.Eq(callL.Call, callR.Call);
 
             ///
 
             case var _ when 
-                l is NumericConstantExpression ln
-                && r is NumericConstantExpression rn:
+                l is ParsedNumericConstantExpression ln
+                && r is ParsedNumericConstantExpression rn:
 
                 return NumericConstantFunctions.Eq(ln.Value, rn.Value);
 
             ///
 
             case var _ when
-                l is QuotedStringExpression strL
-                && r is QuotedStringExpression strR:
+                l is ParsedQuotedStringExpression strL
+                && r is ParsedQuotedStringExpression strR:
 
                 return Equals(strL.Value, strR.Value);
 
             ///
 
             case var _ when 
-                l is CharacterLiteralExpression lc
-                && r is CharacterLiteralExpression rc:
+                l is ParsedCharacterLiteralExpression lc
+                && r is ParsedCharacterLiteralExpression rc:
 
                 return Equals(lc.Char, rc.Char);
             
             ///
 
             case var _ when
-                l is BinaryOpExpression lbo
-                && r is BinaryOpExpression rbo: 
+                l is ParsedBinaryOpExpression lbo
+                && r is ParsedBinaryOpExpression rbo: 
 
-                return ExpressionFunctions.Eq(lbo.Lhs, rbo.Lhs)
+                return ParsedExpressionFunctions.Eq(lbo.Lhs, rbo.Lhs)
                     && lbo.Operator == rbo.Operator
-                    && ExpressionFunctions.Eq(lbo.Rhs, rbo.Rhs);
+                    && ParsedExpressionFunctions.Eq(lbo.Rhs, rbo.Rhs);
 
             ///
 
             case var _ when
-                l is VarExpression varL
-                && r is VarExpression varR:
+                l is ParsedVarExpression varL
+                && r is ParsedVarExpression varR:
 
                 return varL.Value == varR.Value;
 
             ///
 
             case var _ when
-                l is OperatorExpression opL
-                && r is OperatorExpression opR:
+                l is ParsedOperatorExpression opL
+                && r is ParsedOperatorExpression opR:
 
                 return opL.Operator == opR.Operator;
 
             ///
 
             case var _ when
-                l is GarbageExpression
-                && r is GarbageExpression:
+                l is ParsedGarbageExpression
+                && r is ParsedGarbageExpression:
 
                 return true;
 
@@ -2156,7 +2156,7 @@ public static partial class ExpressionFunctions {
 
         switch (expr) {
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.Multiply 
                 || opExpr.Operator == BinaryOperator.Modulo
                 || opExpr.Operator == BinaryOperator.Divide:
@@ -2165,7 +2165,7 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.Add 
                 || opExpr.Operator == BinaryOperator.Subtract:
 
@@ -2173,7 +2173,7 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case OperatorExpression opExpr when
+            case ParsedOperatorExpression opExpr when
                 opExpr.Operator == BinaryOperator.BitwiseLeftShift
                 || opExpr.Operator == BinaryOperator.BitwiseRightShift
                 || opExpr.Operator == BinaryOperator.ArithmeticLeftShift
@@ -2183,7 +2183,7 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.LessThan
                 || opExpr.Operator == BinaryOperator.LessThanOrEqual
                 || opExpr.Operator == BinaryOperator.GreaterThan
@@ -2195,35 +2195,35 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.BitwiseAnd:
 
                 return 73;
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.BitwiseXor:
 
                 return 72;
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.BitwiseOr:
 
                 return 72;
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.LogicalAnd:
 
                 return 70;
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.LogicalOr
                 || opExpr.Operator == BinaryOperator.NoneCoalescing:
 
@@ -2231,7 +2231,7 @@ public static partial class ExpressionFunctions {
 
             ///
 
-            case OperatorExpression opExpr when 
+            case ParsedOperatorExpression opExpr when 
                 opExpr.Operator == BinaryOperator.Assign
                 || opExpr.Operator == BinaryOperator.BitwiseAndAssign
                 || opExpr.Operator == BinaryOperator.BitwiseOrAssign
@@ -2530,14 +2530,14 @@ public static partial class IListFunctions {
 
 public static partial class ParserFunctions {
 
-    public static (ParsedFile, Error?) ParseFile(
+    public static (ParsedNamespace, Error?) ParseFile(
         List<Token> tokens) {
 
         Trace($"ParseFile");
 
         Error? error = null;
 
-        var parsedFile = new ParsedFile();
+        var parsedFile = new ParsedNamespace();
 
         var index = 0;
 
@@ -4370,9 +4370,9 @@ public static partial class ParserFunctions {
                     "incomplete math expression",
                     tokens.ElementAt(index - 1).Span);
 
-                exprStack.Add(new GarbageExpression(tokens.ElementAt(index - 1).Span));
+                exprStack.Add(new ParsedGarbageExpression(tokens.ElementAt(index - 1).Span));
                 
-                exprStack.Add(new GarbageExpression(tokens.ElementAt(index - 1).Span));
+                exprStack.Add(new ParsedGarbageExpression(tokens.ElementAt(index - 1).Span));
 
                 break;
             }
@@ -4407,14 +4407,14 @@ public static partial class ParserFunctions {
 
                 switch (_op) {
 
-                    case OperatorExpression oe: {
+                    case ParsedOperatorExpression oe: {
 
                         var span = new Span(
                             fileId: _lhs.GetSpan().FileId,
                             start: _lhs.GetSpan().Start,
                             end: _rhs.GetSpan().End);
 
-                        exprStack.Add(new BinaryOpExpression(_lhs, oe.Operator, _rhs, span));
+                        exprStack.Add(new ParsedBinaryOpExpression(_lhs, oe.Operator, _rhs, span));
 
                         break;
                     }
@@ -4445,14 +4445,14 @@ public static partial class ParserFunctions {
 
             switch (_op) {
 
-                case OperatorExpression oe: {
+                case ParsedOperatorExpression oe: {
 
                     var span = new Span(
                         fileId: _lhs.GetSpan().FileId,
                         start: _lhs.GetSpan().Start,
                         end: _rhs.GetSpan().End);
 
-                    exprStack.Add(new BinaryOpExpression(_lhs, oe.Operator, _rhs, span));
+                    exprStack.Add(new ParsedBinaryOpExpression(_lhs, oe.Operator, _rhs, span));
 
                     break;
                 }
@@ -4762,7 +4762,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new OperatorExpression(BinaryOperator.LogicalAnd, span);
+                expr = new ParsedOperatorExpression(BinaryOperator.LogicalAnd, span);
 
                 break;
             }
@@ -4771,7 +4771,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new OperatorExpression(BinaryOperator.LogicalOr, span);
+                expr = new ParsedOperatorExpression(BinaryOperator.LogicalOr, span);
 
                 break;
             }
@@ -4791,7 +4791,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, new LogicalNotUnaryOperator(), _span);
+                expr = new ParsedUnaryOpExpression(_expr, new LogicalNotUnaryOperator(), _span);
 
                 break;
             }
@@ -4815,7 +4815,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: operand.GetSpan().End);
 
-                expr = new WhenExpression(operand, patterns, _span);
+                expr = new ParsedWhenExpression(operand, patterns, _span);
 
                 break;
             }
@@ -4841,7 +4841,7 @@ public static partial class ParserFunctions {
 
                                     error = error ?? parseSomeExprErr;
 
-                                    expr = new OptionalSomeExpression(someExpr, span);
+                                    expr = new ParsedOptionalSomeExpression(someExpr, span);
 
                                     break;
                                 }
@@ -4854,7 +4854,7 @@ public static partial class ParserFunctions {
 
                                     error = error ?? parseCallErr;
 
-                                    expr = new CallExpression(call, span);
+                                    expr = new ParsedCallExpression(call, span);
 
                                     break;
                                 }
@@ -4876,14 +4876,14 @@ public static partial class ParserFunctions {
 
                                     case "none": {
 
-                                        expr = new OptionalNoneExpression(span);
+                                        expr = new ParsedOptionalNoneExpression(span);
 
                                         break;
                                     }
 
                                     default: {
 
-                                        expr = new VarExpression(nt.Value, span);
+                                        expr = new ParsedVarExpression(nt.Value, span);
 
                                         break;
                                     }
@@ -4893,7 +4893,7 @@ public static partial class ParserFunctions {
 
                                 error = error ?? err;
 
-                                expr = new CallExpression(call, span);
+                                expr = new ParsedCallExpression(call, span);
                             }
 
                             break;
@@ -4907,7 +4907,7 @@ public static partial class ParserFunctions {
 
                                 case "none": {
 
-                                    expr = new OptionalNoneExpression(span);
+                                    expr = new ParsedOptionalNoneExpression(span);
 
                                     break;
                                 }
@@ -4916,7 +4916,7 @@ public static partial class ParserFunctions {
 
                                 default: {
 
-                                    expr = new VarExpression(nt.Value, span);
+                                    expr = new ParsedVarExpression(nt.Value, span);
 
                                     break;
                                 }
@@ -4930,7 +4930,7 @@ public static partial class ParserFunctions {
 
                     index += 1;
 
-                    expr = new VarExpression(nt.Value, span);
+                    expr = new ParsedVarExpression(nt.Value, span);
                 }
 
                 break;
@@ -5018,7 +5018,7 @@ public static partial class ParserFunctions {
                                 );
                         }
 
-                        _expr = new TupleExpression(
+                        _expr = new ParsedTupleExpression(
                             exprs, 
                             new Span(
                                 fileId: start.FileId, 
@@ -5084,7 +5084,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, new PreIncrementUnaryOperator(), _span);
+                expr = new ParsedUnaryOpExpression(_expr, new PreIncrementUnaryOperator(), _span);
 
                 break;
             }
@@ -5104,7 +5104,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, new PreDecrementUnaryOperator(), _span);
+                expr = new ParsedUnaryOpExpression(_expr, new PreDecrementUnaryOperator(), _span);
 
                 break;
             }
@@ -5124,7 +5124,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, new NegateUnaryOperator(), _span);
+                expr = new ParsedUnaryOpExpression(_expr, new NegateUnaryOperator(), _span);
 
                 break;
             }
@@ -5144,7 +5144,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, new BitwiseNotUnaryOperator(), _span);
+                expr = new ParsedUnaryOpExpression(_expr, new BitwiseNotUnaryOperator(), _span);
 
                 break;
             }
@@ -5164,7 +5164,7 @@ public static partial class ParserFunctions {
                     start: startSpan.Start,
                     end: _expr.GetSpan().End);
 
-                expr = new UnaryOpExpression(_expr, new DereferenceUnaryOperator(), _span);
+                expr = new ParsedUnaryOpExpression(_expr, new DereferenceUnaryOperator(), _span);
 
                 break;
             }
@@ -5194,7 +5194,7 @@ public static partial class ParserFunctions {
                                 start: startSpan.Start,
                                 end: _expr.GetSpan().End);
 
-                            expr = new UnaryOpExpression(_expr, new RawAddressUnaryOperator(), span);
+                            expr = new ParsedUnaryOpExpression(_expr, new RawAddressUnaryOperator(), span);
 
                             break;
                         }
@@ -5206,7 +5206,7 @@ public static partial class ParserFunctions {
                                     "ampersand not currently supported",
                                     tokens.ElementAt(index - 1).Span);
 
-                            expr = new GarbageExpression(tokens.ElementAt(index - 1).Span);
+                            expr = new ParsedGarbageExpression(tokens.ElementAt(index - 1).Span);
 
                             break;
                         }
@@ -5219,7 +5219,7 @@ public static partial class ParserFunctions {
                             "ampersand not currently supported",
                             tokens.ElementAt(index - 1).Span);
 
-                    expr = new GarbageExpression(tokens.ElementAt(index - 1).Span);
+                    expr = new ParsedGarbageExpression(tokens.ElementAt(index - 1).Span);
                 }
 
                 break;
@@ -5229,7 +5229,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new NumericConstantExpression(numTok.Value, span);
+                expr = new ParsedNumericConstantExpression(numTok.Value, span);
 
                 break;
             }
@@ -5238,7 +5238,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                expr = new QuotedStringExpression(qs.Value, span);
+                expr = new ParsedQuotedStringExpression(qs.Value, span);
 
                 break;
             }
@@ -5249,11 +5249,11 @@ public static partial class ParserFunctions {
 
                 if (ct.Value.FirstOrDefault() is Char c) {
 
-                    expr = new CharacterLiteralExpression(c, span);
+                    expr = new ParsedCharacterLiteralExpression(c, span);
                 }
                 else {
 
-                    expr = new GarbageExpression(span);
+                    expr = new ParsedGarbageExpression(span);
                 }
 
                 break;
@@ -5268,7 +5268,7 @@ public static partial class ParserFunctions {
                         "unsupported expression",
                         tokens.ElementAt(index).Span);
 
-                expr = new GarbageExpression(span);
+                expr = new ParsedGarbageExpression(span);
 
                 break;
             }
@@ -5290,7 +5290,7 @@ public static partial class ParserFunctions {
 
                     error = error ?? endErr;
 
-                    expr = new RangeExpression(expr, endExpr, span);
+                    expr = new ParsedRangeExpression(expr, endExpr, span);
 
                     break;
                 }
@@ -5301,7 +5301,7 @@ public static partial class ParserFunctions {
 
                     // Forced Optional unwrap
 
-                    expr = new ForcedUnwrapExpression(expr, span);
+                    expr = new ParsedForcedUnwrapExpression(expr, span);
 
                     break;
                 }
@@ -5317,7 +5317,7 @@ public static partial class ParserFunctions {
                         start: expr.GetSpan().Start,
                         end: endSpan.End);
 
-                    expr = new UnaryOpExpression(expr, new PostIncrementUnaryOperator(), _span);
+                    expr = new ParsedUnaryOpExpression(expr, new PostIncrementUnaryOperator(), _span);
 
                     break;
                 }
@@ -5339,7 +5339,7 @@ public static partial class ParserFunctions {
 
                     // index += 1;
 
-                    expr = new UnaryOpExpression(expr, new IsUnaryOperator(isTypeName), _span);
+                    expr = new ParsedUnaryOpExpression(expr, new IsUnaryOperator(isTypeName), _span);
 
                     break;
                 }
@@ -5426,7 +5426,7 @@ public static partial class ParserFunctions {
 
                     index += 1;
 
-                    expr = new UnaryOpExpression(expr, new TypeCastUnaryOperator(cast), _span);
+                    expr = new ParsedUnaryOpExpression(expr, new TypeCastUnaryOperator(cast), _span);
 
                     break;
                 }
@@ -5442,7 +5442,7 @@ public static partial class ParserFunctions {
                         start: expr.GetSpan().Start,
                         end: endSpan.End);
 
-                    expr = new UnaryOpExpression(expr, new PostDecrementUnaryOperator(), _span);
+                    expr = new ParsedUnaryOpExpression(expr, new PostDecrementUnaryOperator(), _span);
 
                     break;
                 }
@@ -5451,7 +5451,7 @@ public static partial class ParserFunctions {
 
                     index += 1;
 
-                    if (expr is VarExpression ve) {
+                    if (expr is ParsedVarExpression ve) {
 
                         // attempt namespace lookup
 
@@ -5482,7 +5482,7 @@ public static partial class ParserFunctions {
                                         start: expr.GetSpan().Start,
                                         end: tokens[index].Span.End);
 
-                                    expr = new IndexedTupleExpression(
+                                    expr = new ParsedIndexedTupleExpression(
                                         expr,
                                         numberToken.Value.IntegerConstant()!.ToInt64(),
                                         _span);
@@ -5519,13 +5519,13 @@ public static partial class ParserFunctions {
                                                 && !IsNullOrWhiteSpace(n)
                                                 && Char.IsUpper(n[0])) {
 
-                                                expr = new CallExpression(method, _span);
+                                                expr = new ParsedCallExpression(method, _span);
                                             }
                                             else {
 
                                                 // Maybe clear namespace too?
 
-                                                expr = new MethodCallExpression(expr, method, span);
+                                                expr = new ParsedMethodCallExpression(expr, method, span);
                                             }
 
                                             contNS = false;
@@ -5568,7 +5568,7 @@ public static partial class ParserFunctions {
 
                                                 call.Namespace = ns;
 
-                                                expr = new CallExpression(call, span);
+                                                expr = new ParsedCallExpression(call, span);
                                             }
 
                                             contNS = false;
@@ -5580,7 +5580,7 @@ public static partial class ParserFunctions {
                                                 start: expr.GetSpan().Start,
                                                 end: tokens[index - 1].Span.End);
 
-                                            expr = new IndexedStructExpression(
+                                            expr = new ParsedIndexedStructExpression(
                                                 expr,
                                                 nsNameToken.Value,
                                                 _span);
@@ -5634,7 +5634,7 @@ public static partial class ParserFunctions {
                                         start: expr.GetSpan().Start,
                                         end: tokens.ElementAt(index).Span.End);
 
-                                    expr = new IndexedTupleExpression(expr, number.Value.IntegerConstant()!.ToInt64(), _span);
+                                    expr = new ParsedIndexedTupleExpression(expr, number.Value.IntegerConstant()!.ToInt64(), _span);
 
                                     break;
                                 }
@@ -5658,7 +5658,7 @@ public static partial class ParserFunctions {
                                             
                                             error = error ?? err;
 
-                                            expr = new MethodCallExpression(expr, method, _span);
+                                            expr = new ParsedMethodCallExpression(expr, method, _span);
                                         }
                                         else {
         
@@ -5667,7 +5667,7 @@ public static partial class ParserFunctions {
                                                 start: expr.GetSpan().Start,
                                                 end: tokens.ElementAt(index).Span.End);
 
-                                            expr = new IndexedStructExpression(
+                                            expr = new ParsedIndexedStructExpression(
                                                 expr,
                                                 name.Value,
                                                 _span);
@@ -5680,7 +5680,7 @@ public static partial class ParserFunctions {
                                             start: expr.GetSpan().Start,
                                             end: tokens.ElementAt(index).Span.End);
 
-                                        expr = new IndexedStructExpression(
+                                        expr = new ParsedIndexedStructExpression(
                                             expr,
                                             name.Value,
                                             _span);
@@ -5762,7 +5762,7 @@ public static partial class ParserFunctions {
                                     tokens.ElementAt(index - 1).Span);
                         }
 
-                        expr = new IndexedExpression(
+                        expr = new ParsedIndexedExpression(
                             expr, 
                             idx, 
                             new Span(
@@ -5801,7 +5801,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.NoneCoalescing, span),
+                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescing, span),
                     null);
             }
 
@@ -5809,49 +5809,49 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.LogicalAnd, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LogicalAnd, span), null);
             }
 
             case NameToken nt when nt.Value == "or": {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.LogicalOr, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LogicalOr, span), null);
             }
 
             case PlusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Add, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Add, span), null);
             }
 
             case MinusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Subtract, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Subtract, span), null);
             }
 
             case AsteriskToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Multiply, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Multiply, span), null);
             }
 
             case ForwardSlashToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Divide, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Divide, span), null);
             }
 
             case PercentToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Modulo, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Modulo, span), null);
             }
 
             case EqualToken _: {
@@ -5861,7 +5861,7 @@ public static partial class ParserFunctions {
                 index += 1;
                 
                 return (
-                    new OperatorExpression(BinaryOperator.Assign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.Assign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5874,7 +5874,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5887,7 +5887,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5900,7 +5900,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.BitwiseAndAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.BitwiseAndAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5913,7 +5913,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.BitwiseOrAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.BitwiseOrAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5926,7 +5926,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.BitwiseXorAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.BitwiseXorAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5939,7 +5939,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.AddAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.AddAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5952,7 +5952,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.SubtractAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.SubtractAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5965,7 +5965,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.MultiplyAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.MultiplyAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5978,7 +5978,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.DivideAssign, span), 
+                    new ParsedOperatorExpression(BinaryOperator.DivideAssign, span), 
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -5991,7 +5991,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.ModuloAssign, span),
+                    new ParsedOperatorExpression(BinaryOperator.ModuloAssign, span),
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
@@ -6001,77 +6001,77 @@ public static partial class ParserFunctions {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.Equal, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Equal, span), null);
             }
             
             case NotEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.NotEqual, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.NotEqual, span), null);
             }
             
             case LessThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.LessThan, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LessThan, span), null);
             }
             
             case LessThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
             }
             
             case GreaterThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.GreaterThan, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.GreaterThan, span), null);
             }
             
             case GreaterThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
             }
 
             case AmpersandToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseAnd, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseAnd, span), null);
             }
 
             case PipeToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseOr, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseOr, span), null);
             }
 
             case CaretToken _: {
     
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseXor, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseXor, span), null);
             }
 
             case LeftShiftToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
             }
 
             case RightShiftToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
             }
 
             case LeftArithmeticShiftToken _: {
@@ -6079,7 +6079,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
+                    new ParsedOperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
                     null);
             }
 
@@ -6088,7 +6088,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.ArithmeticRightShift, span),
+                    new ParsedOperatorExpression(BinaryOperator.ArithmeticRightShift, span),
                     null);
             }
 
@@ -6097,7 +6097,7 @@ public static partial class ParserFunctions {
                 Trace("ERROR: unsupported operator (possibly just the end of an expression)");
 
                 return (
-                    new GarbageExpression(span),
+                    new ParsedGarbageExpression(span),
                     new ParserError(
                         "unsupported operator", 
                         tokens.ElementAt(index).Span));
@@ -6120,7 +6120,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.NoneCoalescing, span),
+                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescing, span),
                     null);
             }
 
@@ -6128,84 +6128,84 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Add, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Add, span), null);
             }
 
             case MinusToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Subtract, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Subtract, span), null);
             }
 
             case AsteriskToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Multiply, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Multiply, span), null);
             }
 
             case ForwardSlashToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Divide, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Divide, span), null);
             }
 
             case PercentToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.Modulo, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Modulo, span), null);
             }
 
             case NameToken nt when nt.Value == "and": {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.LogicalAnd, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LogicalAnd, span), null);
             }
 
             case NameToken nt when nt.Value == "or": {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.LogicalOr, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LogicalOr, span), null);
             }
 
             case AmpersandToken _: {
 
                 index += 1;
             
-                return (new OperatorExpression(BinaryOperator.BitwiseAnd, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseAnd, span), null);
             }
 
             case PipeToken _: {
 
                 index += 1;
             
-                return (new OperatorExpression(BinaryOperator.BitwiseOr, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseOr, span), null);
             }
 
             case CaretToken _: {
 
                 index += 1;
             
-                return (new OperatorExpression(BinaryOperator.BitwiseXor, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseXor, span), null);
             }
 
             case LeftShiftToken _: {
 
                 index += 1;
             
-                return (new OperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
             }
 
             case RightShiftToken _: {
 
                 index += 1;
             
-                return (new OperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
             }
 
             case LeftArithmeticShiftToken _: {
@@ -6213,7 +6213,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
+                    new ParsedOperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
                     null);
             }
 
@@ -6222,7 +6222,7 @@ public static partial class ParserFunctions {
                 index += 1;
 
                 return (
-                    new OperatorExpression(BinaryOperator.ArithmeticRightShift, span),
+                    new ParsedOperatorExpression(BinaryOperator.ArithmeticRightShift, span),
                     null);
             }
 
@@ -6230,112 +6230,112 @@ public static partial class ParserFunctions {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.Assign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Assign, span), null);
             }
 
             case LeftShiftEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), null);
             }
 
             case RightShiftEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), null);
             }
 
             case AmpersandEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseAndAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseAndAssign, span), null);
             }
 
             case PipeEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseOrAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseOrAssign, span), null);
             }
 
             case CaretEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.BitwiseXorAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.BitwiseXorAssign, span), null);
             }
 
             case PlusEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.AddAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.AddAssign, span), null);
             }
             
             case MinusEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.SubtractAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.SubtractAssign, span), null);
             }
 
             case AsteriskEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.MultiplyAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.MultiplyAssign, span), null);
             }
 
             case ForwardSlashEqualToken _: {
 
                 index += 1;
 
-                return (new OperatorExpression(BinaryOperator.DivideAssign, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.DivideAssign, span), null);
             }
 
             case DoubleEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.Equal, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.Equal, span), null);
             }
             
             case NotEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.NotEqual, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.NotEqual, span), null);
             }
             
             case LessThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.LessThan, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LessThan, span), null);
             }
             
             case LessThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
             }
             
             case GreaterThanToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.GreaterThan, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.GreaterThan, span), null);
             }
             
             case GreaterThanOrEqualToken _: {
                 
                 index += 1;
                 
-                return (new OperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
+                return (new ParsedOperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
             }
 
             default: {
@@ -6343,7 +6343,7 @@ public static partial class ParserFunctions {
                 Trace("ERROR: unsupported operator (possibly just the end of an expression)");
 
                 return (
-                    new GarbageExpression(span),
+                    new ParsedGarbageExpression(span),
                     new ParserError(
                         "unsupported operator", 
                         tokens.ElementAt(index).Span));
@@ -6446,7 +6446,7 @@ public static partial class ParserFunctions {
         var end = index - 1;
 
         return (
-            new SetExpression(
+            new ParsedSetExpression(
                 output,
                 new Span(
                     fileId: tokens[start].Span.FileId,
@@ -6634,7 +6634,7 @@ public static partial class ParserFunctions {
         if (isDictionary) {
 
             return (
-                new DictionaryExpression(
+                new ParsedDictionaryExpression(
                     dictOutput,
                     new Span(
                         fileId: tokens.ElementAt(start).Span.FileId,
@@ -6645,7 +6645,7 @@ public static partial class ParserFunctions {
         else {
 
             return (
-                new ArrayExpression(
+                new ParsedArrayExpression(
                     expressions: output,
                     fillSizeExpr,
                     new Span(
