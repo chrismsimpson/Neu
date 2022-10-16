@@ -5945,6 +5945,7 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.SubtractAssign:
             case BinaryOperator.MultiplyAssign:
             case BinaryOperator.DivideAssign:    
+            case BinaryOperator.ModuloAssign:
             case BinaryOperator.BitwiseAndAssign:
             case BinaryOperator.BitwiseOrAssign:
             case BinaryOperator.BitwiseXorAssign:
