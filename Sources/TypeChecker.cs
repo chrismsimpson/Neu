@@ -4298,8 +4298,8 @@ public static partial class TypeCheckerFunctions {
                 var genericInterface = new Dictionary<Int32, Int32>();
 
                 var err = CheckTypesForCompat(
-                    ty,
                     hint,
+                    ty,
                     genericInterface,
                     expr.GetSpan(),
                     project);
@@ -6646,6 +6646,21 @@ public static partial class TypeCheckerFunctions {
 
         var lhsType = project.Types[lhsTypeId];
 
+        var optionalStructId = project
+            .FindStructInScope(0, "Optional") 
+            ?? throw new Exception("internal error: can't find builtin Optional type");
+
+        // This skips the type compatibility check if assigning a T to a T? without going through `Some`.
+
+        if (lhsType is GenericInstance _gi) {
+
+            if (_gi.StructId == optionalStructId
+                && _gi.TypeIds.Any(argId => argId == rhsTypeId)) {
+
+                return null;
+            }
+        }
+
         switch (lhsType) {
 
             case TypeVariable _: {
@@ -6661,7 +6676,7 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ?? 
                             new TypeCheckError(
-                                $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(genericInferences[lhsTypeId], project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                $"Type mismatch: expected {CodeGenFunctions.CodeGenType(genericInferences[lhsTypeId], project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                 span);   
                     }
                 }
@@ -6733,7 +6748,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? 
                                 new TypeCheckError(
-                                    $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                     span);
                         }
 
@@ -6801,7 +6816,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                     span);
                         }
 
@@ -6875,7 +6890,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                     span);
                         }
 
@@ -6943,7 +6958,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                                     span);
                         }
 
@@ -6960,7 +6975,7 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? 
                         new TypeCheckError(
-                            $"Parameter type mismatch: {CodeGenFunctions.CodeGenType(lhsTypeId, project)} vs {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                            $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
                             span);
                 }
 
