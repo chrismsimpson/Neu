@@ -1035,15 +1035,19 @@ public partial class CheckedBlock {
 
     public List<CheckedStatement> Stmts { get; init; }
 
+    public bool DefinitelyReturns { get; set; }
+
     ///
 
     public CheckedBlock() 
-        : this(new List<CheckedStatement>()) { }
+        : this(new List<CheckedStatement>(), false) { }
 
     public CheckedBlock(
-        List<CheckedStatement> stmts) { 
+        List<CheckedStatement> stmts,
+        bool definitelyReturns) { 
 
         this.Stmts = stmts;
+        this.DefinitelyReturns = definitelyReturns;
     }
 }
 
@@ -3666,6 +3670,8 @@ public static partial class TypeCheckerFunctions {
 
         var functionScopeId = checkedFunction.FuncScopeId;
 
+        var functionLinkage = checkedFunction.Linkage;
+
         var paramVars = new List<CheckedVariable>();
 
         foreach (var param in checkedFunction.Parameters) {
@@ -3718,6 +3724,18 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
+        if (functionLinkage != FunctionLinkage.External
+            && returnType != Compiler.VoidTypeId
+            && !block.DefinitelyReturns) {
+
+            // FIXME: Use better span
+
+            error = error ??
+                new TypeCheckError(
+                    "Control reaches end of non-void function",
+                    func.NameSpan);
+        }
+
         checkedFunction = project.Functions[funcId];
 
         checkedFunction.Block = block;
@@ -3737,6 +3755,8 @@ public static partial class TypeCheckerFunctions {
         var structure = project.Structs[structId];
 
         var structureScopeId = structure.ScopeId;
+
+        var structureLinkage = structure.DefinitionLinkage;
 
         var methodId = project
             .FindFuncInScope(structureScopeId, func.Name)
@@ -3786,6 +3806,18 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
+        if (structureLinkage != DefinitionLinkage.External
+            && returnType != Compiler.VoidTypeId
+            && !block.DefinitelyReturns) {
+
+            // FIXME: Use better span
+
+            error = error ??
+                new TypeCheckError(
+                    "Control reaches end of non-void function",
+                    func.NameSpan);
+        }
+
         checkedFunction = project.Functions[methodId];
 
         checkedFunction.Block = block;
@@ -3793,6 +3825,47 @@ public static partial class TypeCheckerFunctions {
         checkedFunction.ReturnType = returnType;
 
         return error;       
+    }
+
+    public static bool StatementDefinitelyReturns(
+        CheckedStatement statement) {
+
+        switch (statement) {
+
+            case CheckedReturnStatement _:
+                return true;
+
+            case CheckedIfStatement i: {
+
+                // TODO: Things like `if true` should be also accepted as
+                //       definitely returning, if we can prove at typecheck time
+                //       that it's always truthy.
+
+                if (i.Trailing is CheckedStatement elseStmt) {
+
+                    return i.Block.DefinitelyReturns && StatementDefinitelyReturns(elseStmt);
+                }
+                else {
+
+                    return false;
+                }
+            }
+
+            case CheckedBlockStatement b:
+                return b.Block.DefinitelyReturns;
+
+            case CheckedLoopStatement l:
+                return l.Block.DefinitelyReturns;
+
+            case CheckedWhileStatement w:
+                return w.Block.DefinitelyReturns;
+
+            case CheckedForStatement f: 
+                return f.Block.DefinitelyReturns;
+            
+            default: 
+                return false;
+        }
     }
 
     public static (CheckedBlock, Error?) TypeCheckBlock(
@@ -3812,6 +3885,11 @@ public static partial class TypeCheckerFunctions {
             var (checkedStmt, err) = TypeCheckStatement(stmt, blockScopeId, project, safetyMode);
 
             error = error ?? err;
+
+            if (StatementDefinitelyReturns(checkedStmt)) {
+
+                checkedBlock.DefinitelyReturns = true;
+            }
 
             checkedBlock.Stmts.Add(checkedStmt);
         }

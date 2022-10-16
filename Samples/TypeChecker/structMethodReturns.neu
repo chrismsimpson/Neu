@@ -1,0 +1,11 @@
+struct Foo {
+    value: Int32
+
+    // Same as a block with return in it, so this is fine
+    func getValue(this) => this.value
+}
+
+func main() {
+    let foo = Foo(value: 1)
+    printLine("{}", foo.getValue())
+}

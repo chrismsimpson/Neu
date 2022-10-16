@@ -1,0 +1,15 @@
+func foo() -> Int32 {
+    for i in 1..10 {
+        if i == 5 {
+            return i
+        }
+        // Missing else, BUT...
+    }
+
+    // ...we have a return here, so it's okay.
+    return -1
+}
+
+func main() {
+    printLine("{}", foo())
+}

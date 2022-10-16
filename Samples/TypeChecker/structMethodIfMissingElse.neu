@@ -1,0 +1,14 @@
+struct Foo {
+    value: Int32
+
+    func getValue(this) -> Int32 {
+        if this.value > 3 {
+            return this.value
+        }
+    }
+}
+
+func main() {
+    let foo = Foo(value: 1)
+    printLine("{}", foo.getValue())
+}

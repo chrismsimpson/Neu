@@ -40,6 +40,7 @@ public static partial class Program {
         TestEnums();
         TestInlineCPP();
         TestParser();
+        TestTypeChecker();
         TestSets();
         TestNamespaces();
 
@@ -417,6 +418,11 @@ public static partial class Program {
     public static ErrorOrVoid TestParser() {
 
         return TestSamples("./Samples/Parser");
+    }
+
+    public static ErrorOrVoid TestTypeChecker() {
+
+        return TestSamples("./Samples/TypeChecker");
     }
 
     public static ErrorOrVoid TestSets() {

@@ -1,0 +1,9 @@
+func foo() -> Int32 {
+    loop {
+        return 684
+    }
+}
+
+func main() {
+    printLine("{}", foo())
+}
