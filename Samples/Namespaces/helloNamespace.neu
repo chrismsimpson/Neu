@@ -1,0 +1,9 @@
+namespace Greeters {
+    func greet() {
+        printLine("Well, hello friends")
+    }
+}
+
+func main() {
+    Greeters.greet()
+}

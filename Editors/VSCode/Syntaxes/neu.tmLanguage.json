@@ -31,15 +31,15 @@
                 },
                 {
                     "name": "keyword.neu",
-                    "match": "\\b(func|extern|struct|class|throws|enum)\\b"
+                    "match": "\\b(func|extern|struct|class|throws|enum|namespace)\\b"
                 },
                 {
                     "name": "keyword.neu",
-                    "match": "\\b(var|let|anon|raw|none)\\b"
+                    "match": "\\b(var|let|anon|raw)\\b"
                 },
                 {
                     "name": "keyword.operator.new.neu",
-                    "match": "\\b(not|and|or)\\b"
+                    "match": "\\b(not|and|or|is|as)\\b"
                 },
                 {
                     "name": "support.type",

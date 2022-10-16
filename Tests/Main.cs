@@ -41,6 +41,7 @@ public static partial class Program {
         TestInlineCPP();
         TestParser();
         TestSets();
+        TestNamespaces();
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
@@ -421,5 +422,10 @@ public static partial class Program {
     public static ErrorOrVoid TestSets() {
 
         return TestSamples("./Samples/Sets");
+    }
+
+    public static ErrorOrVoid TestNamespaces() {
+
+        return TestSamples("./Samples/Namespaces");
     }
 }
