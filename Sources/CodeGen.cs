@@ -1542,6 +1542,8 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
+        output.Append("NeuInternal::");
+
         switch (op) {
 
             case BinaryOperator.Add: 
