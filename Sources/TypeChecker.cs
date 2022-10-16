@@ -577,10 +577,6 @@ public static partial class ProjectFunctions {
         return null;
     }
 
-
-
-
-
     // Find the namespace in the current scope, or one of its parents
 
     public static Int32? FindNamespaceInScope(
@@ -736,6 +732,162 @@ public static partial class ProjectFunctions {
         }
 
         return null;
+    }
+
+    public static String TypeNameForTypeId(
+        this Project project,
+        Int32 typeId) {
+
+        switch (project.Types[typeId]) {
+
+            case Builtin b: {
+
+                switch (typeId) {
+
+                    case Compiler.VoidTypeId:
+                        return "Void";
+
+                    case Compiler.Int8TypeId:
+                        return "Int8";
+                    
+                    case Compiler.Int16TypeId:
+                        return "Int16";
+                    
+                    case Compiler.Int32TypeId:
+                        return "Int32";
+                    
+                    case Compiler.Int64TypeId:
+                        return "Int64";
+
+                    case Compiler.UInt8TypeId:
+                        return "UInt8";
+                    
+                    case Compiler.UInt16TypeId:
+                        return "UInt16";
+
+                    case Compiler.UInt32TypeId:
+                        return "UInt32";
+
+                    case Compiler.UInt64TypeId:
+                        return "UInt64";
+
+                    case Compiler.IntTypeId:
+                        return "Int";
+
+                    case Compiler.UIntTypeId:
+                        return "UInt";
+
+                    case Compiler.CCharTypeId:
+                        return "CChar";
+
+                    case Compiler.CIntTypeId:
+                        return "CInt";
+
+                    case Compiler.StringTypeId:
+                        return "String";
+
+                    case Compiler.BoolTypeId:
+                        return "Bool";
+
+                    default:
+                        return "Unknown";
+                }
+            }
+
+            case EnumType e: {
+
+                return $"enum {project.Enums[e.EnumId].Name}";
+            }
+
+            case StructType s: {
+
+                if (project.Structs[s.StructId].DefinitionType == DefinitionType.Class) {
+
+                    return $"class {project.Structs[s.StructId].Name}";
+                }
+                else {
+
+                    return $"struct {project.Structs[s.StructId].Name}";
+                }
+            }
+
+            case GenericEnumInstance gei: {
+
+                var output = new StringBuilder($"enum {project.Enums[gei.EnumId].Name}");
+
+                output.Append('<');
+                
+                var first = true;
+
+                foreach (var arg in gei.TypeIds) {
+
+                    if (!first) {
+                        
+                        output.Append(", ");
+                    } 
+                    else {
+                        first = false;
+                    }
+                    
+                    output.Append(project.TypeNameForTypeId(arg));
+                }
+
+                output.Append('>');
+
+                return output.ToString();
+            }
+
+            case GenericInstance gi: {
+
+                var output = new StringBuilder();
+
+                if (project.Structs[gi.StructId].DefinitionType == DefinitionType.Class) {
+
+                    output.Append($"class {project.Structs[gi.StructId].Name}");
+                } 
+                else {
+                    
+                    output.Append("struct {project.Structs[gi.StructId].Name}");
+                }
+
+                output.Append('<');
+                
+                var first = true;
+                
+                foreach (var arg in gi.TypeIds) {
+
+                    if (!first) {
+                        
+                        output.Append(", ");
+                    } 
+                    else {
+                        
+                        first = false;
+                    }
+
+                    output.Append(project.TypeNameForTypeId(arg));
+                }
+
+                output.Append('>');
+
+                return output.ToString();
+            }
+
+            case TypeVariable v: {
+
+                return v.Name;
+            }
+
+            case RawPointerType p: {
+
+                return $"raw {project.TypeNameForTypeId(p.TypeId)}";
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
     }
 }
 
@@ -6690,7 +6842,7 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ?? 
                             new TypeCheckError(
-                                $"Type mismatch: expected {CodeGenFunctions.CodeGenType(genericInferences[lhsTypeId], project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                $"Type mismatch: expected {project.TypeNameForTypeId(genericInferences[lhsTypeId])}, but got {project.TypeNameForTypeId(rhsTypeId)}",
                                 span);   
                     }
                 }
@@ -6762,7 +6914,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? 
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
                                     span);
                         }
 
@@ -6830,7 +6982,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
                                     span);
                         }
 
@@ -6904,7 +7056,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
                                     span);
                         }
 
@@ -6972,7 +7124,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
                                     span);
                         }
 
@@ -6989,7 +7141,7 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? 
                         new TypeCheckError(
-                            $"Type mismatch: expected {CodeGenFunctions.CodeGenType(lhsTypeId, project)}, but got {CodeGenFunctions.CodeGenType(rhsTypeId, project)}",
+                            $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
                             span);
                 }
 
