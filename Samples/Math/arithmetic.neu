@@ -1,0 +1,13 @@
+func main() {
+    let a = 123 + 10
+    let b = 123 - 10
+    let c = 123 * 10
+    let d = 123 / 10
+    let e = 123 % 10
+
+    printLine("{}", a)
+    printLine("{}", b)
+    printLine("{}", c)
+    printLine("{}", d)
+    printLine("{}", e)
+}
