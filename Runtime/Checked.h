@@ -188,6 +188,11 @@ public:
         return m_value;
     }
 
+    ALWAYS_INLINE constexpr T valueUnchecked() const {
+
+        return m_value;
+    }
+
     ///
 
     constexpr void add(T other) {
