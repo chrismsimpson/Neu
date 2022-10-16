@@ -6213,6 +6213,16 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ?? argErr;
 
+                        if (callee.GenericParameters.Count <= idx) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "Trying to access generic parameter out of bounds",
+                                    span);
+
+                            continue;
+                        }
+
                         // Find the associated type variable for this parameter, we'll use it in substitution
 
                         Int32? _typeVarTypeId = null;
