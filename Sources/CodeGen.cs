@@ -589,7 +589,7 @@ public static partial class CodeGenFunctions {
 
                 // Make sure emitted classes always have a vtable.
             
-                output.Append($"    virtual ~{structure.Name}() = default;");
+                output.Append($"    virtual ~{structure.Name}() = default;\n");
 
                 break;
             }
@@ -1286,6 +1286,8 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
+        output.Append(CodeGenIndent(indent));
+        
         output.Append("{\n");
 
         foreach (var stmt in block.Stmts) {
