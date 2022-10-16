@@ -13,7 +13,7 @@
 #include <initializer_list>
 
 template<typename K, typename V, typename KeyTraits, bool IsOrdered>
-class Dictionary {
+class HashMap {
 
 private:
 

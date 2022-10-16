@@ -50,13 +50,13 @@ template<typename T, typename TraitsForT = Traits<T>>
 using OrderedHashTable = HashTable<T, TraitsForT, true>;
 
 template<typename K, typename V, typename KeyTraits = Traits<K>, bool IsOrdered = false>
-class Dictionary;
+class HashMap;
 
 template<typename T, typename TraitsForT = Traits<T>, bool IsOrdered = false>
 class Set;
 
 template<typename K, typename V, typename KeyTraits = Traits<K>>
-using OrderedHashMap = Dictionary<K, V, KeyTraits, true>;
+using OrderedHashMap = HashMap<K, V, KeyTraits, true>;
 
 template<typename T>
 class Badge;
