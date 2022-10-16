@@ -1,4 +1,6 @@
 extern struct String {
+    func number(anon number: Int64) -> String
+
     func split(this, anon c: CChar) -> [String]
     func characters(this) -> raw CChar
     func reverse(this) -> String
