@@ -962,6 +962,11 @@ public static partial class CodeGenFunctions {
             output.Append(CodeGenIndent(INDENT_SIZE));
             output.Append("return 0;\n");
         }
+        else if (fun.Throws && fun.ReturnType == Compiler.VoidTypeId) {
+            
+            output.Append(CodeGenIndent(INDENT_SIZE));
+            output.Append("return {};\n");
+        }
         
         output.Append("}\n");
 

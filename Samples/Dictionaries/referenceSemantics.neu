@@ -1,8 +1,7 @@
 // FIXME: changeValue() returns a value because a function that `throws` can't return void
 
-func changeValue(dictionary: var Dictionary<String, String>) throws -> Int64 {
+func changeValue(dictionary: var Dictionary<String, String>) throws {
     dictionary.set(key: "foo", value: "PASS")
-    return 123
 }
 
 func main() {
