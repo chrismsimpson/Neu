@@ -2980,7 +2980,8 @@ public static partial class CodeGenFunctions {
                 var keyTypeId = de.Entries[0].Item1.GetNeuType();
                 var valueTypeId = de.Entries[0].Item2.GetNeuType();
 
-                output.Append($"(Dictionary<{CodeGenType(keyTypeId, project)}, {CodeGenType(valueTypeId, project)}>({{");
+                output.Append(
+                    $"(TRY(Dictionary<{CodeGenType(keyTypeId, project)}, {CodeGenType(valueTypeId, project)}>::createWithEntries({{");
 
                 var first = true;
 
@@ -3002,7 +3003,7 @@ public static partial class CodeGenFunctions {
                     output.Append('}');
                 }
 
-                output.Append("}))");
+                output.Append("})))");
 
                 break;
             }

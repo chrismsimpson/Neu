@@ -51,28 +51,15 @@ public:
         return { };
     }
 
-    // FIXME: Remove this constructor once jakt knows how to call Dictionary::createEmpty()
+    // FIXME: Remove this constructor once neu knows how to call Dictionary::createEmpty()
 
     Dictionary()
         : m_storage(MUST(adoptNonNullRefOrErrorNomem(new (nothrow) Storage))) { }
-
-    // FIXME: Remove this constructor once jakt knows how to call Dictionary::createWithEntries()
 
     struct Entry {
         K key;
         V value;
     };
-
-    Dictionary(std::initializer_list<Entry> list)
-        : m_storage(MUST(adoptNonNullRefOrErrorNomem(new (nothrow) Storage))) {
-
-        MUST(ensureCapacity(list.size()));
-
-        for (auto& item : list) {
-
-            MUST(set(item.key, item.value));
-        }
-    }
 
     static ErrorOr<Dictionary> createEmpty() {
 
