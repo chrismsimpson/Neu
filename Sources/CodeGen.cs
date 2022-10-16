@@ -8,10 +8,37 @@ public static partial class CodeGenFunctions {
     public static String CodeGen(
         Project project,
         Scope scope) {
+        
+        var output = new StringBuilder();
+    
+        output.Append("#include \"../../../Runtime/lib.h\"\n");
 
+        output.Append(CodeGenNamespace(project, scope));
+
+        return output.ToString();
+    }
+
+    public static String CodeGenNamespace(
+        Project project,
+        Scope scope) {
+            
         var output = new StringBuilder();
 
-        output.Append("#include \"../../../Runtime/lib.h\"\n");
+        // Output the namespaces (and their children)
+
+        foreach (var childScopeId in scope.Children) {
+
+            // For now, require children of the current namespace to have names before being emitted
+
+            var childScope = project.Scopes[childScopeId];
+
+            if (childScope.NamespaceName is String name) {
+
+                output.Append($"namespace {name} {{\n");
+                output.Append(CodeGenNamespace(project, childScope));
+                output.Append("}\n");
+            }
+        }
 
         foreach (var (_, structId) in scope.Structs) {
 
@@ -100,6 +127,9 @@ public static partial class CodeGenFunctions {
         }
 
         return output.ToString();
+
+
+        
     }
 
     public static String CodeGenEnumPredecl(
@@ -1078,9 +1108,44 @@ public static partial class CodeGenFunctions {
         }
     }
 
+
+
+
+
+
+    public static String CodeGenNamespaceQualifier(
+        Int32 scopeId,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        Int32? currentScopeId = project.Scopes[scopeId].Parent;
+
+        while (currentScopeId is not null) {
+
+            // Walk backward, prepending the parents with names to the current output
+
+            if (project.Scopes[currentScopeId.Value].NamespaceName is String namespaceName) {
+
+                output.Insert(0, $"{namespaceName}::");
+            }
+
+            currentScopeId = project.Scopes[currentScopeId.Value].Parent;
+        }
+
+        return output.ToString();
+    }
+
+
+
+
+
+
     public static String CodeGenType(
         Int32 typeId,
         Project project) {
+
+        var output = new StringBuilder();
 
         var ty = project.Types[typeId];
 
@@ -1093,7 +1158,9 @@ public static partial class CodeGenFunctions {
 
             case GenericInstance gi: {
 
-                var output = new StringBuilder(project.Structs[gi.StructId].Name);
+                output.Append(CodeGenNamespaceQualifier(project.Structs[gi.StructId].ScopeId, project));
+
+                output.Append(project.Structs[gi.StructId].Name);
 
                 output.Append('<');
 
@@ -1120,7 +1187,9 @@ public static partial class CodeGenFunctions {
 
             case GenericEnumInstance gei: {
 
-                var output = new StringBuilder(project.Enums[gei.EnumId].Name);
+                output.Append(CodeGenNamespaceQualifier(project.Enums[gei.EnumId].ScopeId, project));
+
+                output.Append(project.Enums[gei.EnumId].Name);
 
                 output.Append('<');
 
@@ -1151,17 +1220,27 @@ public static partial class CodeGenFunctions {
 
                 if (inner.DefinitionType == DefinitionType.Class) {
 
-                    return $"NonNullRefPointer<{inner.Name}>";
+                    output.Append("NonNullRefPointer<");
+                    output.Append(CodeGenNamespaceQualifier(inner.ScopeId, project));
+                    output.Append(inner.Name);
+                    output.Append('>');
+
                 }
                 else {
 
-                    return inner.Name;
+                    output.Append(CodeGenNamespaceQualifier(inner.ScopeId, project));
+                    output.Append(inner.Name);
                 }
+
+                return output.ToString();
             }
 
             case EnumType e: {
 
-                return project.Enums[e.EnumId].Name;
+                output.Append(CodeGenNamespaceQualifier(project.Enums[e.EnumId].ScopeId, project));
+                output.Append(project.Enums[e.EnumId].Name);
+
+                return output.ToString();
             }
 
             case Builtin _: {

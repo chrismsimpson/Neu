@@ -62,7 +62,9 @@ public partial class Compiler {
             this.RawFiles.Count - 1, 
             this.RawFiles[this.RawFiles.Count - 1].Item2);
 
-        var (file, _) = ParserFunctions.ParseNamespace(lexed);
+        var index = 0;
+
+        var (file, _) = ParserFunctions.ParseNamespace(lexed, ref index);
 
         // Scope ID 0 is the global project-level scope that all files can see
 
@@ -97,8 +99,10 @@ public partial class Compiler {
 
             return new ErrorOr<String>(le);
         }
+
+        var index = 0;
         
-        var (parsedFile, parseErr) = ParserFunctions.ParseNamespace(lexed);
+        var (parsedFile, parseErr) = ParserFunctions.ParseNamespace(lexed, ref index);
 
         if (parseErr is Error pe) {
 

@@ -577,6 +577,67 @@ public static partial class ProjectFunctions {
         return null;
     }
 
+
+
+
+
+    // Find the namespace in the current scope, or one of its parents
+
+    public static Int32? FindNamespaceInScope(
+        this Project project,
+        Int32 scopeId,
+        String namespaceName) {
+
+        Int32? currentId = scopeId;
+
+        while (currentId is not null) {
+
+            var scope = project.Scopes[currentId.Value];
+
+            foreach (var childScopeId in scope.Children) {
+
+                var childScope = project.Scopes[childScopeId];
+
+                if (childScope.NamespaceName is String name) {
+
+                    if (name == namespaceName) {
+
+                        return childScopeId;
+                    }
+                }
+            }
+
+            currentId = scope.Parent;
+        }
+
+        return null;
+    }
+
+    // Find namespace in the current scope, but not any of its parents (strictly in the current scope)
+
+    public static Int32? FindNamespaceInScopeStrict(
+        this Project project,
+        Int32 scopeId,
+        String namespaceName) {
+
+        var scope = project.Scopes[scopeId];
+
+        foreach (var childScopeId in scope.Children) {
+
+            var childScope = project.Scopes[childScopeId];
+
+            if (childScope.NamespaceName is String name) {
+
+                if (name == namespaceName) {
+
+                    return childScopeId;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public static ErrorOrVoid AddFuncToScope(
         this Project project,
         Int32 scopeId,
@@ -836,6 +897,25 @@ public partial class CheckedEnumVariant {
             this.Span = span;
         }
     }
+
+///
+
+public partial class CheckedNamespace {
+
+    public String? Name { get; init; }
+
+    public Int32 ScopeId { get; init; }
+
+    ///
+
+    public CheckedNamespace(
+        String? name,
+        Int32 scopeId) {
+
+        this.Name = name;
+        this.ScopeId = scopeId;
+    }
+}
 
 ///
 
@@ -2697,6 +2777,8 @@ public partial class CheckedCall {
 ///
 
 public partial class Scope {
+
+    public String? NamespaceName { get; set; }
     
     public List<CheckedVariable> Vars { get; init; }
 
@@ -2710,32 +2792,42 @@ public partial class Scope {
 
     public Int32? Parent { get; init; }
 
+    // Namespaces may also have children that are also namespaces
+
+    public List<Int32> Children { get; init; }
+
     ///
 
     public Scope(
         Int32? parent) 
         : this(
+            namespaceName: null,
             new List<CheckedVariable>(),
             new List<(String, Int32)>(),
             new List<(String, Int32)>(),
             new List<(String, Int32)>(),
             new List<(String, Int32)>(),
-            parent) { }
+            parent,
+            children: new List<Int32>()) { }
 
     public Scope(
+        String? namespaceName,
         List<CheckedVariable> vars,
         List<(String, Int32)> structs,
         List<(String, Int32)> funcs,
         List<(String, Int32)> enums,
         List<(String, Int32)> types,
-        Int32? parent) {
+        Int32? parent,
+        List<Int32> children) {
 
+        this.NamespaceName = namespaceName;
         this.Vars = vars;
         this.Structs = structs;
         this.Funcs = funcs;
         this.Enums = enums;
         this.Parent = parent;
         this.Types = types;
+        this.Children = children;
     }
 }
 
@@ -2755,6 +2847,17 @@ public static partial class TypeCheckerFunctions {
         var projectEnumLength = project.Enums.Count;
 
         var projectFunctionLength = project.Functions.Count;
+
+        foreach (var ns in parsedNamespace.Namespaces) {
+
+            var namespaceScopeId = project.CreateScope(scopeId);
+
+            project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
+
+            project.Scopes[scopeId].Children.Add(namespaceScopeId);
+        
+            TypeCheckNamespace(ns, namespaceScopeId, project);
+        }
 
         for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
             
@@ -5737,7 +5840,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ??
                                 new TypeCheckError(
-                                    "no methods available on value",
+                                    $"no methods available on value (type: {checkedExpr.GetNeuType()})",
                                     mce.Expression.GetSpan());
 
                             return (
@@ -6065,6 +6168,24 @@ public static partial class TypeCheckerFunctions {
                 if (_enum.GenericParameters.Any()) {
 
                     namespaces[0].GenericParameters = _enum.GenericParameters;
+                }
+
+                return (callee, definitionType, error);
+            }
+            else if (project.FindNamespaceInScope(scopeId, ns)is Int32 namespaceId) {
+
+                if (project.FindStructInScope(scopeId, call.Name) is Int32 nsStructId) {
+
+                    var structure = project.Structs[nsStructId];
+
+                    if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 nsStructFuncId) {
+
+                        callee = project.Functions[nsStructFuncId];
+                    }
+                }
+                else if (project.FindFuncInScope(scopeId, call.Name) is Int32 nsFuncId) {
+
+                    callee = project.Functions[nsFuncId];
                 }
 
                 return (callee, definitionType, error);

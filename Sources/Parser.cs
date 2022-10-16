@@ -344,25 +344,33 @@ public static partial class ParsedVarDeclFunctions {
 
 public partial class ParsedNamespace {
 
+    public String? Name { get; set; }
+
     public List<ParsedFunction> Functions { get; init; }
 
     public List<ParsedStruct> Structs { get; init; }
 
     public List<ParsedEnum> Enums { get; init; }
 
+    public List<ParsedNamespace> Namespaces { get; init; }
+
     ///
 
     public ParsedNamespace()
-        : this(new List<ParsedFunction>(), new List<ParsedStruct>(), new List<ParsedEnum>()) { }
+        : this(null, new List<ParsedFunction>(), new List<ParsedStruct>(), new List<ParsedEnum>(), new List<ParsedNamespace>()) { }
 
     public ParsedNamespace(
+        String? name,
         List<ParsedFunction> functions,
         List<ParsedStruct> structs,
-        List<ParsedEnum> enums) {
+        List<ParsedEnum> enums,
+        List<ParsedNamespace> namespaces) {
 
+        this.Name = name;
         this.Functions = functions;
         this.Structs = structs;
         this.Enums = enums; 
+        this.Namespaces = namespaces;
     }
 }
 
@@ -2531,7 +2539,8 @@ public static partial class IListFunctions {
 public static partial class ParserFunctions {
 
     public static (ParsedNamespace, Error?) ParseNamespace(
-        List<Token> tokens) {
+        List<Token> tokens,
+        ref int index) {
 
         Trace($"ParseNamespace");
 
@@ -2539,7 +2548,7 @@ public static partial class ParserFunctions {
 
         var parsedNamespace = new ParsedNamespace();
 
-        var index = 0;
+        // var index = 0;
 
         var cont = true;
 
@@ -2602,6 +2611,71 @@ public static partial class ParserFunctions {
 
                             parsedNamespace.Structs.Add(structure);
                             
+                            break;
+                        }
+
+                        case "namespace": {
+
+                            index += 1;
+
+                            if (index + 2 < tokens.Count) {
+
+                                // First is the name
+                                // Then the LCurly and RCurly, then we parse the contents inside
+
+                                String? name = null;
+
+                                switch (tokens[index]) {
+
+                                    case NameToken namespaceName: {
+
+                                        index += 1;
+
+                                        name = namespaceName.Value;
+
+                                        break;
+                                    }
+
+                                    default: {
+
+                                        break;
+                                    }
+                                }
+
+                                switch (tokens[index]) {
+
+                                    case LCurlyToken _: {
+
+                                        index += 1;
+
+                                        var (ns, err) = ParseNamespace(tokens, ref index);
+
+                                        error = error ?? err;
+
+                                        index += 1;
+
+                                        if (index < tokens.Count) {
+
+                                            if (tokens[index] is RCurlyToken) {
+
+                                                index += 1;
+                                            }
+                                        }
+
+                                        ns.Name = name;
+
+                                        parsedNamespace.Namespaces.Add(ns);
+
+                                        break;
+                                    }
+
+                                    default: {
+
+                                        break;
+                                    }
+                                }
+                            }
+
                             break;
                         }
 
@@ -2720,6 +2794,13 @@ public static partial class ParserFunctions {
                     // ignore
 
                     index += 1;
+
+                    break;
+                }
+
+                case RCurlyToken _: {
+
+                    cont = false;
 
                     break;
                 }
