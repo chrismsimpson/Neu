@@ -1,0 +1,4 @@
+func main() {
+    let foo: UInt64 = 0
+    let bar: String = foo
+}

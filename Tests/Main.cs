@@ -424,12 +424,12 @@ public static partial class Program {
 
     public static ErrorOrVoid TestParser() {
 
-        return TestSamples("./Samples/Parser");
+        return TestSamples("./Tests/Parser");
     }
 
     public static ErrorOrVoid TestTypeChecker() {
 
-        return TestSamples("./Samples/TypeChecker");
+        return TestSamples("./Tests/TypeChecker");
     }
 
     public static ErrorOrVoid TestSets() {
