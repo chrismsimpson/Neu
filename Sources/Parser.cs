@@ -6377,6 +6377,15 @@ public static partial class ParserFunctions {
                 return (new ParsedOperatorExpression(BinaryOperator.DivideAssign, span), null);
             }
 
+            case PercentEqualToken _: {
+
+                index += 1;
+
+                return (
+                    new ParsedOperatorExpression(BinaryOperator.ModuloAssign, span),
+                    null);
+            }
+
             case DoubleEqualToken _: {
                 
                 index += 1;
