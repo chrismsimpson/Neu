@@ -611,7 +611,7 @@ public static partial class CodeGenFunctions {
 
         foreach (var field in structure.Fields) {
 
-            output.Append(new String(' ', INDENT_SIZE));
+            output.Append(CodeGenIndent(INDENT_SIZE));
 
             output.Append(CodeGenType(field.Type, project));
             
@@ -632,13 +632,13 @@ public static partial class CodeGenFunctions {
 
                 var funcOutput = CodeGenConstructor(func, project);
 
-                output.Append(new String(' ', INDENT_SIZE));
+                output.Append(CodeGenIndent(INDENT_SIZE));
                 output.Append(funcOutput);
                 output.Append('\n');
             }
             else {
 
-                output.Append(new String(' ', INDENT_SIZE));
+                output.Append(CodeGenIndent(INDENT_SIZE));
 
                 if (func.IsStatic()) {
 
@@ -924,7 +924,7 @@ public static partial class CodeGenFunctions {
             
             output.Append("\n");
             output.Append("{\n");
-            output.Append(new String(' ', INDENT_SIZE));
+            output.Append(CodeGenIndent(INDENT_SIZE));
         }
 
         if (fun.Name == "main") {
@@ -941,7 +941,7 @@ public static partial class CodeGenFunctions {
             }
 
             output.Append("{\n");
-            output.Append(new String(' ', INDENT_SIZE));
+            output.Append(CodeGenIndent(INDENT_SIZE));
 
             if (fun.Throws) {
 
@@ -959,7 +959,7 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main") {
             
-            output.Append(new String(' ', INDENT_SIZE));
+            output.Append(CodeGenIndent(INDENT_SIZE));
             output.Append("return 0;\n");
         }
         
@@ -1420,7 +1420,7 @@ public static partial class CodeGenFunctions {
 
                 if (ifStmt.Trailing is CheckedStatement e) {
 
-                    output.Append(new String(' ', indent));
+                    output.Append(CodeGenIndent(indent));
 
                     output.Append("else ");
 
@@ -1493,7 +1493,7 @@ public static partial class CodeGenFunctions {
 
                     if (!first) {
 
-                        output.Append(new String(' ', indent));
+                        output.Append(CodeGenIndent(indent));
                     }
                     else {
 
@@ -1526,13 +1526,6 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
-
-
-
-
-
-
-
 
     public static String CodeGenCheckedBinaryOp(
         int indent,
@@ -1624,15 +1617,6 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
-
-
-
-
-
-
-
-
-
 
     public static String CodeGenExpr(
         int indent,
