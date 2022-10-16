@@ -1,0 +1,8 @@
+class Foo {
+    func bar(var this) { }
+}
+
+func main() {
+    let foo = Foo()
+    foo.bar()
+}

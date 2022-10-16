@@ -6359,16 +6359,22 @@ public static partial class TypeCheckerFunctions {
                                 idx += 1;
                             }
                         }
-                    }
+                    
+                        if (callee.IsStatic()) {
 
-                    // Make sure that our call doesn't have a 'this' pointer to a static callee
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "Cannot call static method on an instance of an object",
+                                    span);
+                        }
 
-                    if (thisExpr is not null && callee.IsStatic()) {
+                        if (callee.IsMutating() && !thisExpr.IsMutable()) {
 
-                        error = error ?? 
-                            new TypeCheckError(
-                                "Cannot call static method on an instance of an object",
-                                span);
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "Cannot call mutating method on an immutable object instance",
+                                    span);
+                        }
                     }
 
                     // This will be 0 for functions or 1 for instance methods, because of the
