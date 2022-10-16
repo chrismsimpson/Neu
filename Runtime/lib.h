@@ -104,13 +104,6 @@ struct Range {
     T end { };
 };
 
-// FIXME: Remove this once we can call qualified functions like "String.number" directly from neu
-
-inline String runtimeHelperNumberToString(Int64 number) {
-
-    return String::number(number);
-}
-
 ErrorOr<int> _neu_main(Array<String>);
 
 template<typename T>
