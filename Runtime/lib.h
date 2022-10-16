@@ -79,12 +79,19 @@
 #include "StringView.cpp"
 #include "Utf8View.cpp"
 
-using Float = float; // 32-bit
-using Double = double; // 64-bit
-
 #include "File.h"
 
 #include "File.cpp"
+
+#ifdef NEU_CONTINUE_ON_PANIC
+constexpr auto _neu_continue_on_panic = true;
+#else
+constexpr auto _neu_continue_on_panic = false;
+#endif
+
+
+using Float = float; // 32-bit
+using Double = double; // 64-bit
 
 template<typename T>
 struct Range {

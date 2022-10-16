@@ -1108,11 +1108,6 @@ public static partial class CodeGenFunctions {
         }
     }
 
-
-
-
-
-
     public static String CodeGenNamespaceQualifier(
         Int32 scopeId,
         Project project) {
@@ -1135,11 +1130,6 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
-
-
-
-
-
 
     public static String CodeGenType(
         Int32 typeId,
@@ -1287,7 +1277,7 @@ public static partial class CodeGenFunctions {
         var output = new StringBuilder();
 
         output.Append(CodeGenIndent(indent));
-        
+
         output.Append("{\n");
 
         foreach (var stmt in block.Stmts) {
@@ -1536,6 +1526,113 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
+
+
+
+
+
+
+
+
+    public static String CodeGenCheckedBinaryOp(
+        int indent,
+        CheckedExpression lhs,
+        CheckedExpression rhs,
+        Int32 typeId,
+        BinaryOperator op,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        output.Append("[](auto _neu_lhs, auto _neu_rhs) {\n");
+        output.Append("Checked<");
+        output.Append(CodeGenType(typeId, project));
+        output.Append("> _neu_checked = _neu_lhs;\n");
+        output.Append("_neu_checked ");
+
+        var opStr = op switch {
+
+            BinaryOperator.Add => '+',
+            BinaryOperator.Subtract => '-',
+            BinaryOperator.Multiply => '*',
+            BinaryOperator.Divide => '/',
+            BinaryOperator.Modulo => '%',
+            _ => throw new Exception($"Checked binary operation codegen is not supported for BinaryOperator::{op}")
+        };
+
+        output.Append(opStr);
+        output.Append("= ");
+        output.Append("_neu_rhs;\n");
+        output.Append("if (_neu_checked.hasOverflow()) {\n");
+
+        output.Append($"\n\n// FIXME: This should print to stderr, but the tests compare stdout.\noutLine(\n\"Panic: {{}} in checked binary operation `{{}} {opStr} {{}}`\",\n_neu_rhs == 0 ? \"Division by zero\" : \"Overflow\", _neu_lhs, _neu_rhs\n);\n");
+
+        output.Append("if (!_neu_continue_on_panic) VERIFY_NOT_REACHED();\n");
+        output.Append("}\n");
+        output.Append("return _neu_checked.valueUnchecked();\n");
+        output.Append("}(");
+        output.Append(CodeGenExpr(indent, lhs, project));
+        output.Append(", ");
+        output.Append(CodeGenExpr(indent, rhs, project));
+        output.Append(')');
+
+        return output.ToString();
+    }
+
+    public static String CodeGenCheckedBinaryOpAssign(
+        int indent,
+        CheckedExpression lhs,
+        CheckedExpression rhs,
+        Int32 typeId,
+        BinaryOperator op,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        output.Append('{');
+        output.Append("auto& _neu_lhs = ");
+        output.Append(CodeGenExpr(indent, lhs, project));
+        output.Append(';');
+        output.Append("auto _neu_rhs = ");
+        output.Append(CodeGenExpr(indent, rhs, project));
+        output.Append(';');
+        output.Append("Checked<");
+        output.Append(CodeGenType(typeId, project));
+        output.Append("> _neu_checked = _neu_lhs;");
+        output.Append("_neu_checked ");
+
+        var opStr = op switch {
+
+            BinaryOperator.AddAssign => '+',
+            BinaryOperator.SubtractAssign => '-',
+            BinaryOperator.MultiplyAssign => '*',
+            BinaryOperator.DivideAssign => '/',
+            BinaryOperator.ModuloAssign => '%',
+            _ => throw new Exception($"Checked binary operation assignment codegen is not supported for BinaryOperator::{op}")
+        };
+
+        output.Append(opStr);
+        output.Append("= _neu_rhs;");
+        output.Append("if (_neu_checked.hasOverflow()) {");
+
+        output.Append($"\n\n// FIXME: This should print to stderr, but the tests compare stdout\noutLine(\n\"Panic: {{}} in checked binary operation `{{}} {opStr} {{}}`\",\n_neu_rhs == 0 ? \"Division by zero\" : \"Overflow\", _neu_lhs, _neu_rhs\n);\n");
+
+        output.Append("if (!_neu_continue_on_panic) VERIFY_NOT_REACHED();");
+        output.Append('}');
+        output.Append("_neu_lhs = _neu_checked.valueUnchecked();");
+        output.Append('}');
+
+        return output.ToString();
+    }
+
+
+
+
+
+
+
+
+
 
     public static String CodeGenExpr(
         int indent,
@@ -2540,6 +2637,10 @@ public static partial class CodeGenFunctions {
 
                 output.Append("(");
 
+                var exprTy = expr.GetNeuType();
+
+                var exprIsInt = NeuTypeFunctions.IsInteger(exprTy);
+
                 switch (binOp.Operator) {
 
                     case BinaryOperator.NoneCoalescing: {
@@ -2559,6 +2660,42 @@ public static partial class CodeGenFunctions {
                         output.Append(", ");
                         output.Append(CodeGenExpr(indent, binOp.Rhs, project));
                         output.Append(')');
+
+                        break;
+                    }
+
+                    case BinaryOperator.Add when exprIsInt:
+                    case BinaryOperator.Subtract when exprIsInt:
+                    case BinaryOperator.Multiply when exprIsInt:
+                    case BinaryOperator.Divide when exprIsInt:
+                    case BinaryOperator.Modulo when exprIsInt: {
+
+                        output.Append(
+                            CodeGenCheckedBinaryOp(
+                                indent,
+                                binOp.Lhs,
+                                binOp.Rhs,
+                                exprTy,
+                                binOp.Operator,
+                                project));
+
+                        break;
+                    }
+
+                    case BinaryOperator.AddAssign when exprIsInt:
+                    case BinaryOperator.SubtractAssign when exprIsInt:
+                    case BinaryOperator.MultiplyAssign when exprIsInt:
+                    case BinaryOperator.DivideAssign when exprIsInt:
+                    case BinaryOperator.ModuloAssign when exprIsInt: {
+
+                        output.Append(
+                            CodeGenCheckedBinaryOpAssign(
+                                indent,
+                                binOp.Lhs,
+                                binOp.Rhs,
+                                exprTy,
+                                binOp.Operator,
+                                project));
 
                         break;
                     }

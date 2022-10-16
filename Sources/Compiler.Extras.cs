@@ -96,6 +96,7 @@ public partial class Compiler {
             projRuntimeCMakeFileContents.Append($"cmake_minimum_required(VERSION 3.21)\n\n");
             projRuntimeCMakeFileContents.Append($"set(CMAKE_CXX_STANDARD 20)\n\n");
             projRuntimeCMakeFileContents.Append($"add_compile_options(-Wno-user-defined-literals)\n\n");
+            projRuntimeCMakeFileContents.Append($"add_compile_options(-DNEU_CONTINUE_ON_PANIC)\n\n");
 
             
 
@@ -136,7 +137,10 @@ public partial class Compiler {
             projOutputCMakeFileContents.Append($"project (Output-{id})\n\n");
             projOutputCMakeFileContents.Append($"cmake_minimum_required(VERSION 3.21)\n\n");
             projOutputCMakeFileContents.Append($"set(CMAKE_CXX_STANDARD 20)\n\n");
+            
             projOutputCMakeFileContents.Append($"add_compile_options(-Wno-user-defined-literals)\n\n");
+            projOutputCMakeFileContents.Append($"add_compile_options(-DNEU_CONTINUE_ON_PANIC)\n\n");
+
             projOutputCMakeFileContents.Append($"add_executable({outputTargetName} output.cpp)\n\n");
             projOutputCMakeFileContents.Append($"target_link_libraries({outputTargetName} {runtimeTargetName})");
             

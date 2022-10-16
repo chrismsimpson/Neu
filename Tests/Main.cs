@@ -5,7 +5,7 @@ public static partial class Program {
 
     public static Int32 SuccesfulTests = 0;
 
-    public static void Main() {
+    public static void Main(String[] args) {
 
         Compiler.CleanTests();
 
@@ -17,32 +17,39 @@ public static partial class Program {
 
         var start = System.Environment.TickCount;
 
-        // TestScratchpad();
+        if (args.Contains("scratchpad")) {
 
-        // TestApps();
+            TestScratchpad();
+        }
+        else if (args.Contains("apps")) {
 
-        TestBasics();
-        TestControlFlow();
-        TestFunctions();
-        TestMath();
-        TestVariables();
-        TestStrings();
-        TestArrays();
-        TestOptional();
-        TestTuples();
-        TestStructs();
-        TestPointers();
-        TestClasses();
-        TestBoolean();
-        TestRanges();
-        TestDictionaries();
-        TestGenerics();
-        TestEnums();
-        TestInlineCPP();
-        TestParser();
-        TestTypeChecker();
-        TestSets();
-        TestNamespaces();
+            TestApps();
+        }
+        else {
+
+            TestBasics();
+            TestControlFlow();
+            TestFunctions();
+            TestMath();
+            TestVariables();
+            TestStrings();
+            TestArrays();
+            TestOptional();
+            TestTuples();
+            TestStructs();
+            TestPointers();
+            TestClasses();
+            TestBoolean();
+            TestRanges();
+            TestDictionaries();
+            TestGenerics();
+            TestEnums();
+            TestInlineCPP();
+            TestParser();
+            TestTypeChecker();
+            TestSets();
+            TestNamespaces();
+        }
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
 
