@@ -1168,6 +1168,50 @@ public static partial class LexerFunctions {
                         new Span(fileId, start, index)));
             }
         }
+        else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'o') {
+
+            // Octal number
+
+            var start = index;
+
+            index += 2;
+
+            while (index < bytes.Length && bytes[index].IsOctalDigit()
+                || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_')) {
+
+                index += 1;
+            }
+
+            if (ToChar(bytes[index - 1]) == '_') {
+
+                return (
+                    new UnknownToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "octal number literal cannot end with underscore",
+                        new Span(fileId, start, index)));
+            }
+
+            var str = UTF8.GetString(bytes[(start + 2)..index]).Replace("_", "");
+
+            Int64 octalNumber = 0;
+
+            try {
+
+                octalNumber = ToInt64(str, 8);
+
+                return (
+                    MakeNumberToken(null, null, octalNumber, new Span(fileId, start, index)),
+                    null);
+            }
+            catch {
+                
+                return (
+                    new UnknownToken(new Span(fileId, start, index)), 
+                    new ParserError(
+                        "could not parse octal number", 
+                        new Span(fileId, start, index)));
+            }
+        }
         else if (bytes.MatchLiteralCast(ref index) is LiteralCast literalCast) {
 
             // Literal cast
@@ -1181,6 +1225,8 @@ public static partial class LexerFunctions {
             var isHex = false;
 
             var isBinary = false;
+
+            var isOctal = false;
 
             if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'x') {
 
@@ -1207,7 +1253,7 @@ public static partial class LexerFunctions {
                             new Span(fileId, start, index)));
                 }
             }
-            else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'x') {
+            else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'b') {
 
                 isBinary = true;
 
@@ -1231,6 +1277,31 @@ public static partial class LexerFunctions {
                         new UnknownToken(new Span(fileId, start, index)),
                         new ParserError(
                             "binary number literal cannot end with underscore",
+                            new Span(fileId, start, index)));
+                }
+            }
+            else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'o') {
+
+                isOctal = true;
+
+                index += 2;
+
+                literalStart += 2;
+
+                // Octal number
+
+                while (index < bytes.Length && bytes[index].IsOctalDigit()
+                    || (ToChar(bytes[index]) == '_' && ToChar(bytes[index - 1]) != '_')) {
+
+                    index += 1;
+                }
+
+                if (ToChar(bytes[index - 1]) == '_') {
+
+                    return (
+                        new UnknownToken(new Span(fileId, start, index)),
+                        new ParserError(
+                            "octal number literal cannot end with underscore",
                             new Span(fileId, start, index)));
                 }
             }
@@ -1273,6 +1344,10 @@ public static partial class LexerFunctions {
                 else if (isBinary) {
 
                     number = ToInt64(str, 2);
+                }
+                else if (isOctal) {
+
+                    number = ToInt64(str, 8);
                 }
                 else {
 
@@ -1712,6 +1787,26 @@ public static partial class CharExtensions {
         var c = ToChar(b);
 
         return Char.IsLetterOrDigit(c);
+    }
+
+    public static bool IsOctalDigit(
+        this byte b) {
+
+        switch (ToChar(b)) {
+
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     public static bool IsAsciiDigit(
