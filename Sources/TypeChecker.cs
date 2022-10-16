@@ -3549,7 +3549,7 @@ public static partial class TypeCheckerFunctions {
 
             var checkedConstructor = new CheckedFunction(
                 name: structure.Name,
-                throws: false,
+                throws: structure.DefinitionType == DefinitionType.Class,
                 returnType: structTypeId,
                 parameters: constructorParams,
                 genericParameters: new List<FunctionGenericParameter>(),

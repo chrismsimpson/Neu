@@ -2,7 +2,7 @@ class Person {
     name: String
     age: Int64
 
-    func generate(name: String, age: Int64) -> Person {
+    func generate(name: String, age: Int64) throws -> Person {
         return Person(name: name, age: age + 1000);
     }
 }

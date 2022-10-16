@@ -989,7 +989,7 @@ public static partial class CodeGenFunctions {
 
                 if (structure.DefinitionType == DefinitionType.Class) {
 
-                    var output = new StringBuilder($"static NonNullRefPointer<{func.Name}> create");
+                    var output = new StringBuilder($"static ErrorOr<NonNullRefPointer<{func.Name}>> create");
 
                     output.Append('(');
 
@@ -1013,7 +1013,7 @@ public static partial class CodeGenFunctions {
                         output.Append(param.Variable.Name);
                     }
 
-                    output.Append($") {{ auto o = adoptRef(*new {func.Name}); ");
+                    output.Append($") {{ auto o = TRY(adoptNonNullRefOrErrorNomem(new (nothrow) {func.Name})); ");
 
                     foreach (var param in func.Parameters) {
 
