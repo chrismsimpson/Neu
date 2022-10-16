@@ -9,18 +9,18 @@
 // NOTE: This macro works with any result type that has the expected APIs.
 //       It's designed with Result and Error in mind.
 
-#define TRY(expression)                                 \
+#define TRY(...)                                        \
     ({                                                  \
-        auto _temporaryResult = (expression);           \
+        auto _temporaryResult = (__VA_ARGS__);          \
         if (_temporaryResult.isError()) {               \
             return _temporaryResult.releaseError();     \
         }                                               \
         _temporaryResult.releaseValue();                \
     })
 
-#define MUST(expression)                        \
-    ({                                          \
-        auto _temporaryResult = (expression);   \
-        VERIFY(!_temporaryResult.isError());    \
-        _temporaryResult.releaseValue();        \
+#define MUST(...)                                   \
+    ({                                              \
+        auto _temporaryResult = (__VA_ARGS__);      \
+        VERIFY(!_temporaryResult.isError());        \
+        _temporaryResult.releaseValue();            \
     })
