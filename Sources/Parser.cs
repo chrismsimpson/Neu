@@ -162,6 +162,27 @@ public partial class ParsedType {
         }
     }
 
+    public partial class ParsedDictionaryType: ParsedType {
+
+        public ParsedType Key { get; init; }
+        
+        public ParsedType Value { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public ParsedDictionaryType(
+            ParsedType key,
+            ParsedType value,
+            Span span) {
+
+            this.Key = key;
+            this.Value = value;
+            this.Span = span;
+        }
+    }
+
     public partial class ParsedSetType: ParsedType {
 
         public ParsedType Type { get; init; }
@@ -6860,22 +6881,73 @@ public static partial class ParserFunctions {
 
             // [T] is shorthand for Array<T>
 
+            // [K:V] is shorthand for Dictionary<K, V>
+
             index += 1;
 
             var (ty, err) = ParseTypeName(tokens, ref index);
 
-            if (tokens[index] is RSquareToken) {
+            // if (tokens[index] is RSquareToken) {
 
-                index += 1;
+            //     index += 1;
 
-                return (
-                    new ParsedArrayType(
-                        ty, 
-                        new Span(
-                            fileId: start.FileId, 
-                            start: start.Start, 
-                            end: tokens[index - 1].Span.End)),
-                    err);   
+            //     return (
+            //         new ParsedArrayType(
+            //             ty, 
+            //             new Span(
+            //                 fileId: start.FileId, 
+            //                 start: start.Start, 
+            //                 end: tokens[index - 1].Span.End)),
+            //         err);   
+            // }
+
+            switch (tokens[index]) {
+
+                case RSquareToken _: {
+
+                    index += 1;
+
+                    return (
+                        new ParsedArrayType(
+                            ty, 
+                            new Span(
+                                fileId: start.FileId, 
+                                start: start.Start, 
+                                end: tokens[index - 1].Span.End)),
+                        err);   
+                }
+
+                case ColonToken _: {
+
+                    index += 1;
+
+                    var (valueTy, valueErr) = ParseTypeName(tokens, ref index);
+
+                    if (index < tokens.Count) {
+
+                        if (tokens[index] is RSquareToken) {
+
+                            index += 1;
+
+                            return (
+                                new ParsedDictionaryType(
+                                    ty,
+                                    valueTy,
+                                    new Span(
+                                        fileId: start.FileId,
+                                        start: start.Start,
+                                        end: tokens[index - 1].Span.End)),
+                                err ?? valueErr);
+                        }
+                    }
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
             }
 
             return (

@@ -7029,6 +7029,30 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
+            case ParsedDictionaryType dt: {
+
+                var (keyType, keyErr) = TypeCheckTypeName(dt.Key, scopeId, project);
+
+                error = error ?? keyErr;
+
+                var (valueType, valueErr) = TypeCheckTypeName(dt.Value, scopeId, project);
+
+                error = error ?? valueErr;
+
+                var dictStructId = project
+                    .FindStructInScope(0, "Dictionary") 
+                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+
+                var typeId = project.FindOrAddTypeId(
+                    new GenericInstance(
+                        dictStructId,
+                        new List<Int32>(new [] { keyType, valueType })));
+
+                return (
+                    typeId,
+                    error);
+            }
+
             case ParsedSetType st: {
 
                 var (innerTy, err) = TypeCheckTypeName(st.Type, scopeId, project);

@@ -45,7 +45,7 @@ extern struct Dictionary<K, V> {
     func capacity(this) -> UInt
     func keys(this) -> [K]
     func hash(this) -> UInt32
-    func Dictionary<A, B>() -> Dictionary<A, B>
+    func Dictionary<A, B>() -> [A: B]
 }
 
 extern struct Set<V> {
