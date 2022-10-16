@@ -1542,33 +1542,35 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append("[](auto _neu_lhs, auto _neu_rhs) {\n");
-        output.Append("Checked<");
+        switch (op) {
+
+            case BinaryOperator.Add: 
+                output.Append("checkedAdd");
+                break;
+
+            case BinaryOperator.Subtract:
+                output.Append("checkedSub");
+                break;
+
+            case BinaryOperator.Multiply:
+                output.Append("checkedMul");
+                break;
+
+            case BinaryOperator.Divide: 
+                output.Append("checkedDiv");
+                break;
+
+            case BinaryOperator.Modulo: 
+                output.Append("checkedMod");
+                break;
+
+            default:
+                throw new Exception($"Checked binary operation codegen is not supported for BinaryOperator::{op}");
+        }
+
+        output.Append('<');
         output.Append(CodeGenType(typeId, project));
-        output.Append("> _neu_checked = _neu_lhs;\n");
-        output.Append("_neu_checked ");
-
-        var opStr = op switch {
-
-            BinaryOperator.Add => '+',
-            BinaryOperator.Subtract => '-',
-            BinaryOperator.Multiply => '*',
-            BinaryOperator.Divide => '/',
-            BinaryOperator.Modulo => '%',
-            _ => throw new Exception($"Checked binary operation codegen is not supported for BinaryOperator::{op}")
-        };
-
-        output.Append(opStr);
-        output.Append("= ");
-        output.Append("_neu_rhs;\n");
-        output.Append("if (_neu_checked.hasOverflow()) {\n");
-
-        output.Append($"\n\n// FIXME: This should print to stderr, but the tests compare stdout.\noutLine(\n\"Panic: {{}} in checked binary operation `{{}} {opStr} {{}}`\",\n_neu_rhs == 0 ? \"Division by zero\" : \"Overflow\", _neu_lhs, _neu_rhs\n);\n");
-
-        output.Append("if (!NeuInternal::continue_on_panic) VERIFY_NOT_REACHED();\n");
-        output.Append("}\n");
-        output.Append("return _neu_checked.valueUnchecked();\n");
-        output.Append("}(");
+        output.Append(">(");
         output.Append(CodeGenExpr(indent, lhs, project));
         output.Append(", ");
         output.Append(CodeGenExpr(indent, rhs, project));
@@ -1588,36 +1590,42 @@ public static partial class CodeGenFunctions {
         var output = new StringBuilder();
 
         output.Append('{');
-        output.Append("auto& _neu_lhs = ");
+        output.Append("auto& _neu_ref = ");
         output.Append(CodeGenExpr(indent, lhs, project));
         output.Append(';');
-        output.Append("auto _neu_rhs = ");
-        output.Append(CodeGenExpr(indent, rhs, project));
-        output.Append(';');
-        output.Append("Checked<");
-        output.Append(CodeGenType(typeId, project));
-        output.Append("> _neu_checked = _neu_lhs;");
-        output.Append("_neu_checked ");
+        output.Append("_neu_ref = NeuInternal::");
 
-        var opStr = op switch {
+        switch (op) {
 
-            BinaryOperator.AddAssign => '+',
-            BinaryOperator.SubtractAssign => '-',
-            BinaryOperator.MultiplyAssign => '*',
-            BinaryOperator.DivideAssign => '/',
-            BinaryOperator.ModuloAssign => '%',
-            _ => throw new Exception($"Checked binary operation assignment codegen is not supported for BinaryOperator::{op}")
+            case BinaryOperator.AddAssign:
+                output.Append("checkedAdd");
+                break;
+
+            case BinaryOperator.SubtractAssign:
+                output.Append("checkedSub");
+                break;
+
+            case BinaryOperator.MultiplyAssign:
+                output.Append("checkedMul");
+                break;
+
+            case BinaryOperator.DivideAssign:
+                output.Append("checkedDiv");
+                break;
+
+            case BinaryOperator.ModuloAssign:
+                output.Append("checkedMod");
+                break;
+
+            default:
+                throw new Exception($"Checked binary operation assignment codegen is not supported for BinaryOperator::{op}");
         };
 
-        output.Append(opStr);
-        output.Append("= _neu_rhs;");
-        output.Append("if (_neu_checked.hasOverflow()) {");
-
-        output.Append($"\n\n// FIXME: This should print to stderr, but the tests compare stdout\noutLine(\n\"Panic: {{}} in checked binary operation `{{}} {opStr} {{}}`\",\n_neu_rhs == 0 ? \"Division by zero\" : \"Overflow\", _neu_lhs, _neu_rhs\n);\n");
-
-        output.Append("if (!NeuInternal::continue_on_panic) VERIFY_NOT_REACHED();");
-        output.Append('}');
-        output.Append("_neu_lhs = _neu_checked.valueUnchecked();");
+        output.Append('<');
+        output.Append(CodeGenType(typeId, project));
+        output.Append(">(_neu_ref, ");
+        output.Append(CodeGenExpr(indent, rhs, project));
+        output.Append(");");
         output.Append('}');
 
         return output.ToString();
