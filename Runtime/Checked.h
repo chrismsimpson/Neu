@@ -232,6 +232,17 @@ public:
         m_value /= other;
     }
 
+    constexpr void mod(T other) {
+
+        auto initial = m_value;
+        
+        div(other);
+        
+        m_value *= other;
+        
+        m_value = initial - m_value;
+    }
+
     ///
 
     constexpr Checked& operator+=(
@@ -301,6 +312,24 @@ public:
     constexpr Checked& operator/=(T other) {
 
         div(other);
+        
+        return *this;
+    }
+
+    ///
+
+    constexpr Checked& operator%=(Checked const& other) {
+
+        m_overflow |= other.m_overflow;
+        
+        mod(other.value());
+        
+        return *this;
+    }
+
+    constexpr Checked& operator%=(T other) {
+
+        mod(other);
         
         return *this;
     }
