@@ -84,13 +84,6 @@
 
 #include "File.cpp"
 
-#ifdef NEU_CONTINUE_ON_PANIC
-constexpr auto _neu_continue_on_panic = true;
-#else
-constexpr auto _neu_continue_on_panic = false;
-#endif
-
-
 using Float = float; // 32-bit
 using Double = double; // 64-bit
 
@@ -104,50 +97,136 @@ struct Range {
     T end { };
 };
 
-ErrorOr<int> _neu_main(Array<String>);
+namespace NeuInternal {
 
-template<typename T>
-inline constexpr T __arithmeticShiftRight(T value, size_t steps) {
+#ifdef NEU_CONTINUE_ON_PANIC
+constexpr auto continue_on_panic = true;
+#else
+constexpr auto continue_on_panic = false;
+#endif
 
-    if constexpr (IsSigned<T>) {
+    ErrorOr<int> main(Array<String>);
 
-        if constexpr (sizeof(T) == 1) {
+    template<typename T>
+    inline constexpr T arithmeticShiftRight(T value, size_t steps) {
 
-            auto sign = (value & 0x80);
-            
-            // 8-bit variant
-            
-            return ((value >> steps) | sign);
+        if constexpr (IsSigned<T>) {
+
+            if constexpr (sizeof(T) == 1) {
+
+                auto sign = (value & 0x80);
+                
+                // 8-bit variant
+                
+                return ((value >> steps) | sign);
+            }
+            else if constexpr (sizeof(T) == 2) {
+                
+                auto sign = (value & 0x8000);
+                
+                // 16-bit variant
+                
+                return ((value >> steps) | sign);
+            }
+            else if constexpr (sizeof(T) == 4) {
+                
+                auto sign = (value & 0x80000000);
+                
+                // 32-bit variant
+                
+                return ((value >> steps) | sign);
+            }
+            else if constexpr (sizeof(T) == 8) {
+                
+                auto sign = (value & 0x8000000000000000);
+                
+                // 64-bit variant
+                
+                return ((value >> steps) | sign);
+            }
+        } 
+        else {
+
+            return (value >> steps);
         }
-        else if constexpr (sizeof(T) == 2) {
-            
-            auto sign = (value & 0x8000);
-            
-            // 16-bit variant
-            
-            return ((value >> steps) | sign);
-        }
-        else if constexpr (sizeof(T) == 4) {
-            
-            auto sign = (value & 0x80000000);
-            
-            // 32-bit variant
-            
-            return ((value >> steps) | sign);
-        }
-        else if constexpr (sizeof(T) == 8) {
-            
-            auto sign = (value & 0x8000000000000000);
-            
-            // 64-bit variant
-            
-            return ((value >> steps) | sign);
-        }
-    } 
-    else {
-
-        return (value >> steps);
     }
+
+    template<typename Value>
+    struct ExplicitValue {
+
+        ExplicitValue(Value&& v)
+            : value(move(v)) { }
+
+        ExplicitValue(Value const& v)
+            : value(v) { }
+
+        Value value;
+    };
+
+    template<>
+    struct ExplicitValue<void> {
+
+        ExplicitValue() { }
+    };
+
+    template<typename Value, typename Return>
+    struct ExplicitValueOrReturn {
+
+        template<typename U>
+        ExplicitValueOrReturn(ExplicitValue<U>&& v)
+            : value(ExplicitValue<Value> { move(v.value) }) { }
+
+        ExplicitValueOrReturn(ExplicitValue<void>&&)
+            : value(ExplicitValue<void> { }) { }
+
+
+        template<typename U>
+        ExplicitValueOrReturn(U&& v) requires(!IsVoid<Return>)
+            : value(Return { forward<U>(v) }) { }
+
+        ExplicitValueOrReturn(void) requires(IsVoid<Return>)
+            : value(Empty { }) { }
+
+        bool isReturn() const { 
+            
+            return value.template has<Conditional<IsVoid<Return>, Empty, Return>>();
+        }
+
+        Return releaseReturn() {
+
+            if constexpr (IsVoid<Return>) {
+
+                return;
+            }
+            else {
+
+                return move(value).template get<Return>();
+            }
+        }
+
+        Value releaseValue() {
+
+            if constexpr (IsVoid<Value>) {
+
+                return;
+            }
+            else {
+
+                return move(value).template get<ExplicitValue<Value>>().value;
+            }
+        }
+
+        Variant<Conditional<IsVoid<Return>, Empty, Return>, ExplicitValue<Value>> value;
+    };
+
+#define NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(x) ({  \
+    auto&& _neu_value = x;                          \
+    if (_neu_value.isReturn()) {                    \
+        return _neu_value.releaseReturn();          \
+    }                                               \
+    _neu_value.releaseValue();                      \
+})
+
 }
 
 
@@ -225,91 +304,6 @@ inline constexpr T __arithmeticShiftRight(T value, size_t steps) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-template<typename Value>
-struct _NeuExplicitValue {
-
-    _NeuExplicitValue(Value&& v)
-        : value(move(v)) { }
-
-    _NeuExplicitValue(Value const& v)
-        : value(v) { }
-
-    Value value;
-};
-
-template<>
-struct _NeuExplicitValue<void> {
-
-    _NeuExplicitValue() { }
-};
-
-template<typename Value, typename Return>
-struct _NeuExplicitValueOrReturn {
-
-    template<typename U>
-    _NeuExplicitValueOrReturn(_NeuExplicitValue<U>&& v)
-        : value(_NeuExplicitValue<Value> { move(v.value) }) { }
-
-    _NeuExplicitValueOrReturn(_NeuExplicitValue<void>&&)
-        : value(_NeuExplicitValue<void> { }) { }
-
-
-    template<typename U>
-    _NeuExplicitValueOrReturn(U&& v) requires(!IsVoid<Return>)
-        : value(Return { forward<U>(v) }) { }
-
-    _NeuExplicitValueOrReturn(void) requires(IsVoid<Return>)
-        : value(Empty { }) { }
-
-    bool isReturn() const { 
-        
-        return value.template has<Conditional<IsVoid<Return>, Empty, Return>>();
-    }
-
-    Return releaseReturn() {
-
-        if constexpr (IsVoid<Return>) {
-
-            return;
-        }
-        else {
-
-            return move(value).template get<Return>();
-        }
-    }
-
-    Value releaseValue() {
-
-        if constexpr (IsVoid<Value>) {
-
-            return;
-        }
-        else {
-
-            return move(value).template get<_NeuExplicitValue<Value>>().value;
-        }
-    }
-
-    Variant<Conditional<IsVoid<Return>, Empty, Return>, _NeuExplicitValue<Value>> value;
-};
-
-#define NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(x) ({  \
-    auto&& _neu_value = x;                          \
-    if (_neu_value.isReturn()) {                    \
-        return _neu_value.releaseReturn();          \
-    }                                               \
-    _neu_value.releaseValue();                      \
-})
 
 
 
@@ -412,7 +406,7 @@ int main(int argc, char** argv) {
         MUST(args.push(argv[i]));
     }
 
-    auto result = _neu_main(move(args));
+    auto result = NeuInternal::main(move(args));
 
     if (result.isError()) {
 

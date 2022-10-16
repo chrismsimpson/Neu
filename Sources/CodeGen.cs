@@ -863,7 +863,7 @@ public static partial class CodeGenFunctions {
 
         if (fun.Name == "main") {
 
-            output.Append("_neu_main");
+            output.Append("NeuInternal::main");
         }
         else {
 
@@ -1565,7 +1565,7 @@ public static partial class CodeGenFunctions {
 
         output.Append($"\n\n// FIXME: This should print to stderr, but the tests compare stdout.\noutLine(\n\"Panic: {{}} in checked binary operation `{{}} {opStr} {{}}`\",\n_neu_rhs == 0 ? \"Division by zero\" : \"Overflow\", _neu_lhs, _neu_rhs\n);\n");
 
-        output.Append("if (!_neu_continue_on_panic) VERIFY_NOT_REACHED();\n");
+        output.Append("if (!NeuInternal::continue_on_panic) VERIFY_NOT_REACHED();\n");
         output.Append("}\n");
         output.Append("return _neu_checked.valueUnchecked();\n");
         output.Append("}(");
@@ -1615,7 +1615,7 @@ public static partial class CodeGenFunctions {
 
         output.Append($"\n\n// FIXME: This should print to stderr, but the tests compare stdout\noutLine(\n\"Panic: {{}} in checked binary operation `{{}} {opStr} {{}}`\",\n_neu_rhs == 0 ? \"Division by zero\" : \"Overflow\", _neu_lhs, _neu_rhs\n);\n");
 
-        output.Append("if (!_neu_continue_on_panic) VERIFY_NOT_REACHED();");
+        output.Append("if (!NeuInternal::continue_on_panic) VERIFY_NOT_REACHED();");
         output.Append('}');
         output.Append("_neu_lhs = _neu_checked.valueUnchecked();");
         output.Append('}');
@@ -2170,7 +2170,7 @@ public static partial class CodeGenFunctions {
 
                     case Int32 _: {
 
-                        output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> _NeuExplicitValueOrReturn<");
+                        output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> NeuInternal::ExplicitValueOrReturn<");
                         output.Append(CodeGenType(we.TypeId, project));
                         output.Append(", ");
                         output.Append("_NeuCurrentFunctionReturnType");
@@ -2197,7 +2197,7 @@ public static partial class CodeGenFunctions {
 
                                         case CheckedExpressionWhenBody e: {
 
-                                            output.Append("return _NeuExplicitReturn(");
+                                            output.Append("return NeuInternal::ExplicitReturn(");
                                             output.Append(CodeGenExpr(0, e.Expression, project));
                                             output.Append(')');
                                             break;
@@ -2295,7 +2295,7 @@ public static partial class CodeGenFunctions {
                                             output.Append(CodeGenType(evwc.SubjectTypeId, project));
                                             output.Append("::");
                                             output.Append(t.Name);
-                                            output.Append(" const& __neu_match_value) -> _NeuExplicitValueOrReturn<");
+                                            output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
                                             output.Append(CodeGenType(we.TypeId, project));
                                             output.Append(", ");
                                             output.Append("_NeuCurrentFunctionReturnType");
@@ -2324,7 +2324,7 @@ public static partial class CodeGenFunctions {
                                             output.Append(CodeGenType(evwc.SubjectTypeId, project));
                                             output.Append("::");
                                             output.Append(u.Name);
-                                            output.Append(" const& __neu_match_value) -> _NeuExplicitValueOrReturn<");
+                                            output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
                                             output.Append(CodeGenType(we.TypeId, project));
                                             output.Append(", ");
                                             output.Append("_NeuCurrentFunctionReturnType");
@@ -2340,7 +2340,7 @@ public static partial class CodeGenFunctions {
                                             output.Append(CodeGenType(evwc.SubjectTypeId, project));
                                             output.Append("::");
                                             output.Append(s.Name);
-                                            output.Append(" const& __neu_match_value) -> _NeuExplicitValueOrReturn<");
+                                            output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
                                             output.Append(CodeGenType(we.TypeId, project));
                                             output.Append(", ");
                                             output.Append("_NeuCurrentFunctionReturnType");
@@ -2383,7 +2383,7 @@ public static partial class CodeGenFunctions {
                                         case CheckedBlockWhenBody b: {
 
                                             output.Append(CodeGenBlock(indent + 1, b.Block, project));
-                                            output.Append("\nreturn _NeuExplicitValue<");
+                                            output.Append("\nreturn NeuInternal::ExplicitValue<");
                                             output.Append(CodeGenType(we.TypeId, project));
                                             output.Append(">();\n");
 
@@ -2399,11 +2399,11 @@ public static partial class CodeGenFunctions {
                                                     indent + 1,
                                                     e.Expression,
                                                     project));
-                                                output.Append("), _NeuExplicitValue<void>();\n");
+                                                output.Append("), NeuInternal::ExplicitValue<void>();\n");
                                             }
                                             else {
 
-                                                output.Append("   return _NeuExplicitValue(");
+                                                output.Append("   return NeuInternal::ExplicitValue(");
                                                 output.Append(CodeGenExpr(
                                                     indent + 1,
                                                     e.Expression,
@@ -2644,7 +2644,7 @@ public static partial class CodeGenFunctions {
 
                     case BinaryOperator.ArithmeticRightShift: {
 
-                        output.Append("__arithmeticShiftRight(");
+                        output.Append("NeuInternal::arithmeticShiftRight(");
                         output.Append(CodeGenExpr(indent, binOp.Lhs, project));
                         output.Append(", ");
                         output.Append(CodeGenExpr(indent, binOp.Rhs, project));
