@@ -1017,12 +1017,9 @@ public static partial class CheckedFunctionFunctions {
     public static bool IsStatic(
         this CheckedFunction func) {
 
-        foreach (var p in func.Parameters) {
+        if (func.Parameters.FirstOrDefault() is CheckedParameter p) {
 
-            if (p.Variable.Name == "this") {
-
-                return false;
-            }
+            return p.Variable.Name != "this";
         }
 
         return true;
