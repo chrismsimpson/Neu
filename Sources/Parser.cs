@@ -2625,54 +2625,32 @@ public static partial class ParserFunctions {
 
                                 String? name = null;
 
-                                switch (tokens[index]) {
+                                if (tokens[index] is NameToken namespaceName) {
 
-                                    case NameToken namespaceName: {
+                                    index += 1;
 
-                                        index += 1;
-
-                                        name = namespaceName.Value;
-
-                                        break;
-                                    }
-
-                                    default: {
-
-                                        break;
-                                    }
+                                    name = namespaceName.Value;
                                 }
 
-                                switch (tokens[index]) {
+                                if (tokens[index] is LCurlyToken) {
 
-                                    case LCurlyToken _: {
+                                    index += 1;
 
-                                        index += 1;
+                                    var (ns, nsErr) = ParseNamespace(tokens, ref index);
 
-                                        var (ns, err) = ParseNamespace(tokens, ref index);
+                                    error = error ?? nsErr;
 
-                                        error = error ?? err;
+                                    index += 1;
 
-                                        index += 1;
+                                    if (index < tokens.Count
+                                        && tokens[index] is RCurlyToken) {
 
-                                        if (index < tokens.Count) {
-
-                                            if (tokens[index] is RCurlyToken) {
-
-                                                index += 1;
-                                            }
-                                        }
-
-                                        ns.Name = name;
-
-                                        parsedNamespace.Namespaces.Add(ns);
-
-                                        break;
+                                            index += 1;
                                     }
 
-                                    default: {
+                                    ns.Name = name;
 
-                                        break;
-                                    }
+                                    parsedNamespace.Namespaces.Add(ns);
                                 }
                             }
 
@@ -7282,7 +7260,7 @@ public static partial class ParserFunctions {
 
                 var cont = true;
 
-                while (index < tokens.Count && cont) {
+                while (cont && index < tokens.Count) {
 
                     switch (tokens.ElementAt(index)) {
 
@@ -7317,9 +7295,25 @@ public static partial class ParserFunctions {
                             
                             error = error ?? parseCallParamNameErr;
 
-                            var (expr, exprError) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
+                            var (expr, exprError) = ParseExpression(
+                                tokens, 
+                                ref index, 
+                                ExpressionKind.ExpressionWithoutAssignment);
 
-                            error = error ?? exprError;
+                            if (exprError is Error _exprError) {
+
+                                Trace("ERROR: error while parsing expression in function call parameter");
+
+                                error = error ?? _exprError;
+
+                                cont = false;
+
+                                break;
+                            }
+                            else {
+
+                                error = error ?? exprError;
+                            }
 
                             call.Args.Add((paramName, expr));
 
