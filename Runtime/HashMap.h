@@ -35,9 +35,9 @@ public:
     
     using ValueType = V;
 
-    Dictionary() = default;
+    HashMap() = default;
 
-    Dictionary(std::initializer_list<Entry> list) {
+    HashMap(std::initializer_list<Entry> list) {
 
         MUST(ensureCapacity(list.size()));
             

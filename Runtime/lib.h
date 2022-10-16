@@ -17,6 +17,7 @@
 #include "CheckedFormatString.h"
 #include "Concepts.h"
 #include "Debug.h"
+#include "Dictionary.h"
 #include "Error.h"
 #include "Find.h"
 #include "FixedPoint.h"
