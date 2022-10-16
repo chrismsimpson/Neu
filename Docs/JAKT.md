@@ -21,6 +21,8 @@
 
 21/05/22: b89afba419a64423b068eca919c65fa920af6490 Add overflow checks to arithmetic
 
+22/05/22: 1cf4f7065b73a8e23266f0d53c86afc4e08b3d45 IsMutating()
+
 
 
 launch.json:
