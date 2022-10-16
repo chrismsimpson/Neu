@@ -879,13 +879,9 @@ public static partial class CodeGenFunctions {
 
         var first = true;
 
-        var constFunc = false;
-
         foreach (var p in fun.Parameters) {
 
             if (p.Variable.Name == "this") {
-
-                constFunc = !p.Variable.Mutable;
 
                 continue;
             }
@@ -915,7 +911,7 @@ public static partial class CodeGenFunctions {
 
         output.Append(')');
 
-        if (constFunc) {
+        if (!fun.IsStatic() && !fun.IsMutating()) {
 
             output.Append(" const");
         }

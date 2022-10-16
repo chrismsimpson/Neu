@@ -1024,6 +1024,17 @@ public static partial class CheckedFunctionFunctions {
 
         return true;
     }
+
+    public static bool IsMutating(
+        this CheckedFunction func) {
+
+        if (!func.IsStatic()) {
+
+            return func.Parameters.First().Variable.Mutable;
+        }
+
+        return false;
+    }
 }
 
 ///
