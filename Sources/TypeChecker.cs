@@ -4039,11 +4039,11 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedVarDeclStatement vds: {
 
-                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, scopeId, project, safetyMode, null);
+                var (checkedTypeId, typenameErr) = TypeCheckTypeName(vds.Decl.Type, scopeId, project);
+
+                var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, scopeId, project, safetyMode, checkedTypeId);
 
                 error = error ?? exprErr;
-
-                var (checkedTypeId, chkTypeErr) = TypeCheckTypeName(vds.Decl.Type, scopeId, project);
 
                 if (checkedTypeId == Compiler.UnknownTypeId && checkedExpr.GetNeuType() != Compiler.UnknownTypeId) {
 
@@ -4051,7 +4051,7 @@ public static partial class TypeCheckerFunctions {
                 }
                 else {
 
-                    error = error ?? chkTypeErr;
+                    error = error ?? typenameErr;
                 }
 
                 var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
