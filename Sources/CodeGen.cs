@@ -1295,7 +1295,7 @@ public static partial class CodeGenFunctions {
             output.Append(stmtStr);
         }
 
-        output.Append(new String(' ', indent));
+        output.Append(CodeGenIndent(indent));
 
         output.Append("}\n");
 
@@ -1309,7 +1309,7 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append(new String(' ', indent));
+        output.Append(CodeGenIndent(indent));
 
         ///
 
@@ -2081,6 +2081,63 @@ public static partial class CodeGenFunctions {
                 switch (_enum.UnderlyingType) {
 
                     case Int32 _: {
+
+                        output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> _NeuExplicitValueOrReturn<");
+                        output.Append(CodeGenType(we.TypeId, project));
+                        output.Append(", ");
+                        output.Append("_NeuCurrentFunctionReturnType");
+                        output.Append("> { \n");
+                        output.Append("switch (");
+                        output.Append(CodeGenExpr(indent, we.Expression, project));
+                        output.Append(") {\n");
+
+                        foreach (var _case in we.Cases) {
+
+                            output.Append("case ");
+                            output.Append(CodeGenType(we.Expression.GetNeuType(), project));
+                            output.Append("::");
+                        
+                            switch (_case) {
+
+                                case CheckedEnumVariantWhenCase evwc: {
+
+                                    output.Append(evwc.VariantName);
+                                    output.Append(":\n");
+                                    output.Append(CodeGenIndent(indent));
+
+                                    switch (evwc.Body) {
+
+                                        case CheckedExpressionWhenBody e: {
+
+                                            output.Append("return _NeuExplicitReturn(");
+                                            output.Append(CodeGenExpr(0, e.Expression, project));
+                                            output.Append(')');
+                                            break;
+                                        }
+
+                                        case CheckedBlockWhenBody b: {
+
+                                            output.Append(CodeGenBlock(indent, b.Block, project));
+                                            output.Append("break;\n");
+
+                                            break;
+                                        }
+                                    }
+
+                                    break;
+                                }
+
+                                default: {
+
+                                    break;
+                                }
+                            }
+
+                            output.Append('\n');
+                        }
+
+                        output.Append("}\n");
+                        output.Append("}()))");
 
                         break;
                     }
@@ -2979,5 +3036,11 @@ public static partial class CodeGenFunctions {
         }
 
         return output.ToString();
+    }
+
+    public static String CodeGenIndent(
+        int indent) {
+
+        return new String(' ', indent);
     }
 }
