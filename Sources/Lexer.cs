@@ -427,9 +427,15 @@ public partial class Token {
             : base(span) { }
     }
 
-    public partial class UnknownToken: Token {
+    // public partial class UnknownToken: Token {
 
-        public UnknownToken(Span span) 
+    //     public UnknownToken(Span span) 
+    //         : base(span) { }
+    // }
+
+    public partial class GarbageToken: Token {
+
+        public GarbageToken(Span span) 
             : base(span) { }
     }
 
@@ -1143,7 +1149,7 @@ public static partial class LexerFunctions {
             if (ToChar(bytes[index - 1]) == '_') {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "hex number literal cannot end with underscore",
                         new Span(fileId, start, index)));
@@ -1151,18 +1157,25 @@ public static partial class LexerFunctions {
 
             var str = UTF8.GetString(bytes[(start + 2)..index]).Replace("_", "");
 
-            Int64 number = 0;
+            try {
 
-            if (Int64.TryParse(str, System.Globalization.NumberStyles.HexNumber, null, out number)) {
+                if (str.Length % 2 != 0) {
 
-                return (
-                    MakeNumberToken(null, null, number, new Span(fileId, start, index)),
-                    null);
+                    str = str.Insert(0, "0");
+                }
+                else {
+
+                    str = str.Insert(0, "00");
+                }
+
+                var hexNumber = BigInteger.Parse(str, NumberStyles.HexNumber | NumberStyles.AllowHexSpecifier);
+
+                return MakeNumberToken(null, null, hexNumber, new Span(fileId, start, index));
             }
-            else {
+            catch {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "could not parse hex",
                         new Span(fileId, start, index)));
@@ -1185,7 +1198,7 @@ public static partial class LexerFunctions {
             if (ToChar(bytes[index - 1]) == '_') {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "octal number literal cannot end with underscore",
                         new Span(fileId, start, index)));
@@ -1193,20 +1206,16 @@ public static partial class LexerFunctions {
 
             var str = UTF8.GetString(bytes[(start + 2)..index]).Replace("_", "");
 
-            Int64 octalNumber = 0;
-
             try {
 
-                octalNumber = ToInt64(str, 8);
+                var octalNumber = str.Aggregate(new BigInteger(), (b, c) => b * 8 + c - '0');
 
-                return (
-                    MakeNumberToken(null, null, octalNumber, new Span(fileId, start, index)),
-                    null);
+                return MakeNumberToken(null, null, octalNumber, new Span(fileId, start, index));
             }
             catch {
                 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)), 
+                    new GarbageToken(new Span(fileId, start, index)), 
                     new ParserError(
                         "could not parse octal number", 
                         new Span(fileId, start, index)));
@@ -1247,7 +1256,7 @@ public static partial class LexerFunctions {
                 if (ToChar(bytes[index - 1]) == '_') {
 
                     return (
-                        new UnknownToken(new Span(fileId, start, index)),
+                        new GarbageToken(new Span(fileId, start, index)),
                         new ParserError(
                             "hex number literal cannot end with underscore",
                             new Span(fileId, start, index)));
@@ -1274,7 +1283,7 @@ public static partial class LexerFunctions {
                 if (ToChar(bytes[index - 1]) == '_') {
 
                     return (
-                        new UnknownToken(new Span(fileId, start, index)),
+                        new GarbageToken(new Span(fileId, start, index)),
                         new ParserError(
                             "binary number literal cannot end with underscore",
                             new Span(fileId, start, index)));
@@ -1299,7 +1308,7 @@ public static partial class LexerFunctions {
                 if (ToChar(bytes[index - 1]) == '_') {
 
                     return (
-                        new UnknownToken(new Span(fileId, start, index)),
+                        new GarbageToken(new Span(fileId, start, index)),
                         new ParserError(
                             "octal number literal cannot end with underscore",
                             new Span(fileId, start, index)));
@@ -1318,7 +1327,7 @@ public static partial class LexerFunctions {
                 if (ToChar(bytes[index - 1]) == '_') {
 
                     return (
-                        new UnknownToken(new Span(fileId, start, index)),
+                        new GarbageToken(new Span(fileId, start, index)),
                         new ParserError(
                             "number literal cannot end with underscore",
                             new Span(fileId, start, index)));
@@ -1333,35 +1342,42 @@ public static partial class LexerFunctions {
 
             index += 1; // trailing ')'
 
-            Int64 number = 0;
+            BigInteger number;
 
             try {
 
                 if (isHex) {
 
-                    number = ToInt64(str, 16);
+                    if (str.Length % 2 != 0) {
+
+                        str = str.Insert(0, "0");
+                    }
+                    else {
+
+                        str = str.Insert(0, "00");
+                    }
+
+                    number = BigInteger.Parse(str, NumberStyles.HexNumber | NumberStyles.AllowHexSpecifier);
                 }
                 else if (isBinary) {
 
-                    number = ToInt64(str, 2);
+                    number = str.Aggregate(new BigInteger(), (b, c) => b * 2 + c - '0');
                 }
                 else if (isOctal) {
 
-                    number = ToInt64(str, 8);
+                    number = str.Aggregate(new BigInteger(), (b, c) => b * 8 + c - '0');
                 }
                 else {
 
-                    number = ToInt64(str, 10);
+                    number = BigInteger.Parse(str);
                 }
 
-                return (
-                    MakeNumberToken(literalCast.Sign, literalCast.Width, number, new Span(fileId, start, index)),
-                    null);
+                return MakeNumberToken(literalCast.Sign, literalCast.Width, number, new Span(fileId, start, index));
             }
             catch {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "could not parse hex",
                         new Span(fileId, start, index)));
@@ -1386,7 +1402,7 @@ public static partial class LexerFunctions {
             if (ToChar(bytes[index - 1]) == '_') {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "binary number literal cannot end with underscore",
                         new Span(fileId, start, index)));
@@ -1396,16 +1412,14 @@ public static partial class LexerFunctions {
 
             try {
 
-                var number = ToInt64(str, 2);
+                var binaryNumber = str.Aggregate(new BigInteger(), (b, c) => b * 2 + c - '0');
 
-                return (
-                    MakeNumberToken(null, null, number, new Span(fileId, start, index)),
-                    null);
+                return MakeNumberToken(null, null, binaryNumber, new Span(fileId, start, index));
             }
             catch {
                 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)), 
+                    new GarbageToken(new Span(fileId, start, index)), 
                     new ParserError(
                         "could not parse binary number", 
                         new Span(fileId, start, index)));
@@ -1426,7 +1440,7 @@ public static partial class LexerFunctions {
             if (ToChar(bytes[index - 1]) == '_') {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "number literal cannot end with underscore",
                         new Span(fileId, start, index)));
@@ -1434,18 +1448,16 @@ public static partial class LexerFunctions {
 
             var str = UTF8.GetString(bytes[start..index]).Replace("_", "");
 
-            Int64 number = 0;
+            try {
 
-            if (Int64.TryParse(str, out number)) {
+                var number = BigInteger.Parse(str);
 
-                return (
-                    MakeNumberToken(null, null, number, new Span(fileId, start, index)),
-                    null);
+                return MakeNumberToken(null, null, number, new Span(fileId, start, index));
             }
-            else {
+            catch {
 
                 return (
-                    new UnknownToken(new Span(fileId, start, index)),
+                    new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "could not parse int", 
                         new Span(fileId, start, index)));
@@ -1586,65 +1598,150 @@ public static partial class LexerFunctions {
             index += 1;
 
             return (
-                new UnknownToken(span),
+                new GarbageToken(span),
                 error);
         }
     }
 
-    public static Token MakeNumberToken(
+    public static (Token, Error?) MakeNumberToken(
         bool? sign,
         int? width,
-        Int64 number,
+        BigInteger number,
         Span span) {
 
         switch (true) {
 
             case var _ when sign == false && width == 8:
-                return new NumberToken(new UInt8Constant(ToByte(number)), span);
+                return (new NumberToken(new UInt8Constant((byte) number), span), null);
 
             case var _ when sign == false && width == 16:
-                return new NumberToken(new UInt16Constant(ToUInt16(number)), span);
+                return (new NumberToken(new UInt16Constant((ushort) number), span), null);
 
             case var _ when sign == false && width == 32:   
-                return new NumberToken(new UInt32Constant(ToUInt32(number)), span);
+                return (new NumberToken(new UInt32Constant((uint) number), span), null);
 
             // FIXME: This loses precision if UInt is 64-bit
         
             case var _ when sign == false && width == null:
-                return new NumberToken(new UIntConstant(ToUInt64(number)), span);
+                return (new NumberToken(new UIntConstant((ulong) number), span), null);
 
             // FIXME: This loses precision:
 
             case var _ when sign == false && width == 64:
-                return new NumberToken(new UInt64Constant(ToUInt64(number)), span);
+                return (new NumberToken(new UInt64Constant((ulong) number), span), null);
 
             case var _ when sign == true && width == 8:
-                return new NumberToken(new Int8Constant(ToSByte(number)), span);
+                return (new NumberToken(new Int8Constant((sbyte) number), span), null);
 
             case var _ when sign == true && width == 16:
-                return new NumberToken(new Int16Constant(ToInt16(number)), span);
+                return (new NumberToken(new Int16Constant((short) number), span), null);
 
             case var _ when sign == true && width == 32:
-                return new NumberToken(new Int32Constant(ToInt32(number)), span);
+                return (new NumberToken(new Int32Constant((int) number), span), null);
 
             case var _ when sign == true && width == null:
-                return new NumberToken(new IntConstant(number), span);
+                return (new NumberToken(new IntConstant((long) number), span), null);
 
             case var _ when sign == true && width == 64:
-                return new NumberToken(new Int64Constant(number), span);
+                return (new NumberToken(new Int64Constant((long) number), span), null);
 
             // FIXME: These 2 don't work at all:
 
             case var _ when sign == null && width == 32: // (Float)
-                return new NumberToken(new Int64Constant(number), span);
+                return (new NumberToken(new Int64Constant((long) number), span), null); // DEF wrong, fixme
 
             case var _ when sign == null && width == 64: // (Double)
-                return new NumberToken(new Int64Constant(number), span);
+                return (new NumberToken(new Int64Constant((long) number), span), null); // DEF wrong, fixme
 
-            default:
-                return new NumberToken(new Int64Constant(number), span);
+            default: {
+
+                if (number > Int64.MaxValue) {
+
+                    if (number <= UInt64.MaxValue) {
+
+                        return (new NumberToken(new UInt64Constant((ulong) number), span), null);
+                    }
+                    else {
+
+                        return (
+                            new GarbageToken(span),
+                            new ParserError(
+                                $"Integer literal {number} too large", 
+                                span));
+                    }
+                }
+                else if (number >= Int64.MinValue) {
+
+                    
+
+                    return (new NumberToken(new Int64Constant((long) number), span), null);
+                }
+                else {
+
+                    return (
+                        new GarbageToken(span),
+                        new ParserError(
+                            $"Integer literal {number} too small", 
+                            span));
+                }
+            }
         }
     }
+
+    // public static Token MakeNumberToken64(
+    //     bool? sign,
+    //     int? width,
+    //     Int64 number,
+    //     Span span) {
+
+    //     switch (true) {
+
+    //         case var _ when sign == false && width == 8:
+    //             return new NumberToken(new UInt8Constant(ToByte(number)), span);
+
+    //         case var _ when sign == false && width == 16:
+    //             return new NumberToken(new UInt16Constant(ToUInt16(number)), span);
+
+    //         case var _ when sign == false && width == 32:   
+    //             return new NumberToken(new UInt32Constant(ToUInt32(number)), span);
+
+    //         // FIXME: This loses precision if UInt is 64-bit
+        
+    //         case var _ when sign == false && width == null:
+    //             return new NumberToken(new UIntConstant(ToUInt64(number)), span);
+
+    //         // FIXME: This loses precision:
+
+    //         case var _ when sign == false && width == 64:
+    //             return new NumberToken(new UInt64Constant(ToUInt64(number)), span);
+
+    //         case var _ when sign == true && width == 8:
+    //             return new NumberToken(new Int8Constant(ToSByte(number)), span);
+
+    //         case var _ when sign == true && width == 16:
+    //             return new NumberToken(new Int16Constant(ToInt16(number)), span);
+
+    //         case var _ when sign == true && width == 32:
+    //             return new NumberToken(new Int32Constant(ToInt32(number)), span);
+
+    //         case var _ when sign == true && width == null:
+    //             return new NumberToken(new IntConstant(number), span);
+
+    //         case var _ when sign == true && width == 64:
+    //             return new NumberToken(new Int64Constant(number), span);
+
+    //         // FIXME: These 2 don't work at all:
+
+    //         case var _ when sign == null && width == 32: // (Float)
+    //             return new NumberToken(new Int64Constant(number), span);
+
+    //         case var _ when sign == null && width == 64: // (Double)
+    //             return new NumberToken(new Int64Constant(number), span);
+
+    //         default:
+    //             return new NumberToken(new Int64Constant(number), span);
+    //     }
+    // }
 }
 
 public struct LiteralCast {
