@@ -1,0 +1,3 @@
+func main() {
+    let tooSmallInt64 = -9_223_372_036_854_775_809;
+}

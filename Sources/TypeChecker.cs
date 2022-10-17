@@ -1496,6 +1496,21 @@ public partial class CheckedStatement {
 public partial class IntegerConstant {
 
     public IntegerConstant() { }
+
+    public override string ToString() {
+        
+        switch (this) {
+
+            case SignedIntegerConstant si:
+                return $"Signed({si.Value})";
+
+            case UnsignedIntegerConstant ui:
+                return $"Unsigned({ui.Value})";
+
+            default:
+                throw new Exception();
+        }
+    }
 }
 
     public partial class SignedIntegerConstant: IntegerConstant {
@@ -6127,13 +6142,21 @@ public static partial class TypeCheckerFunctions {
 
                                 var negativeValue = 0 - nce.Value.IntegerConstant()?.ToBigInteger() ?? throw new Exception();
 
-                                if (!NeuTypeFunctions.CanFitInteger(flippedSignType, new SignedIntegerConstant((long) negativeValue))
+                                long? n = null;
+
+                                try {
+
+                                    n = (long) negativeValue;
+                                }
+                                catch { }
+
+                                if ((n is not null && !NeuTypeFunctions.CanFitInteger(flippedSignType, new SignedIntegerConstant(n.Value)))
                                     || negativeValue < Int64.MinValue) {
 
                                     return (
                                         new CheckedGarbageExpression(span),
                                         new TypeCheckError(
-                                            $"Literal {nce.Value.IntegerConstant()!} too small for unsigned integer type {nce.Type}", 
+                                            $"Literal {nce.Value.IntegerConstant()!.ToString()} too small for unsigned integer type {nce.Type}", 
                                             span));
                                 }
                                 else {

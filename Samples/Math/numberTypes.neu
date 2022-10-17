@@ -9,4 +9,7 @@ func main() {
     let h: UInt64 = 0;
     let i: Float = 0;
     let j: Double = 0;
+
+    let largeUInt64 = 18_446_744_073_709_551_615
+    let smallInt64 = -9_223_372_036_854_775_808
 }
