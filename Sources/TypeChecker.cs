@@ -274,6 +274,26 @@ public static partial class NeuTypeFunctions {
         }
     }
 
+    public static Int32? FlipSignedness(
+        Int32 typeId) {
+
+        switch (typeId) {
+
+            case Compiler.Int8TypeId:       return Compiler.UInt8TypeId;
+            case Compiler.Int16TypeId:      return Compiler.UInt16TypeId;
+            case Compiler.Int32TypeId:      return Compiler.UInt32TypeId;
+            case Compiler.Int64TypeId:      return Compiler.UInt64TypeId;
+            case Compiler.UInt8TypeId:      return Compiler.Int8TypeId;
+            case Compiler.UInt16TypeId:     return Compiler.Int16TypeId;
+            case Compiler.UInt32TypeId:     return Compiler.Int32TypeId;
+            case Compiler.UInt64TypeId:     return Compiler.Int64TypeId;
+            case Compiler.IntTypeId:        return Compiler.UIntTypeId;
+            case Compiler.UIntTypeId:       return Compiler.IntTypeId;
+
+            default:                        return null;
+        }
+    }
+
     public static UInt32 GetBits(
         Int32 typeId) {
 
@@ -1609,6 +1629,22 @@ public static partial class IntegerConstantFunctions {
         };
 
         return (newConstant, typeId);
+    }
+
+    public static BigInteger ToBigInteger(
+        this IntegerConstant integer) {
+
+        switch (integer) {
+
+            case SignedIntegerConstant si: 
+                return new BigInteger(si.Value);
+
+            case UnsignedIntegerConstant ui:
+                return new BigInteger(ui.Value);
+
+            default:
+                throw new Exception();
+        }
     }
 }
 
@@ -6076,9 +6112,69 @@ public static partial class TypeCheckerFunctions {
                     case Compiler.FloatTypeId:
                     case Compiler.DoubleTypeId: {
 
-                        return (
-                            new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), span, exprTypeId),
-                            null);
+                        // FIXME: This at least allows us to check out-of-bounds constants at compile time.
+                        //        We should expand it to check any compile-time known value.
+
+                        if (expr is CheckedNumericConstantExpression nce) {
+
+                            // Flipping the sign on a small enough unsigned constant is fine. We'll change the type to the signed variant.
+
+                            if (NeuTypeFunctions.IsInteger(nce.Type) && !NeuTypeFunctions.IsSigned(nce.Type)) {
+
+                                // FIXME: What about integer types whose signedness we can't yet flip?
+
+                                var flippedSignType = NeuTypeFunctions.FlipSignedness(nce.Type) ?? throw new Exception();
+
+                                var negativeValue = 0 - nce.Value.IntegerConstant()?.ToBigInteger() ?? throw new Exception();
+
+                                if (!NeuTypeFunctions.CanFitInteger(flippedSignType, new SignedIntegerConstant((long) negativeValue))
+                                    || negativeValue < Int64.MinValue) {
+
+                                    return (
+                                        new CheckedGarbageExpression(span),
+                                        new TypeCheckError(
+                                            $"Literal {nce.Value.IntegerConstant()!} too small for unsigned integer type {nce.Type}", 
+                                            span));
+                                }
+                                else {
+
+                                    NumericConstant c = flippedSignType switch {
+
+                                        Compiler.Int8TypeId => new Int8Constant((sbyte) negativeValue),
+                                        Compiler.Int16TypeId => new Int16Constant((short) negativeValue),
+                                        Compiler.Int32TypeId => new Int32Constant((int) negativeValue),
+                                        Compiler.Int64TypeId => new Int64Constant((long) negativeValue),
+                                        
+                                        Compiler.IntTypeId => new IntConstant((long) negativeValue),
+
+                                        Compiler.UInt8TypeId => new UInt8Constant((byte) negativeValue),
+                                        Compiler.UInt16TypeId => new UInt16Constant((ushort) negativeValue),
+                                        Compiler.UInt32TypeId => new UInt32Constant((uint) negativeValue),
+                                        Compiler.UInt64TypeId => new UInt64Constant((ulong) negativeValue),
+                                        
+                                        Compiler.UIntTypeId => new UIntConstant((ulong) negativeValue),
+
+                                        _ => throw new Exception()
+                                    };
+
+                                    return (
+                                        new CheckedNumericConstantExpression(c, span, flippedSignType),
+                                        null);
+                                }
+                            }
+                            else {
+
+                                return (
+                                    new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), span, exprTypeId),
+                                    null);
+                            }
+                        }
+                        else {
+
+                            return (
+                                new CheckedUnaryOpExpression(expr, new CheckedNegateUnaryOperator(), span, exprTypeId),
+                                null);
+                        }
                     }
 
                     default: {
