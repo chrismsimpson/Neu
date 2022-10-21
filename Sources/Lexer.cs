@@ -1687,61 +1687,6 @@ public static partial class LexerFunctions {
             }
         }
     }
-
-    // public static Token MakeNumberToken64(
-    //     bool? sign,
-    //     int? width,
-    //     Int64 number,
-    //     Span span) {
-
-    //     switch (true) {
-
-    //         case var _ when sign == false && width == 8:
-    //             return new NumberToken(new UInt8Constant(ToByte(number)), span);
-
-    //         case var _ when sign == false && width == 16:
-    //             return new NumberToken(new UInt16Constant(ToUInt16(number)), span);
-
-    //         case var _ when sign == false && width == 32:   
-    //             return new NumberToken(new UInt32Constant(ToUInt32(number)), span);
-
-    //         // FIXME: This loses precision if UInt is 64-bit
-        
-    //         case var _ when sign == false && width == null:
-    //             return new NumberToken(new UIntConstant(ToUInt64(number)), span);
-
-    //         // FIXME: This loses precision:
-
-    //         case var _ when sign == false && width == 64:
-    //             return new NumberToken(new UInt64Constant(ToUInt64(number)), span);
-
-    //         case var _ when sign == true && width == 8:
-    //             return new NumberToken(new Int8Constant(ToSByte(number)), span);
-
-    //         case var _ when sign == true && width == 16:
-    //             return new NumberToken(new Int16Constant(ToInt16(number)), span);
-
-    //         case var _ when sign == true && width == 32:
-    //             return new NumberToken(new Int32Constant(ToInt32(number)), span);
-
-    //         case var _ when sign == true && width == null:
-    //             return new NumberToken(new IntConstant(number), span);
-
-    //         case var _ when sign == true && width == 64:
-    //             return new NumberToken(new Int64Constant(number), span);
-
-    //         // FIXME: These 2 don't work at all:
-
-    //         case var _ when sign == null && width == 32: // (Float)
-    //             return new NumberToken(new Int64Constant(number), span);
-
-    //         case var _ when sign == null && width == 64: // (Double)
-    //             return new NumberToken(new Int64Constant(number), span);
-
-    //         default:
-    //             return new NumberToken(new Int64Constant(number), span);
-    //     }
-    // }
 }
 
 public struct LiteralCast {
