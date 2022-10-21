@@ -132,7 +132,13 @@ public static partial class Program {
 
                 ///
 
-                if (File.Exists(outputPath) || File.Exists(errorOutputPath)) {
+                var stderrOutputFilename = $"{name}.error_out";
+                
+                var stderrOutputFilenamePath = $"{path}/{stderrOutputFilename}";
+
+                ///
+
+                if (File.Exists(outputPath) || File.Exists(errorOutputPath) || File.Exists(stderrOutputFilenamePath)) {
 
                     // We have an output to compare to, let's do it.
                     
@@ -179,9 +185,13 @@ public static partial class Program {
 
                                 Console.ForegroundColor = ConsoleColor.Green;
 
-                                Write($" Verified\n");
+                                Write($" Verified (parse/type check)\n");
 
                                 Console.ForegroundColor = og;
+
+                                ///
+
+                                SuccesfulTests += 1;
                             }
 
                             continue;
@@ -220,13 +230,13 @@ public static partial class Program {
                     
                     ///
 
-                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = compiler
+                    var (cmakeGenerateBuildOutput, _, cmakeGenerateBuildExitedSuccessfully) = compiler
                         .GenerateNinjaCMake(
                             projBuildDir, 
                             projGenDir, 
                             printProgress: true);
 
-                    if (cmakeGenerateBuildErr) {
+                    if (!cmakeGenerateBuildExitedSuccessfully) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 
@@ -239,12 +249,12 @@ public static partial class Program {
 
                     ///
 
-                    var (cmakeBuildOutput, cmakeBuildErr) = compiler
+                    var (cmakeBuildOutput, _, cmakeBuildExitedSuccessfully) = compiler
                         .BuildWithCMake(
                             projBuildDir,
                             printProgress: true);
                         
-                    if (cmakeBuildErr) {
+                    if (!cmakeBuildExitedSuccessfully) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 
@@ -257,62 +267,83 @@ public static partial class Program {
 
                     ///
 
-                    var (builtOutput, builtErr) = compiler
+                    var (builtOutput, builtErr, builtExitedSuccessfully) = compiler
                         .Process(
                             name: $"{projBuildDir}/Output/output-{id}",
                             arguments: null,
                             printProgress: true);
 
-                    if (builtErr) {
+                    switch (true) {
 
-                        Console.ForegroundColor = ConsoleColor.Red;
+                        case var _ when
+                            builtExitedSuccessfully &&
+                            File.Exists(outputPath): {
 
-                        Write($" Failed to run\n");
+                            var output = ReadAllText(outputPath);
 
-                        ///
+                            var eq = Equals(builtOutput, output);
 
-                        if (!IsNullOrWhiteSpace(builtOutput)) {
+                            if (eq) {
 
-                            WriteLine(cmakeBuildOutput);
+                                Console.ForegroundColor = ConsoleColor.Green;
+
+                                Write($" Success\n");
+
+                                Console.ForegroundColor = og;
+
+                                ///
+
+                                SuccesfulTests += 1;
+                            }
+                            else {
+
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                
+                                Write($" Mismatched output\n");
+
+                                Console.ForegroundColor = og;
+                            }
+
+                            continue;
                         }
 
-                        ///
+                        case var _ when
+                            // !IsNullOrWhiteSpace(builtErr) &&
+                            File.Exists(stderrOutputFilenamePath): {
 
-                        Console.ForegroundColor = og;
+                            var stderrOutput = ReadAllText(stderrOutputFilenamePath);
 
-                        ///
+                            var eq = Equals(builtErr, stderrOutput);
 
-                        continue;
+                            if (eq) {
+
+                                Console.ForegroundColor = ConsoleColor.Green;
+
+                                Write($" Verified (std err)\n");
+
+                                Console.ForegroundColor = og;
+
+                                ///
+
+                                SuccesfulTests += 1;
+                            }
+                            else {
+
+                                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                                
+                                Write($" Mismatched output (std err)\n");
+
+                                Console.ForegroundColor = og;
+                            }
+
+                            continue;
+                        }
+
+                        default: {
+
+                            throw new Exception("something went wrong");
+                        }
                     }
-
-                    ///
-
-                    var output = ReadAllText(outputPath);
-
-                    var eq = Equals(builtOutput, output);
-
-                    Write($".");
-
-                    if (!eq) {
-
-                        Console.ForegroundColor = ConsoleColor.DarkYellow;
-                        
-                        Write($" Mismatched output\n");
-
-                        Console.ForegroundColor = og;
-
-                        continue;
-                    }
-
-                    Console.ForegroundColor = ConsoleColor.Green;
-
-                    Write($" Success\n");
-
-                    Console.ForegroundColor = og;
-
-                    ///
-
-                    SuccesfulTests += 1;
                 }
             }
         }

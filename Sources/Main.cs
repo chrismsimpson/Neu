@@ -150,13 +150,13 @@ public static partial class Program {
 
                     ///
 
-                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = parser
+                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr, cmakeExitedSuccessfully) = parser
                         .GenerateNinjaCMake(
                             projBuildDir, 
                             projGenDir, 
                             printProgress: true);
 
-                    if (cmakeGenerateBuildErr) {
+                    if (cmakeExitedSuccessfully) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 
@@ -174,12 +174,12 @@ public static partial class Program {
 
                     ///
 
-                    var (cmakeBuildOutput, cmakeBuildErr) = parser
+                    var (cmakeBuildOutput, _, cmakeBuildExitedSuccessfully) = parser
                         .BuildWithCMake(
                             projBuildDir, 
                             printProgress: true);
                         
-                    if (cmakeBuildErr) {
+                    if (cmakeBuildExitedSuccessfully) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 
@@ -278,13 +278,14 @@ public static partial class Program {
 
                     ///
 
-                    var (cmakeGenerateBuildOutput, cmakeGenerateBuildErr) = parser
+                    // cmakeGenerateBuildErr
+                    var (cmakeGenerateBuildOutput, _, cmakeGenerateBuildExitedSuccessfully) = parser
                         .GenerateNinjaCMake(
                             projBuildDir, 
                             projGenDir, 
                             printProgress: true);
 
-                    if (cmakeGenerateBuildErr) {
+                    if (cmakeGenerateBuildExitedSuccessfully) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 
@@ -328,12 +329,12 @@ public static partial class Program {
                     
                     ///
 
-                    var (cmakeBuildOutput, cmakeBuildErr) = parser
+                    var (cmakeBuildOutput, _, cmakeBuildExitedSuccessfully) = parser
                         .BuildWithCMake(
                             projBuildDir,
                             printProgress: true);
 
-                    if (cmakeBuildErr) {
+                    if (cmakeBuildExitedSuccessfully) {
 
                         Console.ForegroundColor = ConsoleColor.Red;
 

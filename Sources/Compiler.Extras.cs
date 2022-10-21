@@ -54,8 +54,6 @@ public partial class Compiler {
 
         if (!File.Exists(projCMakeFile)) {
 
-            // File.WriteAllText(projCMakeFile, $"project(Generated-{id})\n\ncmake_minimum_required(VERSION 3.21)\n\nset(CMAKE_CXX_STANDARD 20)\n\nadd_subdirectory(Runtime)\nadd_subdirectory(Output)");
-
             var projCMakeFileContents = new StringBuilder();
 
             projCMakeFileContents.Append($"project(Generated-{id})\n\n");
@@ -88,17 +86,14 @@ public partial class Compiler {
 
         if (!File.Exists(projRuntimeCMakeFile)) {
 
-            // File.WriteAllText(projRuntimeCMakeFile, $"project (Runtime-{id})\n\nadd_library(runtime-{id} runtime.cpp)");
-
             var projRuntimeCMakeFileContents = new StringBuilder();
 
             projRuntimeCMakeFileContents.Append($"project (Runtime-{id})\n\n");
             projRuntimeCMakeFileContents.Append($"cmake_minimum_required(VERSION 3.21)\n\n");
             projRuntimeCMakeFileContents.Append($"set(CMAKE_CXX_STANDARD 20)\n\n");
+
             projRuntimeCMakeFileContents.Append($"add_compile_options(-Wno-user-defined-literals)\n\n");
             projRuntimeCMakeFileContents.Append($"add_compile_options(-DNEU_CONTINUE_ON_PANIC)\n\n");
-
-            
 
             projRuntimeCMakeFileContents.Append($"add_library({runtimeTargetName} runtime.cpp)\n\n");
             projRuntimeCMakeFileContents.Append($"set_target_properties({runtimeTargetName} PROPERTIES LINKER_LANGUAGE CXX)");
@@ -130,8 +125,6 @@ public partial class Compiler {
 
         if (!File.Exists(projOutputCMakeFile)) {
 
-            // File.WriteAllText(projOutputCMakeFile, $"project (Output-{id})\n\nadd_executable(output-{id} output.cpp)\n\ntarget_link_libraries(output-{id} runtime-{id})");
-
             var projOutputCMakeFileContents = new StringBuilder();
 
             projOutputCMakeFileContents.Append($"project (Output-{id})\n\n");
@@ -156,7 +149,7 @@ public partial class Compiler {
 
     ///
 
-    public (String, bool) Process(
+    public (String Output, String Error, bool) Process(
         String name,
         String? arguments,
         bool printProgress = false) {
@@ -215,9 +208,9 @@ public partial class Compiler {
 
         process.ErrorDataReceived += (sender, e) => {
 
-            if (e.Data?.Trim() is String l && !IsNullOrWhiteSpace(l)) {
+            if (e.Data != null) {
 
-                errOutput.AppendLine(l);
+                errOutput.AppendLine(e.Data);
             }
         };
 
@@ -229,7 +222,7 @@ public partial class Compiler {
 
         ///
 
-        var error = process.ExitCode != 0; // Cannot get this after .Close()
+        var exitedSuccessfully = process.ExitCode == 0;
 
         ///
         
@@ -237,22 +230,15 @@ public partial class Compiler {
 
         ///
 
-        var e = errOutput.ToString();
-
-        ///
-
         return (
-            error 
-                ? IsNullOrWhiteSpace(e)
-                    ? output.ToString()
-                    : e
-                : output.ToString(), 
-            error);
+            output.ToString(),
+            errOutput.ToString(),
+            exitedSuccessfully);
     }
 
     ///
 
-    public (String, bool) GenerateNinjaCMake(
+    public (String, String, bool) GenerateNinjaCMake(
         String projBuildDir,
         String projGenDir,
         bool printProgress = false) {
@@ -266,7 +252,7 @@ public partial class Compiler {
 
     ///
 
-    public (String, bool) BuildWithCMake(
+    public (String, String, bool) BuildWithCMake(
         String projBuildDir,
         bool printProgress = false) {
 
