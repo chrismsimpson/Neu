@@ -7,6 +7,9 @@ func main() {
     let f = -127 as truncated Int8
     let g = 128 as truncated Int8
 
+    // as Should not eat the token after the type
+    let h = (1 as! Int8)
+
     printLine("{}", a)
     printLine("{}", b)
     printLine("{}", c)
@@ -14,4 +17,5 @@ func main() {
     printLine("{}", e)
     printLine("{}", f)
     printLine("{}", g)
+    printLine("{}", h)
 }

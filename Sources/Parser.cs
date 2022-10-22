@@ -5557,7 +5557,7 @@ public static partial class ParserFunctions {
                         }
                     }
 
-                    index += 1;
+                    // index += 1;
 
                     expr = new ParsedUnaryOpExpression(expr, new TypeCastUnaryOperator(cast), _span);
 
