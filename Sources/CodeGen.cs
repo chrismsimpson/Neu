@@ -1823,6 +1823,22 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
+            case CheckedNamespacedVarExpression n: {
+
+                foreach (var ns in n.Namespace) {
+                    
+                    if (!IsNullOrWhiteSpace(ns.Name)) {
+                        
+                        output.Append(ns.Name);
+                        output.Append("::");
+                    }
+                }
+
+                output.Append(n.Variable.Name);
+
+                break;
+            }
+
             case CheckedVarExpression v: {
 
                 output.Append(v.Variable.Name);
@@ -2203,9 +2219,9 @@ public static partial class CodeGenFunctions {
 
                                         case CheckedExpressionWhenBody e: {
 
-                                            output.Append("return NeuInternal::ExplicitReturn(");
+                                            output.Append("return NeuInternal::ExplicitValue(");
                                             output.Append(CodeGenExpr(0, e.Expression, project));
-                                            output.Append(')');
+                                            output.Append(");");
                                             break;
                                         }
 

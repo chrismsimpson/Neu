@@ -2570,6 +2570,27 @@ public partial class CheckedExpression {
         }
     }
 
+    public partial class CheckedNamespacedVarExpression: CheckedExpression {
+
+        public List<CheckedNamespace> Namespace { get; init; }
+
+        public CheckedVariable Variable { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+        
+        public CheckedNamespacedVarExpression(
+            List<CheckedNamespace> ns,
+            CheckedVariable variable,
+            Span span) {
+
+            this.Namespace = ns;
+            this.Variable = variable;
+            this.Span = span;
+        }
+    }
+
     public partial class CheckedVarExpression: CheckedExpression {
         
         public CheckedVariable Variable { get; init; }
@@ -2760,6 +2781,11 @@ public static partial class CheckedExpressionFunctions {
                 return ve.Variable.Type;
             }
 
+            case CheckedNamespacedVarExpression ne: {
+
+                return ne.Variable.Type;
+            }
+
             case CheckedOptionalNoneExpression ckdOptNoneExpr: {
 
                 return ckdOptNoneExpr.Type;
@@ -2849,6 +2875,9 @@ public static partial class CheckedExpressionFunctions {
 
             case CheckedVarExpression v:
                 return v.Span;
+
+            case CheckedNamespacedVarExpression n:
+                return n.Span;
 
             case CheckedOptionalNoneExpression n:
                 return n.Span;
@@ -3319,6 +3348,18 @@ public static partial class TypeCheckerFunctions {
                                         u.Span));
                                 
                                 nextConstantValue = nextConstantValue.Value + 1;
+
+                                // This has a value, so generate a "variable" for it
+
+                                var varErr = project.AddVarToScope(
+                                    enumScopeId,
+                                    new CheckedVariable(
+                                        name: u.Name,
+                                        type: enumTypeId,
+                                        mutable: false),
+                                    u.Span);
+
+                                error = error ?? varErr.Error;
                             }
                         }
                         else {
@@ -3402,7 +3443,17 @@ public static partial class TypeCheckerFunctions {
                                 checkedExpr,
                                 w.Span));
 
-                        // FIXME: Generate a constructor
+                        // This has a value, so generate a "variable" for it
+
+                        var varErr = project.AddVarToScope(
+                            enumScopeId,
+                            new CheckedVariable(
+                                name: w.Name,
+                                type: enumTypeId,
+                                mutable: false),
+                            w.Span);
+                        
+                        error = error ?? varErr.Error;
                     }
 
                     break;
@@ -4941,6 +4992,96 @@ public static partial class TypeCheckerFunctions {
                 }
             }
 
+            case ParsedNamespacedVarExpression e: {
+
+                var scopes = new List<Int32?>(new Int32?[] { scopeId });
+
+                foreach (var ns in e.Items) {
+
+                    // Could either be a namespace or an enum with an underlying type, prefer the namespace
+
+                    Int32? _scope = null;
+
+                    var _lastScopeId = scopes.LastOrDefault();
+
+                    if (_lastScopeId is Int32 lastScopeId) {
+
+                        _scope = project.FindNamespaceInScope(lastScopeId, ns);
+
+                        if (_scope == null) {
+
+                            var _enumId = project.FindEnumInScope(lastScopeId, ns);
+
+                            if (_enumId is Int32 enumId) {
+
+                                _scope = project.Enums[enumId].ScopeId;
+                            }
+                        }
+                    }
+
+                    scopes.Add(_scope);
+                }
+
+                var scope = scopes.LastOrDefault();
+
+                if (e.Items.Count != scopes.Count) {
+
+                    throw new Exception();
+                }
+
+                var checkedNamespace = new List<CheckedNamespace>();
+
+                for (var i = 0; i < e.Items.Count; i++) {
+
+                    checkedNamespace.Add(
+                        new CheckedNamespace(
+                            name: e.Items[i],
+                            scopeId: scopes[i] ?? throw new Exception()));
+                }
+
+                switch (scope) {
+
+                    case Int32 nsScopeId: {
+
+                        if (project.FindVarInScope(nsScopeId, e.Name) is CheckedVariable v) {
+
+                            return (
+                                new CheckedNamespacedVarExpression(checkedNamespace, v, e.Span),
+                                null);
+                        }
+                        else {
+
+                            return (
+                                new CheckedNamespacedVarExpression(
+                                    checkedNamespace,
+                                    new CheckedVariable(
+                                        name: e.Name,
+                                        type: typeHint ?? Compiler.UnknownTypeId,
+                                        mutable: false),
+                                    e.Span),
+                                new TypeCheckError(
+                                    "variable not found",
+                                    e.Span));
+                        }
+                    }
+
+                    default: {
+
+                        return (
+                            new CheckedNamespacedVarExpression(
+                                checkedNamespace,
+                                new CheckedVariable(
+                                    name: e.Name,
+                                    type: typeHint ?? Compiler.UnknownTypeId,
+                                    mutable: false),
+                                e.Span),
+                            new TypeCheckError(
+                                "namespace not found",
+                                e.Span));
+                    }
+                }
+            }
+
             case ParsedArrayExpression ve: {
 
                 var innerType = Compiler.UnknownTypeId;
@@ -5701,28 +5842,34 @@ public static partial class TypeCheckerFunctions {
 
                                                 error = error ?? blockErr;
 
-                                                switch (finalResultType) {
 
-                                                    case Int32 _frt: {
+                                                if (!body.DefinitelyReturns) {
 
-                                                        if (CheckTypesForCompat(
-                                                            Compiler.VoidTypeId,
-                                                            _frt,
-                                                            genericParams,
-                                                            we.Span,
-                                                            project) is Error compatErr) {
+                                                    WriteLine($"{body}");
 
-                                                            error = error ?? compatErr;
+                                                    switch (finalResultType) {
+
+                                                        case Int32 _frt: {
+
+                                                            if (CheckTypesForCompat(
+                                                                Compiler.VoidTypeId,
+                                                                _frt,
+                                                                genericParams,
+                                                                we.Span,
+                                                                project) is Error compatErr) {
+
+                                                                error = error ?? compatErr;
+                                                            }
+
+                                                            break;
                                                         }
 
-                                                        break;
-                                                    }
+                                                        default: {
 
-                                                    default: {
+                                                            finalResultType = Compiler.VoidTypeId;
 
-                                                        finalResultType = Compiler.VoidTypeId;
-
-                                                        break;
+                                                            break;
+                                                        }
                                                     }
                                                 }
 

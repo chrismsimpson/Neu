@@ -1725,6 +1725,27 @@ public partial class ParsedExpression {
         }
     }
     
+    public partial class ParsedNamespacedVarExpression: ParsedExpression {
+
+        public String Name { get; init; }
+
+        public List<String> Items { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public ParsedNamespacedVarExpression(
+            String name,
+            List<String> items,
+            Span span) {
+
+            this.Name = name;
+            this.Items = items;
+            this.Span = span;
+        }
+    }
+
     public partial class ParsedTupleExpression: ParsedExpression {
 
         public List<ParsedExpression> Expressions { get; init; }
@@ -2044,6 +2065,11 @@ public static partial class ParsedExpressionFunctions {
                 return ve.Span;
             }
 
+            case ParsedNamespacedVarExpression ne: {
+
+                return ne.Span;
+            }            
+
             case ParsedOperatorExpression oe: {
 
                 return oe.Span;
@@ -2154,6 +2180,33 @@ public static partial class ParsedExpressionFunctions {
                 && r is ParsedVarExpression varR:
 
                 return varL.Value == varR.Value;
+
+            case var _ when 
+                l is ParsedNamespacedVarExpression ln
+                && r is ParsedNamespacedVarExpression rn: {
+
+                if (!Equals(ln.Name, rn.Name)) {
+
+                    return false;
+                }
+
+                if (ln.Items.Count != rn.Items.Count) {
+
+                    return false;
+                }
+
+                for (var i = 0; i < ln.Items.Count; i++) {
+
+                    if (!Equals(ln.Items[i], rn.Items[i])) {
+
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+                
 
             ///
 
@@ -5683,15 +5736,40 @@ public static partial class ParserFunctions {
 
                                 default: {
 
-                                    index += 1;
+                                    // index += 1;
 
-                                    error = error ??
-                                        new ParserError(
-                                            "Unsupported static method call",
-                                            tokens.ElementAt(index).Span);
+                                    // error = error ??
+                                    //     new ParserError(
+                                    //         "Unsupported static method call",
+                                    //         tokens.ElementAt(index).Span);
+
+                                    String name = tokens[index - 1] switch {
+
+                                        NameToken nt => nt.Value,
+                                        _ => throw new Exception()
+                                    };
 
                                     contNS = false;
 
+                                    // // Just a reference to a variable in a namespace
+                                    // expr = ParsedExpression::NamespacedVar(
+                                    //     name,
+                                    //     namespace,
+                                    //     Span {
+                                    //         file_id: span.file_id,
+                                    //         start: span.start,
+                                    //         end: tokens[*index].span.end,
+                                    //     },
+                                    // );
+
+                                    expr = new ParsedNamespacedVarExpression(
+                                        name,
+                                        ns,
+                                        new Span(
+                                            fileId: span.FileId, 
+                                            start: span.Start, 
+                                            end: tokens[index].Span.End));
+                                    
                                     break;
                                 }
                             }
@@ -6886,20 +6964,6 @@ public static partial class ParserFunctions {
             index += 1;
 
             var (ty, err) = ParseTypeName(tokens, ref index);
-
-            // if (tokens[index] is RSquareToken) {
-
-            //     index += 1;
-
-            //     return (
-            //         new ParsedArrayType(
-            //             ty, 
-            //             new Span(
-            //                 fileId: start.FileId, 
-            //                 start: start.Start, 
-            //                 end: tokens[index - 1].Span.End)),
-            //         err);   
-            // }
 
             switch (tokens[index]) {
 
