@@ -1655,6 +1655,9 @@ public static partial class LexerFunctions {
 
             default: {
 
+                // FIXME: We should use a generic "integer" type here that stores i128, and infer the type later
+                // For now, just check the size of the integer and create an i64 or u64
+
                 if (number > Int64.MaxValue) {
 
                     if (number <= UInt64.MaxValue) {
@@ -1671,8 +1674,6 @@ public static partial class LexerFunctions {
                     }
                 }
                 else if (number >= Int64.MinValue) {
-
-                    
 
                     return (new NumberToken(new Int64Constant((long) number), span), null);
                 }
