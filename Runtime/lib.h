@@ -109,9 +109,7 @@ constexpr auto continue_on_panic = false;
 
     inline void panic(StringView message) {
 
-        // FIXME: This should print to stderr, but the tests compare stdout.
-        
-        outLine("Panic: {}", message);
+        warnLine("Panic: {}", message);
 
         if (continue_on_panic) {
 

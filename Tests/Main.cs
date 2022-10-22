@@ -132,7 +132,7 @@ public static partial class Program {
 
                 ///
 
-                var stderrOutputFilename = $"{name}.error_out";
+                var stderrOutputFilename = $"{name}.errorOut";
                 
                 var stderrOutputFilenamePath = $"{path}/{stderrOutputFilename}";
 
@@ -182,6 +182,8 @@ public static partial class Program {
                                 Console.ForegroundColor = og;
                             }
                             else {
+
+                                Write($"....................");
 
                                 Console.ForegroundColor = ConsoleColor.Green;
 
