@@ -3073,6 +3073,37 @@ public partial class Scope {
         this.Types = types;
         this.Children = children;
     }
+
+    public static bool CanAccess(
+        Int32 ownScopeId,
+        Int32 otherScopeId,
+        Project project) {
+
+        // We can access another scope if we're either the same scope, or we are a direct children scope of the other scope
+
+        if (ownScopeId == otherScopeId) {
+
+            return true;
+        }
+        else {
+
+            Scope? ownScope = project.Scopes[ownScopeId];
+
+            while (ownScope != null) {
+
+                if (ownScope.Parent == otherScopeId) {
+
+                    return true;
+                }
+
+                ownScope = ownScope.Parent is Int32 parentId
+                    ? project.Scopes[parentId]
+                    : null;
+            }
+
+            return false;
+        }
+    }
 }
 
 ///
