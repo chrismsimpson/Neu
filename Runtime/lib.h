@@ -328,175 +328,76 @@ constexpr auto continue_on_panic = false;
     _neu_value.releaseValue();                      \
 })
 
+    template<typename OutputType, typename InputType>
+    ALWAYS_INLINE Optional<OutputType> fallibleIntegerCast(InputType input) {
+
+        static_assert(IsIntegral<InputType>);
+        
+        if (!isWithinRange<OutputType>(input)) {
+
+            return { };
+        }
+
+        return static_cast<OutputType>(input);
+    }
+
+    template<typename... Ts>
+    void compileTimeFail(Ts...) { }
+
+    template<typename OutputType, typename InputType>
+    ALWAYS_INLINE constexpr OutputType infallibleIntegerCast(InputType input) {
+
+        static_assert(IsIntegral<InputType>);
+
+        if (isConstantEvaluated()) {
+
+            if (!isWithinRange<OutputType>(input)) {
+
+                compileTimeFail("Integer cast out of range");
+            }
+        } 
+        else {
+
+            VERIFY(isWithinRange<OutputType>(input));
+        }
+
+        return static_cast<OutputType>(input);
+    }
+
+    template<typename OutputType, typename InputType>
+    ALWAYS_INLINE constexpr OutputType saturatingIntegerCast(InputType input) {
+
+        static_assert(IsIntegral<InputType>);
+
+        if (!isWithinRange<OutputType>(input)) {
+
+            if constexpr (IsSigned<InputType>) {
+
+                if (input < 0) {
+
+                    return NumericLimits<OutputType>::min();
+                }
+            }
+
+            return NumericLimits<OutputType>::max();
+        }
+
+        return static_cast<OutputType>(input);
+    }
+
+    template<typename OutputType, typename InputType>
+    ALWAYS_INLINE constexpr OutputType truncatingIntegerCast(InputType input) {
+
+        static_assert(IsIntegral<InputType>);
+
+        return static_cast<OutputType>(input);
+    }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+using NeuInternal::fallibleIntegerCast;
+using NeuInternal::infallibleIntegerCast;
+using NeuInternal::saturatingIntegerCast;
+using NeuInternal::truncatingIntegerCast;
 
 int main(int argc, char** argv) {
 
