@@ -580,6 +580,8 @@ public partial class ParsedFunction {
 
     public String Name { get; init; }
 
+    public Visibility Visibility { get; init; }
+
     public Span NameSpan { get; init; }
 
     public List<ParsedParameter> Parameters { get; init; }
@@ -600,6 +602,7 @@ public partial class ParsedFunction {
         FunctionLinkage linkage)
         : this(
             String.Empty,
+            visibility: Visibility.Public,
             new Span(
                 fileId: 0, 
                 start: 0, 
@@ -614,6 +617,7 @@ public partial class ParsedFunction {
 
     public ParsedFunction(
         String name,
+        Visibility visibility,
         Span nameSpan,
         List<ParsedParameter> parameters,
         List<(String, Span)> genericParameters,
@@ -623,6 +627,7 @@ public partial class ParsedFunction {
         FunctionLinkage linkage) {
 
         this.Name = name;
+        this.Visibility = visibility;
         this.NameSpan = nameSpan;
         this.Parameters = parameters;
         this.GenericParameters = genericParameters;
@@ -635,7 +640,34 @@ public partial class ParsedFunction {
 
 ///
 
-public partial class Variable {
+public enum Visibility {
+    
+    Public,
+    Private
+}
+
+///
+
+public partial class ParsedParameter {
+
+    public bool RequiresLabel { get; init; }
+
+    public ParsedVariable Variable { get; init; }
+
+    ///
+
+    public ParsedParameter(
+        bool requiresLabel,
+        ParsedVariable variable) {
+
+        this.RequiresLabel = requiresLabel;
+        this.Variable = variable;
+    }
+}
+
+///
+
+public partial class ParsedVariable {
 
     public String Name { get; init; }
 
@@ -645,7 +677,7 @@ public partial class Variable {
 
     ///
 
-    public Variable(
+    public ParsedVariable(
         String name,
         ParsedType ty,
         bool mutable) {
@@ -653,25 +685,6 @@ public partial class Variable {
         this.Name = name;
         this.Type = ty;
         this.Mutable = mutable;
-    }
-}
-
-///
-
-public partial class ParsedParameter {
-
-    public bool RequiresLabel { get; init; }
-
-    public Variable Variable { get; init; }
-
-    ///
-
-    public ParsedParameter(
-        bool requiresLabel,
-        Variable variable) {
-
-        this.RequiresLabel = requiresLabel;
-        this.Variable = variable;
     }
 }
 
@@ -2638,7 +2651,11 @@ public static partial class ParserFunctions {
 
                         case "func": {
 
-                            var (fun, err) = ParseFunction(tokens, ref index, FunctionLinkage.Internal);
+                            var (fun, err) = ParseFunction(
+                                tokens, 
+                                ref index, 
+                                FunctionLinkage.Internal,
+                                Visibility.Public);
 
                             error = error ?? err;
 
@@ -2748,7 +2765,8 @@ public static partial class ParserFunctions {
                                                 var (fun, err) = ParseFunction(
                                                     tokens, 
                                                     ref index, 
-                                                    FunctionLinkage.External);
+                                                    FunctionLinkage.External,
+                                                    Visibility.Public);
 
                                                 error = error ?? err;
 
@@ -3329,6 +3347,8 @@ public static partial class ParserFunctions {
 
                     var methods = new List<ParsedFunction>();
 
+                    Visibility? lastVisibility = null;
+
                     var contFields = true;
 
                     while (contFields && index < tokens.Count) {
@@ -3338,6 +3358,14 @@ public static partial class ParserFunctions {
                             case RCurlyToken _: {
 
                                 index += 1;
+
+                                if (lastVisibility is Visibility) {
+
+                                    error = error ?? 
+                                        new ParserError(
+                                            "Expected function or parameter after visibility modifier",
+                                            tokens[index].Span);
+                                }
 
                                 contFields = false;
 
@@ -3365,13 +3393,39 @@ public static partial class ParserFunctions {
                                     _ => throw new Exception()
                                 };
 
-                                var (funcDecl, err) = ParseFunction(tokens, ref index, funcLinkage);
+                                var visibility = lastVisibility ?? definitionType switch {
+                                    DefinitionType.Class => Visibility.Private,
+                                    DefinitionType.Struct => Visibility.Public,
+                                    _ => throw new Exception()
+                                };
+
+                                lastVisibility = null;
+
+                                var (funcDecl, err) = ParseFunction(tokens, ref index, funcLinkage, visibility);
 
                                 error = error ?? err;
 
                                 methods.Add(funcDecl);
 
                                 break;
+                            }
+
+                            case NameToken nt2 when nt2.Value == "public": {
+
+                                lastVisibility = Visibility.Public;
+
+                                index += 1;
+
+                                continue;
+                            }
+
+                            case NameToken nt2 when nt2.Value == "private": {
+
+                                lastVisibility = Visibility.Private;
+
+                                index += 1;
+
+                                continue;
                             }
 
                             case NameToken _: {
@@ -3381,6 +3435,10 @@ public static partial class ParserFunctions {
                                 var (varDecl, parseVarDeclErr) = ParseVariableDeclaration(tokens, ref index);
                                 
                                 error = error ?? parseVarDeclErr;
+
+                                // FIXME: Actually use the visibility
+                                
+                                lastVisibility = null;
 
                                 // Ignore immutable flag for now
                                 
@@ -3414,6 +3472,14 @@ public static partial class ParserFunctions {
 
                                 break;
                             }
+                        }
+
+                        if (lastVisibility is Visibility v) {
+
+                            error = error ?? 
+                                new ParserError(
+                                    "Expected function or parameter after visibility modifier",
+                                    tokens[index].Span);
                         }
                     }
 
@@ -3487,7 +3553,8 @@ public static partial class ParserFunctions {
     public static (ParsedFunction, Error?) ParseFunction(
         List<Token> tokens,
         ref int index,
-        FunctionLinkage linkage) {
+        FunctionLinkage linkage,
+        Visibility visibility) {
 
         Trace($"ParseFunction: {tokens.ElementAt(index)}");
 
@@ -3617,7 +3684,7 @@ public static partial class ParserFunctions {
                                 parameters.Add(
                                     new ParsedParameter(
                                         requiresLabel: false,
-                                        variable: new Variable(
+                                        variable: new ParsedVariable(
                                             name: "this",
                                             ty: new ParsedEmptyType(),
                                             mutable: currentParamIsMutable)));
@@ -3646,7 +3713,7 @@ public static partial class ParserFunctions {
                                 parameters.Add(
                                     new ParsedParameter(
                                         requiresLabel: currentParamRequiresLabel,
-                                        variable: new Variable(
+                                        variable: new ParsedVariable(
                                             varDecl.Name, 
                                             varDecl.Type, 
                                             varDecl.Mutable)));
@@ -3787,6 +3854,7 @@ public static partial class ParserFunctions {
                         return (
                             new ParsedFunction(
                                 name: funNameToken.Value,
+                                visibility: visibility,
                                 nameSpan,
                                 parameters,
                                 genericParameters,
@@ -3827,6 +3895,7 @@ public static partial class ParserFunctions {
                     return (
                         new ParsedFunction(
                             name: funNameToken.Value,
+                            visibility: visibility,
                             nameSpan,
                             parameters,
                             genericParameters,
