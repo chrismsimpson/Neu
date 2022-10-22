@@ -6621,6 +6621,7 @@ public static partial class TypeCheckerFunctions {
 
         switch (call.Name) {
 
+            case "print" when structId == null:
             case "printLine" when structId == null:
             case "warnLine" when structId == null: {
 

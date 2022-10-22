@@ -1869,6 +1869,25 @@ public static partial class CodeGenFunctions {
 
                 switch (ce.Call.Name) {
 
+                    case "print": {
+
+                        output.Append("out(");
+
+                        for (var i = 0; i < ce.Call.Args.Count; i++) {
+
+                            output.Append(CodeGenExpr(indent, ce.Call.Args[i].Item2, project));
+
+                            if (i != ce.Call.Args.Count - 1) {
+
+                                output.Append(',');
+                            }
+                        }
+
+                        output.Append(')');
+
+                        break;
+                    }
+
                     case "printLine": {
 
                         output.Append("outLine(");
