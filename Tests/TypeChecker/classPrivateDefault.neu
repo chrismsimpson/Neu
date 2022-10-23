@@ -1,0 +1,11 @@
+class GoodEncapsulation {
+    func cantTouch(this) { }
+    public func oraoraora(this) { }
+}
+
+func main() {
+    let encapsulated = GoodEncapsulation()
+    // This is okay!
+    encapsulated.oraoraora()
+    encapsulated.cantTouch()
+}

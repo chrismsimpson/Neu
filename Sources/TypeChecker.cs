@@ -6731,7 +6731,7 @@ public static partial class TypeCheckerFunctions {
                         error = error ?? 
                             new TypeCheckError(
                                 // FIXME: Improve this error
-                                $"Can't access function `{callee.Name}` from scope {project.Scopes[callerScopeId].NamespaceName}",        
+                                $"Can't access function `{callee.Name}` from scope {project.Scopes[callerScopeId].NamespaceName ?? "none"}",
                                 span);
                     }
 

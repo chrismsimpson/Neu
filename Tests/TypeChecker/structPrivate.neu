@@ -1,0 +1,9 @@
+struct WeirdEncapsulation {
+
+    private func parts(this) { }
+}
+
+func main() {
+    let useless = WeirdEncapsulation()
+    useless.parts()
+}
