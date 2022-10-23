@@ -5,23 +5,23 @@ enum Simple {
 }
 
 enum SimpleWithType {
-    a: Int32
-    b: Int32
+    a(Int32)
+    b(Int32)
 }
 
 enum SimpleWithStructType {
-    a { aa: Int32, ab: UInt32 }
-    b: Int32
+    a(aa: Int32, ab: UInt32)
+    b(Int32)
 }
 
 enum SimpleWithTypeParameter<T> {
-    a: T
+    a(T)
     b
 }
 
 enum SimpleWithMultipleTypeParameters<T, U> {
-    a: T
-    b: U
+    a(T)
+    b(U)
 }
 
 enum IntegralWithUnderlyingType: Int32 {

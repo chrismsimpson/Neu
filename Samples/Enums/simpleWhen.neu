@@ -1,15 +1,15 @@
 enum BetterOptional<T> {
-    some: T
+    some(T)
     none
 }
 
 enum BetterResult<T, E> {
-    imFineHowAreYou: T
-    theWorldIsBurning: E
+    imFineHowAreYou(T)
+    theWorldIsBurning(E)
 }
 
 enum ObjectivelyBetterOptional<T> {
-    some { value: T, jokeMetadata: String }
+    some(value: T, jokeMetadata: String)
     none
 }
 

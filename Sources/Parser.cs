@@ -3032,8 +3032,8 @@ public static partial class ParserFunctions {
             Trace($"enum body: {tokens[index]}");
 
             // Variants in one of the following forms:
-            // - Ident(name) Colon Type
-            // - Ident(name) LCurly struct_body RCurly
+            // - Ident(name) LParen Type RParen
+            // - Ident(name) LParen struct_body RParen
             // - Ident(name) Equal Expression
             //    expression should evaluate to the underlying type (not allowed if no underlying type)
             // - Ident(name)
@@ -3071,38 +3071,16 @@ public static partial class ParserFunctions {
 
                 switch (tokens.ElementAtOrDefault(index)) {
 
-                    case ColonToken _: {
+                    case LParenToken _: {
 
                         Trace("variant with type");
-
-                        index += 1;
-
-                        var (varType, typeErr) = ParseTypeName(tokens, ref index);
-                        
-                        // index += 1;
-                        
-                        error = error ?? typeErr;
-                        
-                        _enum.Variants.Add(
-                            new TypedEnumVariant(
-                                name,
-                                varType,
-                                new Span(
-                                    fileId: tokens[index].Span.FileId,
-                                    start: tokens[startIndex].Span.Start,
-                                    end: tokens[index].Span.End)));
-
-                        break;
-                    }
-
-                    case LCurlyToken _: {
 
                         index += 1;
 
                         var members = new List<ParsedVarDecl>();
 
                         while (index < tokens.Count
-                            && !(tokens[index] is RCurlyToken)) {
+                            && !(tokens[index] is RParenToken)) {
                             
                             SkipNewLines(tokens, ref index);
 
@@ -3123,14 +3101,30 @@ public static partial class ParserFunctions {
 
                         index += 1;
 
-                        _enum.Variants.Add(
-                            new StructLikeEnumVariant(
-                                name,
-                                members,
-                                new Span(
-                                    fileId: tokens[index].Span.FileId,
-                                    start: tokens[startIndex].Span.Start,
-                                    end: tokens[index].Span.End)));
+                        if (members.Count == 1 && members[0].Type is ParsedEmptyType) {
+
+                            // We have a simple value (non-struct) case
+
+                            _enum.Variants.Add(
+                                new TypedEnumVariant(
+                                    name,
+                                    new ParsedNameType(members[0].Name, members[0].Span),
+                                    new Span(
+                                        fileId: tokens[index].Span.FileId,
+                                        start: tokens[startIndex].Span.Start,
+                                        end: tokens[index].Span.End)));
+                        }
+                        else {
+
+                            _enum.Variants.Add(
+                                new StructLikeEnumVariant(
+                                    name,
+                                    members,
+                                    new Span(
+                                        fileId: tokens[index].Span.FileId,
+                                        start: tokens[startIndex].Span.Start,
+                                        end: tokens[index].Span.End)));
+                        }
 
                         break;
                     }
