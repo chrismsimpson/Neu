@@ -347,50 +347,70 @@ constexpr auto continue_on_panic = false;
     template<typename OutputType, typename InputType>
     ALWAYS_INLINE constexpr OutputType infallibleIntegerCast(InputType input) {
 
-        static_assert(IsIntegral<InputType>);
+        if constexpr (IsEnum<InputType>) {
 
-        if (isConstantEvaluated()) {
-
-            if (!isWithinRange<OutputType>(input)) {
-
-                compileTimeFail("Integer cast out of range");
-            }
-        } 
+            return infallibleIntegerCast<OutputType>(toUnderlying(input));
+        }
         else {
 
-            VERIFY(isWithinRange<OutputType>(input));
-        }
+            static_assert(IsIntegral<InputType>);
 
-        return static_cast<OutputType>(input);
+            if (isConstantEvaluated()) {
+
+                if (!isWithinRange<OutputType>(input)) {
+
+                    compileTimeFail("Integer cast out of range");
+                }
+            } 
+            else {
+
+                VERIFY(isWithinRange<OutputType>(input));
+            }
+
+            return static_cast<OutputType>(input);
+        }
     }
 
     template<typename OutputType, typename InputType>
     ALWAYS_INLINE constexpr OutputType saturatingIntegerCast(InputType input) {
 
-        static_assert(IsIntegral<InputType>);
+        if constexpr (IsEnum<InputType>) {
+        
+            return saturatingIntegerCast<OutputType>(toUnderlying(input));
+        }
+        else {
 
-        if (!isWithinRange<OutputType>(input)) {
+            static_assert(IsIntegral<InputType>);
 
-            if constexpr (IsSigned<InputType>) {
+            if (!isWithinRange<OutputType>(input)) {
 
-                if (input < 0) {
+                if constexpr (IsSigned<InputType>) {
 
-                    return NumericLimits<OutputType>::min();
+                    if (input < 0) {
+
+                        return NumericLimits<OutputType>::min();
+                    }
                 }
+
+                return NumericLimits<OutputType>::max();
             }
 
-            return NumericLimits<OutputType>::max();
+            return static_cast<OutputType>(input);
         }
-
-        return static_cast<OutputType>(input);
     }
 
     template<typename OutputType, typename InputType>
     ALWAYS_INLINE constexpr OutputType truncatingIntegerCast(InputType input) {
 
-        static_assert(IsIntegral<InputType>);
+        if constexpr (IsEnum<InputType>) {
+            return truncatingIntegerCast<OutputType>(toUnderlying(input));
+        } 
+        else {
 
-        return static_cast<OutputType>(input);
+            static_assert(IsIntegral<InputType>);
+
+            return static_cast<OutputType>(input);
+        }
     }
 }
 

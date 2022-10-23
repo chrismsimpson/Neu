@@ -5079,10 +5079,10 @@ public static partial class TypeCheckerFunctions {
 
                 var scope = scopes.LastOrDefault();
 
-                if (e.Items.Count != scopes.Count) {
+                // if (e.Items.Count != scopes.Count) {
 
-                    throw new Exception();
-                }
+                //     throw new Exception();
+                // }
 
                 var checkedNamespace = new List<CheckedNamespace>();
 
@@ -5091,7 +5091,7 @@ public static partial class TypeCheckerFunctions {
                     checkedNamespace.Add(
                         new CheckedNamespace(
                             name: e.Items[i],
-                            scopeId: scopes[i] ?? throw new Exception()));
+                            scopeId: i < scopes.Count ? scopes[i] ?? 0 : 0));
                 }
 
                 switch (scope) {
