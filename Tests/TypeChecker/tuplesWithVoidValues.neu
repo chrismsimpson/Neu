@@ -1,0 +1,8 @@
+enum Bar {
+    value
+}
+
+func main() {
+    let foo = Bar.value()
+    let b = (when foo { }, 1)
+}
