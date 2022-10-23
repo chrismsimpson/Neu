@@ -77,11 +77,11 @@ extern struct Error {
 }
 
 extern class File {
-    func openForReading(anon path: String) throws -> File
-    func openForWriting(anon path: String) throws -> File
+    public func openForReading(anon path: String) throws -> File
+    public func openForWriting(anon path: String) throws -> File
 
-    func read(var this, anon buffer: [UInt8]) throws -> UInt
-    func write(var this, anon data: [UInt8]) throws -> UInt
+    public func read(var this, anon buffer: [UInt8]) throws -> UInt
+    public func write(var this, anon data: [UInt8]) throws -> UInt
 
-    func readAll(var this) throws -> [UInt8]
+    public func readAll(var this) throws -> [UInt8]
 }
