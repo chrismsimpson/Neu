@@ -310,7 +310,6 @@ public static partial class Program {
                         }
 
                         case var _ when
-                            // !IsNullOrWhiteSpace(builtErr) &&
                             File.Exists(stderrOutputFilenamePath): {
 
                             var stderrOutput = ReadAllText(stderrOutputFilenamePath);

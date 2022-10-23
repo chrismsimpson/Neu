@@ -226,26 +226,6 @@ public static partial class NeuTypeFunctions {
     public static bool IsInteger(
         Int32 typeId) {
 
-        // switch (typeId) {
-
-        //     case Compiler.CCharTypeId:
-        //     case Compiler.CIntTypeId:
-        //     case Compiler.Int8TypeId:
-        //     case Compiler.Int16TypeId:
-        //     case Compiler.Int32TypeId:
-        //     case Compiler.Int64TypeId:
-        //     case Compiler.IntTypeId:
-        //     case Compiler.UInt8TypeId:
-        //     case Compiler.UInt16TypeId:
-        //     case Compiler.UInt32TypeId:
-        //     case Compiler.UInt64TypeId:
-        //     case Compiler.UIntTypeId:
-        //         return true;
-            
-        //     default: 
-        //         return false;
-        // }
-
         return (new [] { Compiler.CCharTypeId, Compiler.CIntTypeId, Compiler.Int8TypeId, Compiler.Int16TypeId, Compiler.Int32TypeId, Compiler.Int64TypeId, Compiler.IntTypeId, Compiler.UInt8TypeId, Compiler.UInt16TypeId, Compiler.UInt32TypeId, Compiler.UInt64TypeId, Compiler.UIntTypeId }).Contains(typeId);
     }
 
@@ -1579,38 +1559,6 @@ public static partial class IntegerConstantFunctions {
         var bits = NeuTypeFunctions.GetBits(typeId);
 
         var signed = NeuTypeFunctions.IsSigned(typeId);
-
-
-
-        // NumericConstant newConstant = i switch {
-        //     SignedIntegerConstant si => typeId switch {      
-        //         Compiler.Int8TypeId => new Int8Constant(ToSByte(si.Value)),
-        //         Compiler.Int16TypeId => new Int16Constant(ToInt16(si.Value)),
-        //         Compiler.Int32TypeId => new Int32Constant(ToInt32(si.Value)),
-        //         Compiler.Int64TypeId => new Int64Constant(si.Value),
-        //         Compiler.IntTypeId => new IntConstant(si.Value),
-        //         Compiler.UInt8TypeId => new UInt8Constant(ToByte(si.Value)),
-        //         Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(si.Value)),
-        //         Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(si.Value)),
-        //         Compiler.UInt64TypeId => new UInt64Constant(ToUInt64(si.Value)),
-        //         Compiler.UIntTypeId => new UIntConstant(ToUInt64(si.Value)),
-        //         _ => throw new Exception("Bogus state in IntegerConstant.promote")
-        //     },
-        //     UnsignedIntegerConstant ui => typeId switch {
-        //         Compiler.Int8TypeId => new Int8Constant(ToSByte(ui.Value)),
-        //         Compiler.Int16TypeId => new Int16Constant(ToInt16(ui.Value)),
-        //         Compiler.Int32TypeId => new Int32Constant(ToInt32(ui.Value)),
-        //         Compiler.Int64TypeId => new Int64Constant(System.Convert.ToInt64(ui.Value)),
-        //         Compiler.IntTypeId => new IntConstant(System.Convert.ToInt64(ui.Value)),
-        //         Compiler.UInt8TypeId => new UInt8Constant(ToByte(ui.Value)),
-        //         Compiler.UInt16TypeId => new UInt16Constant(ToUInt16(ui.Value)),
-        //         Compiler.UInt32TypeId => new UInt32Constant(ToUInt32(ui.Value)),
-        //         Compiler.UInt64TypeId => new UInt64Constant(ui.Value),
-        //         Compiler.UIntTypeId => new UIntConstant(ui.Value),
-        //         _ => throw new Exception("Bogus state in IntegerConstant.promote")
-        //     },
-        //     _ => throw new Exception()
-        // };
 
         NumericConstant newConstant = i switch {
 
@@ -3090,20 +3038,6 @@ public partial class Scope {
             return true;
         }
         else {
-
-            // Scope? ownScope = project.Scopes[ownScopeId];
-
-            // while (ownScope != null) {
-
-            //     if (ownScope.Parent == otherScopeId) {
-
-            //         return true;
-            //     }
-
-            //     ownScope = ownScope.Parent is Int32 parentId
-            //         ? project.Scopes[parentId]
-            //         : null;
-            // }
 
             var ownScope = project.Scopes[ownScopeId];
 
@@ -5079,11 +5013,6 @@ public static partial class TypeCheckerFunctions {
 
                 var scope = scopes.LastOrDefault();
 
-                // if (e.Items.Count != scopes.Count) {
-
-                //     throw new Exception();
-                // }
-
                 var checkedNamespace = new List<CheckedNamespace>();
 
                 for (var i = 0; i < e.Items.Count; i++) {
@@ -6447,14 +6376,47 @@ public static partial class TypeCheckerFunctions {
 
         switch (op) {
 
-            case BinaryOperator.LogicalAnd:
-            case BinaryOperator.LogicalOr:
             case BinaryOperator.LessThan:
             case BinaryOperator.LessThanOrEqual:
             case BinaryOperator.GreaterThan:
             case BinaryOperator.GreaterThanOrEqual:
             case BinaryOperator.Equal:
             case BinaryOperator.NotEqual: {
+
+                if (lhsTy != rhsTy) {
+
+                    return (
+                        lhsTy,
+                        new TypeCheckError(
+                            "binary comparison operation between incompatible types",
+                            span));
+                }
+
+                ty = Compiler.BoolTypeId;
+
+                break;
+            }
+
+            case BinaryOperator.LogicalAnd:
+            case BinaryOperator.LogicalOr: {
+
+                if (lhsTy != Compiler.BoolTypeId) {
+
+                    return (
+                        lhsTy,
+                        new TypeCheckError(
+                            "left side of logical binary operation is not a boolean",
+                            span));
+                }
+
+                if (rhsTy != Compiler.BoolTypeId) {
+
+                    return (
+                        rhsTy,
+                        new TypeCheckError(
+                            "right side of logical binary operation is not a boolean",
+                            span));
+                }
 
                 ty = Compiler.BoolTypeId;
 
@@ -6472,9 +6434,6 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.BitwiseXorAssign:
             case BinaryOperator.BitwiseLeftShiftAssign:
             case BinaryOperator.BitwiseRightShiftAssign: {
-
-                // var lhsTy = lhs.GetNeuType();
-                // var rhsTy = rhs.GetNeuType();
 
                 if (lhsTy != rhsTy) {
 

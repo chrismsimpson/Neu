@@ -2,7 +2,7 @@ func main() {
     let v = [85; 3]
     printLine("{}", v.size())
     var i = 0
-    while i < v.size() {
+    while i < v.size() as! Int64 {
         printLine("{}", v[i++])
     }
 }

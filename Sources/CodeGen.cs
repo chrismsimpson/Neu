@@ -640,11 +640,6 @@ public static partial class CodeGenFunctions {
 
                 output.Append(CodeGenIndent(INDENT_SIZE));
 
-                // if (func.IsStatic()) {
-
-                //     output.Append("static ");
-                // }
-
                 var methodOutput = CodeGenFunc(func, project);
 
                 output.Append(methodOutput);
