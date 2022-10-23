@@ -5770,7 +5770,7 @@ public static partial class TypeCheckerFunctions {
 
                                                                 error = error ?? 
                                                                     new TypeCheckError(
-                                                                        $"match case argument '{_name}' does not exist in struct-like enum variant '{variantName}'",
+                                                                        $"when case argument '{_name}' does not exist in struct-like enum variant '{variantName}'",
                                                                         evwc.ArgumentsSpan);
 
                                                                 break;
