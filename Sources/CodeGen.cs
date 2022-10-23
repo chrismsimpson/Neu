@@ -921,12 +921,10 @@ public static partial class CodeGenFunctions {
             output.Append(" const");
         }
 
-        if (fun.Name == "main") {
-            
-            output.Append("\n");
-            output.Append("{\n");
-            output.Append(CodeGenIndent(INDENT_SIZE));
-        }
+        output.Append("\n{\n");
+        output.Append(CodeGenIndent(INDENT_SIZE));
+        
+        // Put the return type in scope
 
         if (fun.Name == "main") {
 
@@ -934,15 +932,10 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            var returnType = fun.ReturnType;
-
-            if (returnType == Compiler.UnknownTypeId) {
+            if (fun.ReturnType == Compiler.UnknownTypeId) {
 
                 throw new Exception($"Function type unknown at codegen time in {fun.Name}");
             }
-
-            output.Append("{\n");
-            output.Append(CodeGenIndent(INDENT_SIZE));
 
             if (fun.Throws) {
 
