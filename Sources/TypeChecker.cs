@@ -1147,6 +1147,8 @@ public partial class CheckedFunction {
 
     public String Name { get; init; }
 
+    public Visibility Visibility { get; init; }
+
     public bool Throws { get; init; }
     
     public Int32 ReturnType { get; set; }
@@ -1165,6 +1167,7 @@ public partial class CheckedFunction {
 
     public CheckedFunction(
         String name,
+        Visibility visibility,
         bool throws,
         Int32 returnType,
         List<CheckedParameter> parameters,
@@ -1174,6 +1177,7 @@ public partial class CheckedFunction {
         FunctionLinkage linkage) { 
 
         this.Name = name;
+        this.Visibility = visibility;
         this.Throws = throws;
         this.ReturnType = returnType;
         this.Parameters = parameters;
@@ -3087,18 +3091,30 @@ public partial class Scope {
         }
         else {
 
-            Scope? ownScope = project.Scopes[ownScopeId];
+            // Scope? ownScope = project.Scopes[ownScopeId];
 
-            while (ownScope != null) {
+            // while (ownScope != null) {
 
-                if (ownScope.Parent == otherScopeId) {
+            //     if (ownScope.Parent == otherScopeId) {
+
+            //         return true;
+            //     }
+
+            //     ownScope = ownScope.Parent is Int32 parentId
+            //         ? project.Scopes[parentId]
+            //         : null;
+            // }
+
+            var ownScope = project.Scopes[ownScopeId];
+
+            while (ownScope.Parent is Int32 parent) {
+
+                if (parent == otherScopeId) {
 
                     return true;
-                }
+                } 
 
-                ownScope = ownScope.Parent is Int32 parentId
-                    ? project.Scopes[parentId]
-                    : null;
+                ownScope = project.Scopes[parent];
             }
 
             return false;
@@ -3404,6 +3420,8 @@ public static partial class TypeCheckerFunctions {
 
                             var checkedConstructor = new CheckedFunction(
                                 name: u.Name,
+                                // Enum variant constructors are always visible.
+                                visibility: Visibility.Public,
                                 throws: false,
                                 returnType: enumTypeId,
                                 parameters: new List<CheckedParameter>(),
@@ -3557,6 +3575,7 @@ public static partial class TypeCheckerFunctions {
 
                             var checkedConstructor = new CheckedFunction(
                                 name: s.Name,
+                                visibility: Visibility.Public,
                                 throws: false,
                                 returnType: enumTypeId,
                                 parameters: constructorParams,
@@ -3633,6 +3652,7 @@ public static partial class TypeCheckerFunctions {
 
                             var checkedConstructor = new CheckedFunction(
                                 name: t.Name,
+                                visibility: Visibility.Public,
                                 throws: false,
                                 returnType: enumTypeId,
                                 parameters: constructorParams,
@@ -3726,6 +3746,7 @@ public static partial class TypeCheckerFunctions {
 
             var checkedFunction = new CheckedFunction(
                 name: func.Name,
+                visibility: func.Visibility,
                 throws: func.Throws,
                 parameters: new List<CheckedParameter>(),
                 genericParameters: genericParameters,
@@ -3842,6 +3863,8 @@ public static partial class TypeCheckerFunctions {
 
             var checkedConstructor = new CheckedFunction(
                 name: structure.Name,
+                // The default constructor is public
+                visibility: Visibility.Public,
                 throws: structure.DefinitionType == DefinitionType.Class,
                 returnType: structTypeId,
                 parameters: constructorParams,
@@ -3891,6 +3914,7 @@ public static partial class TypeCheckerFunctions {
 
         var checkedFunction = new CheckedFunction(
             name: func.Name,
+            visibility: func.Visibility,
             throws: func.Throws,
             returnType: Compiler.UnknownTypeId,
             parameters: new List<CheckedParameter>(),
@@ -5849,7 +5873,7 @@ public static partial class TypeCheckerFunctions {
 
                                             if (!body.DefinitelyReturns) {
 
-                                                WriteLine($"{body}");
+                                                // WriteLine($"{body}");
 
                                                 switch (finalResultType) {
 
@@ -6698,6 +6722,18 @@ public static partial class TypeCheckerFunctions {
                 calleDefType = _calleDefType;
 
                 if (callee != null) {
+
+                    // Make sure we are allowed to access this method
+
+                    if (callee.Visibility != Visibility.Public
+                        && !Scope.CanAccess(callerScopeId, calleeScopeId, project)) {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                // FIXME: Improve this error
+                                $"Can't access function `{callee.Name}` from scope {project.Scopes[callerScopeId].NamespaceName}",        
+                                span);
+                    }
 
                     calleeThrows = callee.Throws;
 

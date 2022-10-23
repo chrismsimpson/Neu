@@ -1,6 +1,6 @@
 class Foo {
 
-    func toss(this) throws {
+    public func toss(this) throws {
 
         throw Error.fromError(0)
     }

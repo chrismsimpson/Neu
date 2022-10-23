@@ -1,11 +1,11 @@
 class Foo {
     x: Int64
 
-    func set(var this, value: Int64) {
+    public func set(var this, value: Int64) {
         this.x = value
     }
 
-    func get(this) {
+    public func get(this) {
         return this.x
     }
 }

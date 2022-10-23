@@ -2,7 +2,7 @@ class Person {
     name: String
     age: Int64
 
-    func birthday(var this) {
+    public func birthday(var this) {
         ++this.age
     }
 }
