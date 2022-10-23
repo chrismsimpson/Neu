@@ -1177,7 +1177,7 @@ public static partial class LexerFunctions {
                 return (
                     new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
-                        "could not parse hex",
+                        "could not parse hex number",
                         new Span(fileId, start, index)));
             }
         }
@@ -1201,6 +1201,15 @@ public static partial class LexerFunctions {
                     new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "octal number literal cannot end with underscore",
+                        new Span(fileId, start, index)));
+            }
+
+            if (bytes[index].IsAsciiDigit()) {
+
+                return (
+                    new GarbageToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "could not parse octal number",
                         new Span(fileId, start, index)));
             }
 
@@ -1288,6 +1297,15 @@ public static partial class LexerFunctions {
                             "binary number literal cannot end with underscore",
                             new Span(fileId, start, index)));
                 }
+
+                if (bytes[index].IsAsciiDigit()) {
+
+                    return (
+                        new GarbageToken(new Span(fileId, start, index)),
+                        new ParserError(
+                            "could not parse binary number",
+                            new Span(fileId, start, index)));
+                }
             }
             else if (bytes[index] == '0' && index + 2 < bytes.Length && bytes[index + 1] == 'o') {
 
@@ -1311,6 +1329,15 @@ public static partial class LexerFunctions {
                         new GarbageToken(new Span(fileId, start, index)),
                         new ParserError(
                             "octal number literal cannot end with underscore",
+                            new Span(fileId, start, index)));
+                }
+
+                if (bytes[index].IsAsciiDigit()) {
+
+                    return (
+                        new GarbageToken(new Span(fileId, start, index)),
+                        new ParserError(
+                            "could not parse octal number",
                             new Span(fileId, start, index)));
                 }
             }
@@ -1379,7 +1406,7 @@ public static partial class LexerFunctions {
                 return (
                     new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
-                        "could not parse hex",
+                        "could not parse hex number",
                         new Span(fileId, start, index)));
             }
         }
@@ -1405,6 +1432,15 @@ public static partial class LexerFunctions {
                     new GarbageToken(new Span(fileId, start, index)),
                     new ParserError(
                         "binary number literal cannot end with underscore",
+                        new Span(fileId, start, index)));
+            }
+
+            if (bytes[index].IsAsciiDigit()) {
+
+                return (
+                    new GarbageToken(new Span(fileId, start, index)),
+                    new ParserError(
+                        "could not parse binary number",
                         new Span(fileId, start, index)));
             }
 
