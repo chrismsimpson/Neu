@@ -5281,6 +5281,14 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? typeCheckItemExprErr;
 
+                    if (checkedItemExpr.GetNeuType() == Compiler.VoidTypeId) {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "cannot create a tuple that contains a value of type void", 
+                                te.GetSpan());
+                    }
+
                     checkedTypes.Add(checkedItemExpr.GetNeuType());
 
                     checkedItems.Add(checkedItemExpr);
