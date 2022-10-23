@@ -1,0 +1,9 @@
+struct Test {
+    func test<T>(foo: T) -> T {
+        return foo
+    }
+}
+
+func main() {
+    printLine("{}", Test.test(foo: 1));
+}

@@ -640,10 +640,10 @@ public static partial class CodeGenFunctions {
 
                 output.Append(CodeGenIndent(INDENT_SIZE));
 
-                if (func.IsStatic()) {
+                // if (func.IsStatic()) {
 
-                    output.Append("static ");
-                }
+                //     output.Append("static ");
+                // }
 
                 var methodOutput = CodeGenFunc(func, project);
 
@@ -726,6 +726,11 @@ public static partial class CodeGenFunctions {
             output.Append("ErrorOr<int>");
         }
         else {
+
+            if (fun.IsStatic() && fun.Linkage != FunctionLinkage.External) {
+
+                output.Append("static ");
+            }
 
             String returnType;
 
@@ -844,6 +849,11 @@ public static partial class CodeGenFunctions {
             output.Append("ErrorOr<int>");
         }
         else {
+
+            if (fun.IsStatic() && fun.Linkage != FunctionLinkage.External) {
+
+                output.Append("static ");
+            }
 
             String returnType;
 
