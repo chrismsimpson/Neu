@@ -2,7 +2,7 @@ func bubbleSort(values: var [Int64]) {
     var i = 0
     while i < values.size() - 1 {
         var j = 0
-        while j < values.size() - i - 1 {
+        while j < (values.size() as! Int64) - i - 1 {
             if values[j] > values[j + 1] {
                 let tmp = values[j]
                 values[j] = values[j + 1]

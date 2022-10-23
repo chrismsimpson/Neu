@@ -6440,6 +6440,9 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression rhs,
         Span span) {
 
+        var lhsTy = lhs.GetNeuType();
+        var rhsTy = rhs.GetNeuType();
+
         var ty = lhs.GetNeuType();
 
         switch (op) {
@@ -6470,8 +6473,8 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.BitwiseLeftShiftAssign:
             case BinaryOperator.BitwiseRightShiftAssign: {
 
-                var lhsTy = lhs.GetNeuType();
-                var rhsTy = rhs.GetNeuType();
+                // var lhsTy = lhs.GetNeuType();
+                // var rhsTy = rhs.GetNeuType();
 
                 if (lhsTy != rhsTy) {
 
@@ -6490,6 +6493,26 @@ public static partial class TypeCheckerFunctions {
                             "assignment to immutable variable", 
                             span));
                 }
+
+                break;
+            }
+
+            case BinaryOperator.Add:
+            case BinaryOperator.Subtract:
+            case BinaryOperator.Multiply:
+            case BinaryOperator.Divide:
+            case BinaryOperator.Modulo: {
+
+                if (lhsTy != rhsTy) {
+
+                    return (
+                        lhsTy,
+                        new TypeCheckError(
+                            "binary operation between incompatible types",
+                            span));
+                }
+
+                ty = lhsTy;
 
                 break;
             }

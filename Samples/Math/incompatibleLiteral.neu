@@ -1,0 +1,8 @@
+func main() {
+    let x: UInt8 = 12
+    let y: UInt16 = 34
+    printLine("{}", x + y)
+    printLine("{}", x - y)
+    printLine("{}", x * y)
+    printLine("{}", x / y)
+}
