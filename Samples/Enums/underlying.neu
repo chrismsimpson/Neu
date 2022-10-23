@@ -1,0 +1,27 @@
+
+enum CuteLittleEnum: UInt64 {
+    a = 1
+    b
+    c = 69
+}
+
+enum CuterLittlerEnum: UInt32 {
+    a
+    b
+    c
+}
+
+func main() throws -> Int32 {
+
+    printLine("a = {}, b = {}, c = {}",
+        CuteLittleEnum.a as! UInt64,
+        CuteLittleEnum.b as! UInt64,
+        CuteLittleEnum.c as! UInt64)
+
+    printLine("a = {}, b = {}, c = {}",
+        CuterLittlerEnum.a as! UInt32,
+        CuterLittlerEnum.b as! UInt32,
+        CuterLittlerEnum.c as! UInt32)
+
+    return 0
+}
