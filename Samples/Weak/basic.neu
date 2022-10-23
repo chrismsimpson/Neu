@@ -1,0 +1,20 @@
+class Foo {
+    public func hello(this) => "friends"
+}
+
+func main() {
+    
+    var weakFoo: weak Foo = none
+
+    printLine("weakFoo hasValue? {}", weakFoo.hasValue())
+
+    {
+        let foo = Foo()
+        weakFoo = foo
+
+        printLine("weakFoo hasValue? {}", weakFoo.hasValue())
+        printLine("weakFoo hello: {}", weakFoo!.hello())
+    }
+
+    printLine("weakFoo hasValue? {}", weakFoo.hasValue())
+}

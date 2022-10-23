@@ -36,6 +36,11 @@ extern struct Optional<T> {
     func Optional<S>(anon x: S) -> Optional<S>
 }
 
+extern struct WeakPointer<T> {
+    func hasValue(this) -> Bool
+    func clear(var this)
+}
+
 extern struct Dictionary<K, V> {
     func get(this, anon key: K) -> V?
     func contains(this, anon key: K) -> Bool

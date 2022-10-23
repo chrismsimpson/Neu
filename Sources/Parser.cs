@@ -234,6 +234,23 @@ public partial class ParsedType {
         }
     }
 
+    public partial class ParsedWeakPointerType: ParsedType {
+
+        public ParsedType Type { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public ParsedWeakPointerType(
+            ParsedType type,
+            Span span) {
+
+            this.Type = type;
+            this.Span = span;
+        }
+    }
+
     public partial class ParsedEmptyType: ParsedType {
 
         public ParsedEmptyType() { }
@@ -302,6 +319,14 @@ public static partial class ParsedTypeFunctions {
 
                 return Eq(lp.Type, rp.Type)
                     && SpanFunctions.Eq(lp.Span, rp.Span);
+            }
+
+            case var _ when 
+                l is ParsedWeakPointerType lw
+                && r is ParsedWeakPointerType rw: {
+
+                return Eq(lw.Type, rw.Type)
+                    && SpanFunctions.Eq(lw.Span, rw.Span);
             }
 
             case var _ when 
@@ -5673,160 +5698,6 @@ public static partial class ParserFunctions {
 
                         while (contNS && index < tokens.Count) {
 
-                            // switch (tokens.ElementAt(index)) {
-
-                            //     case NumberToken numberToken: {
-
-                            //         index += 1;
-
-                            //         var _span = new Span(
-                            //             fileId: expr.GetSpan().FileId,
-                            //             start: expr.GetSpan().Start,
-                            //             end: tokens[index].Span.End);
-
-                            //         expr = new ParsedIndexedTupleExpression(
-                            //             expr,
-                            //             numberToken.Value.IntegerConstant()!.ToInt64(),
-                            //             _span);
-
-                            //         contNS = false;
-
-                            //         break;
-                            //     }
-
-                            //     case NameToken nsNameToken: {
-
-                            //         index += 1;
-
-                            //         if (index < tokens.Count) {
-
-                            //             if (tokens.ElementAt(index) is LParenToken) {
-
-                            //                 index -= 1;
-
-                            //                 var (method, parseCallErr) = ParseCall(tokens, ref index);
-
-                            //                 error = error ?? parseCallErr;
-
-                            //                 method.Namespace = ns;
-
-                            //                 var _span = new Span(
-                            //                     fileId: expr.GetSpan().FileId,
-                            //                     start: expr.GetSpan().Start,
-                            //                     end: tokens.ElementAt(index).Span.End);
-
-                            //                 // expr = new CallExpression(method, _span);
-
-                            //                 if (method.Namespace.LastOrDefault() is String n
-                            //                     && !IsNullOrWhiteSpace(n)
-                            //                     && Char.IsUpper(n[0])) {
-
-                            //                     expr = new ParsedCallExpression(method, _span);
-                            //                 }
-                            //                 else {
-
-                            //                     // Maybe clear namespace too?
-
-                            //                     expr = new ParsedMethodCallExpression(expr, method, span);
-                            //                 }
-
-                            //                 contNS = false;
-                            //             }
-                            //             else if (tokens.ElementAt(index) is PeriodToken) {
-
-                            //                 switch (tokens.ElementAt(index - 1)) {
-
-                            //                     case NameToken nsNameToken2: {
-
-                            //                         ns.Add(nsNameToken2.Value);
-
-                            //                         break;
-                            //                     }
-
-                            //                     default: {
-
-                            //                         error = error ??
-                            //                             new ParserError(
-                            //                                 "expected namespace",
-                            //                                 tokens.ElementAt(index - 1).Span);
-
-                            //                         break;
-                            //                     }
-                            //                 }
-
-                            //                 index += 1;
-                            //             }
-                            //             else if (tokens.ElementAt(index) is LessThanToken) {
-
-                            //                 index -= 1;
-
-                            //                 var (call, parseCallErr) = ParseCall(tokens, ref index);
-
-                            //                 if (parseCallErr is not null) {
-
-                            //                     error = error ?? parseCallErr;
-                            //                 }
-                            //                 else {
-
-                            //                     call.Namespace = ns;
-
-                            //                     expr = new ParsedCallExpression(call, span);
-                            //                 }
-
-                            //                 contNS = false;
-                            //             }
-                            //             else {
-
-                            //                 var _span = new Span(
-                            //                     fileId: expr.GetSpan().FileId,
-                            //                     start: expr.GetSpan().Start,
-                            //                     end: tokens[index - 1].Span.End);
-
-                            //                 expr = new ParsedIndexedStructExpression(
-                            //                     expr,
-                            //                     nsNameToken.Value,
-                            //                     _span);
-
-                            //                 contNS = false;
-                            //             }
-                            //         }
-                            //         else {
-                                        
-                            //             error = error ??
-                            //                 new ParserError(
-                            //                     "Unsupported static method call",
-                            //                     tokens.ElementAt(index).Span);
-
-                            //             contNS = false;
-                            //         }
-
-                            //         break;
-                            //     }
-
-                            //     default: {
-
-                            //         String name = tokens[index - 1] switch {
-
-                            //             NameToken nt => nt.Value,
-                            //             _ => throw new Exception()
-                            //         };
-
-                            //         contNS = false;
-
-                            //         // Just a reference to a variable in a namespace
-                                    
-                            //         expr = new ParsedNamespacedVarExpression(
-                            //             name,
-                            //             ns,
-                            //             new Span(
-                            //                 fileId: span.FileId, 
-                            //                 start: span.Start, 
-                            //                 end: tokens[index].Span.End));
-                                    
-                            //         break;
-                            //     }
-                            // }
-
                             switch (tokens.ElementAt(index)) {
 
                                 case NumberToken numberToken: {
@@ -7311,7 +7182,7 @@ public static partial class ParserFunctions {
 
             case NameToken nt: {
 
-                if (nt.Value == "raw") {
+                if (nt.Value == "raw" || nt.Value == "weak") {
 
                     index += 1;
 
@@ -7321,12 +7192,24 @@ public static partial class ParserFunctions {
 
                         error = error ?? err;
 
-                        uncheckedType = new ParsedRawPointerType(
-                            childType,
-                            new Span(
-                                fileId: start.FileId,
-                                start: start.Start,
-                                end: tokens.ElementAt(index).Span.End));
+                        if (nt.Value == "raw") {
+    
+                            uncheckedType = new ParsedRawPointerType(
+                                childType,
+                                new Span(
+                                    fileId: start.FileId,
+                                    start: start.Start,
+                                    end: tokens.ElementAt(index - 1).Span.End));
+                        }
+                        else if (nt.Value == "weak") {
+
+                            uncheckedType = new ParsedWeakPointerType(
+                                childType,
+                                new Span(
+                                    fileId: start.FileId,
+                                    start: start.Start,
+                                    end: tokens.ElementAt(index - 1).Span.End));
+                        }
                     }
                 }
                 else {

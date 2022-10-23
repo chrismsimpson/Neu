@@ -4655,7 +4655,7 @@ public static partial class TypeCheckerFunctions {
                 // TODO: actually do the binary operator typecheck against safe operations
                 // For now, use a type we know
                 
-                var (ty, chkBinOpErr) = TypeCheckBinaryOperation(checkedLhs, e.Operator, checkedRhs, e.Span);
+                var (ty, chkBinOpErr) = TypeCheckBinaryOperation(checkedLhs, e.Operator, checkedRhs, e.Span, project);
 
                 error = error ?? chkBinOpErr;
 
@@ -4858,11 +4858,17 @@ public static partial class TypeCheckerFunctions {
                     .FindStructInScope(0, "Optional") 
                     ?? throw new Exception("internal error: can't find builtin Optional type");
 
+                var weakPointerStructId = project
+                    .FindStructInScope(0, "WeakPointer")
+                    ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+
                 var typeId = Compiler.UnknownTypeId;
 
                 switch (type) {
 
-                    case GenericInstance gi when gi.StructId == optionalStructId: {
+                    case GenericInstance gi when 
+                        gi.StructId == optionalStructId
+                        || gi.StructId == weakPointerStructId: {
 
                         typeId = gi.TypeIds[0];
 
@@ -6412,7 +6418,8 @@ public static partial class TypeCheckerFunctions {
         CheckedExpression lhs,
         BinaryOperator op,
         CheckedExpression rhs,
-        Span span) {
+        Span span,
+        Project project) {
 
         var lhsTy = lhs.GetNeuType();
         var rhsTy = rhs.GetNeuType();
@@ -6479,6 +6486,34 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.BitwiseXorAssign:
             case BinaryOperator.BitwiseLeftShiftAssign:
             case BinaryOperator.BitwiseRightShiftAssign: {
+
+                var weakPointerStructId = project
+                    .FindStructInScope(0, "WeakPointer") 
+                    ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+
+                if (project.Types[lhsTy] is GenericInstance gi) {
+
+                    if (gi.StructId == weakPointerStructId) {
+
+                        var innerTy = gi.TypeIds[0];
+
+                        if (project.Types[innerTy] is StructType lhsStructTy) {
+
+                            switch (project.Types[rhsTy]) {
+
+                                case StructType rhsStructTy when lhsStructTy.StructId == rhsStructTy.StructId: {
+
+                                    return (lhsTy, null);                                    
+                                }
+
+                                default: {
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if (lhsTy != rhsTy) {
 
@@ -7681,13 +7716,32 @@ public static partial class TypeCheckerFunctions {
                     error);
             }
 
+            case ParsedWeakPointerType wp: {
+
+                var (innerTy, err) = TypeCheckTypeName(wp.Type, scopeId, project);
+
+                error = error ?? err;
+
+                var weakPointerStructId = project
+                    .FindStructInScope(0, "WeakPointer") 
+                    ?? throw new Exception("internal error: WeakPointer builtin definition not found");
+
+                var typeId = project
+                    .FindOrAddTypeId(new GenericInstance(weakPointerStructId, new List<Int32>(new [] { innerTy })));
+
+                return (
+                    typeId, 
+                    error);
+            }
+
             case ParsedRawPointerType rp: {
 
                 var (innerType, err) = TypeCheckTypeName(rp.Type, scopeId, project);
 
                 error = error ?? err;
 
-                var typeId = project.FindOrAddTypeId(new RawPointerType(innerType));
+                var typeId = project
+                    .FindOrAddTypeId(new RawPointerType(innerType));
 
                 return (
                     typeId,

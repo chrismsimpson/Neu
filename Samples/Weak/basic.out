@@ -1,0 +1,4 @@
+weakFoo hasValue? false
+weakFoo hasValue? true
+weakFoo hello: friends
+weakFoo hasValue? false

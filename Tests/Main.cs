@@ -49,6 +49,7 @@ public static partial class Program {
             TestTypeChecker();
             TestSets();
             TestNamespaces();
+            TestWeak();
         }
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
@@ -472,5 +473,10 @@ public static partial class Program {
     public static ErrorOrVoid TestNamespaces() {
 
         return TestSamples("./Samples/Namespaces");
+    }
+
+    public static ErrorOrVoid TestWeak() {
+
+        return TestSamples("./Samples/Weak");
     }
 }

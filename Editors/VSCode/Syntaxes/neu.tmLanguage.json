@@ -35,7 +35,7 @@
                 },
                 {
                     "name": "keyword.neu",
-                    "match": "\\b(var|let|anon|raw)\\b"
+                    "match": "\\b(var|let|anon|raw|weak)\\b"
                 },
                 {
                     "name": "keyword.operator.new.neu",

@@ -580,7 +580,7 @@ public static partial class CodeGenFunctions {
 
             case DefinitionType.Class: {
 
-                output.Append($"class {structure.Name} : public RefCounted<{structure.Name}> {{\n");
+                output.Append($"class {structure.Name} : public RefCounted<{structure.Name}>, public Weakable<{structure.Name}> {{\n");
                 
                 // As we should test the visibility before codegen, we take a simple
                 // approach to codegen
@@ -1145,11 +1145,31 @@ public static partial class CodeGenFunctions {
 
         var ty = project.Types[typeId];
 
+        var weakPointerStructId = project
+            .FindStructInScope(0, "WeakPointer") 
+            ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+
         switch (ty) {
 
             case RawPointerType pt: {
 
                 return $"{CodeGenType(pt.TypeId, project)}*";
+            }
+
+            case GenericInstance gi when gi.StructId == weakPointerStructId: {
+
+                var innerTy = gi.TypeIds[0];
+
+                if (project.Types[innerTy] is StructType st) {
+                    output.Append("WeakPointer<");
+                    output.Append(CodeGenNamespaceQualifier(
+                        project.Structs[st.StructId].ScopeId,
+                        project));
+                    output.Append(project.Structs[st.StructId].Name);
+                    output.Append('>');
+                }
+
+                return output.ToString();
             }
 
             case GenericInstance gi: {

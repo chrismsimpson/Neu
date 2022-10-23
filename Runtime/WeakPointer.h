@@ -159,6 +159,12 @@ public:
 
     [[nodiscard]] bool isNull() const { return !m_link || m_link->isNull(); }
     
+    [[nodiscard]] bool hasValue() const { return !isNull(); }
+
+    T* value() { return pointer(); }
+
+    T const* value() const { return pointer(); }
+
     void clear() { m_link = nullptr; }
 
     [[nodiscard]] RefPointer<WeakLink> takeLink() { return move(m_link); }
@@ -170,5 +176,86 @@ private:
 
     RefPointer<WeakLink> m_link;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+template<typename U>
+inline ErrorOr<WeakPointer<U>> Weakable<T>::tryMakeWeakPointer() const {
+
+    if (!m_link) {
+
+        m_link = TRY(adoptNonNullRefOrErrorNomem(new (nothrow) WeakLink(const_cast<T&>(static_cast<T const&>(*this)))));
+    }
+
+    return WeakPointer<U>(m_link);
+}
+
+template<typename T>
+struct Formatter<WeakPointer<T>> : Formatter<const T*> {
+
+    ErrorOr<void> format(FormatBuilder& builder, WeakPointer<T> const& value) {
+
+        return Formatter<const T*>::format(builder, value.pointer());
+    }
+};
+
+template<typename T>
+ErrorOr<WeakPointer<T>> tryMakeWeakPointerIfNonNull(T const* ptr) {
+
+    if (ptr) {
+
+        return ptr->template tryMakeWeakPointer<T>();
+    }
+
+    return WeakPointer<T> { };
+}
+
+template<typename T>
+WeakPointer<T> makeWeakPointerIfNonNull(T const* ptr) {
+
+    return MUST(tryMakeWeakPointerIfNonNull(ptr));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif
