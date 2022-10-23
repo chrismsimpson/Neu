@@ -5211,6 +5211,22 @@ public static partial class TypeCheckerFunctions {
                     if (innerTy.Item1 == Compiler.UnknownTypeId
                         && innerTy.Item2 == Compiler.UnknownTypeId) {
 
+                        if (checkedKey.GetNeuType() == Compiler.VoidTypeId) {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "cannot create a dictionary with keys of type void",
+                                    key.GetSpan());
+                        }
+
+                        if (checkedValue.GetNeuType() == Compiler.VoidTypeId) {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "cannot create a dictionary with values of type void",
+                                    value.GetSpan());
+                        }
+
                         innerTy = (checkedKey.GetNeuType(), checkedValue.GetNeuType());
                     }
                     else {
