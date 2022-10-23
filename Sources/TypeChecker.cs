@@ -5098,6 +5098,14 @@ public static partial class TypeCheckerFunctions {
 
                     if (innerType is Compiler.UnknownTypeId) {
 
+                        if (checkedExpr.GetNeuType() == Compiler.VoidTypeId) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "cannot create an array with values of type void",
+                                    v.GetSpan());
+                        }
+
                         innerType = checkedExpr.GetNeuType();
                     }
                     else {
