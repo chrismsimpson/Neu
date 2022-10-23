@@ -5154,6 +5154,14 @@ public static partial class TypeCheckerFunctions {
                     error = error ?? err;
 
                     if (innerTy == Compiler.UnknownTypeId) {
+                         
+                        if (checkedValue.GetNeuType() == Compiler.VoidTypeId) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "cannot create a set with values of type void",
+                                    value.GetSpan());
+                        }
 
                         innerTy = checkedValue.GetNeuType();
                     }
