@@ -1,0 +1,13 @@
+struct Foo {
+    func bar(var this, baz: var Bar) {
+        printLine("OK")
+    }
+}
+
+class Bar { }
+
+func main() {
+    var foo = Foo()
+    let baz = Bar()
+    foo.bar(baz)
+}
