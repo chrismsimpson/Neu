@@ -5013,6 +5013,11 @@ public static partial class TypeCheckerFunctions {
 
                 var scope = scopes.LastOrDefault();
 
+                // if (e.Items.Count != scopes.Count) {
+
+                //     throw new Exception();
+                // }
+
                 var checkedNamespace = new List<CheckedNamespace>();
 
                 for (var i = 0; i < e.Items.Count; i++) {
