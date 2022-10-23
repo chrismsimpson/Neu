@@ -1,0 +1,7 @@
+class Foo {
+    func privateStaticFunc() { }
+}
+
+func main() {
+    Foo.privateStaticFunc()
+}

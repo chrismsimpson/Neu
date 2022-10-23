@@ -1,0 +1,10 @@
+class Foo {
+    public func call(this) => "Foo"
+}
+
+func main() {
+    let foo = Foo()
+    let weakFoo: weak Foo = foo
+
+    printLine("{}", weakFoo!.call())
+}

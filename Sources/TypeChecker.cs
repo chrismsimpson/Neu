@@ -6821,7 +6821,7 @@ public static partial class TypeCheckerFunctions {
                     // Make sure we are allowed to access this method
 
                     if (callee.Visibility != Visibility.Public
-                        && !Scope.CanAccess(callerScopeId, calleeScopeId, project)) {
+                        && !Scope.CanAccess(callerScopeId, callee.FuncScopeId, project)) {
 
                         error = error ?? 
                             new TypeCheckError(
@@ -7213,11 +7213,16 @@ public static partial class TypeCheckerFunctions {
             .FindStructInScope(0, "Optional") 
             ?? throw new Exception("internal error: can't find builtin Optional type");
 
-        // This skips the type compatibility check if assigning a T to a T? without going through `Some`.
+        var weakPointerStructId = project
+            .FindStructInScope(0, "WeakPointer") 
+            ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+
+        // This skips the type compatibility check if assigning a T to a T? or to a
+        // weak T? without going through `Some`
 
         if (lhsType is GenericInstance _gi) {
 
-            if (_gi.StructId == optionalStructId
+            if ((_gi.StructId == optionalStructId || _gi.StructId == weakPointerStructId)
                 && _gi.TypeIds.Any(argId => argId == rhsTypeId)) {
 
                 return null;
