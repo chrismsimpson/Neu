@@ -3075,6 +3075,8 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var ns in parsedNamespace.Namespaces) {
 
+            // Do full typechecks of all the namespaces that are children of this namespace
+
             var namespaceScopeId = project.CreateScope(scopeId);
 
             project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
@@ -3086,7 +3088,7 @@ public static partial class TypeCheckerFunctions {
 
         for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
             
-            // Ensure we know the types ahead of time, so they can be recursive
+            // Bring the struct names into scope for future typechecking
 
             var structure = parsedNamespace.Structs.ElementAt(_structId);
 
@@ -3096,18 +3098,20 @@ public static partial class TypeCheckerFunctions {
 
             var structTypeId = project.Types.Count - 1;
 
-            if (project.AddTypeToScope(scopeId, structure.Name, structTypeId, structure.Span).Error is Error e1) {
+            if (project.AddTypeToScope(
+                scopeId, 
+                structure.Name, 
+                structTypeId, 
+                structure.Span).Error is Error e1) {
 
                 error = error ?? e1;
             }
 
-            if (TypeCheckStructPredecl(structure, structTypeId, structId, scopeId, project) is Error err) {
-
-                error = error ?? err;
-            }
         }
 
         for (Int32 _enumId = 0; _enumId < parsedNamespace.Enums.Count; _enumId++) {
+
+            // Bring the enum names into scope for future typechecking
 
             var _enum = parsedNamespace.Enums[_enumId];
 
@@ -3121,6 +3125,29 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? e;
             }
+        }
+
+        for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
+
+            // Typecheck the protype of the struct
+
+            var structure = parsedNamespace.Structs.ElementAt(_structId);
+
+            var structId = _structId + projectStructLength;
+
+            if (TypeCheckStructPredecl(structure, structId, scopeId, project) is Error err) {
+
+                error = error ?? err;
+            }
+        }
+
+        for (Int32 _enumId = 0; _enumId < parsedNamespace.Enums.Count; _enumId++) {
+
+            // Typecheck the protype of the enum
+
+            var _enum = parsedNamespace.Enums[_enumId];
+
+            var enumId = _enumId + projectEnumLength;
 
             if (TypeCheckEnumPredecl(_enum, enumId, scopeId, project) is Error e2) {
 
@@ -3130,7 +3157,8 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var fun in parsedNamespace.Functions) {
             
-            // Ensure we know the function ahead of time, so they can be recursive
+            // Ensure we know the function prototypes ahead of time, so that
+            // and calls can find and resolve to them
             
             var chkFuncPredeclErr = TypeCheckFuncPredecl(fun, scopeId, project);
 
@@ -3138,6 +3166,8 @@ public static partial class TypeCheckerFunctions {
         }
 
         for (Int32 structId = 0; structId < parsedNamespace.Structs.Count; structId++) {
+
+            // Finish typechecking the full struct (including methods)
 
             var structure = parsedNamespace.Structs.ElementAt(structId);
 
@@ -3151,6 +3181,8 @@ public static partial class TypeCheckerFunctions {
         }
 
         for (Int32 enumId = 0; enumId < parsedNamespace.Enums.Count; enumId++) {
+
+            // Finish typechecking the full enum
 
             var _enum = parsedNamespace.Enums[enumId];
 
@@ -3629,12 +3661,13 @@ public static partial class TypeCheckerFunctions {
 
     public static Error? TypeCheckStructPredecl(
         ParsedStruct structure,
-        Int32 structTypeId,
         Int32 structId,
         Int32 parentScopeId,
         Project project) {
 
         Error? error = null;
+
+        var structTypeId = project.FindOrAddTypeId(new StructType(structId));
 
         var structScopeId = project.CreateScope(parentScopeId);
 
