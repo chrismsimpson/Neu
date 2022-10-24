@@ -1,0 +1,35 @@
+enum Operation {
+    add
+}
+
+ref enum AST {
+    integer(Int64) // you get a C collision if you use int
+    binaryOperation(lhs: AST, op: Operation, rhs: AST)
+}
+
+func eval(anon ast: AST) -> Int64 {
+    when ast {
+        AST.integer(i) => {
+            return i
+        }
+        AST.binaryOperation(lhs: lhs, op: op, rhs: rhs) => {
+            when op {
+                Operation.add => {
+                    return eval(lhs) + eval(rhs)
+                }
+            }
+        }
+    }
+
+    return 0
+}
+
+func main() {
+    let ast = AST.binaryOperation(
+        lhs: AST.integer(5), 
+        op: Operation.add(), 
+        rhs: AST.integer(10)
+    )
+
+    printLine("result: {}", eval(ast))
+}

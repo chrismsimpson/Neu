@@ -940,6 +940,8 @@ public partial class CheckedEnum {
 
     public DefinitionLinkage DefinitionLinkage { get; init; }
 
+    public DefinitionType DefinitionType { get; init; }
+
     public Int32? UnderlyingTypeId { get; init; }
 
     public Span Span { get; init; }
@@ -952,6 +954,7 @@ public partial class CheckedEnum {
         List<CheckedEnumVariant> variants,
         Int32 scopeId,
         DefinitionLinkage definitionLinkage,
+        DefinitionType definitionType,
         Int32? underlyingTypeId,
         Span span) {
 
@@ -960,6 +963,7 @@ public partial class CheckedEnum {
         this.Variants = variants;
         this.ScopeId = scopeId;
         this.DefinitionLinkage = definitionLinkage;
+        this.DefinitionType = definitionType;
         this.UnderlyingTypeId = underlyingTypeId;
         this.Span = span;
     }
@@ -3265,6 +3269,10 @@ public static partial class TypeCheckerFunctions {
                 variants: new List<CheckedEnumVariant>(),
                 scopeId: enumScopeId,
                 definitionLinkage: _enum.DefinitionLinkage,
+                definitionType: 
+                    _enum.IsRecursive 
+                        ? DefinitionType.Class 
+                        : DefinitionType.Struct,
                 underlyingTypeId,
                 span: _enum.Span));
                 
@@ -3388,7 +3396,7 @@ public static partial class TypeCheckerFunctions {
                                 name: u.Name,
                                 // Enum variant constructors are always visible.
                                 visibility: Visibility.Public,
-                                throws: false,
+                                throws: _enum.IsRecursive,
                                 returnTypeId: enumTypeId,
                                 parameters: new List<CheckedParameter>(),
                                 genericParameters: _enum
@@ -3542,7 +3550,7 @@ public static partial class TypeCheckerFunctions {
                             var checkedConstructor = new CheckedFunction(
                                 name: s.Name,
                                 visibility: Visibility.Public,
-                                throws: false,
+                                throws: _enum.IsRecursive,
                                 returnTypeId: enumTypeId,
                                 parameters: constructorParams,
                                 genericParameters: _enum
@@ -3619,7 +3627,7 @@ public static partial class TypeCheckerFunctions {
                             var checkedConstructor = new CheckedFunction(
                                 name: t.Name,
                                 visibility: Visibility.Public,
-                                throws: false,
+                                throws: _enum.IsRecursive,
                                 returnTypeId: enumTypeId,
                                 parameters: constructorParams,
                                 genericParameters: 
@@ -3715,10 +3723,10 @@ public static partial class TypeCheckerFunctions {
                 name: func.Name,
                 visibility: func.Visibility,
                 throws: func.Throws,
+                returnTypeId: Compiler.UnknownTypeId,
                 parameters: new List<CheckedParameter>(),
                 genericParameters: genericParameters,
                 funcScopeId: methodScopeId,
-                returnTypeId: Compiler.UnknownTypeId,
                 block: new CheckedBlock(),
                 linkage: func.Linkage);
 

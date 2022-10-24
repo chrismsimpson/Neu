@@ -84,6 +84,22 @@ public static partial class CodeGenFunctions {
         }
 
         output.Append('\n');
+        
+        foreach (var (_, enumId) in scope.Enums) {
+
+            var _enum = project.Enums[enumId];
+
+            var enumOutput = CodeGenEnum(_enum, project);
+
+            if (!IsNullOrWhiteSpace(enumOutput)) {
+
+                output.Append(enumOutput);
+
+                output.Append('\n');
+            }
+        }
+
+        output.Append('\n');
 
         foreach (var (_, funcId) in scope.Funcs) {
 
@@ -127,12 +143,41 @@ public static partial class CodeGenFunctions {
         }
 
         return output.ToString();
-
-
-        
     }
 
+
+
+
+
     public static String CodeGenEnumPredecl(
+        CheckedEnum _enum,
+        Project project) {
+
+        if (_enum.DefinitionType == DefinitionType.Class) {
+
+            return CodeGenRecursiveEnumPredecl(_enum, project);
+        }
+        else {
+
+            return CodeGenNonRecursiveEnumPredecl(_enum, project);
+        }
+    }
+
+    public static String CodeGenEnum(
+        CheckedEnum _enum,
+        Project project) {
+
+        if (_enum.DefinitionType == DefinitionType.Class) {
+
+            return CodeGenRecursiveEnum(_enum, project);
+        }
+        else {
+
+            return String.Empty;
+        }
+    }
+
+    public static String CodeGenNonRecursiveEnumPredecl(
         CheckedEnum _enum,
         Project project) {
 
@@ -472,6 +517,479 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
+
+    public static String CodeGenRecursiveEnumPredecl(
+        CheckedEnum _enum,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        if (_enum.UnderlyingTypeId is Int32 typeId) {
+
+            if (NeuTypeFunctions.IsInteger(typeId)) {
+
+                output.Append("enum class ");
+                output.Append(_enum.Name);
+                output.Append(": ");
+                output.Append(CodeGenType(typeId, project));
+                output.Append(";\n");
+                return output.ToString();
+            }
+            else {
+
+                throw new Exception("TODO: Enums with a non-integer underlying type");
+            }
+        }
+
+        // These are all Variant<Ts...>, make a new namespace and define the variant types first.
+
+        var isGeneric = _enum.GenericParameters.Any();
+
+        var genericParameterNames = _enum
+            .GenericParameters
+            .Select(p => {
+
+                switch (project.Types[p]) {
+
+                    case TypeVariable t:
+                        return t.Name;
+
+                    default:
+                        throw new Exception("Unreachable");
+                }
+            })
+            .ToList();
+
+        var templateArgs = String.Join(", ", genericParameterNames.Select(p => $"typename {p}"));
+
+        output.Append("namespace ");
+        output.Append(_enum.Name);
+        output.Append("_Details {\n");
+
+        foreach (var variant in _enum.Variants) {
+
+            switch (variant) {
+
+                case CheckedStructLikeEnumVariant s: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(s.Name);
+                    output.Append(";\n");
+
+                    break;
+                }
+
+                case CheckedUntypedEnumVariant u: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(u.Name);
+                    output.Append(";\n");
+
+                    break;
+                }
+
+                case CheckedTypedEnumVariant t: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(t.Name);
+                    output.Append(";\n");
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
+            }
+        }
+
+        output.Append("}\n");
+
+        // Now declare the variant itself.
+        if (isGeneric) {
+
+            output.Append("template<");
+            output.Append(templateArgs);
+            output.Append(">\n");
+        }
+
+        output.Append("struct ");
+        output.Append(_enum.Name);
+        output.Append(';');
+
+        return output.ToString();
+    }
+
+    public static String CodeGenRecursiveEnum(
+        CheckedEnum _enum,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        if (_enum.UnderlyingTypeId is Int32 typeId) {
+
+            if (NeuTypeFunctions.IsInteger(typeId)) {
+
+                output.Append("enum class ");
+                output.Append(_enum.Name);
+                output.Append(": ");
+                output.Append(CodeGenType(typeId, project));
+                output.Append(" {\n");
+
+                foreach (var variant in _enum.Variants) {
+
+                    switch (variant) {
+
+                        case CheckedUntypedEnumVariant u: {
+
+                            output.Append("    ");
+                            output.Append(u.Name);
+                            output.Append(",\n");
+
+                            break;
+                        }
+
+                        case CheckedWithValueEnumVariant v: {
+                            
+                            output.Append("    ");
+                            output.Append(v.Name);
+                            output.Append(" = ");
+                            output.Append(CodeGenExpr(0, v.Expression, project));
+                            output.Append(",\n");
+
+                            break;
+                        }
+
+                        default: {
+
+                            throw new Exception("Unreachable");
+                        }
+                    }
+                }
+
+                output.Append("};\n");
+
+                return output.ToString();
+            }
+            else {
+
+                throw new Exception($"TODO: Enums with a non-integer underlying type");
+            }
+        }
+
+        // These are all Variant<Ts...>, make a new namespace and define the variant types first.
+
+        var isGeneric = _enum.GenericParameters.Any();
+
+        var genericParameterNames = _enum
+            .GenericParameters
+            .Select(p => {
+
+                switch (project.Types[p]) {
+
+                    case TypeVariable t:
+                        return t.Name;
+
+                    default:
+                        throw new Exception("Unreachable");
+                }
+            })
+            .ToList();
+
+        var templateArgs = String.Join(", ", genericParameterNames.Select(p => $"typename {p}"));
+
+        output.Append("namespace ");
+        output.Append(_enum.Name);
+        output.Append("_Details {\n");
+
+        foreach (var variant in _enum.Variants) {
+
+            switch (variant) {
+
+                case CheckedStructLikeEnumVariant s: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(s.Name);
+                    output.Append(" {\n");
+
+                    foreach (var member in s.Decls) {
+
+                        output.Append("        ");
+                        output.Append(CodeGenType(member.TypeId, project));
+                        output.Append(' ');
+                        output.Append(member.Name);
+                        output.Append(";\n");
+                    }
+
+                    output.Append('\n');
+                    output.Append("        template<");
+
+                    for (var i = 0; i < s.Decls.Count; i++) {
+
+                        if (i > 0) {
+
+                            output.Append(", ");
+                        }
+
+                        output.Append("typename _MemberT");
+                        output.Append($"{i}");
+                    }
+
+                    output.Append(">\n");
+                    output.Append("        ");
+                    output.Append(s.Name);
+                    output.Append('(');
+
+                    for (var i = 0; i < s.Decls.Count; i++) {
+
+                        if (i > 0) {
+
+                            output.Append(", ");
+                        }
+
+                        output.Append("_MemberT");
+                        output.Append($"{i}");
+                        output.Append("&& member_");
+                        output.Append($"{i}");
+                    }
+
+                    output.Append("):\n");
+
+                    for (var i = 0; i < s.Decls.Count; i++) {
+
+                        var member = s.Decls[i];
+                    
+                        output.Append("            ");
+                        output.Append(member.Name);
+                        output.Append("{ forward<_MemberT");
+                        output.Append($"{i}");
+                        output.Append(">(member_");
+                        output.Append($"{i}");
+                        output.Append(")}");
+
+                        if (i < s.Decls.Count - 1) {
+
+                            output.Append(",\n");
+                        } 
+                        else {
+
+                            output.Append('\n');
+                        }
+                    }
+
+                    output.Append("    {}\n");
+
+                    output.Append("};\n");
+
+                    break;
+                }
+
+                case CheckedUntypedEnumVariant v: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(v.Name);
+                    output.Append(" {};\n");
+
+                    break;
+                }
+
+                case CheckedTypedEnumVariant t: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(t.Name);
+                    output.Append(" {\n");
+                    output.Append("        ");
+                    output.Append(CodeGenType(t.TypeId, project));
+                    output.Append(" value;\n");
+                    output.Append('\n');
+                    output.Append("        template<typename... Args>\n");
+                    output.Append("        ");
+                    output.Append(t.Name);
+                    output.Append("(Args&&... args): ");
+                    output.Append(" value { forward<Args>(args)... } {}\n");
+                    output.Append("    };\n");
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
+            }
+        }
+
+        output.Append("}\n");
+
+        // Now define the variant itself.
+
+        if (isGeneric) {
+
+            output.Append("template<");
+            output.Append(templateArgs);
+            output.Append(">\n");
+        }
+
+        output.Append("struct ");
+        output.Append(_enum.Name);
+        output.Append(" : public Variant<");
+
+        var variantArgs = new StringBuilder();
+
+        var first = true;
+
+        var variantNames = new List<String>();
+
+        foreach (var variant in _enum.Variants) {
+
+            if (first) {
+
+                first = false;
+            }
+            else {
+
+                variantArgs.Append(", ");
+            }
+
+            var variantName = variant switch {
+
+                CheckedStructLikeEnumVariant s => s.Name,
+                CheckedUntypedEnumVariant u => u.Name,
+                CheckedTypedEnumVariant t => t.Name,
+                _ => throw new Exception("Unreachable")
+            };
+
+            variantArgs.Append(_enum.Name);
+            variantArgs.Append("_Details::");
+            variantArgs.Append(variantName);
+
+            variantNames.Add(variantName);
+
+            if (isGeneric) {
+
+                variantArgs.Append('<');
+                variantArgs.Append(Join(", ", genericParameterNames));
+                variantArgs.Append('>');
+            }
+        }
+
+        output.Append(variantArgs);
+        output.Append("> ");
+
+        if (_enum.DefinitionType == DefinitionType.Class) {
+
+            output.Append(", public RefCounted<");
+            output.Append(_enum.Name);
+
+            if (isGeneric) {
+
+                output.Append('<');
+                output.Append(Join(", ", genericParameterNames));
+                output.Append('>');
+            }
+
+            output.Append('>');
+        }
+
+        output.Append(" {\n");
+
+        output.Append("    using Variant<");
+        output.Append(variantArgs);
+        output.Append(">::Variant;\n");
+
+        foreach (var name in variantNames) {
+
+            output.Append("    using ");
+            output.Append(name);
+            output.Append(" = ");
+            output.Append(_enum.Name);
+            output.Append("_Details::");
+            output.Append(name);
+
+            if (isGeneric) {
+
+                output.Append('<');
+                output.Append(Join(", ", genericParameterNames));
+                output.Append('>');
+            }
+
+            output.Append(";\n");
+        }
+
+        if (_enum.DefinitionType == DefinitionType.Class) {
+
+            var fullyInstantiatedName = new StringBuilder(_enum.Name);
+
+            if (isGeneric) {
+
+                fullyInstantiatedName.Append('<');
+                fullyInstantiatedName.Append(Join(", ", genericParameterNames));
+                fullyInstantiatedName.Append('>');
+            }
+
+            output.Append(
+                "    template<typename V, typename... Args> static auto create(Args&&... args) {\n");
+            output.Append($"        return adoptNonNullRefOrErrorNomem(new (nothrow) {fullyInstantiatedName}(V(forward<Args>(args)...)));\n");
+            output.Append("    }\n");
+        }
+
+        output.Append("};\n");
+
+        return output.ToString();
+    }
+
+
+
+
+
+
+
+
+
+
 
     public static String CodeGenStructPredecl(
         CheckedStruct structure,
@@ -1134,6 +1652,14 @@ public static partial class CodeGenFunctions {
         Int32 typeId,
         Project project) {
 
+        return CodeGenTypePossiblyAsNamespace(typeId, project, false);
+    }
+
+    public static String CodeGenTypePossiblyAsNamespace(
+        Int32 typeId,
+        Project project,
+        bool asNamespace) {
+
         var output = new StringBuilder();
 
         var ty = project.Types[typeId];
@@ -1196,9 +1722,30 @@ public static partial class CodeGenFunctions {
 
             case GenericEnumInstance gei: {
 
-                output.Append(CodeGenNamespaceQualifier(project.Enums[gei.EnumId].ScopeId, project));
+                var closeTag = false;
 
-                output.Append(project.Enums[gei.EnumId].Name);
+                if (!asNamespace && project.Enums[gei.EnumId].DefinitionType == DefinitionType.Class) {
+
+                    output.Append("NonNullRefPointer<");
+                    
+                    var qualifier = CodeGenNamespaceQualifier(project.Enums[gei.EnumId].ScopeId, project);
+
+                    if (!IsNullOrWhiteSpace(qualifier)) {
+
+                        output.Append("typename ");
+                        output.Append(qualifier);
+                    }
+
+                    output.Append(project.Enums[gei.EnumId].Name);
+
+                    closeTag = true;
+                }
+                else {
+
+                    output.Append(CodeGenNamespaceQualifier(project.Enums[gei.EnumId].ScopeId, project));
+
+                    output.Append(project.Enums[gei.EnumId].Name);
+                }
 
                 output.Append('<');
 
@@ -1220,6 +1767,11 @@ public static partial class CodeGenFunctions {
 
                 output.Append('>');
 
+                if (closeTag) {
+
+                    output.Append('>');
+                }
+
                 return output.ToString();
             }
 
@@ -1227,7 +1779,7 @@ public static partial class CodeGenFunctions {
 
                 var inner = project.Structs[st.StructId];
 
-                if (inner.DefinitionType == DefinitionType.Class) {
+                if (!asNamespace && inner.DefinitionType == DefinitionType.Class) {
 
                     output.Append("NonNullRefPointer<");
                     output.Append(CodeGenNamespaceQualifier(inner.ScopeId, project));
@@ -1246,8 +1798,27 @@ public static partial class CodeGenFunctions {
 
             case EnumType e: {
 
-                output.Append(CodeGenNamespaceQualifier(project.Enums[e.EnumId].ScopeId, project));
-                output.Append(project.Enums[e.EnumId].Name);
+                if (!asNamespace && project.Enums[e.EnumId].DefinitionType == DefinitionType.Class) {
+
+                    output.Append("NonNullRefPointer<");
+
+                    var qualifier = CodeGenNamespaceQualifier(project.Enums[e.EnumId].ScopeId, project);
+
+                    if (!IsNullOrWhiteSpace(qualifier)) {
+
+                        output.Append("typename ");
+                        output.Append(qualifier);
+                    }
+
+                    output.Append(project.Enums[e.EnumId].Name);
+                    output.Append('>');
+
+                }
+                else {
+
+                    output.Append(CodeGenNamespaceQualifier(project.Enums[e.EnumId].ScopeId, project));
+                    output.Append(project.Enums[e.EnumId].Name);
+                }
 
                 return output.ToString();
             }
@@ -1952,52 +2523,13 @@ public static partial class CodeGenFunctions {
 
                     default: {
 
-                        for (var idx = 0; idx < ce.Call.Namespace.Count; idx++) {
-
-                            var ns = ce.Call.Namespace[idx];
-
-                            // hack warning: this is to get around C++'s limitation that a constructor
-                            // can't be called like other static methods
-
-                            if (idx == ce.Call.Namespace.Count - 1 && ns.Name == ce.Call.Name) {
-                                
-                                break;
-                            }
-
-                            if (ce.Call.Linkage == FunctionLinkage.ImplicitEnumConstructor) {
-
-                                output.Append("typename ");
-                            }
-
-                            output.Append(ns.Name);
-
-                            if (ns.GenericParameters is List<Int32> _params) {
-
-                                output.Append('<');
-
-                                for (var i = 0; i < _params.Count; i++) {
-
-                                    var param = _params[i];
-
-                                    output.Append(CodeGenType(param, project));
-
-                                    if (i != _params.Count - 1) {
-
-                                        output.Append(',');
-                                    }
-                                }
-
-                                output.Append('>');
-                            }
-
-                            output.Append("::");
-                        }
-
                         if (ce.Call.Linkage == FunctionLinkage.ImplicitConstructor) {
 
                             var typeId = ce.Call.TypeId;
 
                             var ty = project.Types[typeId];
+
+                            output.Append(CodeGenNamespacePath(ce.Call, project));
 
                             switch (ty) {
 
@@ -2043,7 +2575,42 @@ public static partial class CodeGenFunctions {
                                 }
                             }
                         }
+                        else if (ce.Call.Linkage == FunctionLinkage.ImplicitEnumConstructor) {
+
+                            var typeId = ce.Call.TypeId;
+
+                            var type = project.Types[typeId];
+
+                            var enumId = type switch {
+                                EnumType e => e.EnumId,
+                                GenericEnumInstance i => i.EnumId,
+                                _ => throw new Exception("internal error: constructor expected enum type")
+                            };
+
+                            var _enum = project.Enums[enumId];
+
+                            if (_enum.DefinitionType == DefinitionType.Struct) {
+
+                                output.Append("typename ");
+                                output.Append(CodeGenNamespacePath(ce.Call, project));
+                                output.Append(ce.Call.Name);
+                            } 
+                            else {
+
+                                output.Append(CodeGenNamespacePath(ce.Call, project));
+                                output.Append("template create<");
+                                output.Append("typename ");
+                                output.Append(
+                                    CodeGenTypePossiblyAsNamespace(
+                                        typeId, project, true));
+                                output.Append("::");
+                                output.Append(ce.Call.Name);
+                                output.Append('>');
+                            }
+                        }
                         else {
+
+                            output.Append(CodeGenNamespacePath(ce.Call, project));
 
                             output.Append(ce.Call.Name);
                         }
@@ -2225,6 +2792,8 @@ public static partial class CodeGenFunctions {
 
                 var _enum = project.Enums[id];
 
+                var needsDeref = _enum.DefinitionType == DefinitionType.Class;
+
                 switch (_enum.UnderlyingTypeId) {
 
                     case Int32 _: {
@@ -2235,13 +2804,20 @@ public static partial class CodeGenFunctions {
                         output.Append("_NeuCurrentFunctionReturnType");
                         output.Append("> { \n");
                         output.Append("switch (");
+                        if (needsDeref) {
+                            output.Append('*');
+                        }
                         output.Append(CodeGenExpr(indent, we.Expression, project));
                         output.Append(") {\n");
 
                         foreach (var _case in we.Cases) {
 
                             output.Append("case ");
-                            output.Append(CodeGenType(we.Expression.GetTypeId(), project));
+                            output.Append(
+                                CodeGenTypePossiblyAsNamespace(
+                                    we.Expression.GetTypeId(), 
+                                    project, 
+                                    true));
                             output.Append("::");
                         
                             switch (_case) {
@@ -2293,7 +2869,19 @@ public static partial class CodeGenFunctions {
 
                         output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN((");
                         output.Append(CodeGenExpr(indent, we.Expression, project));
-                        output.Append(").visit(");
+
+                        output.Append(')');
+
+                        if (needsDeref) {
+
+                            output.Append("->");
+                        } 
+                        else {
+
+                            output.Append('.');
+                        }
+
+                        output.Append("visit(");
 
                         var first = true;
 
@@ -2351,7 +2939,11 @@ public static partial class CodeGenFunctions {
                                         case CheckedTypedEnumVariant t: {
 
                                             output.Append("typename ");
-                                            output.Append(CodeGenType(evwc.SubjectTypeId, project));
+                                            output.Append(
+                                                CodeGenTypePossiblyAsNamespace(
+                                                    evwc.SubjectTypeId, 
+                                                    project,
+                                                    true));
                                             output.Append("::");
                                             output.Append(t.Name);
                                             output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
@@ -2380,7 +2972,11 @@ public static partial class CodeGenFunctions {
                                         case CheckedUntypedEnumVariant u: {
 
                                             output.Append("typename ");
-                                            output.Append(CodeGenType(evwc.SubjectTypeId, project));
+                                            output.Append(
+                                                CodeGenTypePossiblyAsNamespace(
+                                                    evwc.SubjectTypeId, 
+                                                    project,
+                                                    true));
                                             output.Append("::");
                                             output.Append(u.Name);
                                             output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
@@ -2396,7 +2992,11 @@ public static partial class CodeGenFunctions {
                                         case CheckedStructLikeEnumVariant s: {
 
                                             output.Append("typename ");
-                                            output.Append(CodeGenType(evwc.SubjectTypeId, project));
+                                            output.Append(
+                                                CodeGenTypePossiblyAsNamespace(
+                                                    evwc.SubjectTypeId, 
+                                                    project,
+                                                    true));
                                             output.Append("::");
                                             output.Append(s.Name);
                                             output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
@@ -3221,6 +3821,49 @@ public static partial class CodeGenFunctions {
 
                 throw new Exception();
             }
+        }
+
+        return output.ToString();
+    }
+
+    public static String CodeGenNamespacePath(CheckedCall call, Project project) {
+
+        var output = new StringBuilder();
+
+        for (var idx = 0; idx < call.Namespace.Count; idx++) {
+
+            var ns = call.Namespace[idx];
+
+            // hack warning: this is to get around C++'s limitation that a constructor
+            // can't be called like other static methods
+
+            if (idx == call.Namespace.Count - 1 && ns.Name == call.Name) {
+                
+                break;
+            }
+
+            output.Append(ns.Name);
+
+            if (ns.GenericParameters is List<Int32> _params && _params.Any()) {
+
+                output.Append('<');
+
+                for (var i = 0; i < _params.Count; i++) {
+
+                    var param = _params[i];
+
+                    output.Append(CodeGenType(param, project));
+
+                    if (i != _params.Count - 1) {
+
+                        output.Append(',');
+                    }
+                }
+
+                output.Append('>');
+            }
+
+            output.Append("::");
         }
 
         return output.ToString();

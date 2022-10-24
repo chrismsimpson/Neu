@@ -556,6 +556,8 @@ public partial class ParsedEnum {
 
     public Span Span { get; init; }
 
+    public bool IsRecursive { get; init; }
+
     public DefinitionLinkage DefinitionLinkage { get; init; }
 
     public ParsedType UnderlyingType { get; set; }
@@ -567,6 +569,7 @@ public partial class ParsedEnum {
         List<(String, Span)> genericParameters,
         List<EnumVariant> variants,
         Span span,
+        bool isRecursive,
         DefinitionLinkage definitionLinkage,
         ParsedType underlyingType) {
 
@@ -574,6 +577,7 @@ public partial class ParsedEnum {
         this.GenericParameters = genericParameters;
         this.Variants = variants;
         this.Span = span;
+        this.IsRecursive = isRecursive;
         this.DefinitionLinkage = definitionLinkage;
         this.UnderlyingType = underlyingType;
     }
@@ -2689,9 +2693,22 @@ public static partial class ParserFunctions {
                             break;
                         }
 
+                        case "ref": {
+
+                            index += 1;
+
+                            var (_enum, enumErr) = ParseEnum(tokens, ref index, DefinitionLinkage.Internal, true);
+
+                            error = error ?? enumErr;
+
+                            parsedNamespace.Enums.Add(_enum);
+
+                            break;
+                        }
+
                         case "enum": {
 
-                            var (_enum, err) = ParseEnum(tokens, ref index, DefinitionLinkage.Internal);
+                            var (_enum, err) = ParseEnum(tokens, ref index, DefinitionLinkage.Internal, false);
 
                             error = error ?? err;
 
@@ -2938,7 +2955,8 @@ public static partial class ParserFunctions {
     public static (ParsedEnum, Error?) ParseEnum(
         List<Token> tokens,
         ref int index,
-        DefinitionLinkage definitionLinkage) {
+        DefinitionLinkage definitionLinkage,
+        bool isRecursive) {
 
         Trace($"parse_enum({tokens[index]})");
 
@@ -2954,6 +2972,7 @@ public static partial class ParserFunctions {
                 fileId: tokens[startIndex].Span.FileId,
                 start: tokens[startIndex].Span.Start,
                 end: tokens[index].Span.End),
+            isRecursive,
             definitionLinkage,
             underlyingType: new ParsedEmptyType());
 
@@ -3087,6 +3106,34 @@ public static partial class ParserFunctions {
                             var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index);
 
                             error = error ?? varDeclParseErr;
+
+                            if (decl.Name == _enum.Name && decl.Type is ParsedEmptyType && !isRecursive) {
+
+                                error = error ?? 
+                                    new ParserError(
+                                        "use 'ref enum' to make the enum recursive",
+                                        tokens[index - 1].Span);
+                            }
+                            else {
+
+                                switch (decl.Type) {
+
+                                    case ParsedNameType n when n.Name == _enum.Name && !isRecursive: {
+
+                                        error = error ?? 
+                                            new ParserError(
+                                                "use 'ref enum' to make the enum recursive",
+                                                tokens[index - 1].Span);
+
+                                        break;
+                                    }
+
+                                    default: {
+
+                                        break;
+                                    }
+                                }
+                            }
 
                             members.Add(decl);
 

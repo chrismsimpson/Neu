@@ -31,7 +31,7 @@
                 },
                 {
                     "name": "keyword.neu",
-                    "match": "\\b(func|extern|struct|class|throws|enum|namespace|public|private)\\b"
+                    "match": "\\b(func|extern|struct|class|throws|ref|enum|namespace|public|private)\\b"
                 },
                 {
                     "name": "keyword.neu",
