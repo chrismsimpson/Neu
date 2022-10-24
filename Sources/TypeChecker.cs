@@ -5886,8 +5886,6 @@ public static partial class TypeCheckerFunctions {
 
                                             if (!body.DefinitelyReturns) {
 
-                                                // WriteLine($"{body}");
-
                                                 switch (finalResultType) {
 
                                                     case Int32 _frt: {

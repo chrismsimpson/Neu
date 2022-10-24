@@ -7182,14 +7182,14 @@ public static partial class ParserFunctions {
 
                     if (index < tokens.Count) {
 
-                        var (childType, err) = ParseTypeName(tokens, ref index);
+                        var (childParsedType, err) = ParseTypeName(tokens, ref index);
 
                         error = error ?? err;
 
                         if (nt.Value == "raw") {
     
                             uncheckedType = new ParsedRawPointerType(
-                                childType,
+                                childParsedType,
                                 new Span(
                                     fileId: start.FileId,
                                     start: start.Start,
@@ -7198,7 +7198,7 @@ public static partial class ParserFunctions {
                         else if (nt.Value == "weak") {
 
                             uncheckedType = new ParsedWeakPointerType(
-                                childType,
+                                childParsedType,
                                 new Span(
                                     fileId: start.FileId,
                                     start: start.Start,
