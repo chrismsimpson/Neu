@@ -2,8 +2,10 @@ enum Operation {
     add
 }
 
+// you get a C collision if you use int below
+
 ref enum AST {
-    integer(Int64) // you get a C collision if you use int
+    integer(Int64)
     binaryOperation(lhs: AST, op: Operation, rhs: AST)
 }
 
