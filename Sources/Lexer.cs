@@ -1572,8 +1572,8 @@ public static partial class LexerFunctions {
             if (index == bytes.Length || ToChar(bytes[index]) != '"') {
 
                 error = new ParserError(
-                    "expected quote", 
-                    new Span(fileId, index, index));
+                    "expected end quote", 
+                    new Span(fileId, start, start + 1));
             }
 
             // Everything but the quotes
