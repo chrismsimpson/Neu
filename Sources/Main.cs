@@ -475,7 +475,7 @@ public static partial class Program {
                     lineIndex, 
                     largestLineNumber);
 
-                Write($"{new String(' ', lineSpans[lineIndex].Item2 - lineSpans[lineIndex].Item1 + width + 2)}");
+                Write($"{new String(' ', span.Start - lineSpans[lineIndex].Item1 + width + 4)}");
 
                 Console.ForegroundColor = ConsoleColor.Red;
 
