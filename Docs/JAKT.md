@@ -27,6 +27,8 @@
 
 23/05/22: 590c91c2353019bff762b38b2f16f4a6606fafb2 weak references
 
+23/05/22: fffe7cf61147ba261018c04b81f53ba5d3006cee recursive enums
+
 
 
 launch.json:
