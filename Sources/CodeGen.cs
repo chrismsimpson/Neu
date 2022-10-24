@@ -136,7 +136,7 @@ public static partial class CodeGenFunctions {
         CheckedEnum _enum,
         Project project) {
 
-        if (_enum.UnderlyingType is Int32 ty) {
+        if (_enum.UnderlyingTypeId is Int32 ty) {
 
             if (NeuTypeFunctions.IsInteger(ty)) {
 
@@ -246,7 +246,7 @@ public static partial class CodeGenFunctions {
                     foreach (var member in s.Decls) {
 
                         output.Append("        ");
-                        output.Append(CodeGenType(member.Type, project));
+                        output.Append(CodeGenType(member.TypeId, project));
                         output.Append(" ");
                         output.Append(member.Name);
                         output.Append(";\n");
@@ -613,7 +613,7 @@ public static partial class CodeGenFunctions {
 
             output.Append(CodeGenIndent(INDENT_SIZE));
 
-            output.Append(CodeGenType(field.Type, project));
+            output.Append(CodeGenType(field.TypeId, project));
             
             output.Append(' ');
             
@@ -731,11 +731,11 @@ public static partial class CodeGenFunctions {
 
             if (fun.Throws) {
 
-                returnType = $"ErrorOr<{CodeGenType(fun.ReturnType, project)}>";
+                returnType = $"ErrorOr<{CodeGenType(fun.ReturnTypeId, project)}>";
             }
             else {
 
-                returnType = CodeGenType(fun.ReturnType, project);
+                returnType = CodeGenType(fun.ReturnTypeId, project);
             }
 
             output.Append(returnType);
@@ -765,7 +765,7 @@ public static partial class CodeGenFunctions {
                 output.Append("const ");
             }
 
-            var ty = CodeGenType(p.Variable.Type, project);
+            var ty = CodeGenType(p.Variable.TypeId, project);
 
             output.Append(ty);
 
@@ -854,11 +854,11 @@ public static partial class CodeGenFunctions {
 
             if (fun.Throws) {
 
-                returnType = $"ErrorOr<{CodeGenType(fun.ReturnType, project)}>";
+                returnType = $"ErrorOr<{CodeGenType(fun.ReturnTypeId, project)}>";
             }
             else {
 
-                returnType = CodeGenType(fun.ReturnType, project);
+                returnType = CodeGenType(fun.ReturnTypeId, project);
             }
 
             output.Append(returnType);
@@ -905,7 +905,7 @@ public static partial class CodeGenFunctions {
                 output.Append("const ");
             }
 
-            var ty = CodeGenType(p.Variable.Type, project);
+            var ty = CodeGenType(p.Variable.TypeId, project);
 
             output.Append(ty);
 
@@ -932,18 +932,18 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            if (fun.ReturnType == Compiler.UnknownTypeId) {
+            if (fun.ReturnTypeId == Compiler.UnknownTypeId) {
 
                 throw new Exception($"Function type unknown at codegen time in {fun.Name}");
             }
 
             if (fun.Throws) {
 
-                output.Append($"using _NeuCurrentFunctionReturnType = ErrorOr<{CodeGenType(fun.ReturnType, project)}>;\n");
+                output.Append($"using _NeuCurrentFunctionReturnType = ErrorOr<{CodeGenType(fun.ReturnTypeId, project)}>;\n");
             }
             else {
 
-                output.Append($"using _NeuCurrentFunctionReturnType = {CodeGenType(fun.ReturnType, project)};\n");
+                output.Append($"using _NeuCurrentFunctionReturnType = {CodeGenType(fun.ReturnTypeId, project)};\n");
             }
         }
 
@@ -956,7 +956,7 @@ public static partial class CodeGenFunctions {
             output.Append(CodeGenIndent(INDENT_SIZE));
             output.Append("return 0;\n");
         }
-        else if (fun.Throws && fun.ReturnType == Compiler.VoidTypeId) {
+        else if (fun.Throws && fun.ReturnTypeId == Compiler.VoidTypeId) {
             
             output.Append(CodeGenIndent(INDENT_SIZE));
             output.Append("return {};\n");
@@ -971,7 +971,7 @@ public static partial class CodeGenFunctions {
         CheckedFunction func,
         Project project) {
 
-        var typeId = func.ReturnType;
+        var typeId = func.ReturnTypeId;
 
         var ty = project.Types[typeId];
 
@@ -1000,7 +1000,7 @@ public static partial class CodeGenFunctions {
                             first = false;
                         }
 
-                        var tyStr = CodeGenType(param.Variable.Type, project);
+                        var tyStr = CodeGenType(param.Variable.TypeId, project);
 
                         output.Append(tyStr);
                         output.Append(' ');
@@ -1042,7 +1042,7 @@ public static partial class CodeGenFunctions {
                             first = false;
                         }
 
-                        var tyStr = CodeGenType(param.Variable.Type, project);
+                        var tyStr = CodeGenType(param.Variable.TypeId, project);
                         output.Append(tyStr);
                         output.Append(" a_");
                         output.Append(param.Variable.Name);
@@ -1485,7 +1485,7 @@ public static partial class CodeGenFunctions {
                     output.Append("const ");
                 }
 
-                output.Append(CodeGenType(vd.VarDecl.Type, project));
+                output.Append(CodeGenType(vd.VarDecl.TypeId, project));
                 output.Append(' ');
                 output.Append(vd.VarDecl.Name);
                 output.Append(" = ");
@@ -1995,7 +1995,7 @@ public static partial class CodeGenFunctions {
 
                         if (ce.Call.Linkage == FunctionLinkage.ImplicitConstructor) {
 
-                            var typeId = ce.Call.Type;
+                            var typeId = ce.Call.TypeId;
 
                             var ty = project.Types[typeId];
 
@@ -2127,7 +2127,7 @@ public static partial class CodeGenFunctions {
 
                     case var x: {
 
-                        switch (project.Types[x.GetNeuType()]) {
+                        switch (project.Types[x.GetTypeId()]) {
 
                             case RawPointerType p: {
 
@@ -2195,7 +2195,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedWhenExpression we: {
 
-                var exprType = project.Types[we.Expression.GetNeuType()];
+                var exprType = project.Types[we.Expression.GetTypeId()];
 
                 Int32? _id = null;
 
@@ -2225,7 +2225,7 @@ public static partial class CodeGenFunctions {
 
                 var _enum = project.Enums[id];
 
-                switch (_enum.UnderlyingType) {
+                switch (_enum.UnderlyingTypeId) {
 
                     case Int32 _: {
 
@@ -2241,7 +2241,7 @@ public static partial class CodeGenFunctions {
                         foreach (var _case in we.Cases) {
 
                             output.Append("case ");
-                            output.Append(CodeGenType(we.Expression.GetNeuType(), project));
+                            output.Append(CodeGenType(we.Expression.GetTypeId(), project));
                             output.Append("::");
                         
                             switch (_case) {
@@ -2368,7 +2368,7 @@ public static partial class CodeGenFunctions {
                                                     .FindVarInScope(evwc.ScopeId, evwc.VariantArguments[0].Item2)
                                                     ?? throw new Exception();
 
-                                                output.Append(CodeGenType(v.Type, project));
+                                                output.Append(CodeGenType(v.TypeId, project));
                                                 output.Append(" const& ");
                                                 output.Append(evwc.VariantArguments[0].Item2);
                                                 output.Append(" = __neu_match_value.value;\n");
@@ -2414,7 +2414,7 @@ public static partial class CodeGenFunctions {
                                                         .FindVarInScope(evwc.ScopeId, arg.Item2)
                                                         ?? throw new Exception();
 
-                                                    output.Append(CodeGenType(v.Type, project));
+                                                    output.Append(CodeGenType(v.TypeId, project));
                                                     output.Append(" const& ");
                                                     output.Append(arg.Item2);
                                                     output.Append(" = __neu_match_value.");
@@ -2451,7 +2451,7 @@ public static partial class CodeGenFunctions {
 
                                         case CheckedExpressionWhenBody e: {
 
-                                            if (e.Expression.GetNeuType() == Compiler.VoidTypeId) {
+                                            if (e.Expression.GetTypeId() == Compiler.VoidTypeId) {
 
                                                 output.Append("   return (");
                                                 output.Append(CodeGenExpr(
@@ -2685,7 +2685,7 @@ public static partial class CodeGenFunctions {
 
                 output.Append("(");
 
-                var exprTy = expr.GetNeuType();
+                var exprTy = expr.GetTypeId();
 
                 var exprIsInt = NeuTypeFunctions.IsInteger(exprTy);
 
@@ -2986,7 +2986,7 @@ public static partial class CodeGenFunctions {
                 if (ve.FillSize is CheckedExpression fillSize) {
 
                     output.Append("(TRY(Array<");
-                    output.Append(CodeGenType(ve.Expressions.First().GetNeuType(), project));
+                    output.Append(CodeGenType(ve.Expressions.First().GetTypeId(), project));
                     output.Append(">::filled(");
                     output.Append(CodeGenExpr(indent, fillSize, project));
                     output.Append(", ");
@@ -3025,8 +3025,8 @@ public static partial class CodeGenFunctions {
 
                 // (Dictionary({1, 2, 3}))
 
-                var keyTypeId = de.Entries[0].Item1.GetNeuType();
-                var valueTypeId = de.Entries[0].Item2.GetNeuType();
+                var keyTypeId = de.Entries[0].Item1.GetTypeId();
+                var valueTypeId = de.Entries[0].Item2.GetTypeId();
 
                 output.Append(
                     $"(TRY(Dictionary<{CodeGenType(keyTypeId, project)}, {CodeGenType(valueTypeId, project)}>::createWithEntries({{");
@@ -3060,7 +3060,7 @@ public static partial class CodeGenFunctions {
 
                 // (Set({1, 2, 3}))
 
-                var valueTypeId = se.Items.First().GetNeuType();
+                var valueTypeId = se.Items.First().GetTypeId();
 
                 output.Append($"(Set<{CodeGenType(valueTypeId, project)}>({{");
 
@@ -3167,7 +3167,7 @@ public static partial class CodeGenFunctions {
 
                     case var x: {
 
-                        switch (project.Types[x.GetNeuType()]) {
+                        switch (project.Types[x.GetTypeId()]) {
 
                             case RawPointerType p: {
 

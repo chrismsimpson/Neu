@@ -7053,7 +7053,7 @@ public static partial class ParserFunctions {
 
             index += 1;
 
-            var (ty, err) = ParseTypeName(tokens, ref index);
+            var (parsedTy, err) = ParseTypeName(tokens, ref index);
 
             switch (tokens[index]) {
 
@@ -7063,7 +7063,7 @@ public static partial class ParserFunctions {
 
                     return (
                         new ParsedArrayType(
-                            ty, 
+                            parsedTy, 
                             new Span(
                                 fileId: start.FileId, 
                                 start: start.Start, 
@@ -7075,7 +7075,7 @@ public static partial class ParserFunctions {
 
                     index += 1;
 
-                    var (valueTy, valueErr) = ParseTypeName(tokens, ref index);
+                    var (valueParsedType, valueErr) = ParseTypeName(tokens, ref index);
 
                     if (index < tokens.Count) {
 
@@ -7085,8 +7085,8 @@ public static partial class ParserFunctions {
 
                             return (
                                 new ParsedDictionaryType(
-                                    ty,
-                                    valueTy,
+                                    parsedTy,
+                                    valueParsedType,
                                     new Span(
                                         fileId: start.FileId,
                                         start: start.Start,
@@ -7116,7 +7116,7 @@ public static partial class ParserFunctions {
 
             index += 1;
 
-            var (ty, err) = ParseTypeName(tokens, ref index);
+            var (parsedType, err) = ParseTypeName(tokens, ref index);
 
             if (tokens[index] is RCurlyToken){
 
@@ -7124,7 +7124,7 @@ public static partial class ParserFunctions {
 
                 return (
                     new ParsedSetType(
-                        ty,
+                        parsedType,
                         new Span(
                             fileId: start.FileId,
                             start: start.Start,
