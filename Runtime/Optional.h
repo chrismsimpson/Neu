@@ -23,6 +23,8 @@
 template<typename>
 class Optional;
 
+struct NullOptional { };
+
 template<typename T>
 requires(!IsLValueReference<T>) class [[nodiscard]] Optional<T> {
 
@@ -36,6 +38,8 @@ public:
     using ValueType = T;
 
     ALWAYS_INLINE Optional() = default;
+
+    ALWAYS_INLINE Optional(NullOptional) { }
 
 #ifdef HAS_CONDITIONALLY_TRIVIAL
 

@@ -2268,7 +2268,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedOptionalNoneExpression _: {
 
-                output.Append("{ }");
+                output.Append("NeuInternal::OptionalNone()");
 
                 break;
             }
