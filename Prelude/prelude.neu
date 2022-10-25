@@ -75,7 +75,7 @@ extern struct Range<T> {
 
 extern struct Error {
     func code(this) -> Int32
-    func fromError(anon code: Int32)
+    func fromError(anon code: Int32) -> Error
 }
 
 extern class File {

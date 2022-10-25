@@ -4418,7 +4418,17 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? err;
 
-                // FIXME: Verify that the expression produces an Error
+                var errorStructTypeId = project
+                    .FindTypeInScope(0, "Error") 
+                    ?? throw new Exception("internal error: Error builtin definition not found");
+
+                if (checkedExpr.GetTypeId() != errorStructTypeId) {
+
+                    error = error ?? 
+                        new TypeCheckError(
+                            "throw expression does not produce an error",
+                            ts.Expr.GetSpan());
+                }
 
                 return (
                     new CheckedThrowStatement(checkedExpr),

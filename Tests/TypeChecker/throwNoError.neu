@@ -1,0 +1,9 @@
+func foo() throws -> UInt32 {
+    throw 1
+    return 2
+}
+
+func main() {
+    let x = foo()
+    printLine("{}", x)
+}
