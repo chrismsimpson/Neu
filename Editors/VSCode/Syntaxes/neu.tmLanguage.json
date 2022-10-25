@@ -2,120 +2,604 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "neu",
     "patterns": [
-        {
-            "include": "#keywords"
-        },
-        {
-            "include": "#comment"
-        },
-        {
-            "include": "#constant"
-        },
-        {
-            "include": "#number"
-        },
-        {
-            "include": "#strings"
-        }
+      {
+        "include": "#function"
+      },
+      {
+        "include": "#struct"
+      },
+      {
+        "include": "#variable-declaration"
+      },
+      {
+        "include": "#expressions"
+      },
+      {
+        "include": "#comment"
+      }
     ],
     "repository": {
-        "keywords": {
+      "expressions": {
+        "patterns": [
+          {
+            "include": "#strings"
+          },
+          {
+            "include": "#this"
+          },
+          {
+            "include": "#constant"
+          },
+          {
+            "include": "#number"
+          },
+          {
+            "include": "#control"
+          },
+          {
+            "include": "#operators"
+          },
+          {
+            "include": "#indexing"
+          },
+          {
+            "include": "#call"
+          },
+          {
+            "include": "#variable-declaration"
+          },
+          {
+            "include": "#types"
+          },
+          {
+            "name": "meta.block.neu",
+            "begin": "(\\{)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.brace.neu" }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.brace.neu" }
+            },
+            "patterns": [{ "include": "$self" }]
+          }
+        ]
+      },
+      "this": {
+        "name": "variable.language.this.neu",
+        "match": "\\bthis\\b"
+      },
+      "variable-declaration": {
+        "name": "meta.variable.definition.neu",
+        "comment": "FIXME: The identifier matching is identical to the lexer but more characters may be allowed in the future.",
+        "begin": "\\b(let|var)\\s+((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(:)?",
+        "beginCaptures": {
+          "1": { "name": "keyword.let.neu" },
+          "2": { "name": "variable.other.neu" },
+          "3": { "name": "punctuation.colon.neu" }
+        },
+        "end": "((?:\\+|\\-|\\*|\\/|%)?=)",
+        "endCaptures": {
+          "1": { "name": "keyword.operator.assignment.neu" }
+        },
+        "patterns": [{ "include": "#types" }]
+      },
+      "struct": {
+        "patterns": [
+          {
+            "name": "meta.type.struct.neu",
+            "match": "(\\bextern\\s+)?\\b(class|struct)\\s+((?:\\w|_)(?:\\w|_|[0-9])*)",
+            "captures": {
+              "1": { "name": "storage.modifier.linkage.neu" },
+              "2": { "name": "keyword.type.struct.neu" },
+              "3": { "name": "entity.name.type.struct.neu" }
+            }
+          },
+          {
+            "name": "meta.block.struct.neu",
+            "begin": "(?<=(?:class|struct).*?)(\\{)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.brace.neu" }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.brace.neu" }
+            },
             "patterns": [
-                {
-                    "name": "keyword.control.neu",
-                    "match": "\\b(if|else|while|for|in|return|defer|unsafe|loop|throw|continue|break|try|catch|cpp|when)\\b"
-                },
-                {
-                    "name": "keyword.neu",
-                    "match": "\\b(print|this)\\b"
-                },
-                {
-                    "name": "keyword.neu",
-                    "match": "\\b(func|extern|struct|class|throws|ref|enum|namespace|public|private)\\b"
-                },
-                {
-                    "name": "keyword.neu",
-                    "match": "\\b(var|let|anon|raw|weak)\\b"
-                },
-                {
-                    "name": "keyword.operator.new.neu",
-                    "match": "\\b(not|and|or|is|as)\\b"
-                },
-                {
-                    "name": "support.type",
-                    "match": "\\b(String|Int8|Int16|Int32|Int64|UInt8|UInt16|UInt32|UInt64|Float|Double|Bool|CInt|CChar|Int|UInt)\\b"
-                }
+              {
+                "include": "#field"
+              },
+              {
+                "include": "$self"
+              }
             ]
+          },
+  
+          {
+            "name": "meta.type.generic-arguments.neu",
+            "begin": "(?<=(?:class|struct|enum).*?)\\s*(<)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.angle-bracket.neu" }
+            },
+            "end": "(>)",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.angle-bracket.neu" }
+            },
+            "patterns": [{ "include": "#types" }]
+          },
+          {
+            "name": "meta.type.enum.body.neu",
+            "begin": "(?<=enum.*?)(\\{)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.brace.neu" }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.brace.neu" }
+            },
+            "patterns": [{ "include": "#enum-field" }]
+          },
+          {
+            "name": "meta.type.enum.neu",
+            "match": "(?:\\b(ref)\\s+)?\\b(enum)\\s+((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(?:(:)\\s*((?:(UInt|Int)(?:8|16|32|64))|UInt))?",
+            "captures": {
+              "1": { "name": "storage.modifier.pointer.neu" },
+              "2": { "name": "keyword.type.enum.neu" },
+              "3": { "name": "entity.name.type.enum.neu" },
+              "4": { "name": "punctuation.colon.neu" },
+              "5": { "name": "storage.type.numeric.neu" },
+              "6": { "name": "punctuation.begin.brace.neu" }
+            }
+          }
+        ]
+      },
+      "field": {
+        "name": "meta.field.neu",
+        "begin": "(?:\\b(public|private)\\s+)?\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(:)",
+        "beginCaptures": {
+          "1": { "name": "storage.modifier.visibility.neu" },
+          "2": { "name": "variable.field.neu" },
+          "3": { "name": "punctuation.colon.neu" }
         },
-        "constant": {
-            "match": "\\b(?:true|false)\\b",
-            "name": "constant.language.neu"
+        "end": "$",
+        "patterns": [{ "include": "#types" }]
+      },
+      "enum-field": {
+        "patterns": [
+          {
+            "name": "meta.field.enum.neu",
+            "begin": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(\\{)",
+            "beginCaptures": {
+              "1": { "name": "variable.field.enum.neu" },
+              "2": { "name": "punctuation.begin.brace.neu" }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.brace.neu" }
+            },
+            "patterns": [{ "include": "#field" }]
+          },
+          {
+            "name": "meta.field.assigned.enum.neu",
+            "begin": "(=)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.equals.neu" }
+            },
+            "end": "$",
+            "patterns": [{ "include": "#number" }]
+          },
+          {
+            "include": "#field"
+          },
+          {
+            "name": "meta.field.enum.neu",
+            "match": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*$",
+            "captures": {
+              "1": { "name": "variable.field.enum.neu" }
+            }
+          }
+        ]
+      },
+      "types": {
+        "patterns": [
+          {
+            "name": "storage.modifier.mutable.neu",
+            "match": "\\bvar\\b"
+          },
+          {
+            "name": "storage.modifier.pointer.neu",
+            "match": "\\b(raw|weak)\\b"
+          },
+          {
+            "name": "storage.type.primitive.neu",
+            "match": "\\b(String|Int8|Int16|Int32|Int64|UInt8|UInt16|UInt32|UInt64|Float|Double|Bool|CInt|CChar|UInt|Int)\\b"
+          },
+          {
+            "match": "\\b(?:[A-Z]|_)(?:\\w|_|[0-9])*\\s*(.)",
+            "captures": {
+              "1": { "name": "entity.name.namespace.neu" },
+              "2": { "name": "punctuation.period.neu" }
+            }
+          },
+          {
+            "name": "storage.type.generic.neu",
+            "begin": "\\b((?:[A-Z]|_)(?:\\w|_|[0-9])*)\\s*(<)",
+            "beginCaptures": {
+              "1": { "name": "storage.type.other.neu" },
+              "2": { "name": "punctuation.begin.angle-bracket.neu" }
+            },
+            "end": "(>)",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.angle-bracket.neu" }
+            },
+            "patterns": [{ "include": "#types" }]
+          },
+          {
+            "name": "storage.type.other.neu",
+            "match": "\\b(?:[A-Z]|_)(?:\\w|_|[0-9])*\\b"
+          },
+          {
+            "name": "storage.type.array.neu",
+            "begin": "(\\[)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.square-bracket.neu" }
+            },
+            "end": "(\\])",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.square-bracket.neu" }
+            },
+            "patterns": [{ "include": "#types" }]
+          },
+          {
+            "name": "storage.type.optional.neu",
+            "match": "\\?"
+          },
+          {
+            "name": "punctuation.comma.generic-type-list.neu",
+            "match": ","
+          }
+        ]
+      },
+      "function": {
+        "patterns": [
+          {
+            "name": "meta.function.declaration.neu",
+            "match": "(?:\\b(public|private)\\s+)?(\\bextern\\s+)?(\\bfunc)\\s+((?:\\w|_)(?:\\w|_|[0-9])*)",
+            "captures": {
+              "1": { "name": "storage.modifier.visibility.neu" },
+              "2": { "name": "storage.modifier.linkage.neu" },
+              "3": { "name": "keyword.function.neu" },
+              "4": { "name": "entity.name.function" },
+              "5": { "name": "punctuation.begin.bracket" }
+            }
+          },
+          {
+            "name": "meta.function.argument-list.neu",
+            "begin": "(?<=func.*?)(\\()",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.bracket" }
+            },
+            "end": "(\\))",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.bracket" }
+            },
+            "patterns": [{ "include": "#argument-list" }]
+          },
+          {
+            "name": "meta.function.return-type.neu",
+            "begin": "(?<=\\)\\s*)(throws)?\\s*(\\-\\>)",
+            "beginCaptures": {
+              "1": { "name": "keyword.type.throws.neu" },
+              "2": { "name": "punctuation.arrow.thin.neu" }
+            },
+            "end": "(?=\\{|$)",
+            "patterns": [{ "include": "#types" }]
+          },
+          {
+            "name": "meta.function.body.neu",
+            "begin": "(?<=func.*?)(\\{)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.brace.neu" }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.brace.neu" }
+            },
+            "patterns": [{ "include": "$self" }]
+          },
+          {
+            "name": "meta.function.generic-arguments.neu",
+            "begin": "(?<=func.*?)(<)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.angle-bracket.neu" }
+            },
+            "end": "(>)",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.angle-bracket.neu" }
+            },
+            "patterns": [{ "include": "#types" }]
+          }
+        ]
+      },
+      "argument-list": {
+        "patterns": [
+          {
+            "name": "storage.modifier.anonymous.argument.neu",
+            "match": "\\banon\\b"
+          },
+          {
+            "include": "#this"
+          },
+          {
+            "match": "\\b(var)\\s+(this)\\b",
+            "captures": {
+              "1": { "name": "storage.modifier.mutable.argument.neu" },
+              "2": { "name": "variable.language.this.neu" }
+            }
+          },
+          {
+            "name": "meta.argument.neu",
+            "begin": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(:)",
+            "beginCaptures": {
+              "1": { "name": "variable.parameter.neu" },
+              "2": { "name": "punctuation.colon.neu" }
+            },
+            "end": "$|(,)|(?:(?=\\)))",
+            "endCaptures": {
+              "1": { "name": "punctuation.comma.neu" }
+            },
+            "patterns": [{ "include": "#types" }]
+          },
+          {
+            "name": "punctuation.comma.neu",
+            "match": ","
+          }
+        ]
+      },
+      "parameter-list": {
+        "patterns": [
+          {
+            "name": "meta.parameter.neu",
+            "begin": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(:)(?!\\:)",
+            "beginCaptures": {
+              "1": { "name": "variable.parameter.name.neu" },
+              "2": { "name": "punctuation.colon.neu" }
+            },
+            "end": "$|(,)|(?=\\))",
+            "endCaptures": {
+              "1": { "name": "punctuation.comma.neu" }
+            },
+            "patterns": [{ "include": "$self" }]
+          },
+          {
+            "name": "punctuation.comma.neu",
+            "match": ","
+          },
+          {
+            "include": "$self"
+          }
+        ]
+      },
+      "match-patterns": {
+        "patterns": [
+          {
+            "name": "meta.pattern.enum.neu",
+            "match": "\\b((?:[a-z]|_)(?:\\w|_|[0-9])*)(.)",
+            "captures": {
+              "1": { "name": "entity.name.type.enum.neu" },
+              "2": { "name": "punctuation.period.neu" }
+            }
+          },
+          {
+            "name": "meta.pattern.enum.variant.tuple.neu",
+            "begin": "\\b((?:[a-z]|_)(?:\\w|_|[0-9])*)\\s*(\\()",
+            "beginCaptures": {
+              "1": { "name": "entity.name.type.enum.neu" },
+              "2": { "name": "punctuation.begin.bracket.neu" }
+            },
+            "end": "(\\))",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.bracket.neu" }
+            },
+            "patterns": [{ "include": "#parameter-list" }]
+          },
+          {
+            "name": "meta.pattern.enum.variant.neu",
+            "match": "\\b((?:[a-z]|_)(?:\\w|_|[0-9])*)\\b",
+            "captures": {
+              "1": { "name": "entity.name.type.enum.neu" }
+            }
+          },
+          {
+            "begin": "(\\=\\>)",
+            "beginCaptures": {
+              "1": { "name": "keyword.operator.fat-arrow.neu" }
+            },
+            "end": "$",
+            "patterns": [{ "include": "$self" }]
+          },
+          {
+            "include": "$self"
+          }
+        ]
+      },
+      "indexing": {
+        "patterns": [
+          {
+            "name": "meta.index.struct.neu",
+            "match": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(\\.)",
+            "captures": {
+              "1": { "name": "variable.other.neu" },
+              "2": { "name": "punctuation.period.neu" }
+            }
+          },
+          {
+            "name": "meta.index.namespace.neu",
+            "match": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(.)",
+            "captures": {
+              "1": { "name": "entity.name.namespace.neu" },
+              "2": { "name": "punctuation.period.neu" }
+            }
+          },
+          {
+            "name": "meta.index.array.neu",
+            "begin": "(\\[)",
+            "beginCaptures": {
+              "1": { "name": "punctuation.begin.square-bracket.neu" }
+            },
+            "end": "(\\])",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.square-bracket.neu" }
+            },
+            "patterns": [{ "include": "$self" }]
+          },
+          {
+            "name": "meta.index.other.neu",
+            "match": "(\\.)",
+            "captures": {
+              "1": { "name": "punctuation.period.neu" }
+            }
+          }
+        ]
+      },
+      "call": {
+        "name": "meta.call.neu",
+        "begin": "\\b((?:\\w|_)(?:\\w|_|[0-9])*)\\s*(\\()",
+        "beginCaptures": {
+          "1": { "name": "entity.name.function.call.neu" },
+          "2": { "name": "punctuation.begin.bracket.neu" }
         },
-        "number": {
-            "patterns": [
-                {
-                    "name": "constant.numeric.hex.neu",
-                    "match": "\\b(?<!\\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n)?\\b(?!\\$)",
-                    "captures": {
-                        "1": {
-                            "name": "storage.type.numeric.bigint.neu"
-                        }
-                    }
-                },
-                {
-                    "name": "constant.numeric.binary.neu",
-                    "match": "\\b(?<!\\$)0(?:b|B)[01][01_]*(n)?\\b(?!\\$)",
-                    "captures": {
-                        "1": {
-                            "name": "storage.type.numeric.bigint.neu"
-                        }
-                    }
-                },
-                {
-                    "name": "constant.numeric.octal.neu",
-                    "match": "\\b(?<!\\$)0(?:o|O)?[0-7][0-7_]*(n)?\\b(?!\\$)",
-                    "captures": {
-                        "1": {
-                            "name": "storage.type.numeric.bigint.neu"
-                        }
-                    }
-                },
-                {
-                    "name": "constant.numeric.neu",
-                    "match": "\\b(?<!\\$)[0-9][0-9_]*(n)?\\b(?!\\$)",
-                    "captures": {
-                        "1": {
-                            "name": "storage.type.numeric.bigint.neu"
-                        }
-                    }
-                }
-            ],
-            "name": "constant.numeric.neu"
+        "end": "(\\))",
+        "endCaptures": {
+          "1": { "name": "punctuation.end.bracket.neu" }
         },
-        "comment": {
-            "patterns": [
-                {
-                    "captures": {
-                        "1": {
-                            "name": "punctuation.definition.comment.neu"
-                        }
-                    },
-                    "match": "(//).*$\\n?",
-					"name": "comment.line.double-slash.neu"
-                }
-            ]
+        "patterns": [{ "include": "#parameter-list" }]
+      },
+      "control": {
+        "patterns": [
+          {
+            "name": "meta.control.neu",
+            "match": "\\b(if|else|while|for|loop|try|catch|cpp|unsafe|defer|when)(?=.*?(?:\\{|$))",
+            "captures": {
+              "1": { "name": "keyword.control.block.neu" }
+            }
+          },
+          {
+            "name": "keyword.control.neu",
+            "match": "\\b(return|throw|continue|break)\\b"
+          },
+          {
+            "name": "meta.control.match.neu",
+            "begin": "(?<=when.*?)(\\{)",
+            "beginCaptures": {
+              "2": { "name": "punctuation.begin.brace.neu" }
+            },
+            "end": "(\\})",
+            "endCaptures": {
+              "1": { "name": "punctuation.end.brace.neu" }
+            },
+            "patterns": [{ "include": "#match-patterns" }]
+          }
+        ]
+      },
+      "operators": {
+        "patterns": [
+          {
+            "name": "keyword.operator.logic.neu",
+            "match": "\\b(not|and|or)\\b"
+          },
+          {
+            "name": "keyword.operator.arithmetic.neu",
+            "match": "(\\+|\\-|\\*|\\/|\\^|\\~)(=)?"
+          },
+          {
+            "name": "keyword.operator.comparison.neu",
+            "match": "(((=|>|<)(=)?)|!=)"
+          },
+          {
+            "name": "keyword.operator.cast.neu",
+            "match": "\\b(as)(\\!|\\?)"
+          },
+          {
+            "name": "keyword.other.neu",
+            "match": "\\b(in)\\b"
+          },
+          {
+            "name": "keyword.operator.range.neu",
+            "match": "\\.\\."
+          },
+          {
+            "name": "punctuation.semicolon.neu",
+            "match": ";"
+          }
+        ]
+      },
+      "constant": {
+        "match": "\\b(?:true|false)\\b",
+        "name": "constant.language.neu"
+      },
+      "number": {
+        "patterns": [
+          {
+            "name": "constant.numeric.hex.neu",
+            "match": "\\b(?<!\\$)0(?:x|X)[0-9a-fA-F][0-9a-fA-F_]*(n|(?:(UInt|Int)(?:8|16|32|64))|UInt)?\\b(?!\\$)",
+            "captures": {
+              "1": { "name": "storage.type.numeric.neu" }
+            }
+          },
+          {
+            "name": "constant.numeric.binary.neu",
+            "match": "\\b(?<!\\$)0(?:b|B)[01][01_]*(n|(?:(UInt|Int)(?:8|16|32|64))|UInt)?\\b(?!\\$)",
+            "captures": {
+              "1": { "name": "storage.type.numeric.neu" }
+            }
+          },
+          {
+            "name": "constant.numeric.octal.neu",
+            "match": "\\b(?<!\\$)0(?:o|O)?[0-7][0-7_]*(n|(?:(UInt|Int)(?:8|16|32|64))|UInt)?\\b(?!\\$)",
+            "captures": {
+              "1": { "name": "storage.type.numeric.neu" }
+            }
+          },
+          {
+            "name": "constant.numeric.neu",
+            "match": "\\b(?<!\\$)[0-9][0-9_]*(n|(?:(UInt|Int)(?:8|16|32|64))|UInt)?\\b(?!\\$)",
+            "captures": {
+              "1": { "name": "storage.type.numeric.neu" }
+            }
+          }
+        ],
+        "name": "constant.numeric.neu"
+      },
+      "comment": {
+        "patterns": [
+          {
+            "captures": {
+              "1": { "name": "punctuation.definition.comment.neu" }
+            },
+            "match": "(//).*$\\n?",
+            "name": "comment.line.double-slash.neu"
+          }
+        ]
+      },
+      "strings": {
+        "name": "string.quoted.double.neu",
+        "begin": "(\")",
+        "beginCaptures": {
+          "1": { "name": "punctuation.begin.quote.double.neu" }
         },
-        "strings": {
-            "name": "string.quoted.double.neu",
-            "begin": "\"",
-            "end": "\"",
-            "patterns": [
-                {
-                    "name": "constant.character.escape.neu",
-                    "match": "\\\\."
-                }
-            ]
-        }
+        "end": "(\")",
+        "endCaptures": {
+          "1": { "name": "punctuation.end.quote.double.neu" }
+        },
+        "patterns": [
+          {
+            "name": "constant.character.escape.neu",
+            "match": "\\\\."
+          }
+        ]
+      }
     },
     "scopeName": "source.neu"
-}
+  }
+  
