@@ -85,6 +85,21 @@ public partial class Token {
         }
     }
 
+    public partial class SingleQuotedByteStringToken: Token {
+
+        public String Value { get; init; }
+
+        ///
+
+        public SingleQuotedByteStringToken(
+            String value,
+            Span span)
+            : base(span) {
+
+            this.Value = value;
+        }
+    }
+
     public partial class QuotedStringToken: Token {
 
         public String Value { get; init; }
@@ -445,6 +460,20 @@ public static partial class TokenFunctions {
         Token l, Token r) {
 
         switch (true) {
+
+            case var _ when 
+                l is SingleQuotedStringToken ls
+                && r is SingleQuotedStringToken rs:
+
+                return ls.Value == rs.Value
+                    && SpanFunctions.Eq(ls.Span, rs.Span);
+
+            case var _ when 
+                l is SingleQuotedByteStringToken ls
+                && r is SingleQuotedByteStringToken rs:
+
+                return ls.Value == rs.Value
+                    && SpanFunctions.Eq(ls.Span, rs.Span);
 
             case var _ when
                 l is QuotedStringToken lq
@@ -1360,6 +1389,50 @@ public static partial class LexerFunctions {
                             new Span(fileId, start, index)));
                 }
             }
+            else if (literalCast.Width == 8 && literalCast.Sign == null && bytes[index] == '\'') {
+
+                start += literalCast.Length;
+
+                index += 1;
+
+                // Byte
+
+                var escaped = false;
+
+                while (index < bytes.Length && (escaped || bytes[index] != '\'')) {
+
+                    if (!escaped && bytes[index] == '\\') {
+
+                        escaped = true;
+                    }
+                    else {
+
+                        escaped = false;
+                    }
+
+                    index += 1;
+                }
+
+                if (index == bytes.Length || bytes[index] != '\'') {
+
+                    error = error ?? 
+                        new ParserError(
+                            "expected single quote", 
+                            new Span(fileId, index, index));
+                }
+
+                // Everything but the quotes
+
+                var byteStr = UTF8.GetString(bytes[(start + 1)..index]);
+
+                index += 2; // trailing `')`
+
+                var end = index;
+
+                return (
+                    new SingleQuotedByteStringToken(byteStr, new Span(fileId, start, end)),
+                    error);
+            }
             else {
 
                 throw new Exception();
@@ -1793,11 +1866,21 @@ public static partial class CharExtensions {
         }
         else if (bytes.Match(i, "Float")) {
 
+            i += 5;
+
             width = 32;
         }
         else if (bytes.Match(i, "Double")) {
+            
+            i += 6;
 
             width = 64;
+        }
+        else if (bytes.Match(i, "Byte")) {
+            
+            i += 4;
+
+            width = 8;
         }
         else {
 

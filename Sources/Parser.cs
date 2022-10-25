@@ -1636,6 +1636,23 @@ public partial class ParsedExpression {
         }
     }
 
+    public partial class ParsedByteLiteralExpression: ParsedExpression {
+
+        public byte Byte { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public ParsedByteLiteralExpression(
+            byte b,
+            Span span) {
+
+            this.Byte = b;
+            this.Span = span;
+        }
+    }
+
     public partial class ParsedArrayExpression: ParsedExpression {
 
         public List<ParsedExpression> Expressions { get; init; }
@@ -2046,6 +2063,11 @@ public static partial class ParsedExpressionFunctions {
                 return qse.Span;
             }
 
+            case ParsedByteLiteralExpression ble: {
+
+                return ble.Span;
+            }
+
             case ParsedCharacterLiteralExpression cle: {
 
                 return cle.Span;
@@ -2216,6 +2238,14 @@ public static partial class ParsedExpressionFunctions {
             
             ///
 
+            case var _ when 
+                l is ParsedByteLiteralExpression lb
+                && r is ParsedByteLiteralExpression rb:
+
+                return Equals(lb.Byte, rb.Byte);
+            
+            ///
+
             case var _ when
                 l is ParsedBinaryOpExpression lbo
                 && r is ParsedBinaryOpExpression rbo: 
@@ -2255,9 +2285,7 @@ public static partial class ParsedExpressionFunctions {
                 }
 
                 return true;
-            }
-
-                
+            }   
 
             ///
 
@@ -5532,6 +5560,22 @@ public static partial class ParserFunctions {
                 if (ct.Value.FirstOrDefault() is Char c) {
 
                     expr = new ParsedCharacterLiteralExpression(c, span);
+                }
+                else {
+
+                    expr = new ParsedGarbageExpression(span);
+                }
+
+                break;
+            }
+
+            case SingleQuotedByteStringToken bt: {
+
+                index += 1;
+
+                if (bt.Value.FirstOrDefault() is char c) {
+
+                    expr = new ParsedByteLiteralExpression((byte) c, span);
                 }
                 else {
 

@@ -2155,6 +2155,23 @@ public partial class CheckedExpression {
         }
     }
 
+    public partial class CheckedByteConstantExpression: CheckedExpression {
+
+        public byte Value { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public CheckedByteConstantExpression(
+            byte value,
+            Span span) {
+
+            this.Value = value;
+            this.Span = span;
+        }
+    }
+
     public partial class CheckedCharacterConstantExpression: CheckedExpression {
 
         public Char Char { get; init; }
@@ -2654,6 +2671,11 @@ public static partial class CheckedExpressionFunctions {
                 return Compiler.StringTypeId;
             }
 
+            case CheckedByteConstantExpression _: {
+
+                return Compiler.UInt8TypeId;
+            }
+
             case CheckedCharacterConstantExpression _: {
 
                 return Compiler.CCharTypeId; // use the C one for now
@@ -2776,6 +2798,9 @@ public static partial class CheckedExpressionFunctions {
 
             case CheckedQuotedStringExpression q:
                 return q.Span;
+
+            case CheckedByteConstantExpression b:
+                return b.Span;
 
             case CheckedCharacterConstantExpression c:
                 return c.Span;
@@ -5294,6 +5319,15 @@ public static partial class TypeCheckerFunctions {
 
                 return (
                     new CheckedQuotedStringExpression(e.Value, e.Span),
+                    err);
+            }
+
+            case ParsedByteLiteralExpression b: {
+
+                var (_, err) = unifyWithTypeHint(project, Compiler.UInt8TypeId);
+
+                return (
+                    new CheckedByteConstantExpression(b.Byte, b.Span),
                     err);
             }
 

@@ -2300,6 +2300,22 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
+            case CheckedByteConstantExpression b: {
+
+                if ((b.Value & 128) == 0) {
+
+                    output.Append('\'');
+                    output.Append(ToChar(b.Value));
+                    output.Append('\'');
+                } 
+                else {
+
+                    output.Append($"0x{b.Value}");
+                }
+
+                break;
+            }
+
             case CheckedCharacterConstantExpression cce: {
 
                 output.Append('\'');

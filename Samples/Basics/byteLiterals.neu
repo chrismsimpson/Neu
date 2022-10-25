@@ -1,0 +1,6 @@
+func main() {
+    var b = Byte('b')
+    printLine("{:c} {:c}", b, Byte('b'))
+    ++b 
+    printLine("{:x}", b)
+}
