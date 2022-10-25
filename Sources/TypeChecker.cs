@@ -3958,6 +3958,11 @@ public static partial class TypeCheckerFunctions {
             .FindFuncInScope(parentScopeId, func.Name) 
             ?? throw new Exception("Internal error: missing previously defined function");
 
+        if (func.Name == "main") {
+
+            error = TypeCheckNeuMain(func);
+        }
+
         var checkedFunction = project.Functions[funcId];
 
         var functionScopeId = checkedFunction.FuncScopeId;
@@ -4035,6 +4040,79 @@ public static partial class TypeCheckerFunctions {
         checkedFunction.ReturnTypeId = returnTypeId;
 
         return error;
+    }
+
+    public static Error? TypeCheckNeuMain(
+        ParsedFunction func) {
+
+        var paramTypeError = 
+            new TypeCheckError(
+                "Main function must take a single array of strings as its parameter",
+                func.NameSpan);
+
+        if (func.Parameters.Count > 1) {
+
+            return paramTypeError;
+        }
+
+        if (func.Parameters.Any()) {
+
+            switch (func.Parameters[0].Variable.Type) {
+
+                case ParsedArrayType a: {
+
+                    switch (a.Type) {
+
+                        case ParsedEmptyType _: {
+
+                            break;
+                        }
+
+                        case ParsedNameType n when n.Name == "String": {
+
+                            break;
+                        }
+
+                        default: {
+
+                            return paramTypeError;
+                        }
+                    }
+
+                    break;
+                }
+
+                default: {
+
+                    return paramTypeError;
+                }
+            }
+        }
+
+        var returnTypeError = 
+            new TypeCheckError(
+                "Main function must return CInt",
+                func.NameSpan);
+
+        switch (func.ReturnType) {
+
+            case ParsedEmptyType _: {
+
+                break;
+            }
+
+            case ParsedNameType n when n.Name == "CInt": {
+
+                break;
+            }
+
+            default: {
+
+                return returnTypeError;
+            }
+        }
+
+        return null;
     }
 
     public static Error? TypeCheckMethod(

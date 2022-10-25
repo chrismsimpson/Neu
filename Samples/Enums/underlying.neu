@@ -11,7 +11,7 @@ enum CuterLittlerEnum: UInt32 {
     c
 }
 
-func main() throws -> Int32 {
+func main() throws -> CInt {
 
     printLine("a = {}, b = {}, c = {}",
         CuteLittleEnum.a as! UInt64,
