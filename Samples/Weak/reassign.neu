@@ -1,5 +1,5 @@
 class Foo {
-    x: Int64
+    public x: Int64
 }
 
 func main() {

@@ -1231,18 +1231,22 @@ public partial class CheckedVarDecl {
 
     public Span Span { get; init; }
 
+    public Visibility Visibility { get; init; }
+
     ///
 
     public CheckedVarDecl(
         String name,
         Int32 typeId,
         bool mutable,
-        Span span) {
+        Span span,
+        Visibility visibility) {
 
         this.Name = name;
         this.TypeId = typeId;
         this.Mutable = mutable;
         this.Span = span;
+        this.Visibility = visibility;
     }
 }
 
@@ -1256,16 +1260,20 @@ public partial class CheckedVariable {
 
     public bool Mutable { get; init; }
 
+    public Visibility Visibility { get; init; }
+
     ///
 
     public CheckedVariable(
         String name,
         Int32 typeId,
-        bool mutable) {
+        bool mutable,
+        Visibility visibility) {
 
         this.Name = name;
         this.TypeId = typeId;
         this.Mutable = mutable;
+        this.Visibility = visibility;
     }
 }
 
@@ -3062,7 +3070,91 @@ public partial class Scope {
 
 ///
 
+public interface INamespaceMember {
+
+    Visibility GetVisibility();
+    String GetName();
+    String GetKind();
+}
+
+public partial class CheckedVarDecl: INamespaceMember {
+
+    public Visibility GetVisibility() {
+
+        return this.Visibility;
+    }
+
+    public String GetName() {
+
+        return this.Name;
+    }
+
+    public String GetKind() {
+
+        return "variable";
+    }
+}
+
+public partial class CheckedVariable: INamespaceMember {
+
+    public Visibility GetVisibility() {
+
+        return this.Visibility;
+    }
+
+    public String GetName() {
+
+        return this.Name;
+    }
+
+    public String GetKind() {
+
+        return "variable";
+    }
+}
+
+
+public partial class CheckedFunction: INamespaceMember {
+
+    public Visibility GetVisibility() {
+
+        return this.Visibility;
+    }
+
+    public String GetName() {
+
+        return this.Name;
+    }
+
+    public String GetKind() {
+
+        return "function";
+    }
+}
+
+///
+
 public static partial class TypeCheckerFunctions {
+
+    public static Error? CheckAccessibility(
+        Int32 ownScopeId,
+        Int32 memberScopeId,
+        INamespaceMember member,
+        Span span,
+        Project project) {
+
+        if (member.GetVisibility() != Visibility.Public
+            && !Scope.CanAccess(ownScopeId, memberScopeId, project)) {
+
+            return new TypeCheckError(
+                $"Can't access {member.GetKind()} '{member.GetName()}' from scope {project.Scopes[ownScopeId].NamespaceName ?? "none"}",
+                span);
+        }
+        else {
+
+            return null;
+        }
+    }
 
     public static Error? TypeCheckNamespace(
         ParsedNamespace parsedNamespace,
@@ -3377,7 +3469,8 @@ public static partial class TypeCheckerFunctions {
                                     new CheckedVariable(
                                         name: u.Name,
                                         typeId: enumTypeId,
-                                        mutable: false),
+                                        mutable: false,
+                                        visibility: Visibility.Public),
                                     u.Span);
 
                                 error = error ?? varErr.Error;
@@ -3473,7 +3566,8 @@ public static partial class TypeCheckerFunctions {
                             new CheckedVariable(
                                 name: w.Name,
                                 typeId: enumTypeId,
-                                mutable: false),
+                                mutable: false,
+                                visibility: Visibility.Public),
                             w.Span);
                         
                         error = error ?? varErr.Error;
@@ -3521,7 +3615,8 @@ public static partial class TypeCheckerFunctions {
                                         name: member.Name,
                                         typeId: decl,
                                         mutable: member.Mutable,
-                                        span: member.Span));
+                                        span: member.Span,
+                                        visibility: member.Visibility));
                             }
                         }
 
@@ -3542,7 +3637,8 @@ public static partial class TypeCheckerFunctions {
                                         variable: new CheckedVariable(
                                             name: member.Name,
                                             typeId: member.TypeId,
-                                            mutable: false)))
+                                            mutable: false,
+                                            visibility: member.Visibility)))
                                 .ToList();
 
                             var funcScopeId = project.CreateScope(parentScopeId);
@@ -3619,7 +3715,8 @@ public static partial class TypeCheckerFunctions {
                                         variable: new CheckedVariable(
                                             name: "value",
                                             typeId: checkedType,
-                                            mutable: false))
+                                            mutable: false,
+                                            visibility: Visibility.Public))
                                 });
 
                             var funcScopeId = project.CreateScope(parentScopeId);
@@ -3737,7 +3834,8 @@ public static partial class TypeCheckerFunctions {
                     var checkedVariable = new CheckedVariable(
                         name: param.Variable.Name,
                         typeId: structTypeId,
-                        mutable: param.Variable.Mutable);
+                        mutable: param.Variable.Mutable,
+                        visibility: Visibility.Public);
 
                     checkedFunction.Parameters.Add(
                         new CheckedParameter(
@@ -3753,7 +3851,8 @@ public static partial class TypeCheckerFunctions {
                     var checkedVariable = new CheckedVariable(
                         name: param.Variable.Name,
                         typeId: paramType,
-                        mutable: param.Variable.Mutable);
+                        mutable: param.Variable.Mutable,
+                        visibility: Visibility.Public);
 
                     checkedFunction.Parameters.Add(
                         new CheckedParameter(
@@ -3814,7 +3913,8 @@ public static partial class TypeCheckerFunctions {
                     name: uncheckedMember.Name,
                     typeId: checkedMemberType, 
                     mutable: uncheckedMember.Mutable, 
-                    span: uncheckedMember.Span));
+                    span: uncheckedMember.Span,
+                    visibility: uncheckedMember.Visibility));
         }
 
         if (project.FindFuncInScope(chkStructScopeId, structure.Name) == null) {
@@ -3831,7 +3931,9 @@ public static partial class TypeCheckerFunctions {
                         variable: new CheckedVariable(
                             name: field.Name,
                             typeId: field.TypeId,
-                            mutable: field.Mutable)));
+                            mutable: field.Mutable,
+                            // This is the constructor parameter, not the field. It can be public
+                            visibility: Visibility.Public)));
             }
 
             var funcScopeId = project.CreateScope(parentScopeId);
@@ -3927,7 +4029,8 @@ public static partial class TypeCheckerFunctions {
             var checkedVariable = new CheckedVariable(
                 name: param.Variable.Name,
                 typeId: paramType,
-                mutable: param.Variable.Mutable);
+                mutable: param.Variable.Mutable,
+                visibility: Visibility.Public);
 
             checkedFunction.Parameters.Add(
                 new CheckedParameter(
@@ -4283,7 +4386,8 @@ public static partial class TypeCheckerFunctions {
                 var errorDecl = new CheckedVariable(
                     name: tryStmt.Name,
                     typeId: project.FindOrAddTypeId(new StructType(errorStructId)),
-                    mutable: false);
+                    mutable: false,
+                    visibility: Visibility.Public);
 
                 var catchScopeId = project.CreateScope(scopeId);
 
@@ -4350,7 +4454,8 @@ public static partial class TypeCheckerFunctions {
                 var iteratorDecl = new CheckedVariable(
                     name: fs.IteratorName,
                     typeId: indexType ?? throw new Exception(),
-                    mutable: true);
+                    mutable: true,
+                    visibility: Visibility.Public);
 
                 if (project.AddVarToScope(iteratorScopeId, iteratorDecl, fs.Range.GetSpan()).Error is Error e) {
 
@@ -4440,14 +4545,16 @@ public static partial class TypeCheckerFunctions {
                     name: vds.Decl.Name,
                     typeId: checkedTypeId,
                     span: vds.Decl.Span,
-                    mutable: vds.Decl.Mutable);
+                    mutable: vds.Decl.Mutable,
+                    visibility: vds.Decl.Visibility);
 
                 if (project.AddVarToScope(
                     scopeId,
                     new CheckedVariable(
                         name: checkedVarDecl.Name, 
                         typeId: checkedVarDecl.TypeId, 
-                        mutable: checkedVarDecl.Mutable),
+                        mutable: checkedVarDecl.Mutable,
+                        visibility: checkedVarDecl.Visibility),
                     checkedVarDecl.Span).Error is Error e) {
 
                     error = error ?? e;
@@ -5098,7 +5205,8 @@ public static partial class TypeCheckerFunctions {
                             new CheckedVariable(
                                 e.Value, 
                                 typeId: typeHint ?? Compiler.UnknownTypeId,
-                                mutable: false),
+                                mutable: false,
+                                visibility: Visibility.Public),
                             e.Span),
                         new TypeCheckError(
                             "variable not found",
@@ -5155,13 +5263,13 @@ public static partial class TypeCheckerFunctions {
 
                 switch (scope) {
 
-                    case Int32 nsScopeId: {
+                    case Int32 variableScopeId: {
 
-                        if (project.FindVarInScope(nsScopeId, e.Name) is CheckedVariable v) {
+                        if (project.FindVarInScope(variableScopeId, e.Name) is CheckedVariable v) {
 
                             return (
                                 new CheckedNamespacedVarExpression(checkedNamespace, v, e.Span),
-                                null);
+                                CheckAccessibility(scopeId, variableScopeId, v, e.Span, project));
                         }
                         else {
 
@@ -5171,7 +5279,8 @@ public static partial class TypeCheckerFunctions {
                                     new CheckedVariable(
                                         name: e.Name,
                                         typeId: typeHint ?? Compiler.UnknownTypeId,
-                                        mutable: false),
+                                        mutable: false,
+                                        visibility: Visibility.Public),
                                     e.Span),
                                 new TypeCheckError(
                                     "variable not found",
@@ -5187,7 +5296,8 @@ public static partial class TypeCheckerFunctions {
                                 new CheckedVariable(
                                     name: e.Name,
                                     typeId: typeHint ?? Compiler.UnknownTypeId,
-                                    mutable: false),
+                                    mutable: false,
+                                    visibility: Visibility.Public),
                                 e.Span),
                             new TypeCheckError(
                                 "namespace not found",
@@ -5786,7 +5896,8 @@ public static partial class TypeCheckerFunctions {
                                                             new CheckedVariable(
                                                                 name: evwc.VariantArguments[0].Item2,
                                                                 _typeId,
-                                                                mutable: false),
+                                                                mutable: false,
+                                                                visibility: Visibility.Public),
                                                             t.Span));
                                                     }
 
@@ -5859,7 +5970,8 @@ public static partial class TypeCheckerFunctions {
                                                                     new CheckedVariable(
                                                                         name: arg.Item2,
                                                                         typeId: ft,
-                                                                        mutable: false),
+                                                                        mutable: false,
+                                                                        visibility: Visibility.Public),
                                                                     we.Span));
                                                                 
                                                                 break;
@@ -6080,7 +6192,12 @@ public static partial class TypeCheckerFunctions {
                                         ise.Name,
                                         ise.Span,
                                         member.TypeId),
-                                    null);
+                                    CheckAccessibility(
+                                        scopeId, 
+                                        structure.ScopeId, 
+                                        member, 
+                                        ise.Span, 
+                                        project));
                             }
                         }
 
@@ -6908,15 +7025,14 @@ public static partial class TypeCheckerFunctions {
 
                     // Make sure we are allowed to access this method
 
-                    if (callee.Visibility != Visibility.Public
-                        && !Scope.CanAccess(callerScopeId, callee.FuncScopeId, project)) {
+                    var accessibilityError = CheckAccessibility(
+                        callerScopeId, 
+                        callee.FuncScopeId, 
+                        callee, 
+                        span, 
+                        project);
 
-                        error = error ?? 
-                            new TypeCheckError(
-                                // FIXME: Improve this error
-                                $"Can't access function `{callee.Name}` from scope {project.Scopes[callerScopeId].NamespaceName ?? "none"}",
-                                span);
-                    }
+                    error = error ?? accessibilityError;
 
                     calleeThrows = callee.Throws;
 

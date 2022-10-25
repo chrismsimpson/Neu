@@ -1,6 +1,6 @@
 class Person {
-    name: String
-    age: Int64
+    public name: String
+    public age: Int64
 
     public func generate(name: String, age: Int64) throws -> Person {
         return Person(name: name, age: age + 1000);

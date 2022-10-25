@@ -1,6 +1,6 @@
 class Person {
-    name: String
-    age: Int64
+    public name: String
+    public age: Int64
 
     public func birthday(var this) {
         ++this.age
