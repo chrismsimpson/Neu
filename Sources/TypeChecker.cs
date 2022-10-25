@@ -6176,11 +6176,18 @@ public static partial class TypeCheckerFunctions {
 
                 var checkedExprType = project.Types[checkedExpr.GetTypeId()];
 
-                switch (checkedExprType) {
+                Int32? _structId = checkedExprType switch {
 
-                    case GenericInstance gi: {
+                    GenericInstance gi => gi.StructId,
+                    StructType st => st.StructId,
+                    _ => null
+                };
 
-                        var structure = project.Structs[gi.StructId];
+                switch (_structId) {
+
+                    case Int32 structId: {
+
+                        var structure = project.Structs[structId];
 
                         foreach (var member in structure.Fields) {
 
@@ -6198,32 +6205,6 @@ public static partial class TypeCheckerFunctions {
                                         member, 
                                         ise.Span, 
                                         project));
-                            }
-                        }
-
-                        error = error ?? 
-                            new TypeCheckError(
-                                $"unknown member of struct: {structure.Name}.{ise.Name}",
-                                ise.Span);
-
-                        break;
-                    }
-
-                    case StructType st: {
-
-                        var structure = project.Structs[st.StructId];
-
-                        foreach (var member in structure.Fields) {
-
-                            if (member.Name == ise.Name) {
-
-                                return (
-                                    new CheckedIndexedStructExpression(
-                                        checkedExpr,
-                                        ise.Name,
-                                        ise.Span,
-                                        member.TypeId),
-                                    null);
                             }
                         }
 

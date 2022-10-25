@@ -1,0 +1,11 @@
+class GoodEncapsulation {
+    mudaAmount: UInt32
+    public oraAmount: UInt32
+}
+
+func main() {
+    let encapsulated = GoodEncapsulation(mudaAmount: 20, oraAmount: 9001)
+    // This is okay!
+    encapsulated.oraAmount
+    encapsulated.mudaAmount
+}
