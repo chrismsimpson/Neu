@@ -6494,7 +6494,11 @@ public static partial class TypeCheckerFunctions {
                     case Compiler.UInt32TypeId:
                     case Compiler.UInt64TypeId:
                     case Compiler.FloatTypeId:
-                    case Compiler.DoubleTypeId: {
+                    case Compiler.DoubleTypeId:
+                    case Compiler.UIntTypeId:
+                    case Compiler.IntTypeId:
+                    case Compiler.CCharTypeId:
+                    case Compiler.CIntTypeId: {
 
                         if (!expr.IsMutable()) {
 
