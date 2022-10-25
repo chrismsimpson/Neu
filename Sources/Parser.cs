@@ -356,21 +356,25 @@ public partial class ParsedVarDecl {
 
     public Span Span { get; init; }
 
+    public Visibility Visibility { get; init; }
+
     ///
 
     public ParsedVarDecl(Span span)
-        : this(String.Empty, new ParsedEmptyType(), false, span) { }
+        : this(String.Empty, new ParsedEmptyType(), false, span, Visibility.Public) { }
 
     public ParsedVarDecl(
         String name,
         ParsedType type,
         bool mutable,
-        Span span) {
+        Span span,
+        Visibility visibility) {
 
         this.Name = name;
         this.Type = type;
         this.Mutable = mutable;
         this.Span = span;
+        this.Visibility = visibility;
     }
 }
 
@@ -3103,7 +3107,9 @@ public static partial class ParserFunctions {
                             
                             SkipNewLines(tokens, ref index);
 
-                            var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index);
+                            // Fields in struct-like enums are always public.
+
+                            var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index, Visibility.Public);
 
                             error = error ?? varDeclParseErr;
 
@@ -3498,13 +3504,16 @@ public static partial class ParserFunctions {
 
                                 // Lets parse a parameter
 
-                                var (varDecl, parseVarDeclErr) = ParseVariableDeclaration(tokens, ref index);
+                                var visibility = lastVisibility
+                                    ?? (definitionType == DefinitionType.Class 
+                                        ? Visibility.Private 
+                                        : Visibility.Public);
+
+                                lastVisibility = null;
+
+                                var (varDecl, parseVarDeclErr) = ParseVariableDeclaration(tokens, ref index, visibility);
                                 
                                 error = error ?? parseVarDeclErr;
-
-                                // FIXME: Actually use the visibility
-                                
-                                lastVisibility = null;
 
                                 // Ignore immutable flag for now
                                 
@@ -3762,7 +3771,7 @@ public static partial class ParserFunctions {
 
                                 // Now lets parse a parameter
 
-                                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index);
+                                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index, Visibility.Public);
 
                                 error = error ?? varDeclErr;
 
@@ -4314,7 +4323,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index);
+                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index, Visibility.Public);
 
                 error = error ?? varDeclErr;
 
@@ -6962,7 +6971,8 @@ public static partial class ParserFunctions {
 
     public static (ParsedVarDecl, Error?) ParseVariableDeclaration(
         List<Token> tokens,
-        ref int index) {
+        ref int index,
+        Visibility visibility) {
 
         Trace($"ParseVariableDeclaration: {tokens.ElementAt(index)}");
 
@@ -6994,7 +7004,8 @@ public static partial class ParserFunctions {
                                     name: nt.Value, 
                                     type: new ParsedEmptyType(),
                                     mutable: false,
-                                    span: tokens.ElementAt(index - 1).Span),
+                                    span: tokens.ElementAt(index - 1).Span,
+                                    visibility),
                                 null);
                         }
                     }
@@ -7006,7 +7017,8 @@ public static partial class ParserFunctions {
                             name: nt.Value, 
                             type: new ParsedEmptyType(), 
                             mutable: false, 
-                            span: tokens.ElementAt(index - 1).Span), 
+                            span: tokens.ElementAt(index - 1).Span,
+                            visibility), 
                         null);
                 }
             
@@ -7044,7 +7056,8 @@ public static partial class ParserFunctions {
                         name: varName, 
                         type: varType, 
                         mutable: mutable,
-                        span: declSpan);
+                        span: declSpan,
+                        visibility);
 
                     // index += 1;
 
@@ -7059,7 +7072,8 @@ public static partial class ParserFunctions {
                             nt.Value, 
                             type: new ParsedEmptyType(),
                             mutable: false,
-                            span: tokens.ElementAt(index - 2).Span), 
+                            span: tokens.ElementAt(index - 2).Span,
+                            visibility), 
                         new ParserError(
                             "expected type", 
                             tokens.ElementAt(index).Span));
