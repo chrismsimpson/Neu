@@ -1,0 +1,11 @@
+enum SomeEnum {
+    okay
+}
+
+class SomeClass {
+    e: SomeEnum
+}
+
+func main() {
+    let c = SomeClass(e: SomeEnum.okay())
+}

@@ -1501,21 +1501,85 @@ public static partial class CodeGenFunctions {
 
                 if (structure.DefinitionType == DefinitionType.Class) {
 
-                    var output = new StringBuilder($"static ErrorOr<NonNullRefPointer<{func.Name}>> create");
+                    var output = new StringBuilder();
 
-                    output.Append('(');
+                    // First, generate a private constructor:
 
-                    var first = true;
+                    output.Append("private:\n");
+
+                    output.Append($"explicit {func.Name}(");
+                    
+                    var first1 = true;
 
                     foreach (var param in func.Parameters) {
 
-                        if (!first) {
+                        if (!first1) {
+                            
+                            output.Append(", ");
+                        } 
+                        else {
+                            
+                            first1 = false;
+                        }
+
+                        output.Append(CodeGenType(param.Variable.TypeId, project));
+                        output.Append("&& a_");
+                        output.Append(param.Variable.Name);
+                    }
+
+                    output.Append(')');
+
+                    if (func.Parameters.Any()) {
+
+                        output.Append(": ");
+
+                        var first2 = true;
+
+                        foreach (var param in func.Parameters) {
+
+                            if (!first2) {
+                                
+                                output.Append(", ");
+                            } 
+                            else {
+                                
+                                first2 = false;
+                            }
+
+                            output.Append(param.Variable.Name);
+                            output.Append("(move(a_");
+                            output.Append(param.Variable.Name);
+                            output.Append("))");
+                        }
+                    }
+
+                    output.Append("{}\n");
+
+                    output.Append("public:\n");
+                    output.Append(
+                        $"static ErrorOr<NonNullRefPointer<{func.Name}>> create");
+
+
+
+
+
+
+
+
+
+                    output.Append('(');
+
+                    var first3 = true;
+
+                    foreach (var param in func.Parameters) {
+
+                        if (!first3) {
 
                             output.Append(", ");
                         }
                         else {
 
-                            first = false;
+                            first3 = false;
                         }
 
                         var tyStr = CodeGenType(param.Variable.TypeId, project);
@@ -1525,18 +1589,27 @@ public static partial class CodeGenFunctions {
                         output.Append(param.Variable.Name);
                     }
 
-                    output.Append($") {{ auto o = TRY(adoptNonNullRefOrErrorNomem(new (nothrow) {func.Name})); ");
+                    output.Append($") {{ auto o = TRY(adoptNonNullRefOrErrorNomem(new (nothrow) {func.Name} (");
+
+                    var first4 = true;
 
                     foreach (var param in func.Parameters) {
 
-                        output.Append("o->");
+                        if (!first4) {
+                            
+                            output.Append(", ");
+                        } 
+                        else {
+                            
+                            first4 = false;
+                        }
+
+                        output.Append("move(");
                         output.Append(param.Variable.Name);
-                        output.Append(" = ");
-                        output.Append(param.Variable.Name);
-                        output.Append("; ");
+                        output.Append(')');
                     }
 
-                    output.Append("return o; }");
+                    output.Append("))); return o; }");
 
                     return output.ToString();
                 }
