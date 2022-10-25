@@ -12,7 +12,7 @@
     "contributes": {
         "languages": [{
             "id": "neu",
-            "aliases": ["neu", "neu"],
+            "aliases": ["Neu"],
             "extensions": [".neu"],
             "configuration": "./language-configuration.json"
         }],

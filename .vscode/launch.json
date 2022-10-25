@@ -272,6 +272,14 @@
                 "programOutput": true,
                 "threadExit": false
             }
-        }
+        },
+		{
+			"name": "Launch VSCode extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/Editors/VSCode"
+			]
+		}
     ]
 }
