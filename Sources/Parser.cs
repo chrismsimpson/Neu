@@ -2734,11 +2734,24 @@ public static partial class ParserFunctions {
 
                             index += 1;
 
-                            var (_enum, enumErr) = ParseEnum(tokens, ref index, DefinitionLinkage.Internal, true);
+                            if (tokens.ElementAtOrDefault(index) is NameToken nt2) {
 
-                            error = error ?? enumErr;
+                                if (nt2.Value == "enum") {
 
-                            parsedNamespace.Enums.Add(_enum);
+                                    var (_enum, enumErr) = ParseEnum(tokens, ref index, DefinitionLinkage.Internal, true);
+
+                                    error = error ?? enumErr;
+
+                                    parsedNamespace.Enums.Add(_enum);
+
+                                    continue;
+                                }
+                            }
+
+                            error = error ?? 
+                                new ParserError(
+                                    "expected enum keyword",
+                                    tokens[index].Span);
 
                             break;
                         }
