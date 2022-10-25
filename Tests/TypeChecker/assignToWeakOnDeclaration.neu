@@ -4,7 +4,7 @@ class Foo {
 
 func main() {
     let foo = Foo()
-    let weakFoo: weak Foo = foo
+    let weakFoo: weak Foo? = foo
 
     printLine("{}", weakFoo!.call())
 }

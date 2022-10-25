@@ -4,7 +4,7 @@ class Foo {
 
 func main() {
     
-    var weakFoo: weak Foo = none
+    var weakFoo: weak Foo? = none
 
     printLine("weakFoo hasValue? {}", weakFoo.hasValue())
 

@@ -6,7 +6,7 @@ func main() {
     let foo1 = Foo(x: 1)
     let foo2 = Foo(x: 2)
 
-    var weakFoo: weak Foo = none
+    var weakFoo: weak Foo? = none
     weakFoo = foo1
     printLine("{}", weakFoo!.x)
 

@@ -7248,6 +7248,8 @@ public static partial class ParserFunctions {
 
                     if (index < tokens.Count) {
 
+                        var typenameStart = tokens[index].Span;
+
                         var (childParsedType, err) = ParseTypeName(tokens, ref index);
 
                         error = error ?? err;
@@ -7263,12 +7265,34 @@ public static partial class ParserFunctions {
                         }
                         else if (nt.Value == "weak") {
 
-                            uncheckedType = new ParsedWeakPointerType(
-                                childParsedType,
-                                new Span(
-                                    fileId: start.FileId,
-                                    start: start.Start,
-                                    end: tokens.ElementAt(index - 1).Span.End));
+                            switch (childParsedType) {
+
+                                case ParsedOptionalType opt: {
+
+                                    uncheckedType = new ParsedWeakPointerType(
+                                        opt.Type,
+                                        new Span(
+                                            fileId: start.FileId,
+                                            start: start.Start,
+                                            end: tokens[index - 1].Span.End));
+
+                                    break;
+                                }
+                                default: {
+
+                                    Trace("ERROR: missing `?` after weak pointer type name");
+
+                                    error = error ?? 
+                                        new ParserError(
+                                            "missing `?` after weak pointer type name",
+                                            new Span(
+                                                fileId: typenameStart.FileId,
+                                                start: typenameStart.Start,
+                                                end: tokens[index - 1].Span.End));
+
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
