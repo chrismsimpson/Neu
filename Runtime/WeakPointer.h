@@ -22,6 +22,9 @@ public:
 
     WeakPointer() = default;
 
+    // `WeakPointer<T>` should be constructible from `none` in Neu
+    WeakPointer(NullOptional) { }
+
     template<typename U>
     WeakPointer(WeakPointer<U> const& other) requires(IsBaseOf<T, U>)
         : m_link(other.m_link) { }
