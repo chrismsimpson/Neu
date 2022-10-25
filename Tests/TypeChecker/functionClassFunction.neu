@@ -1,0 +1,11 @@
+func test(i: Int32) -> Int32 {
+    return i
+}
+
+class TestClass {
+    func init(var this) { }
+}
+
+func main() {
+    printLine("{}", test(i: 3))
+}

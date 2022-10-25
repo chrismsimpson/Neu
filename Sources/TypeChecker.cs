@@ -3171,8 +3171,6 @@ public static partial class TypeCheckerFunctions {
 
         var projectEnumLength = project.Enums.Count;
 
-        var projectFunctionLength = project.Functions.Count;
-
         foreach (var ns in parsedNamespace.Namespaces) {
 
             // Do full typechecks of all the namespaces that are children of this namespace
@@ -3254,6 +3252,8 @@ public static partial class TypeCheckerFunctions {
                 error = error ?? e2;
             }
         }
+
+        var projectFunctionLength = project.Functions.Count;
 
         foreach (var fun in parsedNamespace.Functions) {
             
