@@ -1404,27 +1404,6 @@ public partial class CheckedStatement {
         }
     }
 
-    public partial class CheckedForStatement: CheckedStatement {
-
-        public String IteratorName { get; init; }
-
-        public CheckedExpression Range { get; init; }
-
-        public CheckedBlock Block { get; init; }
-
-        ///
-
-        public CheckedForStatement(
-            String iteratorName,
-            CheckedExpression range,
-            CheckedBlock block) {
-
-            this.IteratorName = iteratorName;
-            this.Range = range;
-            this.Block = block;
-        }
-    }
-
     public partial class CheckedBreakStatement: CheckedStatement {
 
         public CheckedBreakStatement() { }
@@ -4326,8 +4305,8 @@ public static partial class TypeCheckerFunctions {
             case CheckedWhileStatement w:
                 return w.Block.DefinitelyReturns;
 
-            case CheckedForStatement f: 
-                return f.Block.DefinitelyReturns;
+            // case CheckedForStatement f: 
+            //     return f.Block.DefinitelyReturns;
             
             default: 
                 return false;
@@ -4423,52 +4402,191 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedForStatement fs: {
 
-                var (checkedExpr, err) = TypeCheckExpression(fs.Range, scopeId, project, safetyMode, null);
+                // Translate `for x in expr { body }` to
+                // block {
+                //     var _magic = expr
+                //     loop {
+                //         let x = _magic.next()
+                //         if not x.hasValue() {
+                //             break
+                //         }
+                //         let iteratorName = x!
+                //         body
+                //     }
+                // }
+                //
+                // The only restrictions placed on the iterator are such:
+                //     1- Must respond to .next(); the mutability of the iterator is inferred from .next()'s signature
+                //     2- The result of .next() must be an Optional
 
-                error = error ?? err;
+                var (iterableExpr, iterErr) = TypeCheckExpression(fs.Range, scopeId, project, safetyMode, null);
 
-                var iteratorScopeId = project.CreateScope(scopeId);
+                error = error ?? iterErr;
 
-                var rangeStructId = project
-                    .FindStructInScope(0, "Range")
-                    ?? throw new Exception("internal error: Range builtin definition not found");
+                var iterableType = project.Types[iterableExpr.GetTypeId()];
 
-                Int32? indexType = null;
+                var iterableShouldBeMutable = false;
 
-                if (project.Types[checkedExpr.GetTypeId()] is GenericInstance gi) {
+                // Requirement 1: Iterator must have a .next() method
+                //                This currently limits it to structs and classes.
+                // Right now we do a single pass check, and check generic functions at declaration time (as opposed to doing so at instantiation time)
+                // so we have to pretend it's okay if we don't know the iterable type right now.
 
-                    if (gi.StructId == rangeStructId) {
+                Int32? _structId = iterableType switch {
 
-                        indexType = gi.TypeIds[0];
+                    GenericInstance gi => gi.StructId,
+                    StructType st => st.StructId,
+                    _ => null
+                };
+
+                switch (iterableType) {
+
+                    case TypeVariable _: {
+
+                        // Since we're not sure, just make it mutable.
+
+                        iterableShouldBeMutable = true;
+
+                        break;
                     }
-                    else {
 
-                        throw new Exception("Range expression doesn't have Range type");
+                    case GenericInstance _:
+                    case StructType _: {
+
+                        var _struct = project.Structs[_structId ?? throw new Exception()];
+
+                        var _nextMethodFunctionId = project
+                            .FindFuncInScope(_struct.ScopeId, "next");
+
+                        if (_nextMethodFunctionId is Int32 nextMethodFunctionId) {
+
+                            var nextMethodFunc = project.Functions[nextMethodFunctionId];
+
+                            // Check whether we need to make the iterator mutable
+
+                            if (nextMethodFunc.IsMutating()) {
+
+                                iterableShouldBeMutable = true;
+                            }
+                        }
+                        else {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "Iterator must have a .next() method",
+                                    fs.Range.GetSpan());
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Iterator must have a .next() method",
+                                fs.Iterator.Item2);
+
+                        break;
                     }
                 }
-                else {
 
-                    throw new Exception("Range expression doesn't have Range type");
-                }
+                var rewrittenStatement = new ParsedBlockStatement(
+                    new ParsedBlock(
+                        new List<ParsedStatement>(
+                            new ParsedStatement[] {
 
-                var iteratorDecl = new CheckedVariable(
-                    name: fs.IteratorName,
-                    typeId: indexType ?? throw new Exception(),
-                    mutable: true,
-                    visibility: Visibility.Public);
+                                // var _magic = expr
 
-                if (project.AddVarToScope(iteratorScopeId, iteratorDecl, fs.Range.GetSpan()).Error is Error e) {
+                                new ParsedVarDeclStatement(
+                                    new ParsedVarDecl(
+                                        name: "_magic",
+                                        type: new ParsedEmptyType(),
+                                        mutable: iterableShouldBeMutable,
+                                        span: fs.Iterator.Item2,
+                                        visibility: Visibility.Public),
+                                    fs.Range),
 
-                    error = error ?? e;
-                }
+                                // loop {
 
-                var (checkedBlock, blockErr) = TypeCheckBlock(fs.Block, iteratorScopeId, project, safetyMode);
+                                new ParsedLoopStatement(
+                                    new ParsedBlock(
+                                        new List<ParsedStatement>(
+                                            new ParsedStatement[] {
 
-                error = error ?? blockErr;
+                                                // let x = _magic.next()
 
-                return (
-                    new CheckedForStatement(fs.IteratorName, checkedExpr, checkedBlock),
-                    error);
+                                                new ParsedVarDeclStatement(
+                                                    new ParsedVarDecl(
+                                                        name: "_magic_value",
+                                                        type: new ParsedEmptyType(),
+                                                        mutable: iterableShouldBeMutable,
+                                                        span: fs.Iterator.Item2,
+                                                        visibility: Visibility.Public
+                                                    ),
+                                                    new ParsedMethodCallExpression(
+                                                        new ParsedVarExpression(
+                                                            "_magic",
+                                                            fs.Iterator.Item2),
+                                                        new ParsedCall(
+                                                            ns: new List<String>(),
+                                                            name: "next",
+                                                            args: new List<(String, ParsedExpression)>(),
+                                                            typeArgs: new List<ParsedType>()),
+                                                        fs.Iterator.Item2)),
+
+                                                // if not x.hasValue() {
+
+                                                new ParsedIfStatement(
+                                                    new ParsedUnaryOpExpression(
+                                                        new ParsedMethodCallExpression(
+                                                            new ParsedVarExpression(
+                                                                "_magic_value",
+                                                                fs.Iterator.Item2),
+                                                            new ParsedCall(
+                                                                ns: new List<String>(),
+                                                                name: "hasValue",
+                                                                args: new List<(string, ParsedExpression)>(),
+                                                                typeArgs: new List<ParsedType>()),
+                                                            fs.Iterator.Item2),
+                                                        new LogicalNotUnaryOperator(),
+                                                        fs.Iterator.Item2),
+                                                    new ParsedBlock(
+                                                        new List<ParsedStatement>(
+                                                            new ParsedStatement[] {
+
+                                                                new ParsedBreakStatement()
+                                                            })),
+                                                    null),
+
+                                                // let iterator_name = x!
+
+                                                new ParsedVarDeclStatement(
+                                                    new ParsedVarDecl(
+                                                        name: fs.Iterator.Item1,
+                                                        type: new ParsedEmptyType(),
+                                                        mutable: iterableShouldBeMutable,
+                                                        span: fs.Iterator.Item2,
+                                                        visibility: Visibility.Public),
+                                                    new ParsedForcedUnwrapExpression(
+                                                        new ParsedVarExpression(
+                                                            "_magic_value",
+                                                            fs.Iterator.Item2),
+                                                        fs.Iterator.Item2)),
+
+                                                // body
+
+                                                // new ParsedBlockStatement(new ParsedBlock(fs.Block.Statements.ToList()))
+                                                new ParsedBlockStatement(fs.Block)
+                                            })))
+
+                            })));
+
+                var (statement, stmtErr) = TypeCheckStatement(rewrittenStatement, scopeId, project, safetyMode);
+
+                error = error ?? stmtErr;
+
+                return (statement, error);
             }
 
             case ParsedContinueStatement cs: {
@@ -5209,7 +5327,7 @@ public static partial class TypeCheckerFunctions {
                                 visibility: Visibility.Public),
                             e.Span),
                         new TypeCheckError(
-                            "variable not found",
+                            $"variable '{e.Value}' not found",
                             e.Span));
                 }
             }
@@ -5283,7 +5401,7 @@ public static partial class TypeCheckerFunctions {
                                         visibility: Visibility.Public),
                                     e.Span),
                                 new TypeCheckError(
-                                    "variable not found",
+                                    $"variable '{e.Name}' not found",
                                     e.Span));
                         }
                     }
@@ -6516,6 +6634,7 @@ public static partial class TypeCheckerFunctions {
                                 catch { }
 
                                 if ((n is not null && !NeuTypeFunctions.CanFitInteger(flippedSignType, new SignedIntegerConstant(n.Value)))
+                                    // This is the case if the above "as Int64" overflows.
                                     || negativeValue < Int64.MinValue) {
 
                                     return (

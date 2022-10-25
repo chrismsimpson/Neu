@@ -69,7 +69,9 @@ extern struct Set<V> {
 
 extern struct Tuple { }
 
-extern struct Range { }
+extern struct Range<T> {
+    func next(var this) -> T?
+}
 
 extern struct Error {
     func code(this) -> Int32

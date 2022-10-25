@@ -1,0 +1,21 @@
+struct Countdown {
+    from: Int64
+
+    func next(var this) -> Int64? {
+
+        if this.from == -1 {
+
+            return none
+        }
+
+        let value = this.from
+        --this.from
+        return value
+    }
+}
+
+func main() {
+    for x in Countdown(from: 10) {
+        printLine("{}", x)
+    }
+}

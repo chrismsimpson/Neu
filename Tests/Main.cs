@@ -218,11 +218,25 @@ public static partial class Program {
 
                     if (cppStringOrError.Error is Error e) {
 
+                        Write($" .....................");
+
+                        Console.ForegroundColor = ConsoleColor.Red;
+
+                        Write($" Unexpected error\n");
+
                         var errStr = e.Content ?? e.ErrorType.ToString();
 
-                        WriteLine(errStr);
+                        WriteLine($"{errStr}\n");
 
-                        throw new Exception(errStr);
+                        Console.ForegroundColor = og;
+
+                        ///
+                        
+                        continue;
+
+                        // WriteLine(errStr);
+
+                        // throw new Exception(errStr);
                     }
 
                     compiler.Generate(

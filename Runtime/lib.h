@@ -95,6 +95,23 @@ struct Range {
     T start { };
 
     T end { };
+
+    T current { };
+
+    Range(T start, T end)
+        : start(start), 
+          end(end), 
+          current(start) { }
+
+    Optional<T> next() {
+
+        if (current == end) {
+
+            return { };
+        }
+
+        return current++;
+    }
 };
 
 namespace NeuInternal {

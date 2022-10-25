@@ -1165,7 +1165,9 @@ public static partial class ParsedWhileStatementFunctions {
 
 public partial class ParsedForStatement: ParsedStatement {
 
-    public String IteratorName { get; init; }
+    // public String IteratorName { get; init; }
+
+    public (String, Span) Iterator { get; init; }
 
     public ParsedExpression Range { get; init; }
 
@@ -1174,11 +1176,13 @@ public partial class ParsedForStatement: ParsedStatement {
     ///
 
     public ParsedForStatement(
-        String iteratorName,
+        // String iteratorName,
+        (String, Span) iterator,
         ParsedExpression range,
         ParsedBlock block) {
 
-        this.IteratorName = iteratorName;
+        // this.IteratorName = iteratorName;
+        this.Iterator = iterator;
         this.Range = range;
         this.Block = block;
     }
@@ -1206,7 +1210,8 @@ public static partial class ParsedForStatementFunctions {
         ///
 
         return 
-            _l.IteratorName == _r.IteratorName
+            _l.Iterator.Item1 == _r.Iterator.Item1
+            && SpanFunctions.Eq(_l.Iterator.Item2, _r.Iterator.Item2)
             && ParsedExpressionFunctions.Eq(_l.Range, _r.Range)
             && ParsedBlockFunctions.Eq(_l.Block, _r.Block);
     }
@@ -4279,7 +4284,7 @@ public static partial class ParserFunctions {
                             error = error ?? blockErr;
 
                             return (
-                                new ParsedForStatement(iter.Value, rangeExpr, block),
+                                new ParsedForStatement((iter.Value, iter.Span), rangeExpr, block),
                                 error);
                         }
 

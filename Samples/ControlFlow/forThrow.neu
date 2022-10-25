@@ -1,0 +1,12 @@
+struct Iter {
+    func next(this) throws -> Int64? {
+        throw Error.fromError(Int32(1))
+        return none
+    }
+}
+
+func main() {
+    for x in Iter() {
+        return 0
+    }
+}

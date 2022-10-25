@@ -1939,24 +1939,24 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            case CheckedForStatement f: {
+            // case CheckedForStatement f: {
                 
-                output.Append("{ auto&& _range = ");
-                output.Append(CodeGenExpr(indent, f.Range, project));
-                output.Append("; for(auto ");
-                output.Append(f.IteratorName);
-                output.Append(' ');
-                output.Append(" = _range.start;");
-                output.Append(f.IteratorName);
-                output.Append("!= _range.end;");
-                output.Append(f.IteratorName);
-                output.Append("++");
-                output.Append(") {");
-                output.Append(CodeGenBlock(indent, f.Block, project));
-                output.Append("}}");
+            //     output.Append("{ auto&& _range = ");
+            //     output.Append(CodeGenExpr(indent, f.Range, project));
+            //     output.Append("; for(auto ");
+            //     output.Append(f.IteratorName);
+            //     output.Append(' ');
+            //     output.Append(" = _range.start;");
+            //     output.Append(f.IteratorName);
+            //     output.Append("!= _range.end;");
+            //     output.Append(f.IteratorName);
+            //     output.Append("++");
+            //     output.Append(") {");
+            //     output.Append(CodeGenBlock(indent, f.Block, project));
+            //     output.Append("}}");
 
-                break;
-            }
+            //     break;
+            // }
 
             case CheckedExpressionStatement es: {
 
