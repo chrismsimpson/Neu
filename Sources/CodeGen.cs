@@ -1465,7 +1465,11 @@ public static partial class CodeGenFunctions {
             }
         }
 
-        var block = CodeGenBlock(INDENT_SIZE, fun.Block, project);
+        var block = CodeGenBlock(
+            INDENT_SIZE, 
+            fun.Block
+                ?? throw new Exception("Function being generated must be checked"),
+            project);
 
         output.Append(block);
 
@@ -1815,7 +1819,13 @@ public static partial class CodeGenFunctions {
                 }
                 else {
 
-                    output.Append(CodeGenNamespaceQualifier(project.Enums[gei.EnumId].ScopeId, project));
+                    var qualifier = CodeGenNamespaceQualifier(project.Enums[gei.EnumId].ScopeId, project);
+
+                    if (!IsNullOrWhiteSpace(qualifier)) {
+
+                        output.Append("typename ");
+                        output.Append(qualifier);
+                    }
 
                     output.Append(project.Enums[gei.EnumId].Name);
                 }
@@ -1889,7 +1899,14 @@ public static partial class CodeGenFunctions {
                 }
                 else {
 
-                    output.Append(CodeGenNamespaceQualifier(project.Enums[e.EnumId].ScopeId, project));
+                    var qualifier = CodeGenNamespaceQualifier(project.Enums[e.EnumId].ScopeId, project);
+
+                    if (!IsNullOrWhiteSpace(qualifier)) {
+
+                        output.Append("typename ");
+                        output.Append(qualifier);
+                    }
+
                     output.Append(project.Enums[e.EnumId].Name);
                 }
 
@@ -2783,7 +2800,7 @@ public static partial class CodeGenFunctions {
 
                     case var x: {
 
-                        switch (project.Types[x.GetTypeId()]) {
+                        switch (project.Types[x.GetTypeIdOrTypeVar()]) {
 
                             case RawPointerType p: {
 
@@ -2851,7 +2868,7 @@ public static partial class CodeGenFunctions {
 
             case CheckedWhenExpression we: {
 
-                var exprType = project.Types[we.Expression.GetTypeId()];
+                var exprType = project.Types[we.Expression.GetTypeIdOrTypeVar()];
 
                 Int32? _id = null;
 
@@ -2904,7 +2921,7 @@ public static partial class CodeGenFunctions {
                             output.Append("case ");
                             output.Append(
                                 CodeGenTypePossiblyAsNamespace(
-                                    we.Expression.GetTypeId(), 
+                                    we.Expression.GetTypeIdOrTypeVar(), 
                                     project, 
                                     true));
                             output.Append("::");
@@ -3140,7 +3157,7 @@ public static partial class CodeGenFunctions {
 
                                         case CheckedExpressionWhenBody e: {
 
-                                            if (e.Expression.GetTypeId() == Compiler.VoidTypeId) {
+                                            if (e.Expression.GetTypeIdOrTypeVar() == Compiler.VoidTypeId) {
 
                                                 output.Append("   return (");
                                                 output.Append(CodeGenExpr(
@@ -3374,7 +3391,7 @@ public static partial class CodeGenFunctions {
 
                 output.Append("(");
 
-                var exprTy = expr.GetTypeId();
+                var exprTy = expr.GetTypeIdOrTypeVar();
 
                 var exprIsInt = NeuTypeFunctions.IsInteger(exprTy);
 
@@ -3675,7 +3692,10 @@ public static partial class CodeGenFunctions {
                 if (ve.FillSize is CheckedExpression fillSize) {
 
                     output.Append("(TRY(Array<");
-                    output.Append(CodeGenType(ve.Expressions.First().GetTypeId(), project));
+                    output.Append(
+                        CodeGenType(
+                            ve.Expressions.First().GetTypeIdOrTypeVar(), 
+                            project));
                     output.Append(">::filled(");
                     output.Append(CodeGenExpr(indent, fillSize, project));
                     output.Append(", ");
@@ -3714,8 +3734,8 @@ public static partial class CodeGenFunctions {
 
                 // (Dictionary({1, 2, 3}))
 
-                var keyTypeId = de.Entries[0].Item1.GetTypeId();
-                var valueTypeId = de.Entries[0].Item2.GetTypeId();
+                var keyTypeId = de.Entries[0].Item1.GetTypeIdOrTypeVar();
+                var valueTypeId = de.Entries[0].Item2.GetTypeIdOrTypeVar();
 
                 output.Append(
                     $"(TRY(Dictionary<{CodeGenType(keyTypeId, project)}, {CodeGenType(valueTypeId, project)}>::createWithEntries({{");
@@ -3749,7 +3769,7 @@ public static partial class CodeGenFunctions {
 
                 // (Set({1, 2, 3}))
 
-                var valueTypeId = se.Items.First().GetTypeId();
+                var valueTypeId = se.Items.First().GetTypeIdOrTypeVar();
 
                 output.Append($"(Set<{CodeGenType(valueTypeId, project)}>({{");
 
@@ -3856,7 +3876,7 @@ public static partial class CodeGenFunctions {
 
                     case var x: {
 
-                        switch (project.Types[x.GetTypeId()]) {
+                        switch (project.Types[x.GetTypeIdOrTypeVar()]) {
 
                             case RawPointerType p: {
 
@@ -3903,7 +3923,9 @@ public static partial class CodeGenFunctions {
                 // Incorrect parse/typecheck
                 // Probably shouldn't be able to get to this point?
 
-                break;
+                throw new Exception("Garbage statement in codegen");
+
+                // break;
             }
 
             default: {

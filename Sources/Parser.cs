@@ -629,6 +629,8 @@ public partial class ParsedFunction {
 
     public FunctionLinkage Linkage { get; init; }
 
+    public bool MustInstantiate { get; set; }
+
     ///
 
     public ParsedFunction(
@@ -646,7 +648,8 @@ public partial class ParsedFunction {
             throws: false,
             returnType: 
                 new ParsedEmptyType(),
-            linkage) { }
+            linkage,
+            mustInstantiate: false) { }
 
     public ParsedFunction(
         String name,
@@ -657,7 +660,8 @@ public partial class ParsedFunction {
         ParsedBlock block,
         bool throws,
         ParsedType returnType,
-        FunctionLinkage linkage) {
+        FunctionLinkage linkage,
+        bool mustInstantiate) {
 
         this.Name = name;
         this.Visibility = visibility;
@@ -668,6 +672,7 @@ public partial class ParsedFunction {
         this.Throws = throws;
         this.ReturnType = returnType;
         this.Linkage = linkage;
+        this.MustInstantiate = mustInstantiate;
     }
 }
 
@@ -708,16 +713,20 @@ public partial class ParsedVariable {
 
     public bool Mutable { get; init; }
 
+    public Span Span { get; init; }
+
     ///
 
     public ParsedVariable(
         String name,
         ParsedType ty,
-        bool mutable) {
+        bool mutable,
+        Span span) {
 
         this.Name = name;
         this.Type = ty;
         this.Mutable = mutable;
+        this.Span = span;
     }
 }
 
@@ -3519,11 +3528,16 @@ public static partial class ParserFunctions {
 
                                 lastVisibility = null;
 
-                                var (funcDecl, err) = ParseFunction(tokens, ref index, funcLinkage, visibility);
+                                var (func, err) = ParseFunction(tokens, ref index, funcLinkage, visibility);
 
                                 error = error ?? err;
 
-                                methods.Add(funcDecl);
+                                if (definitionLinkage == DefinitionLinkage.External) {
+
+                                    func.MustInstantiate = true;
+                                }
+
+                                methods.Add(func);
 
                                 break;
                             }
@@ -3808,7 +3822,8 @@ public static partial class ParserFunctions {
                                         variable: new ParsedVariable(
                                             name: "this",
                                             ty: new ParsedEmptyType(),
-                                            mutable: currentParamIsMutable)));
+                                            mutable: currentParamIsMutable,
+                                            span: tokens[index - 1].Span)));
 
                                 break;
                             }
@@ -3837,7 +3852,8 @@ public static partial class ParserFunctions {
                                         variable: new ParsedVariable(
                                             varDecl.Name, 
                                             varDecl.Type, 
-                                            varDecl.Mutable)));
+                                            varDecl.Mutable,
+                                            span: tokens[index - 1].Span)));
 
                                 break;
                             }
@@ -3982,7 +3998,8 @@ public static partial class ParserFunctions {
                                 block: new ParsedBlock(),
                                 throws,
                                 returnType,
-                                linkage),
+                                linkage,
+                                mustInstantiate: true),
                             error);
                     }
 
@@ -4023,7 +4040,8 @@ public static partial class ParserFunctions {
                             block,
                             throws,
                             returnType,
-                            linkage),
+                            linkage,
+                            mustInstantiate: false),
                         error);
                 }
 

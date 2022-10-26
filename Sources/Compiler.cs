@@ -132,11 +132,35 @@ public partial class Compiler {
             }
         }
 
+        if (CheckCodeGenPreconditions(project) is Error e2) {
+
+            return new ErrorOr<String>(e2);
+        }
+
         // Hardwire to first file for now
 
         return new ErrorOr<String>(CodeGenFunctions.CodeGen(
             project, 
             project.Scopes[fileScopeId]));
+    }
+
+    public Error? CheckCodeGenPreconditions(
+        Project project) {
+
+        // Make sure all functions have a known return type
+
+        foreach (var func in project.Functions) {
+
+            if (func.ReturnTypeId == Compiler.UnknownTypeId) {
+
+                return new TypeCheckError(
+                    $"Could not infer the return type of function '{func.Name}', please explicitly specify it",
+                    (func.Function
+                        ?? throw new Exception("Typechecking non-parsed function")).NameSpan);
+            }
+        }
+
+        return null;
     }
     
     public ErrorOrVoid Compile(
