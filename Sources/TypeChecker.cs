@@ -5881,15 +5881,37 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedArrayExpression ve: {
 
-                var innerType = Compiler.UnknownTypeId;
+                var innerTypeId = Compiler.UnknownTypeId;
 
                 var output = new List<CheckedExpression>();
+
+                var arrayStructId = project
+                    .FindStructInScope(0, "Array")
+                    ?? throw new Exception("internal error: Array builtin definition not found");
+
+                Int32? innerHint = null;
+
+                if (typeHint is Int32 hint) {
+
+                    if (project.Types[hint] is GenericInstance gi) {
+
+                        if (gi.StructId == arrayStructId) {
+
+                            innerHint = gi.TypeIds[0];
+                        }
+                    }
+                }
 
                 CheckedExpression? checkedFillSizeExpr = null;
 
                 if (ve.FillSize is ParsedExpression fillSize) {
 
-                    var (chkFillSizeExpr, chkFillSizeErr) = TypeCheckExpression(fillSize, scopeId, project, safetyMode, null);
+                    var (chkFillSizeExpr, chkFillSizeErr) = TypeCheckExpression(
+                        fillSize, 
+                        scopeId, 
+                        project, 
+                        safetyMode, 
+                        innerHint);
 
                     checkedFillSizeExpr = chkFillSizeExpr;
 
@@ -5900,11 +5922,11 @@ public static partial class TypeCheckerFunctions {
 
                 foreach (var v in ve.Expressions) {
 
-                    var (checkedExpr, err) = TypeCheckExpression(v, scopeId, project, safetyMode, null);
+                    var (checkedExpr, err) = TypeCheckExpression(v, scopeId, project, safetyMode, innerHint);
 
                     error = error ?? err;
 
-                    if (innerType is Compiler.UnknownTypeId) {
+                    if (innerTypeId is Compiler.UnknownTypeId) {
 
                         if (checkedExpr.GetTypeId(scopeId, project) == Compiler.VoidTypeId) {
 
@@ -5914,11 +5936,11 @@ public static partial class TypeCheckerFunctions {
                                     v.GetSpan());
                         }
 
-                        innerType = checkedExpr.GetTypeId(scopeId, project);
+                        innerTypeId = checkedExpr.GetTypeId(scopeId, project);
                     }
                     else {
 
-                        if (innerType != checkedExpr.GetTypeId(scopeId, project)) {
+                        if (innerTypeId != checkedExpr.GetTypeId(scopeId, project)) {
 
                             error = error ?? 
                                 new TypeCheckError(
@@ -5930,12 +5952,23 @@ public static partial class TypeCheckerFunctions {
                     output.Add(checkedExpr);
                 }
 
-                var arrayStructId = project
-                    .FindStructInScope(0, "Array")
-                    ?? throw new Exception("internal error: Array builtin definition not found");
+                if (innerTypeId == Compiler.UnknownTypeId) {
+
+                    if (innerHint is Int32 hintInnerType) {
+
+                        innerTypeId = hintInnerType;
+                    }
+                    else if (typeHint == null) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Cannot infer generic type for Array<T>",
+                                ve.Span);
+                    }
+                }
 
                 var typeId = project
-                    .FindOrAddTypeId(new GenericInstance(arrayStructId, new List<Int32>(new [] { innerType })));
+                    .FindOrAddTypeId(new GenericInstance(arrayStructId, new List<Int32>(new [] { innerTypeId })));
 
                 var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
 
@@ -5956,9 +5989,26 @@ public static partial class TypeCheckerFunctions {
 
                 var output = new List<CheckedExpression>();
 
+                var setStructId = project
+                    .FindStructInScope(0, "Set")
+                    ?? throw new Exception("internal error: Set builtin definition not found");
+
+                Int32? innerHint = null;
+
+                if (typeHint is Int32 hint) {
+
+                    if (project.Types[hint] is GenericInstance gi) {
+                        
+                        if (gi.StructId == setStructId) {
+
+                            innerHint = gi.TypeIds[0];
+                        }
+                    }
+                }
+
                 foreach (var value in se.Items) {
 
-                    var (checkedValue, err) = TypeCheckExpression(value, scopeId, project, safetyMode, null);
+                    var (checkedValue, err) = TypeCheckExpression(value, scopeId, project, safetyMode, innerHint);
 
                     error = error ?? err;
 
@@ -5985,9 +6035,20 @@ public static partial class TypeCheckerFunctions {
                     output.Add(checkedValue);
                 }
 
-                var setStructId = project
-                    .FindStructInScope(0, "Set")
-                    ?? throw new Exception("internal error: Set builtin definition not found");
+                if (innerTypeId == Compiler.UnknownTypeId) {
+
+                    if (innerHint is Int32 hintInnerType) {
+
+                        innerTypeId = hintInnerType;
+                    }
+                    else if (typeHint == null) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Cannot infer generic type for Set<T>",
+                                se.Span);
+                    }
+                }
 
                 var typeId = project
                     .FindOrAddTypeId(new GenericInstance(setStructId, new List<Int32>(new [] { innerTypeId })));
@@ -6003,22 +6064,44 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedDictionaryExpression de: {
 
-                var innerTypeIds = (Compiler.UnknownTypeId, Compiler.UnknownTypeId);
+                var keyTypeId = Compiler.UnknownTypeId;
+
+                var valueTypeId = Compiler.UnknownTypeId;
 
                 var output = new List<(CheckedExpression, CheckedExpression)>();
 
+                var dictStructId = project
+                    .FindStructInScope(0, "Dictionary")
+                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+
+                Int32? keyHint = null;
+
+                Int32? valueHint = null;
+
+                if (typeHint is Int32 hint) {
+
+                    if (project.Types[hint] is GenericInstance gi) {
+
+                        if (gi.StructId == dictStructId) {
+
+                            keyHint = gi.TypeIds[0];
+                            valueHint = gi.TypeIds[1];
+                        }
+                    }
+                }
+
                 foreach (var (key, value) in de.Entries) {
 
-                    var (checkedKey, keyErr) = TypeCheckExpression(key, scopeId, project, safetyMode, null);
+                    var (checkedKey, keyErr) = TypeCheckExpression(key, scopeId, project, safetyMode, keyHint);
 
                     error = error ?? keyErr;
 
-                    var (checkedValue, valueErr) = TypeCheckExpression(value, scopeId, project, safetyMode, null);
+                    var (checkedValue, valueErr) = TypeCheckExpression(value, scopeId, project, safetyMode, valueHint);
 
                     error = error ?? valueErr;
 
-                    if (innerTypeIds.Item1 == Compiler.UnknownTypeId
-                        && innerTypeIds.Item2 == Compiler.UnknownTypeId) {
+                    if (keyTypeId == Compiler.UnknownTypeId
+                        && valueTypeId == Compiler.UnknownTypeId) {
 
                         if (checkedKey.GetTypeId(scopeId, project) == Compiler.VoidTypeId) {
 
@@ -6036,13 +6119,12 @@ public static partial class TypeCheckerFunctions {
                                     value.GetSpan());
                         }
 
-                        innerTypeIds = (
-                            checkedKey.GetTypeId(scopeId, project), 
-                            checkedValue.GetTypeId(scopeId, project));
+                        keyTypeId = checkedKey.GetTypeId(scopeId, project);
+                        valueTypeId = checkedValue.GetTypeId(scopeId, project);
                     }
                     else {
 
-                        if (innerTypeIds.Item1 != checkedKey.GetTypeId(scopeId, project)) {
+                        if (keyTypeId != checkedKey.GetTypeId(scopeId, project)) {
 
                             error = error ??
                                 new TypeCheckError(
@@ -6050,7 +6132,7 @@ public static partial class TypeCheckerFunctions {
                                     key.GetSpan());
                         }
 
-                        if (innerTypeIds.Item2 != checkedValue.GetTypeId(scopeId, project)) {
+                        if (valueTypeId != checkedValue.GetTypeId(scopeId, project)) {
 
                             error = error ??
                                 new TypeCheckError(
@@ -6062,11 +6144,41 @@ public static partial class TypeCheckerFunctions {
                     output.Add((checkedKey, checkedValue));
                 }
 
-                var dictStructId = project
-                    .FindStructInScope(0, "Dictionary")
-                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+                if (keyTypeId == Compiler.UnknownTypeId) {
 
-                var typeId = project.FindOrAddTypeId(new GenericInstance(dictStructId, new List<Int32>(new [] { innerTypeIds.Item1, innerTypeIds.Item2 })));
+                    if (keyHint is Int32 kh) {
+
+                        keyTypeId = kh;
+                    }
+                    else if (typeHint == null) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Cannot infer key type for Dictionary",
+                                de.Span);
+                    }
+                }
+
+                if (valueTypeId == Compiler.UnknownTypeId) {
+
+                    if (valueHint is Int32 vh) {
+
+                        valueTypeId = vh;
+                    }
+                    else if (typeHint == null) {
+
+                        error = error ?? 
+                            new TypeCheckError(
+                                "Cannot infer value type for Dictionary",
+                                de.Span);
+                    }
+                }
+
+                var typeId = project
+                    .FindOrAddTypeId(
+                        new GenericInstance(
+                            dictStructId, 
+                            new List<Int32>(new [] { keyTypeId, valueTypeId })));
 
                 var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
 

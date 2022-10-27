@@ -1,0 +1,9 @@
+func main() {
+    var set1: [Int64] = []
+    set1.push(1)
+    set1.push(2)
+    var set2: [[[String]]] = []
+    set2.push([["hello"]])
+    set2.push([["world"]])
+    printLine("{} {}", set1.size(), set2.size())
+}
