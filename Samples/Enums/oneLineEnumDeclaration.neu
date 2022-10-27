@@ -1,0 +1,13 @@
+enum Apple { grannySmith }
+
+func appleName(apple: Apple) {
+    when (apple) {
+        Apple.grannySmith => {
+            printLine("Granny Smith")
+        }
+    }
+}
+
+func main() {
+    appleName(apple: Apple.grannySmith())
+}

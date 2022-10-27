@@ -3310,12 +3310,12 @@ public static partial class ParserFunctions {
                         break;
                     }
 
-                    case RCurlyToken _: {
+                    // case RCurlyToken _: {
 
-                        cont = false;
+                    //     cont = false;
 
-                        break;
-                    }
+                    //     break;
+                    // }
 
                     default: {
 
@@ -3327,8 +3327,20 @@ public static partial class ParserFunctions {
                                     start: tokens[index].Span.Start,
                                     end: tokens[index].Span.End)));
 
+                        if (tokens[index] is RCurlyToken) {
+
+                            cont = false;
+
+                            break;
+                        }
+
                         break;
                     }
+                }
+
+                if (!cont) {
+
+                    break;
                 }
 
                 // Require a comma or a newline after each variant
