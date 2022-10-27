@@ -3157,10 +3157,50 @@ public static partial class ParserFunctions {
 
                         var members = new List<ParsedVarDecl>();
 
+                        ParsedType? parsedType = null;
+
                         while (index < tokens.Count
                             && !(tokens[index] is RParenToken)) {
                             
                             SkipNewLines(tokens, ref index);
+                            
+                            ///
+
+                            var lookaheadSave = index;
+
+                            SkipNewLines(tokens, ref index);
+
+                            var notNameThenColon = ((index + 1) < tokens.Count) 
+                                && !(tokens.ElementAt(index) is NameToken 
+                                    && tokens.ElementAt(index + 1) is ColonToken);
+
+                            index = lookaheadSave;
+
+                            ///
+
+                            var parseAsType = !members.Any() && parsedType == null && notNameThenColon;
+
+                            if (parseAsType) {
+
+                                var (_type, parseErr) = ParseTypeName(tokens, ref index);
+
+                                error = error ?? parseErr;
+
+                                parsedType = _type;
+
+                                SkipNewLines(tokens, ref index);
+
+                                if (index >= tokens.Count
+                                    || !(tokens[index] is RParenToken)) {
+
+                                    error = error ?? 
+                                        new ParserError(
+                                            "expected `)` to end type in enum variant",
+                                            tokens[index].Span);
+                                }
+
+                                break;
+                            }
 
                             // Fields in struct-like enums are always public.
 
@@ -3209,14 +3249,16 @@ public static partial class ParserFunctions {
 
                         index += 1;
 
-                        if (members.Count == 1 && members[0].Type is ParsedEmptyType) {
+                        if (parsedType is ParsedType _parsedType) {
+                        // if (members.Count == 1 && members[0].Type is ParsedEmptyType) {
 
                             // We have a simple value (non-struct) case
 
                             _enum.Variants.Add(
                                 new TypedEnumVariant(
                                     name,
-                                    new ParsedNameType(members[0].Name, members[0].Span),
+                                    // new ParsedNameType(members[0].Name, members[0].Span),
+                                    _parsedType,
                                     new Span(
                                         fileId: tokens[index].Span.FileId,
                                         start: tokens[startIndex].Span.Start,

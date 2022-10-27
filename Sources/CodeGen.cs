@@ -215,12 +215,39 @@ public static partial class CodeGenFunctions {
             }
         }
 
+        foreach (var (_, structId) in scope.Structs) {
+
+            var structure = project.Structs[structId];
+
+            if (structure.DefinitionLinkage == DefinitionLinkage.External) {
+
+                continue;
+            }
+
+            if (structure.GenericParameters.Any()) {
+
+                continue;
+            }
+
+            var _scope = project.Scopes[structure.ScopeId];
+
+            foreach (var (_, scopeFuncId) in _scope.Funcs) {
+
+                var scopeFunc = project.Functions[scopeFuncId];
+
+                if (scopeFunc.Linkage != FunctionLinkage.ImplicitConstructor) {
+
+                    var funcOutput = CodeGenFuncInNamespace(scopeFunc, structure.TypeId, project);
+
+                    output.Append(funcOutput);
+
+                    output.Append('\n');
+                }
+            }
+        }
+
         return output.ToString();
     }
-
-
-
-
 
     public static String CodeGenEnumPredecl(
         CheckedEnum _enum,
@@ -1339,7 +1366,16 @@ public static partial class CodeGenFunctions {
 
                 output.Append(CodeGenIndent(INDENT_SIZE));
 
-                var methodOutput = CodeGenFunc(func, project);
+                String methodOutput;
+
+                if (!structure.GenericParameters.Any()) {
+
+                    methodOutput = CodeGenFuncPredecl(func, project);
+                }
+                else {
+
+                    methodOutput = CodeGenFunc(func, project);
+                }
 
                 output.Append(methodOutput);
             }
@@ -1450,6 +1486,11 @@ public static partial class CodeGenFunctions {
 
         foreach (var p in fun.Parameters) {
 
+            if (first && p.Variable.Name == "this") {
+
+                continue;
+            }
+
             if (!first) {
 
                 output.Append(", ");
@@ -1473,13 +1514,28 @@ public static partial class CodeGenFunctions {
             output.Append(p.Variable.Name);
         }
 
-        output.Append(");");
+        if (!fun.IsStatic() && !fun.IsMutating()) {
+
+            output.Append(") const;");
+        }
+        else {
+
+            output.Append(");");
+        }
 
         return output.ToString();
     }
 
     public static String CodeGenFunc(
         CheckedFunction fun,
+        Project project) {
+
+        return CodeGenFuncInNamespace(fun, null, project);
+    }
+
+    public static String CodeGenFuncInNamespace(
+        CheckedFunction fun,
+        Int32? containingStruct,
         Project project) {
 
         var output = new StringBuilder();
@@ -1544,7 +1600,7 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            if (fun.IsStatic() && fun.Linkage != FunctionLinkage.External) {
+            if (fun.IsStatic() && containingStruct == null) {
 
                 output.Append("static ");
             }
@@ -1565,18 +1621,36 @@ public static partial class CodeGenFunctions {
 
         output.Append(' ');
 
-        if (fun.Name == "main") {
+        var isMain = fun.Name == "main" && containingStruct == null;
+
+        if (isMain) {
 
             output.Append("NeuInternal::main");
         }
         else {
+
+            String? _qualifier = null;
+
+            if (containingStruct is Int32 _typeId) {
+
+                _qualifier = CodeGenTypePossiblyAsNamespace(_typeId, project, true);
+            }
+
+            if (_qualifier is String qualifier) {
+
+                if (!IsNullOrWhiteSpace(qualifier)) {
+
+                    output.Append(qualifier);
+                    output.Append("::");
+                }
+            }
 
             output.Append(fun.Name);
         }
 
         output.Append('(');
 
-        if (fun.Name == "main" && !fun.Parameters.Any()) {
+        if (isMain && !fun.Parameters.Any()) {
         
             output.Append("Array<String>");
         }
@@ -1625,7 +1699,7 @@ public static partial class CodeGenFunctions {
         
         // Put the return type in scope
 
-        if (fun.Name == "main") {
+        if (isMain) {
 
             output.Append("using _NeuCurrentFunctionReturnType = ErrorOr<int>;\n");
         }
@@ -1654,7 +1728,7 @@ public static partial class CodeGenFunctions {
 
         output.Append(block);
 
-        if (fun.Name == "main") {
+        if (isMain) {
             
             output.Append(CodeGenIndent(INDENT_SIZE));
             output.Append("return 0;\n");
