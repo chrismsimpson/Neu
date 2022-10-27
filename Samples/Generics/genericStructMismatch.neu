@@ -1,0 +1,12 @@
+struct Foo<T> {
+    x: T
+}
+
+struct Bar<T> {
+    x: T,
+    y: T,
+}
+
+func main() {
+    let x: Foo<Int64> = Bar(x: 1, y: 2)
+}

@@ -8238,6 +8238,13 @@ public static partial class TypeCheckerFunctions {
                                 idx += 1;
                             }
                         }
+                        else {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    $"Type mismatch: expected '{project.TypeNameForTypeId(lhsTypeId)}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
+                                    span);
+                        }
 
                         break;
                     }
