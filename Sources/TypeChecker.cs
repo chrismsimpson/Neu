@@ -7247,7 +7247,7 @@ public static partial class TypeCheckerFunctions {
                     return (
                         lhsTypeId,
                         new TypeCheckError(
-                            "binary comparison operation between incompatible types",
+                            $"Binary comparison operation between incompatible types ('{project.TypeNameForTypeId(lhsTypeId)}' and '{project.TypeNameForTypeId(rhsTypeId)}')",
                             span));
                 }
 
@@ -7327,7 +7327,7 @@ public static partial class TypeCheckerFunctions {
                     return (
                         lhsTypeId,
                         new TypeCheckError(
-                            $"assignment between incompatible types ({lhsTypeId} and {rhsTypeId})",
+                            $"Assignment between incompatible types ('{lhsTypeId}' and '{rhsTypeId}')",
                             span));
                 }
 
@@ -7354,7 +7354,7 @@ public static partial class TypeCheckerFunctions {
                     return (
                         lhsTypeId,
                         new TypeCheckError(
-                            $"binary arithmetic operation between incompatible types {project.TypeNameForTypeId(lhsTypeId)} and {project.TypeNameForTypeId(rhsTypeId)}",
+                            $"Binary arithmetic operation between incompatible types ('{project.TypeNameForTypeId(lhsTypeId)}' and '{project.TypeNameForTypeId(rhsTypeId)}')",
                             span));
                 }
 
