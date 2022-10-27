@@ -173,24 +173,24 @@ public static partial class CodeGenFunctions {
         }
         else {
 
-            return String.Empty;
+            return CodeGenNonRecursiveEnum(_enum, project);
         }
     }
 
-    public static String CodeGenNonRecursiveEnumPredecl(
+    public static String CodeGenNonRecursiveEnum(
         CheckedEnum _enum,
         Project project) {
 
-        if (_enum.UnderlyingTypeId is Int32 ty) {
+        if (_enum.UnderlyingTypeId is Int32 typeId) {
 
-            if (NeuTypeFunctions.IsInteger(ty)) {
+            if (NeuTypeFunctions.IsInteger(typeId)) {
 
                 var _output = new StringBuilder();
 
                 _output.Append("enum class ");
                 _output.Append(_enum.Name);
                 _output.Append(": ");
-                _output.Append(CodeGenType(ty, project));
+                _output.Append(CodeGenType(typeId, project));
                 _output.Append(" {\n");
 
                 foreach (var variant in _enum.Variants) {
@@ -296,8 +296,6 @@ public static partial class CodeGenFunctions {
                         output.Append(member.Name);
                         output.Append(";\n");
                     }
-
-                    // output.Append("    };\n");
 
                     output.Append("        template<");
 
@@ -514,6 +512,126 @@ public static partial class CodeGenFunctions {
         }
 
         output.Append("};\n");
+
+        return output.ToString();
+    }
+
+    public static String CodeGenNonRecursiveEnumPredecl(
+        CheckedEnum _enum,
+        Project project) {
+
+        if (_enum.UnderlyingTypeId is Int32 typeId) {
+
+            if (NeuTypeFunctions.IsInteger(typeId)) {
+
+                var _output = new StringBuilder();
+
+                _output.Append("enum class ");
+                _output.Append(_enum.Name);
+                _output.Append(": ");
+                _output.Append(CodeGenType(typeId, project));
+                _output.Append(";\n");
+                
+                return _output.ToString();
+            }
+            else {
+
+                throw new Exception("TODO: Enums with a non-integer underlying type");
+            }
+        }
+
+        // These are all Variant<Ts...>, make a new namespace and define the variant types first.
+
+        var isGeneric = _enum.GenericParameters.Any();
+
+        var genericParameterNames = _enum
+            .GenericParameters
+            .Select(p => project.Types[p] switch {
+                TypeVariable tv => tv.Name,
+                _ => throw new Exception()
+            })
+            .ToList();
+
+        var templateArgs = Join(", ", genericParameterNames.Select(p => $"typename {p}"));
+
+        var output = new StringBuilder();
+        output.Append("namespace ");
+        output.Append(_enum.Name);
+        output.Append("_Details {\n");
+
+        foreach (var variant in _enum.Variants) {
+
+            switch (variant) {
+                
+                case CheckedStructLikeEnumVariant s: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(s.Name);
+                    output.Append(";\n");
+
+                    break;
+                }
+
+                case CheckedUntypedEnumVariant u: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(u.Name);
+                    output.Append(";\n");
+
+                    break;
+                }
+
+                case CheckedTypedEnumVariant t: {
+
+                    if (isGeneric) {
+
+                        output.Append("    template<");
+                        output.Append(templateArgs);
+                        output.Append(">\n");
+                    }
+
+                    output.Append("    struct ");
+                    output.Append(t.Name);
+                    output.Append(";\n");
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
+            }
+        }
+
+        output.Append("}\n");
+
+        // Now declare the variant itself.
+
+        if (isGeneric) {
+
+            output.Append("template<");
+            output.Append(templateArgs);
+            output.Append(">\n");
+        }
+
+        output.Append("struct ");
+        output.Append(_enum.Name);
+        output.Append(';');
 
         return output.ToString();
     }
