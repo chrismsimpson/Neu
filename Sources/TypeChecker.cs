@@ -738,6 +738,10 @@ public static partial class ProjectFunctions {
         this Project project,
         Int32 typeId) {
 
+        var optionalStructId = project
+            .FindStructInScope(0, "Optional")
+            ?? throw new Exception("internal error: can't find builtin Optional type");
+
         switch (project.Types[typeId]) {
 
             case Builtin b: {
@@ -837,6 +841,11 @@ public static partial class ProjectFunctions {
                 return output.ToString();
             }
 
+            case GenericInstance gi when gi.StructId == optionalStructId: {
+
+                return $"{project.TypeNameForTypeId(gi.TypeIds[0])}?";
+            }
+
             case GenericInstance gi: {
 
                 var output = new StringBuilder();
@@ -847,7 +856,7 @@ public static partial class ProjectFunctions {
                 } 
                 else {
                     
-                    output.Append("struct {project.Structs[gi.StructId].Name}");
+                    output.Append($"struct {project.Structs[gi.StructId].Name}");
                 }
 
                 output.Append('<');
@@ -7327,7 +7336,7 @@ public static partial class TypeCheckerFunctions {
                     return (
                         lhsTypeId,
                         new TypeCheckError(
-                            $"Assignment between incompatible types ('{lhsTypeId}' and '{rhsTypeId}')",
+                            $"Assignment between incompatible types ('{project.TypeNameForTypeId(lhsTypeId)}' and '{project.TypeNameForTypeId(rhsTypeId)}')",
                             span));
                 }
 

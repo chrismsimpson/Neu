@@ -1,0 +1,7 @@
+class Foo {
+}
+
+func main() {
+    var x: Foo? = none
+    x = 5
+}
