@@ -8090,7 +8090,7 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ?? 
                             new TypeCheckError(
-                                $"Type mismatch: expected {project.TypeNameForTypeId(genericInferences[lhsTypeId])}, but got {project.TypeNameForTypeId(rhsTypeId)}",
+                                $"Type mismatch: expected '{project.TypeNameForTypeId(genericInferences[lhsTypeId])}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
                                 span);   
                     }
                 }
@@ -8162,7 +8162,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? 
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
+                                    $"Type mismatch: expected '{project.TypeNameForTypeId(lhsTypeId)}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
                                     span);
                         }
 
@@ -8230,7 +8230,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
+                                    $"Type mismatch: expected '{project.TypeNameForTypeId(lhsTypeId)}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
                                     span);
                         }
 
@@ -8304,7 +8304,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
+                                    $"Type mismatch: expected '{project.TypeNameForTypeId(lhsTypeId)}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
                                     span);
                         }
 
@@ -8372,7 +8372,7 @@ public static partial class TypeCheckerFunctions {
                             
                             error = error ??
                                 new TypeCheckError(
-                                    $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
+                                    $"Type mismatch: expected '{project.TypeNameForTypeId(lhsTypeId)}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
                                     span);
                         }
 
@@ -8389,7 +8389,7 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? 
                         new TypeCheckError(
-                            $"Type mismatch: expected {project.TypeNameForTypeId(lhsTypeId)}, but got {project.TypeNameForTypeId(rhsTypeId)}",
+                            $"Type mismatch: expected '{project.TypeNameForTypeId(lhsTypeId)}', but got '{project.TypeNameForTypeId(rhsTypeId)}'",
                             span);
                 }
 
