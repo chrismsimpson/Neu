@@ -70,9 +70,77 @@ public static partial class CodeGenFunctions {
         
         output.Append('\n');
 
+        // Figure out the right order to output the structs
+        // This is necessary as C++ requires a type to be defined before it's used as a value type,
+        // we can ignore the generic types as they are only resolved when used by other non-generic code.
+
+        var typeDependencyGraph = ProduceTypeDependencyGraph(project, scope);
+
+        var seenTypes = new HashSet<Int32>();
+
+        foreach (var typeId in typeDependencyGraph.Keys) {
+
+            var traversal = new List<Int32>();
+
+            PostOrderTraversal(
+                project,
+                typeId,
+                seenTypes,
+                typeDependencyGraph,
+                traversal);
+                
+            foreach (var _typeId in traversal) {
+
+                var _type = project.Types[_typeId];
+
+                seenTypes.Add(_typeId);
+
+                switch (_type) {
+
+                    case EnumType et: {
+
+                        var _enum = project.Enums[et.EnumId];
+                        var enumOutput = CodeGenEnum(_enum, project);
+
+                        if (!IsNullOrWhiteSpace(enumOutput)) {
+                            
+                            output.Append(enumOutput);
+                            output.Append('\n');
+                        }
+
+                        break;
+                    }
+
+                    case StructType st: {
+
+                        var structure = project.Structs[st.StructId];
+                        var structOutput = CodeGenStruct(structure, project);
+
+                        if (!IsNullOrWhiteSpace(structOutput)) {
+                            
+                            output.Append(structOutput);
+                            output.Append('\n');
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        throw new Exception($"Unexpected type in dependency graph: {_type}");
+                    }
+                }
+            }
+        }
+
         foreach (var (_, structId) in scope.Structs) {
 
             var structure = project.Structs[structId];
+
+            if (seenTypes.Contains(structure.TypeId)) {
+
+                continue;
+            }
 
             var structOutput = CodeGenStruct(structure, project);
 
@@ -88,6 +156,11 @@ public static partial class CodeGenFunctions {
         foreach (var (_, enumId) in scope.Enums) {
 
             var _enum = project.Enums[enumId];
+
+            if (seenTypes.Contains(_enum.TypeId)) {
+
+                continue;
+            }
 
             var enumOutput = CodeGenEnum(_enum, project);
 
@@ -1098,16 +1171,6 @@ public static partial class CodeGenFunctions {
 
         return output.ToString();
     }
-
-
-
-
-
-
-
-
-
-
 
     public static String CodeGenStructPredecl(
         CheckedStruct structure,
@@ -4102,5 +4165,227 @@ public static partial class CodeGenFunctions {
         int indent) {
 
         return new String(' ', indent);
+    }
+
+    public static void ExtractDependenciesFrom(
+        Project project,
+        Int32 typeId,
+        HashSet<Int32> deps,
+        Dictionary<Int32, List<Int32>> graph,
+        bool topLevel) {
+
+        if (graph.ContainsKey(typeId)) {
+
+            foreach (var dep in graph[typeId]) {
+
+                deps.Add(dep);
+            }
+
+            return;
+        }
+
+        var _type = project.Types[typeId];
+
+        Int32? _structId = null;
+
+        Int32? _enumId = null;
+
+        switch (_type) {
+
+            case GenericInstance gi: {
+
+                _structId = gi.StructId;
+
+                break;
+            }
+
+            case StructType st: {
+
+                _structId = st.StructId;
+
+                break;
+            }
+
+            case GenericEnumInstance gei: {
+
+                _enumId = gei.EnumId;
+
+                break;
+            }
+
+            case EnumType et: {
+
+                _enumId = et.EnumId;
+
+                break;
+            }
+
+            default: {
+
+                break;
+            }
+        }
+
+        switch (_type) {
+
+            case GenericInstance _:
+            case StructType _: {
+
+                var structId = _structId ?? throw new Exception();
+
+                var _struct = project.Structs[structId];
+
+                if (_struct.DefinitionLinkage == DefinitionLinkage.External) {
+
+                    // This type is defined somewhere else,
+                    // so we can skip marking it as a dependency.
+                    return;
+                }
+
+                if (_struct.DefinitionType == DefinitionType.Class && !topLevel) {
+
+                    // We store and pass these as pointers, so we don't need to
+                    // include them in the dependency graph.
+                    return;
+                }
+
+                deps.Add(_struct.TypeId);
+
+                // The struct's fields are also dependencies.
+
+                foreach (var field in _struct.Fields) {
+
+                    ExtractDependenciesFrom(project, field.TypeId, deps, graph, false);
+                }
+
+                break;
+            }
+
+            case GenericEnumInstance _:
+            case EnumType _: {
+
+                var enumId = _enumId ?? throw new Exception();
+
+                var _enum = project.Enums[enumId];
+
+                if (_enum.DefinitionLinkage == DefinitionLinkage.External) {
+    
+                    // This type is defined somewhere else,
+                    // so we can skip marking it as a dependency.
+                    return;
+                }
+
+                if (_enum.DefinitionType == DefinitionType.Class && !topLevel) {
+
+                    // We store and pass these as pointers, so we don't need to
+                    // include them in the dependency graph.
+                    return;
+                }
+
+                deps.Add(_enum.TypeId);
+
+                if (_enum.UnderlyingTypeId is Int32 _typeId) {
+
+                    ExtractDependenciesFrom(project, _typeId, deps, graph, false);
+                }
+
+                // The enum variants' types are also dependencies
+
+                foreach (var variant in _enum.Variants) {
+
+                    switch (variant) {
+
+                        case CheckedTypedEnumVariant t: {
+
+                            ExtractDependenciesFrom(project, t.TypeId, deps, graph, false);
+
+                            break;
+                        }
+
+                        case CheckedStructLikeEnumVariant s: {
+
+                            foreach (var field in s.Decls) {
+
+                                ExtractDependenciesFrom(project, field.TypeId, deps, graph, false);
+                            }
+
+                            break;
+                        }
+
+                        default: {
+
+                            break;
+                        }
+                    }
+                }
+
+                break;
+            }
+
+            case Builtin _: {
+
+                break;
+            }
+
+            case TypeVariable _: {
+
+                break;
+            }
+
+            case RawPointerType _: {
+
+                break;
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+
+    }
+
+    public static Dictionary<Int32, List<Int32>> ProduceTypeDependencyGraph(
+        Project project,
+        Scope scope) {
+
+        var graph = new Dictionary<Int32, List<Int32>>();
+
+        foreach (var (_, typeId) in scope.Types) {
+
+            var deps = new HashSet<Int32>();
+
+            ExtractDependenciesFrom(project, typeId, deps, graph, true);
+
+            graph[typeId] = deps.ToList();
+
+        }
+
+        return graph;
+    }
+
+    public static void PostOrderTraversal(
+        Project project,
+        Int32 typeId,
+        HashSet<Int32> visited,
+        Dictionary<Int32, List<Int32>> graph,
+        List<Int32> output) {
+
+        if (visited.Contains(typeId)) {
+
+            return;
+        }
+
+        visited.Add(typeId);
+
+        if (graph.ContainsKey(typeId)) {
+
+            foreach (var dep in graph[typeId]) {
+
+                PostOrderTraversal(project, dep, visited, graph, output);
+            }
+        }
+
+        output.Add(typeId);
     }
 }

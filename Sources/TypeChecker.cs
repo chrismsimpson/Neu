@@ -925,6 +925,8 @@ public partial class CheckedStruct {
 
     public DefinitionType DefinitionType { get; init; }
 
+    public Int32 TypeId { get; init; }
+
     ///
 
     public CheckedStruct(
@@ -933,7 +935,8 @@ public partial class CheckedStruct {
         List<CheckedVarDecl> fields,
         Int32 scopeId,
         DefinitionLinkage definitionLinkage,
-        DefinitionType definitionType) {
+        DefinitionType definitionType,
+        Int32 typeId) {
 
         this.Name = name;
         this.GenericParameters = genericParameters;
@@ -941,6 +944,7 @@ public partial class CheckedStruct {
         this.ScopeId = scopeId;
         this.DefinitionLinkage = definitionLinkage;
         this.DefinitionType = definitionType;
+        this.TypeId = typeId;
     }
 }
 
@@ -964,6 +968,8 @@ public partial class CheckedEnum {
 
     public Span Span { get; init; }
 
+    public Int32 TypeId { get; init; }
+
     ///
 
     public CheckedEnum(
@@ -974,7 +980,8 @@ public partial class CheckedEnum {
         DefinitionLinkage definitionLinkage,
         DefinitionType definitionType,
         Int32? underlyingTypeId,
-        Span span) {
+        Span span,
+        Int32 typeId) {
 
         this.Name = name;
         this.GenericParameters = genericParameters;
@@ -984,6 +991,7 @@ public partial class CheckedEnum {
         this.DefinitionType = definitionType;
         this.UnderlyingTypeId = underlyingTypeId;
         this.Span = span;
+        this.TypeId = typeId;
     }
 }
 
@@ -3467,7 +3475,10 @@ public static partial class TypeCheckerFunctions {
                         ? DefinitionType.Class 
                         : DefinitionType.Struct,
                 underlyingTypeId,
-                span: _enum.Span));
+                span: _enum.Span,
+                typeId: project
+                    .FindTypeInScope(parentScopeId, _enum.Name)
+                    ?? throw new Exception("Enum must exist before predeclaration")));
                 
         switch (project.AddEnumToScope(parentScopeId, _enum.Name, enumId, _enum.Span).Error) {
 
@@ -3894,7 +3905,8 @@ public static partial class TypeCheckerFunctions {
                 fields: new List<CheckedVarDecl>(),
                 scopeId: structScopeId,
                 definitionLinkage: structure.DefinitionLinkage,
-                definitionType: structure.DefinitionType));
+                definitionType: structure.DefinitionType,
+                typeId: structTypeId));
 
         foreach (var (genParam, paramSpan) in structure.GenericParameters) {
 

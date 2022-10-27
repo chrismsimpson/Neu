@@ -52,6 +52,7 @@ public static partial class Program {
             TestSets();
             TestNamespaces();
             TestWeak();
+            TestCodeGen();
         }
 
         WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()} at {DateTime.UtcNow.ToFriendlyLocalTimestamp()}");
@@ -494,5 +495,10 @@ public static partial class Program {
     public static ErrorOrVoid TestWeak() {
 
         return TestSamples("./Samples/Weak");
+    }
+
+    public static ErrorOrVoid TestCodeGen() {
+
+        return TestSamples("./Tests/CodeGen");
     }
 }

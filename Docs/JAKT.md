@@ -29,6 +29,8 @@
 
 23/05/22: fffe7cf61147ba261018c04b81f53ba5d3006cee recursive enums
 
+24/05/22: 5823883e06a6bee13bfaf7242cc9e877a79a66ab enum decl breakage
+
 
 
 launch.json:

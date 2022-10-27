@@ -1,0 +1,26 @@
+struct A {
+    field: B
+}
+
+class C {
+    field1: A
+    field2: B
+    field3: C
+}
+
+struct B {
+    field: MyEnum
+}
+
+enum MyEnum {
+    a(MyRecursiveEnum)
+}
+
+ref enum MyRecursiveEnum {
+    a(MyRecursiveEnum)
+    b
+}
+
+func main() {
+    // Should compile.
+}

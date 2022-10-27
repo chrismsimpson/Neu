@@ -521,50 +521,6 @@ public static partial class Program {
         Console.ForegroundColor = ogColor;
 
         WriteLine($"{new String('-', width + 3)}");
-
-        // WriteLine("-----");
-
-        // var fileContents = parser.GetFileContents(span.FileId);
-
-        // var index = 0;
-
-        // while (index <= fileContents.Length) {
-
-        //     var c = ' ';
-
-        //     if (index < fileContents.Length) {
-
-        //         c = ToChar(fileContents[index]);
-        //     }
-        //     else if (span.Start == span.End && index == span.Start) {
-
-        //         c = '_';
-        //     }
-
-        //     if ((index >= span.Start && index < span.End)
-        //         || (span.Start == span.End && index == span.Start)) {
-
-        //         // In the error span
-
-        //         var ogColor = System.Console.ForegroundColor;
-
-        //         System.Console.ForegroundColor = ConsoleColor.Red;
-
-        //         Write(c);
-
-        //         System.Console.ForegroundColor = ogColor;
-        //     }
-        //     else {
-
-        //         Write(c);
-        //     }
-
-        //     index += 1;
-        // }
-
-        // WriteLine("");
-        
-        // WriteLine("-----");
     }
 
     public static void PrintSourceLine(
