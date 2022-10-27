@@ -87,6 +87,8 @@ public partial class Compiler {
             return new ErrorOr<String>(preludeErr);
         }
 
+        Trace($"-----------------------------");
+
         var contents = ReadAllBytes(filename);
         
         this.RawFiles.Add((filename, contents));
@@ -139,9 +141,10 @@ public partial class Compiler {
 
         // Hardwire to first file for now
 
-        return new ErrorOr<String>(CodeGenFunctions.CodeGen(
-            project, 
-            project.Scopes[fileScopeId]));
+        return new ErrorOr<String>(
+            CodeGenFunctions.CodeGen(
+                project, 
+                project.Scopes[fileScopeId]));
     }
 
     public Error? CheckCodeGenPreconditions(

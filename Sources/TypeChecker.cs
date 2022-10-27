@@ -3353,7 +3353,8 @@ public static partial class TypeCheckerFunctions {
             // Ensure we know the function prototypes ahead of time, so that
             // and calls can find and resolve to them
             
-            var chkFuncPredeclErr = TypeCheckFuncPredecl(fun, scopeId, project);
+            var chkFuncPredeclErr = TypeCheckFuncPredecl(
+                fun, scopeId, null, project);
 
             error = error ?? chkFuncPredeclErr;
         }
@@ -3376,6 +3377,8 @@ public static partial class TypeCheckerFunctions {
         for (Int32 i = 0; i < parsedNamespace.Functions.Count; i++) {
 
             var func = parsedNamespace.Functions[i];
+
+            // Typecheck the function bodies
 
             project.CurrentFunctionIndex = i + projectFunctionLength;
 
@@ -3911,10 +3914,11 @@ public static partial class TypeCheckerFunctions {
                 parameters: new List<CheckedParameter>(),
                 genericParameters: new List<FunctionGenericParameter>(),
                 funcScopeId: methodScopeId,
-                block:
-                    func.GenericParameters.Any()
-                        ? null
-                        : new CheckedBlock(),
+                // block:
+                //     func.GenericParameters.Any()
+                //         ? null
+                //         : new CheckedBlock(),
+                block: new CheckedBlock(),
                 func: func,
                 linkage: func.Linkage,
                 isInstantiated: !isGeneric || isExtern);
@@ -4171,11 +4175,30 @@ public static partial class TypeCheckerFunctions {
     public static Error? TypeCheckFuncPredecl(
         ParsedFunction func,
         Int32 parentScopeId,
+        Int32? thisArgTypeId,
         Project project) {
 
         Error? error = null;
 
         var funcScopeId = project.CreateScope(parentScopeId);
+
+        bool isGeneric;
+
+        if (thisArgTypeId is Int32 someType) {
+
+            if (project.Types[someType] is GenericInstance) {
+
+                isGeneric = true;
+            }
+            else {
+
+                isGeneric = func.GenericParameters.Any();
+            }
+        }
+        else {
+
+            isGeneric = func.GenericParameters.Any();
+        }
 
         var checkedFunction = new CheckedFunction(
             name: func.Name,
@@ -4188,7 +4211,7 @@ public static partial class TypeCheckerFunctions {
             block: new CheckedBlock(),
             func: func,
             linkage: func.Linkage,
-            isInstantiated: !func.GenericParameters.Any());
+            isInstantiated: !isGeneric);
 
         project.Functions.Add(checkedFunction);
 
@@ -4227,16 +4250,23 @@ public static partial class TypeCheckerFunctions {
 
         Int32? checkScope = null;
 
-        if (func.GenericParameters.Any()) {
+        if (isGeneric) {
 
             checkScope = project.CreateScope(funcScopeId);
         }
+
+        var first = true;
 
         foreach (var param in func.Parameters) {
 
             var (paramType, typeCheckNameErr) = TypeCheckTypeName(param.Variable.Type, funcScopeId, project);
 
             error = error ?? typeCheckNameErr;
+
+            if (first && param.Variable.Name == "this") {
+
+                paramType = thisArgTypeId ?? paramType;
+            }
 
             var checkedVariable = new CheckedVariable(
                 name: param.Variable.Name,
@@ -4306,14 +4336,11 @@ public static partial class TypeCheckerFunctions {
         Int32 funcId,
         List<Int32> genericArguments,
         Int32 parentScopeId,
+        Int32? thisTypeId,
+        Dictionary<Int32, Int32> genericSubstitutions,
         Project project) {
 
         var _func = project.Functions[funcId];
-
-        if (!_func.GenericParameters.Any()) {
-
-            throw new Exception("Generic function without generic parameters");
-        }
 
         // Now we can actually resolve it, let's gooooo
 
@@ -4332,18 +4359,16 @@ public static partial class TypeCheckerFunctions {
                 func.NameSpan);
         }
 
-        for (var i = 0; i < func.GenericParameters.Count; i++) {
+        var span = func.NameSpan;
 
-            var genericParameter = func.GenericParameters[i];
-            var genericArgument = genericArguments[i];
+        foreach (var (k, v) in genericSubstitutions) {
 
-            if (project.AddTypeToScope(
-                scopeId,
-                genericParameter.Item1,
-                genericArgument,
-                genericParameter.Item2).Error is Error err) {
+            if (project.Types[k] is TypeVariable tv) {
 
-                error = error ?? err;
+                if (project.AddTypeToScope(scopeId, tv.Name, v, span).Error is Error err) {
+
+                    error = error ?? err;
+                }
             }
         }
 
@@ -4351,7 +4376,7 @@ public static partial class TypeCheckerFunctions {
 
         project.CurrentFunctionIndex = _funcId;
 
-        var funcPredeclErr = TypeCheckFuncPredecl(func, scopeId, project);
+        var funcPredeclErr = TypeCheckFuncPredecl(func, scopeId, thisTypeId, project);
 
         error = error ?? funcPredeclErr;
 
@@ -4419,7 +4444,11 @@ public static partial class TypeCheckerFunctions {
 
         checkedFunction.ReturnTypeId = _funcReturnTypeId;
 
-        var (block, typeCheckBlockErr) = TypeCheckBlock(func.Block, functionScopeId, project, SafetyMode.Safe);
+        var (block, typeCheckBlockErr) = TypeCheckBlock(
+            func.Block, 
+            functionScopeId, 
+            project, 
+            SafetyMode.Safe);
 
         error = error ?? typeCheckBlockErr;
 
@@ -6684,7 +6713,9 @@ public static partial class TypeCheckerFunctions {
 
                 var typeId = Compiler.UnknownTypeId;
 
-                var checkedExprType = project.Types[checkedExpr.GetTypeId(scopeId, project)];
+                var checkedExprTypeId = checkedExpr.GetTypeId(scopeId, project);
+                
+                var checkedExprType = project.Types[checkedExprTypeId];
 
                 Int32? _structId = checkedExprType switch {
 
@@ -6703,15 +6734,21 @@ public static partial class TypeCheckerFunctions {
 
                             if (member.Name == ise.Name) {
 
+                                var resolvedTypeId = ResolveTypeVar(member.TypeId, scopeId, project);
+
+                                var (unifiedType, _) = unifyWithTypeHint(project, resolvedTypeId);
+
+                                var _structure = project.Structs[structId];
+
                                 return (
                                     new CheckedIndexedStructExpression(
                                         checkedExpr,
                                         ise.Name,
                                         ise.Span,
-                                        member.TypeId),
+                                        unifiedType),
                                     CheckAccessibility(
                                         scopeId, 
-                                        structure.ScopeId, 
+                                        _structure.ScopeId, 
                                         member, 
                                         ise.Span, 
                                         project));
@@ -6730,7 +6767,7 @@ public static partial class TypeCheckerFunctions {
 
                         error = error ??
                             new TypeCheckError(
-                                "member access of non-struct value",
+                                $"member access on value of non-struct type {project.TypeNameForTypeId(checkedExprTypeId)} is not allowed",
                                 ise.Span);
 
                         break;
@@ -7518,6 +7555,8 @@ public static partial class TypeCheckerFunctions {
 
         Int32? genericCheckedFunctionToInstantiate = null;
 
+        Int32? maybeThisTypeId = null;
+
         switch (call.Name) {
 
             case "print" when structId == null:
@@ -7571,6 +7610,11 @@ public static partial class TypeCheckerFunctions {
                 if (_calleeId is Int32 calleeId) {
 
                     var callee = project.Functions[calleeId];
+
+                    if (!callee.IsInstantiated) {
+
+                        genericCheckedFunctionToInstantiate = calleeId;
+                    }
 
                     // Make sure we are allowed to access this method
 
@@ -7645,6 +7689,8 @@ public static partial class TypeCheckerFunctions {
                     if (thisExpr is CheckedExpression _thisExpr) {
 
                         var typeId = _thisExpr.GetTypeId(calleeScopeId, project);
+
+                        maybeThisTypeId = typeId;
 
                         var paramType = project.Types[typeId];
 
@@ -7721,10 +7767,10 @@ public static partial class TypeCheckerFunctions {
 
                             var callee2 = project.Functions[calleeId2];
 
-                            if (!callee2.IsInstantiated) {
+                            // if (!callee2.IsInstantiated) {
 
-                                genericCheckedFunctionToInstantiate = calleeId2;
-                            }
+                            //     genericCheckedFunctionToInstantiate = calleeId2;
+                            // }
 
                             if (call.Args[idx].Item2 is ParsedVarExpression ve) {
 
@@ -7833,10 +7879,17 @@ public static partial class TypeCheckerFunctions {
 
             // Clear the generic parameters and typecheck in the fully specialised scope.
 
+            if (maybeThisTypeId is Int32 id) {
+
+                maybeThisTypeId = SubstituteTypeVarsInType(id, genericSubstitutions, project);
+            }
+
             var err = TypeCheckAndSpecializeGenericFunction(
                 _funcId,
                 typeArgs,
                 calleeScopeId,
+                maybeThisTypeId,
+                genericSubstitutions,
                 project);
 
             error = error ?? err;

@@ -17,6 +17,15 @@ func baz<T>(anon x: T) -> Int32 {
     return x.a
 }
 
+// Make sure it works inside structs
+struct Test2<T> {
+    a: T
+
+    func test(this) -> T {
+        return this.a + 0
+    }
+}
+
 func main() {
-    printLine("{} {} {}", foo(1, 2), bar(1 as! Int8), baz(Test(a: 1)))
+    printLine("{} {} {} {}", foo(1, 2), bar(1 as! Int8), baz(Test(a: 1)), Test2(a: 0).test())
 }

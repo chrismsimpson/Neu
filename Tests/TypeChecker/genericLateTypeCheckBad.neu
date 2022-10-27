@@ -1,0 +1,13 @@
+struct Foo<T> {
+    a: T
+
+    func test<U>(this, anon x: U) -> T {
+        return this.a + x
+    }
+}
+
+func main() {
+    let f = Foo(a: "foo")
+    f.test(123) // Can't add String and Int64
+}
+
