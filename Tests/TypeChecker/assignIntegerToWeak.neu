@@ -1,0 +1,7 @@
+class Foo {
+}
+
+func main() {
+    var x: weak Foo? = none
+    x = 5
+}

@@ -742,6 +742,10 @@ public static partial class ProjectFunctions {
             .FindStructInScope(0, "Optional")
             ?? throw new Exception("internal error: can't find builtin Optional type");
 
+        var weakPointerStructId = project
+            .FindStructInScope(0, "WeakPointer")
+            ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+
         switch (project.Types[typeId]) {
 
             case Builtin b: {
@@ -844,6 +848,11 @@ public static partial class ProjectFunctions {
             case GenericInstance gi when gi.StructId == optionalStructId: {
 
                 return $"{project.TypeNameForTypeId(gi.TypeIds[0])}?";
+            }
+
+            case GenericInstance gi when gi.StructId == weakPointerStructId: {
+
+                return $"weak {project.TypeNameForTypeId(gi.TypeIds[0])}?";
             }
 
             case GenericInstance gi: {
