@@ -1,0 +1,8 @@
+func foo() -> (Int64, String) {
+    return (1, "hello")
+}
+
+func main() {
+    let x = foo()
+    printLine("{} {}", x.0, x.1)
+}

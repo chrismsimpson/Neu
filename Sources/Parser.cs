@@ -145,6 +145,23 @@ public partial class ParsedType {
         }
     }
 
+    public partial class ParsedTupleType: ParsedType {
+
+        public List<ParsedType> Types { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public ParsedTupleType(
+            List<ParsedType> types,
+            Span span) {
+
+            this.Types = types;
+            this.Span = span;
+        }
+    }
+
     public partial class ParsedArrayType: ParsedType {
 
         public ParsedType Type { get; init; }
@@ -297,6 +314,26 @@ public static partial class ParsedTypeFunctions {
                 return SpanFunctions.Eq(lg.Span, rg.Span);
             }
 
+            case var _ when
+                l is ParsedTupleType lt
+                && r is ParsedTupleType rt: {
+
+                if (lt.Types.Count != rt.Types.Count) {
+
+                    return false;
+                }
+
+                for (var i = 0; i < lt.Types.Count; i++) {
+
+                    if (!ParsedTypeFunctions.Eq(lt.Types[i], rt.Types[i])) {
+
+                        return false;
+                    }
+                }
+
+                return SpanFunctions.Eq(lt.Span, rt.Span);
+            }
+
             case var _ when 
                 l is ParsedArrayType la
                 && r is ParsedArrayType ra: {
@@ -304,7 +341,24 @@ public static partial class ParsedTypeFunctions {
                 return ParsedTypeFunctions.Eq(la.Type, ra.Type)
                     && SpanFunctions.Eq(la.Span, ra.Span);
             }
+
+            case var _ when 
+                l is ParsedDictionaryType ld
+                && r is ParsedDictionaryType rd: {
+
+                return ParsedTypeFunctions.Eq(ld.Key, rd.Key)
+                    && ParsedTypeFunctions.Eq(ld.Value, rd.Value)
+                    && SpanFunctions.Eq(ld.Span, rd.Span);
+            }
             
+            case var _ when 
+                l is ParsedSetType ls
+                && r is ParsedSetType rs: {
+
+                return ParsedTypeFunctions.Eq(ls.Type, rs.Type)
+                    && SpanFunctions.Eq(ls.Span, rs.Span);
+            }
+
             case var _ when 
                 l is ParsedOptionalType lo
                 && r is ParsedOptionalType ro: {
@@ -7313,7 +7367,7 @@ public static partial class ParserFunctions {
 
             var (parsedType, err) = ParseTypeName(tokens, ref index);
 
-            if (tokens[index] is RCurlyToken){
+            if (tokens[index] is RCurlyToken) {
 
                 index += 1;
 
@@ -7327,13 +7381,61 @@ public static partial class ParserFunctions {
                     err);
             }
 
-            // TODO: Add {K:V} shorthand for Dictionary<K,V>?
-
             return (
                 new ParsedEmptyType(),
                 err ?? 
                     new ParserError(
                         "expected ]",
+                        tokens[index].Span));
+        }
+        else if (tokens[index] is LParenToken) {
+
+            // (A, B, C) is shorthand for Tuple<A, B, C>
+
+            index += 1;
+
+            var parsedTypes = new List<ParsedType>();
+
+            Error? error = null;
+
+            while (index < tokens.Count) {
+
+                if (tokens[index] is RParenToken) {
+
+                    index += 1;
+
+                    return (
+                        new ParsedTupleType(
+                            parsedTypes,
+                            new Span(
+                                fileId: start.FileId,
+                                start: start.Start,
+                                end: tokens[index - 1].Span.End)),
+                        error);
+                }
+
+                if (tokens[index] is CommaToken) {
+
+                    index += 1;
+                }
+
+                var (parsedType, err) = ParseTypeName(tokens, ref index);
+
+                parsedTypes.Add(parsedType);
+
+                if (err is Error e) {
+
+                    error = error ?? e;
+
+                    break;
+                }
+            }
+
+            return (
+                new ParsedEmptyType(),
+                error ?? 
+                    new TypeCheckError(
+                        "expected )",
                         tokens[index].Span));
         }
         else {

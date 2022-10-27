@@ -8666,6 +8666,33 @@ public static partial class TypeCheckerFunctions {
                 return (Compiler.UnknownTypeId, null);
             }
 
+            case ParsedTupleType t: {
+
+                var checkedTypes = new List<Int32>();
+
+                foreach (var innerType in t.Types) {
+
+                    var (_typeId, err) = TypeCheckTypeName(innerType, scopeId, project);
+
+                    error = error ?? err;
+
+                    checkedTypes.Add(_typeId);
+                }
+
+                var tupleStructId = project
+                    .FindStructInScope(0, "Tuple") 
+                    ?? throw new Exception("internal error: Tuple builtin definition not found");
+
+                // FIXME: Tuple is not a generic type since we don't have variadic generics yet, however
+                // we don't actually check if the stuct_id is actually generic or not, so the type checking
+                // works as expected for now
+
+                var typeId =
+                    project.FindOrAddTypeId(new GenericInstance(tupleStructId, checkedTypes));
+
+                return (typeId, error);
+            }
+
             case ParsedArrayType vt: {
 
                 var (innerType, innerTypeErr) = TypeCheckTypeName(vt.Type, scopeId, project);
