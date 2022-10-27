@@ -3944,13 +3944,16 @@ public static partial class CodeGenFunctions {
 
             case CheckedArrayExpression ve: {
 
+                var valueTypeId = project.Types[ve.Type] switch {
+
+                    GenericInstance gi => gi.TypeIds[0],
+                    _ => throw new Exception("Internal error: Array doesn't have inner type")
+                };
+
                 if (ve.FillSize is CheckedExpression fillSize) {
 
                     output.Append("(TRY(Array<");
-                    output.Append(
-                        CodeGenType(
-                            ve.Expressions.First().GetTypeIdOrTypeVar(), 
-                            project));
+                    output.Append(CodeGenType(valueTypeId, project));
                     output.Append(">::filled(");
                     output.Append(CodeGenExpr(indent, fillSize, project));
                     output.Append(", ");
@@ -3961,7 +3964,9 @@ public static partial class CodeGenFunctions {
 
                     // (Array({1, 2, 3}))
 
-                    output.Append("(Array({");
+                    output.Append("(Array<");
+                    output.Append(CodeGenType(valueTypeId, project));
+                    output.Append(">({");
 
                     var first = true;
 
@@ -3989,8 +3994,11 @@ public static partial class CodeGenFunctions {
 
                 // (Dictionary({1, 2, 3}))
 
-                var keyTypeId = de.Entries[0].Item1.GetTypeIdOrTypeVar();
-                var valueTypeId = de.Entries[0].Item2.GetTypeIdOrTypeVar();
+                var (keyTypeId, valueTypeId) = project.Types[de.TypeId] switch {
+
+                    GenericInstance gi => (gi.TypeIds[0], gi.TypeIds[1]),
+                    _ => throw new Exception("Internal error: Dictionary doesn't have inner type")
+                };
 
                 output.Append(
                     $"(TRY(Dictionary<{CodeGenType(keyTypeId, project)}, {CodeGenType(valueTypeId, project)}>::createWithEntries({{");
@@ -4024,7 +4032,11 @@ public static partial class CodeGenFunctions {
 
                 // (Set({1, 2, 3}))
 
-                var valueTypeId = se.Items.First().GetTypeIdOrTypeVar();
+                var valueTypeId = project.Types[se.TypeId] switch {
+
+                    GenericInstance gi => gi.TypeIds[0],
+                    _ => throw new Exception("Internal error: Set doesn't have inner type")
+                };
 
                 output.Append($"(Set<{CodeGenType(valueTypeId, project)}>({{");
 
