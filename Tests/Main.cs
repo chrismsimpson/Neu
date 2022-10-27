@@ -54,7 +54,7 @@ public static partial class Program {
             TestWeak();
         }
 
-        WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()}");
+        WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()} at {DateTime.UtcNow.ToFriendlyLocalTimestamp()}");
 
         ///
 
