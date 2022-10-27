@@ -5189,6 +5189,42 @@ public static partial class ParserFunctions {
 
         switch (tokens.ElementAt(index)) {
 
+            case PeriodToken _: {
+
+                var thisExpr = new ParsedVarExpression("this", tokens[index].Span);
+
+                index += 1;
+
+                switch (tokens[index]) {
+
+                    case NameToken tName: {
+
+                        index += 1;
+
+                        expr = new ParsedIndexedStructExpression(
+                            thisExpr,
+                            tName.Value,
+                            tokens[index].Span);
+
+                        break;
+                    }
+
+                    default: {
+
+                        error = error ??
+                            new ParserError(
+                                "Missing member name after '.'",
+                                tokens[index - 1].Span);
+
+                        expr = new ParsedGarbageExpression(tokens[index].Span);
+
+                        break;
+                    }
+                }
+
+                break;
+            }
+
             case NameToken nt when nt.Value == "true": {
 
                 index += 1;
