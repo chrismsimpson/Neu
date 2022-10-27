@@ -1,5 +1,5 @@
 func foo() -> Int32 {
-    if true {
+    if false {
         return 123
     }
 }

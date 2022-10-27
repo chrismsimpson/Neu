@@ -4699,13 +4699,21 @@ public static partial class TypeCheckerFunctions {
             case CheckedReturnStatement _:
                 return true;
 
-            case CheckedIfStatement i when i.Trailing is CheckedStatement elseStmt: {
+            case CheckedIfStatement i when 
+                i.Expr is CheckedBooleanExpression expr: {
 
-                // TODO: Things like `if true` should be also accepted as
-                //       definitely returning, if we can prove at typecheck time
-                //       that it's always truthy.
+                if (expr.Value) {
 
-                return i.Block.DefinitelyReturns && StatementDefinitelyReturns(elseStmt);
+                    return i.Block.DefinitelyReturns;
+                }
+                else if (i.Trailing is CheckedStatement elseStmt) {
+
+                    return StatementDefinitelyReturns(elseStmt);
+                }
+                else {
+
+                    return false;
+                }
             }
 
             case CheckedBlockStatement b:
