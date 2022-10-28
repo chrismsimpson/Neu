@@ -42,7 +42,6 @@
 #include <Core/Result.h>
 #include <Core/ReverseIterator.h>
 #include <Core/ScopeGuard.h>
-#include <Core/Set.h>
 #include <Core/Span.h>
 #include <Core/Detail.h>
 #include <Core/std.h>
@@ -77,7 +76,11 @@
 #include <Core/StringView.cpp>
 #include <Core/Utf8View.cpp>
 
+template<typename T, typename TraitsForT = Traits<T>, bool IsOrdered = false>
+class Set;
+
 #include <Builtins/Dictionary.h>
+#include <Builtins/Set.h>
 
 #include <IO/File.h>
 
