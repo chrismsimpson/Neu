@@ -82,6 +82,8 @@ public static partial class Program {
                                     throw new Exception($"\nTest: {path}\nReturned error: {returnedError}\nExpected error: {expectedErrorMsg}");
                                 }
 
+                                Write($" ......");
+
                                 Console.ForegroundColor = ConsoleColor.Green;
 
                                 Write($" Verified (parse/type check)\n");
@@ -158,6 +160,8 @@ public static partial class Program {
 
                         stdErrChecked = true;
 
+                        Write($" ......");
+
                         Console.ForegroundColor = ConsoleColor.Green;
 
                         Write($" Verified (std err)\n");
@@ -175,6 +179,8 @@ public static partial class Program {
 
                             throw new Exception($"\nTests: {path}");
                         }
+                        
+                        Write($" ......");
 
                         Console.ForegroundColor = ConsoleColor.Green;
 
