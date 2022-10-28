@@ -485,22 +485,23 @@ public static partial class ProjectFunctions {
 
         var scope = project.Scopes[scopeId];
 
-        foreach (var (existingStruct, _) in scope.Structs) {
+        foreach (var (existingStruct, _, defSpan) in scope.Structs) {
 
             if (name == existingStruct) {
 
                 return new ErrorOrVoid(
-                    new TypeCheckError(
+                    new TypecheckErrorWithHint(
                         $"redefinition of struct/class {name}",
-                        span));
+                        span,
+                        $"struct/class {name} was first defined here",
+                        defSpan));
             }
         }
 
-        scope.Structs.Add((name, structId));
+        scope.Structs.Add((name, structId, span));
 
         return new ErrorOrVoid();
     }
-
 
     public static ErrorOrVoid AddEnumToScope(
         this Project project,
@@ -3098,7 +3099,7 @@ public partial class Scope {
     
     public List<CheckedVariable> Vars { get; init; }
 
-    public List<(String, Int32)> Structs { get; init; }
+    public List<(String, Int32, Span)> Structs { get; init; }
 
     public List<(String, Int32, Span)> Funcs { get; init; }
 
@@ -3119,7 +3120,7 @@ public partial class Scope {
         : this(
             namespaceName: null,
             new List<CheckedVariable>(),
-            new List<(String, Int32)>(),
+            new List<(String, Int32, Span)>(),
             new List<(String, Int32, Span)>(),
             new List<(String, Int32)>(),
             new List<(String, Int32)>(),
@@ -3129,7 +3130,7 @@ public partial class Scope {
     public Scope(
         String? namespaceName,
         List<CheckedVariable> vars,
-        List<(String, Int32)> structs,
+        List<(String, Int32, Span)> structs,
         List<(String, Int32, Span)> funcs,
         List<(String, Int32)> enums,
         List<(String, Int32)> types,

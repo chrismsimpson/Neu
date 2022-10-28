@@ -42,7 +42,7 @@ public static partial class CodeGenFunctions {
             }
         }
 
-        foreach (var (_, structId) in scope.Structs) {
+        foreach (var (_, structId, _) in scope.Structs) {
 
             var structure = project.Structs[structId];
 
@@ -135,7 +135,7 @@ public static partial class CodeGenFunctions {
             }
         }
 
-        foreach (var (_, structId) in scope.Structs) {
+        foreach (var (_, structId, _) in scope.Structs) {
 
             var structure = project.Structs[structId];
 
@@ -217,7 +217,7 @@ public static partial class CodeGenFunctions {
             }
         }
 
-        foreach (var (_, structId) in scope.Structs) {
+        foreach (var (_, structId, _) in scope.Structs) {
 
             var structure = project.Structs[structId];
 
