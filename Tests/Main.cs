@@ -1,7 +1,197 @@
 
-namespace NeuTests;
+namespace Neu;
 
 public static partial class Program {
+
+    public static ErrorOrVoid TestSamples(
+        String path) {
+
+        if (!Directory.Exists(path)) {
+
+            return new ErrorOrVoid();
+        }
+
+        var files = Directory.GetFiles(path);
+
+        if (!files.Any()) {
+
+            return new ErrorOrVoid();
+        }
+
+        foreach (var sample in files.OrderBy(x => x)) {
+
+            var ext = Path.GetExtension(sample);
+
+            if (ext == ".neu") {
+
+                // Great, we found test file
+
+                var outputPath = sample.ReplacingExtension(ext, "out");
+
+                var errorOutputPath = sample.ReplacingExtension(ext, "error");
+
+                var stdErrOutputPath = sample.ReplacingExtension(ext, "errorOut");
+
+                if (File.Exists(outputPath) || File.Exists(errorOutputPath) || File.Exists(stdErrOutputPath)) {
+
+                    var og = Console.ForegroundColor;
+
+                    Write($"Test: {sample}");
+
+                    var filename = Path.GetFileName(sample);
+
+                    var name = filename.Substring(0, filename.Length - ext.Length);
+                    
+                    // We have an output to compare to, let's do it.
+
+                    var compiler = new Compiler();
+
+                    var cppStringOrError = compiler.ConvertToCPP(sample);
+
+                    String? cppString = null;
+
+                    switch (true) {
+
+                        case var _ when 
+                            cppStringOrError.Error == null 
+                            && !IsNullOrWhiteSpace(cppStringOrError.Value): {
+
+                            if (File.Exists(errorOutputPath)) {
+
+                                var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
+
+                                throw new Exception($"Expected error not created: {expectedErrorMsg}");
+                            }
+
+                            cppString = cppStringOrError.Value;
+
+                            break;
+                        }
+
+                        case var _ when 
+                            cppStringOrError.Error is Error err: {
+
+                            if (File.Exists(errorOutputPath)) {
+
+                                var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
+
+                                var returnedError = err.Content?.Trim() ?? String.Empty;
+
+                                if (!returnedError.Contains(expectedErrorMsg)) {
+
+                                    throw new Exception($"\nTest: {path}\nReturned error: {returnedError}\nExpected error: {expectedErrorMsg}");
+                                }
+
+                                Console.ForegroundColor = ConsoleColor.Green;
+
+                                Write($" Verified (parse/type check)\n");
+
+                                Console.ForegroundColor = og;
+
+                                ///
+
+                                SuccesfulTests += 1;
+
+                                continue;
+                            }
+                            else {
+
+                                WriteLine($"Test failed: {path}");
+
+                                return new ErrorOrVoid(err);
+                            }
+                        }
+
+                        default: {
+
+                            throw new Exception();
+                        }
+                    }
+
+                    var sampleDir = sample.Substring(2, sample.Length - filename.Length - 2);
+
+                    var cppDir = $"./Build/{sampleDir}";
+
+                    Directory.CreateDirectory(cppDir);
+
+                    var cppFilename = $"{cppDir}{name}.cpp";
+
+                    File.WriteAllText(cppFilename, cppString);
+
+                    var exeName = $"{cppFilename.Substring(0, cppFilename.Length - ext.Length)}.out";
+
+                    var (stdOut, stdErr, success) = 
+                        Compiler.Build(
+                            cppFilename,
+                            exeName,
+                            verbose: false);
+
+                    if (!success) {
+
+                        WriteLine(stdOut);
+                        WriteLine(stdErr);
+
+                        throw new Exception();
+                    }
+
+                    var (binStdOut, binStdErr, binSuccess) = 
+                        Process
+                            .Run(name: exeName);
+
+                    var baselineText = File.Exists(outputPath)
+                        ? File.ReadAllText(outputPath)
+                        : null;
+
+                    var baselineStdErrText = File.Exists(stdErrOutputPath)
+                        ? File.ReadAllText(stdErrOutputPath)
+                        : null;
+                   
+                    var stdErrChecked = false;
+
+                    if (!IsNullOrWhiteSpace(baselineStdErrText)) {
+
+                        if (!binStdErr.Contains(baselineStdErrText)) {
+
+                            throw new Exception(
+                                $"\n Test (stderr): {path}");
+                        }
+
+                        stdErrChecked = true;
+
+                        Console.ForegroundColor = ConsoleColor.Green;
+
+                        Write($" Verified (std err)\n");
+
+                        Console.ForegroundColor = og;
+
+                        ///
+
+                        SuccesfulTests += 1;
+                    }
+
+                    if (!stdErrChecked || !IsNullOrWhiteSpace(baselineText)) {
+
+                        if (!Equals(binStdOut, baselineText)) {
+
+                            throw new Exception($"\nTests: {path}");
+                        }
+
+                        Console.ForegroundColor = ConsoleColor.Green;
+
+                        Write($" Success\n");
+
+                        Console.ForegroundColor = og;
+
+                        ///
+
+                        SuccesfulTests += 1;
+                    }
+                }
+            }
+        }
+
+        return new ErrorOrVoid();
+    }
 
     public static Int32 SuccesfulTests = 0;
 
@@ -9,7 +199,7 @@ public static partial class Program {
 
         Console.Clear();
 
-        Compiler.CleanTests();
+        Compiler.Clean();
 
         ///
 
@@ -19,43 +209,58 @@ public static partial class Program {
 
         var start = System.Environment.TickCount;
 
-        if (args.Contains("scratchpad")) {
+        switch (true) {
 
-            TestScratchpad();
+            case var _ when
+                args.Length > 0
+                && args[0] == "apps": {
+
+                TestApps();
+
+                break;
+            }
+
+            case var _ when
+                args.Length > 0
+                && args[0] == "scratchpad": {
+
+                TestScratchpad();
+
+                break;
+            }
+            
+            default: {
+
+                TestBasics();
+                TestControlFlow();
+                TestFunctions();
+                TestMath();
+                TestVariables();
+                TestStrings();
+                TestArrays();
+                TestOptional();
+                TestTuples();
+                TestStructs();
+                TestPointers();
+                TestClasses();
+                TestBoolean();
+                TestRanges();
+                TestDictionaries();
+                TestGenerics();
+                TestEnums();
+                TestInlineCPP();
+                TestParser();
+                TestTypeChecker();
+                TestSets();
+                TestNamespaces();
+                TestWeak();
+                TestCodeGen();
+
+                break;
+            }
         }
-        else if (args.Contains("apps")) {
 
-            TestApps();
-        }
-        else {
-
-            TestBasics();
-            TestControlFlow();
-            TestFunctions();
-            TestMath();
-            TestVariables();
-            TestStrings();
-            TestArrays();
-            TestOptional();
-            TestTuples();
-            TestStructs();
-            TestPointers();
-            TestClasses();
-            TestBoolean();
-            TestRanges();
-            TestDictionaries();
-            TestGenerics();
-            TestEnums();
-            TestInlineCPP();
-            TestParser();
-            TestTypeChecker();
-            TestSets();
-            TestNamespaces();
-            TestWeak();
-            TestCodeGen();
-        }
-
-        WriteLine($"\nCompleted {SuccesfulTests + 1} tests in {start.Elapsed()} at {DateTime.UtcNow.ToFriendlyLocalTimestamp()}");
+        WriteLine($"\nCompleted {SuccesfulTests} test{(SuccesfulTests == 1 ? "" : "s")} in {start.Elapsed()} at {DateTime.UtcNow.ToFriendlyLocalTimestamp()}");
 
         ///
 
@@ -96,281 +301,6 @@ public static partial class IntFunctions {
 }
 
 public static partial class Program {
-
-    public static ErrorOrVoid TestSamples(
-        String path) {
-
-        if (!Directory.Exists(path)) {
-
-            return new ErrorOrVoid();
-        }
-
-        var files = Directory.GetFiles(path);
-
-        if (!files.Any()) {
-
-            return new ErrorOrVoid();
-        }
-
-        foreach (var sample in files.OrderBy(x => x)) {
-
-            var ext = Path.GetExtension(sample);
-
-            if (ext == ".neu") {
-
-                // Great, we found test file
-
-                var name = Path.GetFileNameWithoutExtension(sample);
-
-                ///
-
-                var outputFilename = $"{name}.out";
-
-                var outputPath = $"{path}/{outputFilename}";
-
-                ///
-
-                var errorOutputFilename = $"{name}.error";
-
-                var errorOutputPath = $"{path}/{errorOutputFilename}";
-
-                ///
-
-                var stderrOutputFilename = $"{name}.errorOut";
-                
-                var stderrOutputFilenamePath = $"{path}/{stderrOutputFilename}";
-
-                ///
-
-                if (File.Exists(outputPath) || File.Exists(errorOutputPath) || File.Exists(stderrOutputFilenamePath)) {
-
-                    // We have an output to compare to, let's do it.
-                    
-                    var og = Console.ForegroundColor;
-                    
-                    Write($"Test: {sample} ");
-
-                    ///
-
-                    var compiler = new Compiler();
-
-                    var cppStringOrError = compiler.ConvertToCPP(sample);
-
-                    String? cppString = null;
-
-                    if (cppStringOrError.Value is String c && cppStringOrError.Error == null) {
-
-                        if (File.Exists(errorOutputPath)) {
-
-                            var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
-
-                            throw new Exception($"Expected error not created: {expectedErrorMsg}");
-                        }
-
-                        cppString = c;
-                    }
-                    else {
-
-                        if (File.Exists(errorOutputPath)) {
-
-                            var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
-
-                            var returnedError = cppStringOrError.Error?.Content?.Trim() ?? "";
-
-                            if (!Equals(returnedError, expectedErrorMsg)) {
-
-                                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                
-                                Write($" `{returnedError}`, expected `{expectedErrorMsg}`\n");
-
-                                Console.ForegroundColor = og;
-                            }
-                            else {
-
-                                Write($"....................");
-
-                                Console.ForegroundColor = ConsoleColor.Green;
-
-                                Write($" Verified (parse/type check)\n");
-
-                                Console.ForegroundColor = og;
-
-                                ///
-
-                                SuccesfulTests += 1;
-                            }
-
-                            continue;
-                        }
-                    }
-
-                    ///
-
-                    var id = Guid.NewGuid();
-
-                    ///
-
-                    var buildDir = $"./Build";
-                    var projBuildDir = $"{buildDir}/{id}";
-                    var genDir = $"./Generated";
-                    var projGenDir = $"{genDir}/{id}";
-
-                    ///
-
-                    if (cppStringOrError.Error is Error e) {
-
-                        Write($" .....................");
-
-                        Console.ForegroundColor = ConsoleColor.Red;
-
-                        Write($" Unexpected error\n");
-
-                        var errStr = e.Content ?? e.ErrorType.ToString();
-
-                        WriteLine($"{errStr}\n");
-
-                        Console.ForegroundColor = og;
-
-                        ///
-                        
-                        continue;
-
-                        // WriteLine(errStr);
-
-                        // throw new Exception(errStr);
-                    }
-
-                    compiler.Generate(
-                        buildDir,
-                        projBuildDir,
-                        genDir,
-                        projGenDir,
-                        $"{id}", 
-                        cppString ?? throw new Exception());
-                    
-                    ///
-
-                    var (cmakeGenerateBuildOutput, _, cmakeGenerateBuildExitedSuccessfully) = compiler
-                        .GenerateNinjaCMake(
-                            projBuildDir, 
-                            projGenDir, 
-                            printProgress: true);
-
-                    if (!cmakeGenerateBuildExitedSuccessfully) {
-
-                        Console.ForegroundColor = ConsoleColor.Red;
-
-                        Write($" Failed to generate build\n");
-
-                        Console.ForegroundColor = og;
-
-                        continue;
-                    }
-
-                    ///
-
-                    var (cmakeBuildOutput, _, cmakeBuildExitedSuccessfully) = compiler
-                        .BuildWithCMake(
-                            projBuildDir,
-                            printProgress: true);
-                        
-                    if (!cmakeBuildExitedSuccessfully) {
-
-                        Console.ForegroundColor = ConsoleColor.Red;
-
-                        Write($" Failed to build\n");
-
-                        Console.ForegroundColor = og;
-
-                        continue;
-                    }
-
-                    ///
-
-                    var (builtOutput, builtErr, builtExitedSuccessfully) = compiler
-                        .Process(
-                            name: $"{projBuildDir}/Output/output-{id}",
-                            arguments: null,
-                            printProgress: true);
-
-                    switch (true) {
-
-                        case var _ when
-                            builtExitedSuccessfully &&
-                            File.Exists(outputPath): {
-
-                            var output = ReadAllText(outputPath);
-
-                            var eq = Equals(builtOutput, output);
-
-                            if (eq) {
-
-                                Console.ForegroundColor = ConsoleColor.Green;
-
-                                Write($" Success\n");
-
-                                Console.ForegroundColor = og;
-
-                                ///
-
-                                SuccesfulTests += 1;
-                            }
-                            else {
-
-                                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                
-                                Write($" Mismatched output\n");
-
-                                Console.ForegroundColor = og;
-                            }
-
-                            continue;
-                        }
-
-                        case var _ when
-                            File.Exists(stderrOutputFilenamePath): {
-
-                            var stderrOutput = ReadAllText(stderrOutputFilenamePath);
-
-                            var eq = Equals(builtErr, stderrOutput);
-
-                            if (eq) {
-
-                                Console.ForegroundColor = ConsoleColor.Green;
-
-                                Write($" Verified (std err)\n");
-
-                                Console.ForegroundColor = og;
-
-                                ///
-
-                                SuccesfulTests += 1;
-                            }
-                            else {
-
-                                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                                
-                                Write($" Mismatched output (std err)\n");
-
-                                Console.ForegroundColor = og;
-                            }
-
-                            continue;
-                        }
-
-                        default: {
-
-                            throw new Exception("something went wrong");
-                        }
-                    }
-                }
-            }
-        }
-
-        return new ErrorOrVoid();
-    }
-
-    ///
 
     public static ErrorOrVoid TestScratchpad() {
 

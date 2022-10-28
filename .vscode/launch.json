@@ -2,6 +2,28 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "neu",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
+            "args": [
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
+            "logging": {
+                "moduleLoad": false,
+                "engineLogging": false,
+                "elapsedTiming": false,
+                "exceptions": true,
+                "processExit": true,
+                "programOutput": true,
+                "threadExit": false
+            },
+            "requireExactSource": true
+        },
+        {
             "name": "neu clean",
             "type": "coreclr",
             "request": "launch",
@@ -25,184 +47,7 @@
             "requireExactSource": true
         },
         {
-            "name": "neu clean-tests",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
-            "args": [
-                "clean-tests"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "stopAtEntry": false,
-            "logging": {
-                "moduleLoad": false,
-                "engineLogging": false,
-                "elapsedTiming": false,
-                "exceptions": true,
-                "processExit": true,
-                "programOutput": true,
-                "threadExit": false
-            },
-            "requireExactSource": true
-        },
-        {
-            "name": "neu cmake-build ./X",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
-            "args": [
-                "cmake-build", "./Samples/Variables/varInference.neu"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "stopAtEntry": false,
-            "logging": {
-                "moduleLoad": false,
-                "engineLogging": false,
-                "elapsedTiming": false,
-                "exceptions": true,
-                "processExit": true,
-                "programOutput": true,
-                "threadExit": false
-            },
-            "requireExactSource": true
-        },
-        {
-            "name": "neu cmake-generate ./X",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
-            "args": [
-                "cmake-generate", "./Samples/Variables/varInference.neu"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "stopAtEntry": false,
-            "logging": {
-                "moduleLoad": false,
-                "engineLogging": false,
-                "elapsedTiming": false,
-                "exceptions": true,
-                "processExit": true,
-                "programOutput": true,
-                "threadExit": false
-            },
-            "requireExactSource": true
-        },
-        {
-            "name": "neu transpile ./X",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
-            "args": [
-                "transpile", "./Samples/Variables/varInference.neu"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "stopAtEntry": false,
-            "logging": {
-                "moduleLoad": false,
-                "engineLogging": false,
-                "elapsedTiming": false,
-                "exceptions": true,
-                "processExit": true,
-                "programOutput": true,
-                "threadExit": false
-            },
-            "requireExactSource": true
-        },
-        {
-            "name": "neu build ./X",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
-            "args": [
-
-                // "./Samples/Basics/comments.neu",
-                // "./Samples/Basics/error.neu",
-                // "./Samples/Basics/hello.neu",
-                // "./Samples/Basics/helloNumber.neu",
-
-                // "./Samples/ControlFlow/defer.neu",
-                // "./Samples/ControlFlow/if.neu",
-                // "./Samples/ControlFlow/if2.neu",
-                // "./Samples/ControlFlow/if3.neu",
-                // "./Samples/ControlFlow/if4.neu",
-                // "./Samples/ControlFlow/if5.neu",
-                // "./Samples/ControlFlow/ifElseIdenticalError.neu",
-                // "./Samples/ControlFlow/ifWithBadAssignment.neu",
-                // "./Samples/ControlFlow/while2.neu",
-                // "./Samples/ControlFlow/while.neu",
-
-                // "./Samples/Functions/call.neu",
-                // "./Samples/Functions/callMissingFunction.neu",
-                // "./Samples/Functions/callWithArg.neu",
-                // "./Samples/Functions/callWithBadArgs.neu",
-                // "./Samples/Functions/callWithReturn.neu",
-                // "./Samples/Functions/callWrongArgCount.neu",
-                // "./Samples/Functions/callWithTwoArgs.neu",
-                // "./Samples/Functions/recursion.neu",
-
-                // "./Samples/Math/math.neu",
-                // "./Samples/Math/math2.neu",
-                // "./Samples/Math/numberTypes.neu",
-
-                // "./Samples/Variables/blocksAndScopes.neu",
-                // "./Samples/Variables/var.neu",
-                // "./Samples/Variables/var2.neu",
-                // "./Samples/Variables/var3.neu",
-                // "./Samples/Variables/varBadAssignment.neu",
-                "build", "./Samples/Variables/varInference.neu",
-                // "./Samples/Variables/varRedefiniion.neu",
-                
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "stopAtEntry": false,
-            "logging": {
-                "moduleLoad": false,
-                "engineLogging": false,
-                "elapsedTiming": false,
-                "exceptions": true,
-                "processExit": true,
-                "programOutput": true,
-                "threadExit": false
-            },
-            "requireExactSource": true
-        },
-        {
-            // "name": "neu test scratchpad",
-            "name": "scratchpad",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/Tests/bin/Debug/net6.0/NeuTests.dll",
-            "args": [
-                "scratchpad"
-            ],
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "stopAtEntry": false,
-            "logging": {
-                "moduleLoad": false,
-                "engineLogging": false,
-                "elapsedTiming": false,
-                "exceptions": true,
-                "processExit": true,
-                "programOutput": true,
-                "threadExit": false
-            },
-            "requireExactSource": true
-        },
-        {
-            // "name": "neu test apps",
-            "name": "apps",
+            "name": "neu apps",
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/bin/Debug/net6.0/NeuTests.dll",
@@ -225,13 +70,12 @@
             "requireExactSource": true
         },
         {
-            // "name": "neu test-suite",
-            "name": "test suite",
+            "name": "neu scratchpad",
             "type": "coreclr",
             "request": "launch",
             "program": "${workspaceFolder}/Tests/bin/Debug/net6.0/NeuTests.dll",
             "args": [
-                
+                "scratchpad"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
@@ -249,20 +93,16 @@
             "requireExactSource": true
         },
         {
-            "name": "output",
-            "type": "cppdbg",
+            "name": "neu tests",
+            "type": "coreclr",
             "request": "launch",
-            // "preLaunchTask": "build",
-            "program": "${workspaceFolder}/Build/varInference/Output/output-varInference",
+            "program": "${workspaceFolder}/Tests/bin/Debug/net6.0/NeuTests.dll",
             "args": [
-
             ],
-            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "internalConsoleOptions": "openOnSessionStart",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false,
             "logging": {
                 "moduleLoad": false,
                 "engineLogging": false,
@@ -271,15 +111,8 @@
                 "processExit": true,
                 "programOutput": true,
                 "threadExit": false
-            }
-        },
-		{
-			"name": "Launch VSCode extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}/Editors/VSCode"
-			]
-		}
+            },
+            "requireExactSource": true
+        }
     ]
 }

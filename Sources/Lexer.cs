@@ -3,7 +3,7 @@ namespace Neu;
 
 public partial class Span {
 
-    public FileId FileId { get; init; }
+    public Int32 FileId { get; init; }
 
     public int Start { get; init; }
     
@@ -12,7 +12,7 @@ public partial class Span {
     ///
 
     public Span(
-        FileId fileId,
+        Int32 fileId,
         int start,
         int end) {
 
@@ -524,7 +524,7 @@ public static partial class TokenFunctions {
 public static partial class LexerFunctions {
 
     public static (List<Token>, Error?) Lex(
-        FileId fileId, 
+        Int32 fileId, 
         byte[] bytes) {
 
         var output = new List<Token>();
@@ -1157,7 +1157,7 @@ public static partial class LexerFunctions {
 
     ///
 
-    public static (Token, Error?) LexItem(FileId fileId, byte[] bytes, ref int index) {
+    public static (Token, Error?) LexItem(Int32 fileId, byte[] bytes, ref int index) {
 
         Error? error = null;
 

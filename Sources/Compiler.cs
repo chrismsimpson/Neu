@@ -70,13 +70,9 @@ public partial class Compiler {
 
         return TypeCheckerFunctions.TypeCheckNamespace(file, 0, project);
     }
-}
-
-///
-
-public partial class Compiler {
-
-    public ErrorOr<String> ConvertToCPP(String filename) {
+    
+    public ErrorOr<String> ConvertToCPP(
+        String filename) {
 
         var project = new Project();
 
@@ -89,7 +85,7 @@ public partial class Compiler {
 
         Trace($"-----------------------------");
 
-        var contents = ReadAllBytes(filename);
+        var contents = File.ReadAllBytes(filename);
         
         this.RawFiles.Add((filename, contents));
 
@@ -139,7 +135,18 @@ public partial class Compiler {
                 project.Scopes[fileScopeId]));
     }
 
-    public Error? CheckCodeGenPreconditions(
+    public byte[] GetFileContents(
+        Int32 fileId) {
+
+        return this.RawFiles[fileId].Item2;
+    }
+
+    public static byte[] Prelude() {
+
+        return File.ReadAllBytes("./Runtime/prelude.neu");
+    }
+
+    public static Error? CheckCodeGenPreconditions(
         Project project) {
 
         // Make sure all functions have a known return type
@@ -156,44 +163,5 @@ public partial class Compiler {
         }
 
         return null;
-    }
-    
-    public ErrorOrVoid Compile(
-        String filename) {
-
-        var cppStringOrError = this.ConvertToCPP(filename);
-
-        if (cppStringOrError.Error != null) {
-
-            return new ErrorOrVoid(cppStringOrError.Error);
-        }
-
-        var cppString = cppStringOrError.Value ?? throw new Exception();
-
-        ///
-
-        var id = Path.GetFileNameWithoutExtension(filename);
-
-        ///
-
-        this.Generate(id, cppString);
-
-        ///
-
-        return new ErrorOrVoid();
-    }
-
-    ///
-
-    public byte[] GetFileContents(FileId fileId) {
-
-        return this.RawFiles[fileId].Item2;
-    }
-
-    ///
-
-    public static byte[] Prelude() {
-
-        return ReadAllBytes("./Prelude/prelude.neu");
     }
 }

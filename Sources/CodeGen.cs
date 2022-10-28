@@ -11,7 +11,9 @@ public static partial class CodeGenFunctions {
         
         var output = new StringBuilder();
     
-        output.Append("#include \"../../../Runtime/lib.h\"\n");
+        // output.Append("#include \"../../../Runtime/lib.h\"\n");
+
+        output.Append("#include <lib.h>\n");
 
         output.Append(CodeGenNamespace(project, scope));
 
