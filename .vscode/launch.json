@@ -7,6 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/Sources/bin/Debug/net6.0/Neu.dll",
             "args": [
+                
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",

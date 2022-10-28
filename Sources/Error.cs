@@ -56,6 +56,29 @@ public partial class TypeCheckError: Error {
     }
 }
 
+public partial class TypecheckErrorWithHint: Error {
+
+    public Span Span { get; init; }
+
+    public String HintString { get; init; }
+
+    public Span HintSpan { get; init; }
+
+    ///
+
+    public TypecheckErrorWithHint(
+        String content, 
+        Span span,
+        String hintString,
+        Span hintSpan)
+        : base(ErrorType.TypeCheck, content) {
+
+        this.Span = span;
+        this.HintString = hintString;
+        this.HintSpan = hintSpan;
+    }
+}
+
 public partial class ValidationError: Error {
 
     public Span Span { get; init; }
