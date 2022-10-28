@@ -119,24 +119,16 @@ public partial class Compiler {
 
         var fileScopeId = project.Scopes.Count - 1;
 
-        var checkErr = TypeCheckerFunctions.TypeCheckNamespace(parsedFile, fileScopeId, project);
+        var _nsErr = TypeCheckerFunctions.TypeCheckNamespace(parsedFile, fileScopeId, project);
 
-        switch (checkErr) {
+        if (_nsErr is Error nsErr) {
 
-            case Error e: {
-
-                return new ErrorOr<String>(e);
-            }
-
-            default: {
-
-                break;
-            }
+            return new ErrorOr<String>(nsErr);
         }
 
-        if (CheckCodeGenPreconditions(project) is Error e2) {
+        if (CheckCodeGenPreconditions(project) is Error preCondErr) {
 
-            return new ErrorOr<String>(e2);
+            return new ErrorOr<String>(preCondErr);
         }
 
         // Hardwire to first file for now
