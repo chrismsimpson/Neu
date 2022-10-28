@@ -176,7 +176,7 @@ public static partial class CodeGenFunctions {
 
         output.Append('\n');
 
-        foreach (var (_, funcId) in scope.Funcs) {
+        foreach (var (_, funcId, _) in scope.Funcs) {
 
             var func = project.Functions[funcId];
 
@@ -197,7 +197,7 @@ public static partial class CodeGenFunctions {
 
         output.Append('\n');
 
-        foreach (var (_, funcId) in scope.Funcs) {
+        foreach (var (_, funcId, _) in scope.Funcs) {
 
             var func = project.Functions[funcId];
 
@@ -233,7 +233,7 @@ public static partial class CodeGenFunctions {
 
             var _scope = project.Scopes[structure.ScopeId];
 
-            foreach (var (_, scopeFuncId) in _scope.Funcs) {
+            foreach (var (_, scopeFuncId, _) in _scope.Funcs) {
 
                 var scopeFunc = project.Functions[scopeFuncId];
 
@@ -1352,7 +1352,7 @@ public static partial class CodeGenFunctions {
 
         var scope = project.Scopes[structure.ScopeId];
 
-        foreach (var (_, funcId) in scope.Funcs) {
+        foreach (var (_, funcId, _) in scope.Funcs) {
 
             var func = project.Functions[funcId];
 

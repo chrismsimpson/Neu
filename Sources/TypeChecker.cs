@@ -643,18 +643,20 @@ public static partial class ProjectFunctions {
 
         var scope = project.Scopes[scopeId];
 
-        foreach (var (existingFunc, _) in scope.Funcs) {
+        foreach (var (existingFunc, _, defSpan) in scope.Funcs) {
 
             if (name == existingFunc) {
 
                 return new ErrorOrVoid(
-                    new TypeCheckError(
+                    new TypecheckErrorWithHint(
                         $"redefinition of function {name}",
-                        span));
+                        span,
+                        $"function {name} was first defined here",
+                        defSpan));
             }
         }
 
-        scope.Funcs.Add((name, funcId));
+        scope.Funcs.Add((name, funcId, span));
 
         return new ErrorOrVoid();
     }
@@ -3098,7 +3100,7 @@ public partial class Scope {
 
     public List<(String, Int32)> Structs { get; init; }
 
-    public List<(String, Int32)> Funcs { get; init; }
+    public List<(String, Int32, Span)> Funcs { get; init; }
 
     public List<(String, Int32)> Enums { get; init; }
 
@@ -3118,7 +3120,7 @@ public partial class Scope {
             namespaceName: null,
             new List<CheckedVariable>(),
             new List<(String, Int32)>(),
-            new List<(String, Int32)>(),
+            new List<(String, Int32, Span)>(),
             new List<(String, Int32)>(),
             new List<(String, Int32)>(),
             parent,
@@ -3128,7 +3130,7 @@ public partial class Scope {
         String? namespaceName,
         List<CheckedVariable> vars,
         List<(String, Int32)> structs,
-        List<(String, Int32)> funcs,
+        List<(String, Int32, Span)> funcs,
         List<(String, Int32)> enums,
         List<(String, Int32)> types,
         Int32? parent,
