@@ -4,8 +4,8 @@ class Foo {
 
 func main() {
 
-    let foo: weak Foo? = none
-    let bar = foo
+    var foo: weak Foo? = none
+    var bar = foo
 
     printLine("OK")
 }

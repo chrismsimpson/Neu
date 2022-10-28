@@ -5090,6 +5090,31 @@ public static partial class TypeCheckerFunctions {
                     checkedExpr = promotedExpr;
                 }
 
+                var weakPointerStructId = project
+                    .FindStructInScope(0, "WeakPointer")
+                    ?? throw new Exception("internal error: can't find builtin WeakPtr type");
+
+                switch (project.Types[checkedTypeId]) {
+
+                    case GenericInstance gi when gi.StructId == weakPointerStructId: {
+
+                        if (!vds.Decl.Mutable) {
+
+                            error = error ??
+                                new TypeCheckError(
+                                    "Weak reference must be mutable",
+                                    vds.Decl.Span);
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        break;
+                    }
+                }
+
                 var checkedVarDecl = new CheckedVarDecl(
                     name: vds.Decl.Name,
                     typeId: checkedTypeId,

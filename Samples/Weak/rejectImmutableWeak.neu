@@ -1,0 +1,6 @@
+class Foo {
+}
+
+func main() {
+    let foo: weak Foo? = none
+}
