@@ -31,6 +31,7 @@
 
 24/05/22: 5823883e06a6bee13bfaf7242cc9e877a79a66ab enum decl breakage
 
+25/05/22: 3126eec349315eb0ce4eef36848b8055abe013a9 move dicts to builtins
 
 
 launch.json:
