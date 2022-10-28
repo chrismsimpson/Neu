@@ -1,0 +1,12 @@
+struct Size {
+    width: Int64
+    height: Int64
+
+    func area(this) => .width * .height
+}
+
+
+func main() {
+    let s = Size(width: 5, height: 6)
+    printLine("{}", s.area())
+}
