@@ -5,7 +5,6 @@
 
 #include <Core/AllOf.h>
 #include <Core/AnyOf.h>
-#include <Core/Array.h>
 #include <Core/Assertions.h>
 #include <Core/Atomic.h>
 #include <Core/Badge.h>
@@ -79,6 +78,7 @@
 template<typename T, typename TraitsForT = Traits<T>, bool IsOrdered = false>
 class Set;
 
+#include <Builtins/Array.h>
 #include <Builtins/Dictionary.h>
 #include <Builtins/Set.h>
 

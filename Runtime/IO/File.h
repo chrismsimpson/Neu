@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <Core/Array.h>
 #include <Core/Error.h>
 #include <Core/RefCounted.h>
 #include <Core/String.h>
+#include <Builtins/Array.h>
 #include <stdio.h>
 
 class File final : public RefCounted<File> {
