@@ -18,9 +18,6 @@
 #include <Core/Types.h>
 
 template<typename T>
-class OwnPointer;
-
-template<typename T>
 class [[nodiscard]] RefPointer {
 
     template<typename U>
@@ -100,14 +97,6 @@ public:
 
 #    endif
     }
-
-    ///
-
-    template<typename U>
-    RefPointer(OwnPointer<U> const&) = delete;
-
-    template<typename U>
-    RefPointer& operator=(OwnPointer<U> const&) = delete;
 
     ///
 

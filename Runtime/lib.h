@@ -33,11 +33,9 @@
 #include <Core/Math.h>
 #include <Core/Memory.h>
 #include <Core/NonCopyable.h>
-#include <Core/NonNullOwnPointer.h>
 #include <Core/NonNullRefPointer.h>
 #include <Core/NumericLimits.h>
 #include <Core/Optional.h>
-#include <Core/OwnPointer.h>
 #include <Core/Platform.h>
 #include <Core/RefCounted.h>
 #include <Core/RefPointer.h>

@@ -22,8 +22,6 @@ public:
 
     using RefCountType = unsigned int;
 
-    using AllowOwnPointer = FalseType;
-
     ALWAYS_INLINE void ref() const {
 
         VERIFY(m_refCount > 0);

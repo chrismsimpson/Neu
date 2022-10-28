@@ -74,9 +74,6 @@ template<typename T>
 class NonNullRefPointer;
 
 template<typename T>
-class NonNullOwnPointer;
-
-template<typename T>
 class Optional;
 
 #ifdef KERNEL
@@ -93,9 +90,6 @@ template<typename T>
 class RefPointer;
 
 #endif
-
-template<typename T>
-class OwnPointer;
 
 template<typename T>
 class WeakPointer;

@@ -15,9 +15,6 @@
 #include <Core/Types.h>
 
 template<typename T>
-class OwnPointer;
-
-template<typename T>
 class RefPointer;
 
 template<typename T>
@@ -104,12 +101,6 @@ public:
 
 #    endif
     }
-
-    template<typename U>
-    NonNullRefPointer(OwnPointer<U> const&) = delete;
-
-    template<typename U>
-    NonNullRefPointer& operator=(OwnPointer<U> const&) = delete;
 
     template<typename U>
     NonNullRefPointer(RefPointer<U> const&) = delete;
