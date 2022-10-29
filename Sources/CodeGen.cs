@@ -4439,7 +4439,7 @@ public static partial class CodeGenFunctions {
 
         var graph = new Dictionary<Int32, List<Int32>>();
 
-        foreach (var (_, typeId) in scope.Types) {
+        foreach (var (_, typeId, _) in scope.Types) {
 
             var deps = new HashSet<Int32>();
 

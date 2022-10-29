@@ -698,18 +698,20 @@ public static partial class ProjectFunctions {
 
         var scope = project.Scopes[scopeId];
 
-        foreach (var (existingType, _) in scope.Types) {
+        foreach (var (existingType, _, defSpan) in scope.Types) {
 
             if (typeName == existingType) {
 
                 return new ErrorOrVoid(
-                    new TypeCheckError(
+                    new TypecheckErrorWithHint(
                         $"redefinition of type {typeName}",
-                        span));
+                        span,
+                        $"type {typeName} was first defined here",
+                        defSpan));
             }
         }
 
-        scope.Types.Add((typeName, typeId));
+        scope.Types.Add((typeName, typeId, span));
 
         return new ErrorOrVoid();
     }
@@ -3107,7 +3109,7 @@ public partial class Scope {
 
     public List<(String, Int32, Span)> Enums { get; init; }
 
-    public List<(String, Int32)> Types { get; init; }
+    public List<(String, Int32, Span)> Types { get; init; }
 
     public Int32? Parent { get; init; }
 
@@ -3125,7 +3127,7 @@ public partial class Scope {
             new List<(String, Int32, Span)>(),
             new List<(String, Int32, Span)>(),
             new List<(String, Int32, Span)>(),
-            new List<(String, Int32)>(),
+            new List<(String, Int32, Span)>(),
             parent,
             children: new List<Int32>()) { }
 
@@ -3135,7 +3137,7 @@ public partial class Scope {
         List<(String, Int32, Span)> structs,
         List<(String, Int32, Span)> funcs,
         List<(String, Int32, Span)> enums,
-        List<(String, Int32)> types,
+        List<(String, Int32, Span)> types,
         Int32? parent,
         List<Int32> children) {
 
