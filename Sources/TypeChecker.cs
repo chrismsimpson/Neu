@@ -5915,6 +5915,8 @@ public static partial class TypeCheckerFunctions {
 
                 var innerTypeId = Compiler.UnknownTypeId;
 
+                Span? innerTypeSpan = null;
+
                 var output = new List<CheckedExpression>();
 
                 var arrayStructId = project
@@ -5958,9 +5960,11 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? err;
 
+                    var currentValueTypeId = checkedExpr.GetTypeId(scopeId, project);
+
                     if (innerTypeId is Compiler.UnknownTypeId) {
 
-                        if (checkedExpr.GetTypeId(scopeId, project) == Compiler.VoidTypeId) {
+                        if (currentValueTypeId == Compiler.VoidTypeId) {
 
                             error = error ?? 
                                 new TypeCheckError(
@@ -5968,17 +5972,19 @@ public static partial class TypeCheckerFunctions {
                                     v.GetSpan());
                         }
 
-                        innerTypeId = checkedExpr.GetTypeId(scopeId, project);
+                        innerTypeId = currentValueTypeId;
+                        innerTypeSpan = v.GetSpan();
                     }
-                    else {
+                    else if (innerTypeId != currentValueTypeId) {
 
-                        if (innerTypeId != checkedExpr.GetTypeId(scopeId, project)) {
+                        var arrayTypeName = project.TypeNameForTypeId(innerTypeId);
 
-                            error = error ?? 
-                                new TypeCheckError(
-                                    "does not match type of previous values in vector",
-                                    v.GetSpan());
-                        }
+                        error = error ??
+                            new TypecheckErrorWithHint(
+                                $"type '{project.TypeNameForTypeId(currentValueTypeId)}' does not match type '{arrayTypeName}' of previous values in array",
+                                v.GetSpan(),
+                                $"array was inferred to store type '{arrayTypeName}' here",
+                                innerTypeSpan ?? throw new Exception());
                     }
 
                     output.Add(checkedExpr);
