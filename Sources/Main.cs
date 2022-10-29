@@ -201,7 +201,8 @@ Arguments:
 ";
 
     public static readonly String CLEAN_MESSAGE = 
-@"Clean successful
+@"
+Clean successful
 ";
 }
 
