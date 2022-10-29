@@ -6113,7 +6113,11 @@ public static partial class TypeCheckerFunctions {
 
                 var keyTypeId = Compiler.UnknownTypeId;
 
+                Span? keyTypeSpan = null;
+
                 var valueTypeId = Compiler.UnknownTypeId;
+
+                Span? valueTypeSpan = null;
 
                 var output = new List<(CheckedExpression, CheckedExpression)>();
 
@@ -6143,14 +6147,18 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? keyErr;
 
+                    var currentKeyTypeId = checkedKey.GetTypeId(scopeId, project);
+
                     var (checkedValue, valueErr) = TypeCheckExpression(value, scopeId, project, safetyMode, valueHint);
 
                     error = error ?? valueErr;
 
+                    var currentValueTypeId = checkedValue.GetTypeId(scopeId, project);
+
                     if (keyTypeId == Compiler.UnknownTypeId
                         && valueTypeId == Compiler.UnknownTypeId) {
 
-                        if (checkedKey.GetTypeId(scopeId, project) == Compiler.VoidTypeId) {
+                        if (currentKeyTypeId == Compiler.VoidTypeId) {
 
                             error = error ??
                                 new TypeCheckError(
@@ -6158,7 +6166,7 @@ public static partial class TypeCheckerFunctions {
                                     key.GetSpan());
                         }
 
-                        if (checkedValue.GetTypeId(scopeId, project) == Compiler.VoidTypeId) {
+                        if (currentValueTypeId == Compiler.VoidTypeId) {
 
                             error = error ??
                                 new TypeCheckError(
@@ -6166,25 +6174,38 @@ public static partial class TypeCheckerFunctions {
                                     value.GetSpan());
                         }
 
-                        keyTypeId = checkedKey.GetTypeId(scopeId, project);
-                        valueTypeId = checkedValue.GetTypeId(scopeId, project);
+                        keyTypeId = currentKeyTypeId;
+
+                        keyTypeSpan = key.GetSpan();
+
+                        valueTypeId = currentValueTypeId;
+
+                        valueTypeSpan = value.GetSpan();
                     }
                     else {
 
-                        if (keyTypeId != checkedKey.GetTypeId(scopeId, project)) {
+                        if (keyTypeId != currentKeyTypeId) {
 
-                            error = error ??
-                                new TypeCheckError(
-                                    "does not match type of previous values in dictionary",
-                                    key.GetSpan());
+                            var keyTypeName = project.TypeNameForTypeId(keyTypeId);
+
+                            error = error ?? 
+                                new TypecheckErrorWithHint(
+                                    $"type '{project.TypeNameForTypeId(currentKeyTypeId)}' does not match type '{keyTypeName}' of previous keys in dictionary",
+                                    key.GetSpan(),
+                                    $"dictionary was inferred to store keys of type '{keyTypeName}' here",
+                                    keyTypeSpan ?? throw new Exception());
                         }
 
-                        if (valueTypeId != checkedValue.GetTypeId(scopeId, project)) {
+                        if (valueTypeId != currentValueTypeId) {
+
+                            var valueTypeName = project.TypeNameForTypeId(valueTypeId);
 
                             error = error ??
-                                new TypeCheckError(
-                                    "does not match type of previous values in dictionary",
-                                    value.GetSpan());
+                                new TypecheckErrorWithHint(
+                                    $"type '{project.TypeNameForTypeId(currentValueTypeId)}' does not match type '{valueTypeName}' of previous values in dictionary",
+                                    value.GetSpan(),
+                                    $"dictionary was inferred to store values of type '{valueTypeName}' here",
+                                    valueTypeSpan ?? throw new Exception());
                         }
                     }
 
