@@ -1,0 +1,6 @@
+func main() {
+    printLine("{}", 0.0)
+    printLine("{}", 3.14159265358979)
+    printLine("{}", 1.61803399)
+    printLine("{}", 2.71827)
+}
