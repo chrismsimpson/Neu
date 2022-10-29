@@ -57,7 +57,7 @@ public static partial class CodeGenFunctions {
 
         output.Append('\n');
 
-        foreach (var (_, enumId) in scope.Enums) {
+        foreach (var (_, enumId, _) in scope.Enums) {
 
             var _enum = project.Enums[enumId];
 
@@ -155,7 +155,7 @@ public static partial class CodeGenFunctions {
 
         output.Append('\n');
         
-        foreach (var (_, enumId) in scope.Enums) {
+        foreach (var (_, enumId, _) in scope.Enums) {
 
             var _enum = project.Enums[enumId];
 
