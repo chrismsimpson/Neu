@@ -1,0 +1,8 @@
+class A {
+    public elements: [Float]
+}
+
+func main() {
+    var a2 = A(elements: [Float(0), Float(1), Float(2)])
+    printLine("{}", a2.elements[1])
+}
