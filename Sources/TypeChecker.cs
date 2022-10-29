@@ -6025,6 +6025,8 @@ public static partial class TypeCheckerFunctions {
 
                 var innerTypeId = Compiler.UnknownTypeId;
 
+                Span? innerTypeSpan = null;
+
                 var output = new List<CheckedExpression>();
 
                 var setStructId = project
@@ -6050,9 +6052,11 @@ public static partial class TypeCheckerFunctions {
 
                     error = error ?? err;
 
+                    var currentValueTypeId = checkedValue.GetTypeId(scopeId, project);
+
                     if (innerTypeId == Compiler.UnknownTypeId) {
                          
-                        if (checkedValue.GetTypeId(scopeId, project) == Compiler.VoidTypeId) {
+                        if (currentValueTypeId == Compiler.VoidTypeId) {
 
                             error = error ?? 
                                 new TypeCheckError(
@@ -6060,14 +6064,19 @@ public static partial class TypeCheckerFunctions {
                                     value.GetSpan());
                         }
 
-                        innerTypeId = checkedValue.GetTypeId(scopeId, project);
+                        innerTypeId = currentValueTypeId;
+                        innerTypeSpan = value.GetSpan();
                     }
-                    else if (innerTypeId != checkedValue.GetTypeId(scopeId, project)) {
+                    else if (innerTypeId != currentValueTypeId) {
 
-                        error = error ?? 
-                            new TypeCheckError(
-                                "does not match type of previous values in set",
-                                value.GetSpan());
+                        var setTypeName = project.TypeNameForTypeId(innerTypeId);
+
+                        error = error ??
+                            new TypecheckErrorWithHint(
+                                $"type '{project.TypeNameForTypeId(currentValueTypeId)}' does not match type '{setTypeName}' of previous values in set",
+                                value.GetSpan(),
+                                $"set was inferred to store type '{setTypeName}' here",
+                                innerTypeSpan ?? throw new Exception());
                     }
 
                     output.Add(checkedValue);
