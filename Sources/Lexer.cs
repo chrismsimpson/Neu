@@ -1762,13 +1762,11 @@ public static partial class LexerFunctions {
             case var _ when sign == true && width == 64:
                 return (new NumberToken(new Int64Constant((long) number), span), null);
 
-            // FIXME: These 2 don't work at all:
+            case var _ when sign == null && width == 32:
+                return (new NumberToken(new FloatConstant((float) number), span), null);
 
-            case var _ when sign == null && width == 32: // (Float)
-                return (new NumberToken(new Int64Constant((long) number), span), null); // DEF wrong, fixme
-
-            case var _ when sign == null && width == 64: // (Double)
-                return (new NumberToken(new Int64Constant((long) number), span), null); // DEF wrong, fixme
+            case var _ when sign == null && width == 64:
+                return (new NumberToken(new DoubleConstant((double) number), span), null);
 
             default: {
 

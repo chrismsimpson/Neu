@@ -5985,7 +5985,7 @@ public static partial class ParserFunctions {
 
                                     expr = new ParsedIndexedTupleExpression(
                                         expr,
-                                        numberToken.Value.IntegerConstant()!.ToInt64(),
+                                        numberToken.Value.NumberConstant()!.ToInt64(),
                                         _span);
 
                                     contNS = false;
@@ -6162,7 +6162,10 @@ public static partial class ParserFunctions {
                                         start: expr.GetSpan().Start,
                                         end: tokens.ElementAt(index).Span.End);
 
-                                    expr = new ParsedIndexedTupleExpression(expr, number.Value.IntegerConstant()!.ToInt64(), _span);
+                                    expr = new ParsedIndexedTupleExpression(
+                                        expr,
+                                        number.Value.NumberConstant()!.ToInt64(),
+                                        _span);
 
                                     break;
                                 }

@@ -2766,6 +2766,24 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case FloatConstant f: {
+
+                        output.Append("static_cast<Float>(");
+                        output.Append(f.Value.ToString());
+                        output.Append(")");
+
+                        break;
+                    }
+
+                    case DoubleConstant d: {
+
+                        output.Append("static_cast<Double>(");
+                        output.Append(d.Value.ToString());
+                        output.Append(')');
+
+                        break;
+                    }
+
                     default: { 
                         
                         break;

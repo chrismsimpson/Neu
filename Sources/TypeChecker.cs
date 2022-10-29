@@ -229,6 +229,20 @@ public static partial class NeuTypeFunctions {
         return (new [] { Compiler.CCharTypeId, Compiler.CIntTypeId, Compiler.Int8TypeId, Compiler.Int16TypeId, Compiler.Int32TypeId, Compiler.Int64TypeId, Compiler.IntTypeId, Compiler.UInt8TypeId, Compiler.UInt16TypeId, Compiler.UInt32TypeId, Compiler.UInt64TypeId, Compiler.UIntTypeId }).Contains(typeId);
     }
 
+    public static bool IsFloating(
+        Int32 typeId) {
+
+        switch (typeId) {
+
+            case Compiler.FloatTypeId:
+            case Compiler.DoubleTypeId:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
     public static bool IsSigned(
         Int32 typeId) {
 
@@ -302,13 +316,13 @@ public static partial class NeuTypeFunctions {
         }
     }
 
-    public static bool CanFitInteger(
+    public static bool CanFitNumber(
         Int32 typeId,
-        IntegerConstant value) {
+        NumberConstant value) {
 
         switch (value) {
 
-            case SignedIntegerConstant si: {
+            case SignedNumberConstant si: {
 
                 switch (typeId) {
 
@@ -332,7 +346,7 @@ public static partial class NeuTypeFunctions {
                 }
             }
 
-            case UnsignedIntegerConstant ui: {
+            case UnsignedNumberConstant ui: {
 
                 switch (typeId) {
 
@@ -348,6 +362,16 @@ public static partial class NeuTypeFunctions {
                     // FIXME: Don't assume that usize is 64-bit
                     case Compiler.UIntTypeId: return true;
                     case Compiler.UInt64TypeId: return true;
+                    default: return false;
+                }
+            }
+
+            case FloatingNumberConstant fc: {
+
+                switch (typeId) {
+
+                    case Compiler.FloatTypeId: return fc.Value >= ToDouble(float.MinValue) && fc.Value <= ToDouble(float.MaxValue);
+                    case Compiler.DoubleTypeId: return true;
                     default: return false;
                 }
             }
@@ -787,6 +811,12 @@ public static partial class ProjectFunctions {
 
                     case Compiler.UInt64TypeId:
                         return "UInt64";
+
+                    case Compiler.FloatTypeId:
+                        return "Float";
+
+                    case Compiler.DoubleTypeId:
+                        return "Double";
 
                     case Compiler.IntTypeId:
                         return "Int";
@@ -1524,18 +1554,18 @@ public partial class CheckedStatement {
 
 ///
 
-public partial class IntegerConstant {
+public partial class NumberConstant {
 
-    public IntegerConstant() { }
+    public NumberConstant() { }
 
     public override string ToString() {
         
         switch (this) {
 
-            case SignedIntegerConstant si:
+            case SignedNumberConstant si:
                 return $"Signed({si.Value})";
 
-            case UnsignedIntegerConstant ui:
+            case UnsignedNumberConstant ui:
                 return $"Unsigned({ui.Value})";
 
             default:
@@ -1544,45 +1574,56 @@ public partial class IntegerConstant {
     }
 }
 
-    public partial class SignedIntegerConstant: IntegerConstant {
+    public partial class SignedNumberConstant: NumberConstant {
 
         public Int64 Value { get; init; }
 
         ///
 
-        public SignedIntegerConstant(
+        public SignedNumberConstant(
             Int64 value) {
 
             this.Value = value;
         }
     }
 
-    public partial class UnsignedIntegerConstant: IntegerConstant {
+    public partial class UnsignedNumberConstant: NumberConstant {
 
         public UInt64 Value { get; init; }
 
         ///
 
-        public UnsignedIntegerConstant(
+        public UnsignedNumberConstant(
             UInt64 value) {
 
             this.Value = value;
         }
     }
 
-public static partial class IntegerConstantFunctions {
+    public partial class FloatingNumberConstant: NumberConstant {
+
+        public double Value { get; init; }
+
+        public FloatingNumberConstant(
+            double value) {
+
+            this.Value = value;
+        }
+    }
+
+public static partial class NumberConstantFunctions {
 
     public static Int64 ToInt64(
-        this IntegerConstant i) {
+        this NumberConstant i) {
 
         switch (i) {
 
-            case SignedIntegerConstant s: {
+            case SignedNumberConstant s: {
 
                 return s.Value;
             }
 
-            case UnsignedIntegerConstant u: {
+            case UnsignedNumberConstant u: {
 
                 return System.Convert.ToInt64(u.Value);
             }
@@ -1595,10 +1636,10 @@ public static partial class IntegerConstantFunctions {
     }
 
     public static (NumericConstant?, Int32) Promote(
-        this IntegerConstant i,
+        this NumberConstant i,
         Int32 typeId) {
 
-        if (!NeuTypeFunctions.CanFitInteger(typeId, i)) {
+        if (!NeuTypeFunctions.CanFitNumber(typeId, i)) {
 
             return (null, Compiler.UnknownTypeId);
         }
@@ -1609,7 +1650,7 @@ public static partial class IntegerConstantFunctions {
 
         NumericConstant newConstant = i switch {
 
-            SignedIntegerConstant si => (bits, signed) switch {
+            SignedNumberConstant si => (bits, signed) switch {
 
                 (8, false) => new UInt8Constant(ToByte(si.Value)),
                 (16, false) => new UInt16Constant(ToUInt16(si.Value)),
@@ -1624,7 +1665,7 @@ public static partial class IntegerConstantFunctions {
                 _ => throw new Exception("Numeric constants can only be 8, 16, 32, or 64 bits long")
             },
 
-            UnsignedIntegerConstant ui => (bits, signed) switch {
+            UnsignedNumberConstant ui => (bits, signed) switch {
 
                 (8, false) => new UInt8Constant(ToByte(ui.Value)),
                 (16, false) => new UInt16Constant(ToUInt16(ui.Value)),
@@ -1639,6 +1680,13 @@ public static partial class IntegerConstantFunctions {
                 _ => throw new Exception("Numeric constants can only be 8, 16, 32, or 64 bits long")
             },
 
+            FloatingNumberConstant f => (bits, signed) switch {
+
+                (32, true) => new FloatConstant((float) f.Value),
+                (64, true) => new DoubleConstant((double) f.Value),
+                _ => throw new Exception("Floating numeric constants can only be 32, or 64 bits long")
+            },
+
             _ => throw new Exception()
         };
 
@@ -1646,18 +1694,18 @@ public static partial class IntegerConstantFunctions {
     }
 
     public static BigInteger ToBigInteger(
-        this IntegerConstant integer) {
+        this NumberConstant integer) {
 
         switch (integer) {
 
-            case SignedIntegerConstant si: 
+            case SignedNumberConstant si: 
                 return new BigInteger(si.Value);
 
-            case UnsignedIntegerConstant ui:
+            case UnsignedNumberConstant ui:
                 return new BigInteger(ui.Value);
 
             default:
-                throw new Exception();
+                throw new Exception("Not supported for floating numbers");
         }
     }
 }
@@ -1811,6 +1859,32 @@ public partial class NumericConstant {
         }
     }
 
+    public partial class FloatConstant: NumericConstant {
+
+        public float Value { get; init; }
+
+        ///
+
+        public FloatConstant(
+            float value) {
+
+            this.Value = value;
+        }
+    }
+
+    public partial class DoubleConstant: NumericConstant {
+
+        public double Value { get; init; }
+
+        ///
+
+        public DoubleConstant(
+            double value) {
+
+            this.Value = value;
+        }
+    }
+
 public static partial class NumericConstantFunctions {
 
     public static bool Eq(NumericConstant l, NumericConstant r) {
@@ -1827,24 +1901,28 @@ public static partial class NumericConstantFunctions {
             case var _ when l is UInt32Constant lu32 && r is UInt32Constant ru32:       return lu32.Value == ru32.Value;
             case var _ when l is UInt64Constant lu64 && r is UInt64Constant ru64:       return lu64.Value == ru64.Value;
             case var _ when l is UIntConstant lu && r is UIntConstant ru:               return lu.Value == ru.Value;
+            case var _ when l is FloatConstant lf && r is FloatConstant rf:             return lf.Value == rf.Value;
+            case var _ when l is DoubleConstant ld && r is DoubleConstant rd:           return ld.Value == rd.Value;
             default:                                                                    return false;
         }
     }
 
-    public static IntegerConstant? IntegerConstant(
+    public static NumberConstant? NumberConstant(
         this NumericConstant n) {
 
         switch (n) {
-            case Int8Constant i8: return new SignedIntegerConstant(ToInt64(i8.Value));
-            case Int16Constant i16: return new SignedIntegerConstant(ToInt64(i16.Value));
-            case Int32Constant i32: return new SignedIntegerConstant(ToInt64(i32.Value));
-            case Int64Constant i64: return new SignedIntegerConstant(i64.Value);
-            case IntConstant i: return new SignedIntegerConstant(i.Value);
-            case UInt8Constant u8: return new UnsignedIntegerConstant(ToUInt64(u8.Value));
-            case UInt16Constant u16: return new UnsignedIntegerConstant(ToUInt64(u16.Value));
-            case UInt32Constant u32: return new UnsignedIntegerConstant(ToUInt64(u32.Value));
-            case UInt64Constant u64: return new UnsignedIntegerConstant(u64.Value);
-            case UIntConstant u: return new UnsignedIntegerConstant(u.Value);
+            case Int8Constant i8: return new SignedNumberConstant(ToInt64(i8.Value));
+            case Int16Constant i16: return new SignedNumberConstant(ToInt64(i16.Value));
+            case Int32Constant i32: return new SignedNumberConstant(ToInt64(i32.Value));
+            case Int64Constant i64: return new SignedNumberConstant(i64.Value);
+            case IntConstant i: return new SignedNumberConstant(i.Value);
+            case UInt8Constant u8: return new UnsignedNumberConstant(ToUInt64(u8.Value));
+            case UInt16Constant u16: return new UnsignedNumberConstant(ToUInt64(u16.Value));
+            case UInt32Constant u32: return new UnsignedNumberConstant(ToUInt64(u32.Value));
+            case UInt64Constant u64: return new UnsignedNumberConstant(u64.Value);
+            case UIntConstant u: return new UnsignedNumberConstant(u.Value);
+            case FloatConstant f: return new FloatingNumberConstant((double) f.Value);
+            case DoubleConstant d: return new FloatingNumberConstant(d.Value);
             default: throw new Exception();
         }
     }
@@ -1863,6 +1941,8 @@ public static partial class NumericConstantFunctions {
             case UInt32Constant u32: return Compiler.UInt32TypeId;
             case UInt64Constant u64: return Compiler.UInt64TypeId;
             case UIntConstant u: return Compiler.UIntTypeId;
+            case FloatConstant f: return Compiler.FloatTypeId;
+            case DoubleConstant d: return Compiler.DoubleTypeId;
             default: throw new Exception();
         }
     }
@@ -2983,18 +3063,18 @@ public static partial class CheckedExpressionFunctions {
 
     }
 
-    public static IntegerConstant? ToIntegerConstant(
+    public static NumberConstant? ToNumberConstant(
         this CheckedExpression e) {
 
         switch (e) {
 
-            case CheckedNumericConstantExpression ne: return ne.Value.IntegerConstant();
+            case CheckedNumericConstantExpression ne: return ne.Value.NumberConstant();
 
             case CheckedUnaryOpExpression ue when 
                 ue.Operator is CheckedTypeCastUnaryOperator tc
                 && tc.TypeCast is CheckedInfallibleTypeCast: {
 
-                if (!NeuTypeFunctions.IsInteger(ue.Type)) {
+                if (!NeuTypeFunctions.IsInteger(ue.Type) && !NeuTypeFunctions.IsFloating(ue.Type)) {
 
                     return null;
                 }
@@ -3003,7 +3083,7 @@ public static partial class CheckedExpressionFunctions {
 
                     case CheckedNumericConstantExpression c: {
 
-                        return c.Value.IntegerConstant();
+                        return c.Value.NumberConstant();
                     }
 
                     default: {
@@ -3659,9 +3739,9 @@ public static partial class TypeCheckerFunctions {
 
                         var (checkedExpr, typeErr) = castToUnderlying(w.Expression, project);
 
-                        switch (checkedExpr.ToIntegerConstant()) {
+                        switch (checkedExpr.ToNumberConstant()) {
 
-                            case IntegerConstant constant: {
+                            case NumberConstant constant: {
 
                                 nextConstantValue = ToUInt64(constant.ToInt64()) + 1;
 
@@ -5328,7 +5408,7 @@ public static partial class TypeCheckerFunctions {
             return (null, null);
         }
 
-        if (checkedRhs.ToIntegerConstant() is IntegerConstant rhsConstant) {
+        if (checkedRhs.ToNumberConstant() is NumberConstant rhsConstant) {
 
             var (_newConstant, newType) = rhsConstant.Promote(lhsTypeId);
 
@@ -7330,7 +7410,7 @@ public static partial class TypeCheckerFunctions {
 
                                 var flippedSignType = NeuTypeFunctions.FlipSignedness(nce.Type) ?? throw new Exception();
 
-                                var negativeValue = 0 - nce.Value.IntegerConstant()?.ToBigInteger() ?? throw new Exception();
+                                var negativeValue = 0 - nce.Value.NumberConstant()?.ToBigInteger() ?? throw new Exception();
 
                                 long? n = null;
 
@@ -7340,14 +7420,14 @@ public static partial class TypeCheckerFunctions {
                                 }
                                 catch { }
 
-                                if ((n is not null && !NeuTypeFunctions.CanFitInteger(flippedSignType, new SignedIntegerConstant(n.Value)))
+                                if ((n is not null && !NeuTypeFunctions.CanFitNumber(flippedSignType, new SignedNumberConstant(n.Value)))
                                     // This is the case if the above "as Int64" overflows.
                                     || negativeValue < Int64.MinValue) {
 
                                     return (
                                         new CheckedGarbageExpression(span),
                                         new TypeCheckError(
-                                            $"Literal {nce.Value.IntegerConstant()!.ToString()} too small for unsigned integer type {nce.Type}", 
+                                            $"Literal {nce.Value.NumberConstant()!.ToString()} too small for unsigned integer type {nce.Type}", 
                                             span));
                                 }
                                 else {
