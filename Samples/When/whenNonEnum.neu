@@ -1,0 +1,14 @@
+func main() {
+    
+    let x = when 42 {
+        (21 * 2) => [1, 2, 3]
+        else => []
+    }
+    
+    let y = when "foo" {
+        ("f" + "oo") => "bar"
+        else => "baz"
+    }
+
+    printLine("{} {}", x.size(), y)
+}

@@ -2278,6 +2278,36 @@ public partial class CheckedWhenCase {
         }
     }
 
+    public partial class CheckedExpressionWhenCase: CheckedWhenCase {
+
+        public CheckedExpression Expression { get; init; }
+
+        public CheckedWhenBody Body { get; init; }
+
+        ///
+
+        public CheckedExpressionWhenCase(
+            CheckedExpression expression,
+            CheckedWhenBody body) {
+
+            this.Expression = expression;
+            this.Body = body;
+        }
+    }
+
+    public partial class CheckedCatchAllWhenCase: CheckedWhenCase {
+
+        public CheckedWhenBody Body { get; init; }
+        
+        ///
+
+        public CheckedCatchAllWhenCase(
+            CheckedWhenBody body) {
+
+            this.Body = body;
+        }
+    }
+     
 ///
 
 public partial class CheckedExpression {
@@ -2656,18 +2686,22 @@ public partial class CheckedExpression {
 
         public Int32 TypeId { get; init; }
 
+        public bool ValuesAreAllConstant { get; init; }
+
         ///
 
         public CheckedWhenExpression(
             CheckedExpression expression,
             List<CheckedWhenCase> cases,
             Span span,
-            Int32 typeId) {
+            Int32 typeId,
+            bool valuesAreAllConstant) {
 
             this.Expression = expression;
             this.Cases = cases;
             this.Span = span;
             this.TypeId = typeId;
+            this.ValuesAreAllConstant = valuesAreAllConstant;
         }
     }
 
@@ -5194,7 +5228,7 @@ public static partial class TypeCheckerFunctions {
 
                 var weakPointerStructId = project
                     .FindStructInScope(0, "WeakPointer")
-                    ?? throw new Exception("internal error: can't find builtin WeakPtr type");
+                    ?? throw new Exception("internal error: can't find builtin WeakPointer type");
 
                 switch (project.Types[checkedTypeId]) {
 
@@ -5429,6 +5463,109 @@ public static partial class TypeCheckerFunctions {
         }
 
         return (null, null);
+    }
+
+    public static (CheckedWhenBody, Error?) TypeCheckWhenBody(
+        WhenBody body,
+        Int32 scopeId,
+        Project project,
+        SafetyMode safetyMode,
+        Dictionary<Int32, Int32> genericParameters,
+        ref Int32? finalResultType,
+        Span span) {
+
+        Error? error = null;
+
+        CheckedWhenBody? _body = null;
+
+        switch (body) {
+
+            case BlockWhenBody block: {
+
+                var (checkedBlock, err) = TypeCheckBlock(block.Block, scopeId, project, safetyMode);
+
+                error = error ?? err;
+
+                if (!checkedBlock.DefinitelyReturns) {
+
+                    switch (finalResultType) {
+
+                        case Int32 frt: {
+
+                            if (CheckTypesForCompat(
+                                Compiler.VoidTypeId,
+                                frt,
+                                genericParameters,
+                                span, 
+                                project) is Error e) {
+
+                                error = error ?? e;
+                            }
+
+                            break;
+                        }
+
+                        default: {
+
+                            finalResultType = Compiler.VoidTypeId;
+
+                            break;
+                        }
+                    }
+                }
+
+                _body = new CheckedBlockWhenBody(checkedBlock);
+
+                break;
+            }
+
+            case ExpressionWhenBody expr: {
+
+                var (checkedBody, err) = TypeCheckExpression(expr.Expression, scopeId, project, safetyMode, finalResultType);
+
+                error = error ?? err;
+
+                var span2 = expr.Expression.GetSpan();
+
+                switch (finalResultType) {
+
+                    case Int32 frt: {
+
+                        if (CheckTypesForCompat(
+                            checkedBody.GetTypeId(scopeId, project),
+                            frt,
+                            genericParameters,
+                            span2,
+                            project) is Error e2) {
+
+                            error = error ?? e2;
+                        }
+
+                        break;
+                    }
+
+                    default: {
+
+                        finalResultType = checkedBody.GetTypeId(scopeId, project);
+
+                        break;
+                    }
+                }
+
+                _body = new CheckedExpressionWhenBody(checkedBody);
+
+                break;
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+
+        return (
+            _body ?? throw new Exception(),
+            error);
     }
 
     public static (CheckedExpression, Error?) TypeCheckExpression(
@@ -6617,6 +6754,8 @@ public static partial class TypeCheckerFunctions {
 
                 Int32? finalResultType = null;
 
+                var allVariantsAreConstants = true;
+
                 ///
 
                 Int32? tyEnumId = null;
@@ -6653,9 +6792,86 @@ public static partial class TypeCheckerFunctions {
 
                         var enumName = _enum.Name;
 
+                        var seenCatchAll = false;
+
                         foreach (var c in we.Cases) {
 
                             switch (c) {
+
+                                case CatchAllWhenCase cawc: {
+
+                                    if (seenCatchAll) {
+
+                                        error = error ??
+                                            new TypeCheckError(
+                                                "multiple catch-all cases in match are not allowed",
+                                                cawc.MarkerSpan);
+                                    }
+                                    else {
+
+                                        seenCatchAll = true;
+                                    }
+
+                                    var (body, err2) = TypeCheckWhenBody(
+                                        cawc.Body,
+                                        scopeId,
+                                        project,
+                                        safetyMode,
+                                        genericParams,
+                                        ref finalResultType,
+                                        we.Span);
+
+                                    error = error ?? err2;
+
+                                    checkedCases.Add(new CheckedCatchAllWhenCase(body));
+
+                                    break;
+                                }
+
+                                case ExpressionWhenCase ewc: {
+
+                                    var (checkedMatchedExpr, err3) = TypeCheckExpression(
+                                        ewc.MatchedExpression, 
+                                        scopeId, 
+                                        project, 
+                                        safetyMode, 
+                                        subjectTypeId);
+
+                                    error = error ?? err3;
+
+                                    if (checkedMatchedExpr.ToNumberConstant() == null) {
+
+                                        allVariantsAreConstants = false;
+                                    }
+
+                                    // FIXME: In the future, we should really make this a "does it satisfy some trait" check.
+                                    //        For now, we just check that the types are equal.
+
+                                    if (CheckTypesForCompat(
+                                        checkedMatchedExpr.GetTypeId(scopeId, project),
+                                        subjectTypeId,
+                                        genericParams,
+                                        ewc.MarkerSpan,
+                                        project) is Error err4) {
+
+                                        error = error = err4;
+                                    }
+
+                                    var (body, err5) = TypeCheckWhenBody(
+                                        ewc.Body,
+                                        scopeId,
+                                        project,
+                                        safetyMode,
+                                        genericParams,
+                                        ref finalResultType,
+                                        we.Span);
+
+                                    error = error ?? err5;
+
+                                    checkedCases.Add(new CheckedExpressionWhenCase(checkedMatchedExpr, body));
+
+                                    break;
+                                }
 
                                 case EnumVariantWhenCase evwc: {
 
@@ -6711,7 +6927,8 @@ public static partial class TypeCheckerFunctions {
                                                     checkedCases,
                                                     we.Span,
                                                     // FIXME: Figure this out.
-                                                    Compiler.UnknownTypeId),
+                                                    Compiler.UnknownTypeId,
+                                                    false),
                                                 error);
                                         }
 
@@ -6889,7 +7106,7 @@ public static partial class TypeCheckerFunctions {
                                                 newScopeId, 
                                                 project, 
                                                 safetyMode, 
-                                                null);
+                                                finalResultType);
 
                                             error = error ?? bodyErr;
 
@@ -6997,10 +7214,185 @@ public static partial class TypeCheckerFunctions {
 
                     default: {
 
-                        error = error ?? 
-                            new TypeCheckError(
-                                $"when used on non-enum value (nyi: {project.Types[subjectTypeId]})",
-                                we.Expression.GetSpan());
+                        var seenCatchAll = false;
+
+                        foreach (var _case in we.Cases) {
+
+                            switch (_case) {
+
+                                case EnumVariantWhenCase evwc: {
+
+                                    error = error ??
+                                        new TypeCheckError(
+                                            "Cannot use enum variant names to match non-enum type '{project.TypeNameForTypeId(subjectTypeId}'",
+                                            evwc.MarkerSpan);
+
+                                    break;
+                                }
+
+                                case CatchAllWhenCase cawc: {
+
+                                    if (seenCatchAll) {
+
+                                        error = error ??
+                                            new TypeCheckError(
+                                                "Cannot have multiple catch-all match cases",
+                                                cawc.MarkerSpan);
+                                    }
+                                    else {
+
+                                        seenCatchAll = true;
+                                    }
+
+                                    CheckedWhenBody? body = null;
+
+                                    switch (cawc.Body) {
+
+                                        case BlockWhenBody block: {
+
+                                            var (checkedBlock, err10) = TypeCheckBlock(block.Block, scopeId, project, safetyMode);
+
+                                            error = error ?? err10;
+
+                                            if (!checkedBlock.DefinitelyReturns) {
+
+                                                switch (finalResultType) {
+
+                                                    case Int32 _frt2: {
+
+                                                        if (CheckTypesForCompat(
+                                                            Compiler.VoidTypeId,
+                                                            _frt2,
+                                                            genericParams,
+                                                            we.Span,
+                                                            project) is Error err11) {
+
+                                                            error = error ?? err11;
+                                                        }
+
+                                                        break;
+                                                    }
+
+                                                    default: {
+
+                                                        finalResultType = Compiler.VoidTypeId;
+
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            body = new CheckedBlockWhenBody(checkedBlock);
+
+                                            break;
+                                        }
+
+                                        case ExpressionWhenBody expr2: {
+
+                                            var (_body, err8) = TypeCheckExpression(
+                                                expr2.Expression,
+                                                scopeId,
+                                                project,
+                                                safetyMode,
+                                                finalResultType);
+
+                                            error = error ?? err8;
+
+                                            switch (finalResultType) {
+
+                                                case Int32 _frt: {
+
+                                                    if (CheckTypesForCompat(
+                                                        _body.GetTypeId(scopeId, project),
+                                                        _frt,
+                                                        genericParams,
+                                                        expr2.Expression.GetSpan(),
+                                                        project) is Error err9) {
+
+                                                        error = error ?? err9;
+                                                    }
+
+                                                    break;
+                                                }
+
+                                                default: {
+
+                                                    finalResultType = _body.GetTypeId(scopeId, project);
+
+                                                    break;
+                                                }
+                                            }
+
+                                            body = new CheckedExpressionWhenBody(_body);
+
+                                            break;
+                                        }
+
+                                        default: {
+
+                                            throw new Exception();
+                                        }
+                                    }
+
+                                    checkedCases.Add(new CheckedCatchAllWhenCase(body));
+
+                                    break;
+                                }
+
+                                case ExpressionWhenCase ewc: {
+
+                                    var (checkedExpr2, err5) = TypeCheckExpression(
+                                        ewc.MatchedExpression,
+                                        scopeId,
+                                        project,
+                                        safetyMode,
+                                        subjectTypeId);
+
+                                    error = error ?? err5;
+
+                                    if (checkedExpr2.ToNumberConstant() == null) {
+
+                                        allVariantsAreConstants = false;
+                                    }
+
+                                    // FIXME: In the future, we should really make this a "does it satisfy some trait" check.
+                                    //        For now, we just check that the types are equal.
+
+                                    if (CheckTypesForCompat(
+                                        checkedExpr2.GetTypeId(scopeId, project),
+                                        subjectTypeId,
+                                        genericParams,
+                                        ewc.MarkerSpan,
+                                        project) is Error err6) {
+
+                                        error = error ?? err6;
+                                    }
+
+                                    var (body, err7) = TypeCheckWhenBody(
+                                        ewc.Body,
+                                        scopeId,
+                                        project,
+                                        safetyMode,
+                                        genericParams,
+                                        ref finalResultType,
+                                        ewc.MarkerSpan);
+
+                                    error = error ?? err7;
+
+                                    checkedCases.Add(
+                                        new CheckedExpressionWhenCase(
+                                            checkedExpr2,
+                                            body));
+
+                                    break;
+                                }
+
+                                default: {
+
+                                    throw new Exception();
+                                }
+                            }
+                        }
 
                         break;
                     }
@@ -7010,7 +7402,7 @@ public static partial class TypeCheckerFunctions {
 
                     var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, frt);
 
-                    error = unifyErr;
+                    error = error ?? unifyErr;
 
                     finalResultType = unifiedTypeId;
                 }
@@ -7020,7 +7412,8 @@ public static partial class TypeCheckerFunctions {
                         checkedExpr,
                         checkedCases,
                         we.Span,
-                        finalResultType ?? Compiler.VoidTypeId),
+                        finalResultType ?? Compiler.VoidTypeId,
+                        allVariantsAreConstants),
                     error);
             }
 

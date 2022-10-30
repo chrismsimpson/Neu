@@ -26,6 +26,31 @@ public partial class Error {
     }
 }
 
+public static partial class ErrorFunctions {
+
+    public static Span GetSpan(
+        this Error e) {
+
+        switch (e) {
+
+            case ParserError pe: 
+                return pe.Span;
+           
+            case TypeCheckError te:
+                return te.Span;
+           
+            case ValidationError ve: 
+                return ve.Span;
+           
+            case TypecheckErrorWithHint teh: 
+                return teh.Span;
+            
+            default:
+                throw new Exception();
+        }
+    }
+}
+
 public partial class ParserError: Error {
 
     public Span Span { get; init; }

@@ -10,8 +10,6 @@ public static partial class CodeGenFunctions {
         Scope scope) {
         
         var output = new StringBuilder();
-    
-        // output.Append("#include \"../../../Runtime/lib.h\"\n");
 
         output.Append("#include <lib.h>\n");
 
@@ -2286,25 +2284,6 @@ public static partial class CodeGenFunctions {
                 break;
             }
 
-            // case CheckedForStatement f: {
-                
-            //     output.Append("{ auto&& _range = ");
-            //     output.Append(CodeGenExpr(indent, f.Range, project));
-            //     output.Append("; for(auto ");
-            //     output.Append(f.IteratorName);
-            //     output.Append(' ');
-            //     output.Append(" = _range.start;");
-            //     output.Append(f.IteratorName);
-            //     output.Append("!= _range.end;");
-            //     output.Append(f.IteratorName);
-            //     output.Append("++");
-            //     output.Append(") {");
-            //     output.Append(CodeGenBlock(indent, f.Block, project));
-            //     output.Append("}}");
-
-            //     break;
-            // }
-
             case CheckedExpressionStatement es: {
 
                 var exprStr = CodeGenExpr(indent, es.Expression, project);
@@ -2561,6 +2540,646 @@ public static partial class CodeGenFunctions {
         output.Append(CodeGenExpr(indent, rhs, project));
         output.Append(");");
         output.Append('}');
+
+        return output.ToString();
+    }
+
+    public static String CodeGenWhenBody(
+        int indent,
+        CheckedWhenBody body,
+        Project project,
+        Int32 returnTypeId) {
+
+        var output = new StringBuilder();
+
+        switch (body) {
+
+            case CheckedExpressionWhenBody expr: {
+
+                if (expr.Expression.GetTypeIdOrTypeVar() == Compiler.VoidTypeId) {
+
+                    output.Append("   return (");
+                    output.Append(CodeGenExpr(indent + 1, expr.Expression, project));
+                    output.Append("), NeuInternal::ExplicitValue<void>();\n");
+                }
+                else {
+
+                    output.Append("   return NeuInternal::ExplicitValue(");
+                    output.Append(CodeGenExpr(indent + 1, expr.Expression, project));
+                    output.Append(");\n");
+                }
+
+                break;
+            }
+
+            case CheckedBlockWhenBody block: {
+
+                output.Append(CodeGenBlock(indent, block.Block, project));
+
+                if (returnTypeId == Compiler.VoidTypeId) {
+
+                    output.Append("return NeuInternal::ExplicitValue<void>();\n");
+                }
+
+                break;
+            }
+
+            default: {
+
+                throw new Exception();
+            }
+        }
+
+        return output.ToString();
+    }
+
+    public static String CodeGenEnumMatch(
+        CheckedEnum _enum,
+        CheckedExpression expr,
+        List<CheckedWhenCase> cases,
+        Int32 returnTypeId,
+        bool matchValuesAreAllConstant,
+        Int32 indent,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        var needsDeref = _enum.DefinitionType == DefinitionType.Class;
+
+        switch (_enum.UnderlyingTypeId) {
+
+            case Int32 _: {
+
+                if (matchValuesAreAllConstant) {
+
+                    // Use a switch statement instead of if-else chains
+                    
+                    output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> NeuInternal::ExplicitValueOrReturn<");
+                    output.Append(CodeGenType(returnTypeId, project));
+                    output.Append(", ");
+                    output.Append("_NeuCurrentFunctionReturnType");
+                    output.Append("> { \n");
+                    output.Append("switch (");
+                    
+                    if (needsDeref) {
+                        
+                        output.Append('*');
+                    }
+                    
+                    output.Append(CodeGenExpr(indent, expr, project));
+                    output.Append(") {\n");
+                }
+                else {
+
+                    output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> NeuInternal::ExplicitValueOrReturn<");
+                    output.Append(CodeGenType(returnTypeId, project));
+                    output.Append(", ");
+                    output.Append("_NeuCurrentFunctionReturnType");
+                    output.Append("> { \n");
+                    output.Append("auto __neu_enum_value = ");
+
+                    if (needsDeref) {
+
+                        output.Append('*');
+                    }
+
+                    output.Append(CodeGenExpr(indent, expr, project));
+                    output.Append(";\n");
+                }
+
+                var first1 = true;
+
+                foreach (var _case in cases) {
+
+                    var thisIsTheFirstCase = first1;
+
+                    if (first1) {
+
+                        first1 = false;
+                    }
+
+                    switch (_case) {
+
+                        case CheckedEnumVariantWhenCase evwc: {
+
+                            if (matchValuesAreAllConstant) {
+                                output.Append("case ");
+                            } 
+                            else {
+                                
+                                if (!thisIsTheFirstCase) {
+                                    
+                                    output.Append("else ");
+                                }
+
+                                output.Append("if (__neu_enum_value == ");
+                            }
+
+                            output.Append(
+                                CodeGenTypePossiblyAsNamespace(
+                                    expr.GetTypeIdOrTypeVar(),
+                                    project,
+                                    true));
+
+                            output.Append("::");
+                            output.Append(evwc.VariantName);
+                            
+                            if (matchValuesAreAllConstant) {
+
+                                output.Append(":\n");
+                            } 
+                            else {
+                                output.Append(") {\n");
+                            }
+
+                            output.Append(CodeGenIndent(indent));
+                            output.Append(
+                                CodeGenWhenBody(
+                                    indent + 1,
+                                    evwc.Body,
+                                    project,
+                                    returnTypeId));
+
+                            if (matchValuesAreAllConstant) {
+
+                                output.Append("break;\n");
+                            } 
+                            else {
+
+                                output.Append('}');
+                            }
+
+                            break;
+                        }
+
+                        case CheckedCatchAllWhenCase cawc: {
+
+                            if (matchValuesAreAllConstant) {
+                                
+                                output.Append("default:\n");
+                            } 
+                            else if (thisIsTheFirstCase) {
+                                
+                                output.Append('{');
+                            } 
+                            else {
+                                
+                                output.Append("else {\n");
+                            }
+                            
+                            output.Append(CodeGenIndent(indent + 1));
+                            output.Append(
+                                CodeGenWhenBody(
+                                    indent + 1,
+                                    cawc.Body,
+                                    project,
+                                    returnTypeId));
+                            
+                            if (matchValuesAreAllConstant) {
+
+                                output.Append("break;\n");
+                            } 
+                            else {
+
+                                output.Append('}');
+                            }
+
+                            break;
+                        }
+
+                        case CheckedExpressionWhenCase ewc: {
+
+                            if (matchValuesAreAllConstant) {
+
+                                output.Append("case ");
+                            } 
+                            else {
+                                
+                                if (!thisIsTheFirstCase) {
+                                    
+                                    output.Append("else ");
+                                }
+
+                                output.Append("if (__neu_enum_value == ");
+                            }
+
+                            output.Append(CodeGenExpr(indent, ewc.Expression, project));
+                            
+                            if (matchValuesAreAllConstant) {
+
+                                output.Append(":\n");
+                            } 
+                            else {
+
+                                output.Append(") {\n");
+                            }
+
+                            output.Append(CodeGenIndent(indent + 1));
+                            
+                            output.Append(
+                                CodeGenWhenBody(
+                                    indent + 1,
+                                    ewc.Body,
+                                    project,
+                                    returnTypeId));
+
+                            if (matchValuesAreAllConstant) {
+
+                                output.Append("break;\n");
+                            } 
+                            else {
+
+                                output.Append('}');
+                            }
+
+                            break;
+                        }
+
+                        default: {
+
+                            throw new Exception();
+                        }
+                    }
+                    
+                    output.Append('\n');
+                }
+
+                if (matchValuesAreAllConstant) {
+
+                    output.Append("}\n");
+                }
+
+                output.Append("}()))");
+
+                break;
+            }
+
+            default: {
+
+                output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN((");
+                output.Append(CodeGenExpr(indent, expr, project));
+                output.Append(')');
+
+                if (needsDeref) {
+
+                    output.Append("->");
+                }
+                else {
+
+                    output.Append('.');
+                }
+
+                output.Append("visit(");
+
+                var first = true;
+
+                foreach (var _case in cases) {
+
+                    if (!first) {
+
+                        output.Append(", ");
+                    }
+                    else {
+
+                        first = false;
+                    }
+
+                    output.Append("[&] (");
+
+                    switch (_case) {
+
+                        case CheckedEnumVariantWhenCase evwc: {
+
+                            var _type = project.Types[evwc.SubjectTypeId];
+
+                            var enumId = _type switch {
+                                GenericEnumInstance gei => gei.EnumId,
+                                EnumType et => et.EnumId,
+                                _ => throw new Exception("Expected enum type")
+                            };
+
+                            var _enum2 = project.Enums[enumId];
+
+                            var variant = _enum2.Variants[evwc.VariantIndex];
+
+                            switch (variant) {
+
+                                case CheckedTypedEnumVariant t: {
+
+                                    output.Append("typename ");
+                                    
+                                    output.Append(CodeGenTypePossiblyAsNamespace(
+                                        evwc.SubjectTypeId,
+                                        project,
+                                        true));
+                                    
+                                    output.Append("::");
+                                    output.Append(t.Name);
+                                    output.Append(
+                                        " const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
+                                    
+                                    output.Append(CodeGenType(returnTypeId, project));
+                                    output.Append(", ");
+                                    output.Append("_NeuCurrentFunctionReturnType");
+                                    output.Append('>');
+                                    output.Append(" {\n");
+                                    output.Append("   ");
+
+                                    if (evwc.VariantArguments.Any()) {
+
+                                        var _var = project
+                                            .FindVarInScope(evwc.ScopeId, evwc.VariantArguments[0].Item2)
+                                            ?? throw new Exception();
+                                            
+                                        output.Append(CodeGenType(_var.TypeId, project));
+                                        output.Append(" const& ");
+                                        output.Append(evwc.VariantArguments[0].Item2);
+                                        output.Append(" = __neu_match_value.value;\n");
+                                    }
+
+                                    break;
+                                }
+
+                                case CheckedUntypedEnumVariant u: {
+
+                                    output.Append("typename ");
+                                    output.Append(CodeGenTypePossiblyAsNamespace(
+                                        evwc.SubjectTypeId,
+                                        project,
+                                        true));
+                                    output.Append("::");
+                                    output.Append(u.Name);
+                                    output.Append(
+                                        " const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
+                                    output.Append(CodeGenType(returnTypeId, project));
+                                    output.Append(", ");
+                                    output.Append("_NeuCurrentFunctionReturnType");
+                                    output.Append('>');
+                                    output.Append(" {\n");
+
+                                    break;
+                                }
+
+                                case CheckedStructLikeEnumVariant s: {
+
+                                    output.Append("typename ");
+
+                                    output.Append(CodeGenTypePossiblyAsNamespace(
+                                        evwc.SubjectTypeId,
+                                        project,
+                                        true));
+
+                                    output.Append("::");
+                                    output.Append(s.Name);
+                                    output.Append(
+                                        " const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
+
+                                    output.Append(CodeGenType(returnTypeId, project));
+                                    output.Append(", ");
+                                    output.Append("_NeuCurrentFunctionReturnType");
+                                    output.Append('>');
+                                    output.Append(" {\n");
+
+                                    if (evwc.VariantArguments.Any()) {
+
+                                        foreach (var arg in evwc.VariantArguments) {
+
+                                            var _var = project.FindVarInScope(evwc.ScopeId, arg.Item2) ?? throw new Exception();
+
+                                            output.Append(CodeGenType(_var.TypeId, project));
+                                            output.Append(" const& ");
+                                            output.Append(arg.Item2);
+                                            output.Append(" = __neu_match_value.");
+                                            output.Append(arg.Item1 ?? throw new Exception());
+                                            output.Append(";\n");
+                                        }
+                                    }
+
+                                    break;
+                                }
+
+                                case CheckedWithValueEnumVariant v: {
+
+                                    throw new Exception("Unreachable");
+                                }
+
+                                default: {
+
+                                    throw new Exception();
+                                }
+                            }
+
+                            output.Append(
+                                CodeGenWhenBody(
+                                    indent + 1, 
+                                    evwc.Body, 
+                                    project, 
+                                    returnTypeId));
+
+                            break;
+                        }
+
+                        case CheckedCatchAllWhenCase cawc: {
+
+                            output.Append(
+                                "auto const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
+
+                            output.Append(CodeGenType(returnTypeId, project));
+                            output.Append(", ");
+                            output.Append("_NeuCurrentFunctionReturnType");
+                            output.Append('>');
+                            output.Append(" {\n");
+
+                            output.Append(
+                                CodeGenWhenBody(
+                                    indent + 1,
+                                    cawc.Body,
+                                    project,
+                                    returnTypeId));
+
+                            break;
+                        }
+
+                        default: {
+
+                            throw new Exception("Matching enum subject with non-enum value");
+                        }
+                    }
+
+                    output.Append("}\n");
+                }
+
+                output.Append(')');
+                output.Append(')');
+
+                break;
+            }
+        }
+
+        return output.ToString();
+
+        throw new Exception();
+    }
+
+    public static String CodeGenGenericMatch(
+        CheckedExpression expr,
+        List<CheckedWhenCase> cases,
+        Int32 returnTypeId,
+        bool matchValuesAreAllConstant,
+        Int32 indent,
+        Project project) {
+
+        var output = new StringBuilder();
+
+        if (matchValuesAreAllConstant) {
+    
+            // Use a switch statement instead of if-else chains
+
+            output.Append(
+                "NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> NeuInternal::ExplicitValueOrReturn<");
+            
+            output.Append(CodeGenType(returnTypeId, project));
+            output.Append(", ");
+            output.Append("_NeuCurrentFunctionReturnType");
+            output.Append("> { \n");
+            output.Append("switch (");
+            output.Append(CodeGenExpr(indent, expr, project));
+            output.Append(") {\n");
+        } 
+        else {
+
+            output.Append(
+                "NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> NeuInternal::ExplicitValueOrReturn<");
+            
+            output.Append(CodeGenType(returnTypeId, project));
+            output.Append(", ");
+            output.Append("_NeuCurrentFunctionReturnType");
+            output.Append("> { \n");
+            output.Append("auto __neu_enum_value = ");
+            output.Append(CodeGenExpr(indent, expr, project));
+            output.Append(";\n");
+        }
+
+        var first = true;
+
+        foreach (var _case in cases) {
+
+            var thisIsTheFirstCase = first;
+
+            if (first) {
+
+                first = false;
+            }
+
+            switch (_case) {
+
+                case CheckedEnumVariantWhenCase evwc: {
+
+                    throw new Exception("Attempted to do a generic match on an enum variant");
+                }
+
+                case CheckedCatchAllWhenCase cawc: {
+
+                    if (matchValuesAreAllConstant) {
+                        
+                        output.Append("default:\n");
+                    } 
+                    else if (thisIsTheFirstCase) {
+                        
+                        output.Append('{');
+                    } 
+                    else {
+                        
+                        output.Append("else {\n");
+                    }
+                    
+                    output.Append(CodeGenIndent(indent + 1));
+                    output.Append(
+                        CodeGenWhenBody(
+                            indent + 1,
+                            cawc.Body,
+                            project,
+                            returnTypeId));
+                            
+                    if (matchValuesAreAllConstant) {
+
+                        output.Append("break;\n");
+                    } 
+                    else {
+                        
+                        output.Append('}');
+                    }
+
+                    break;
+                }
+
+                case CheckedExpressionWhenCase ewc: {
+
+                    if (matchValuesAreAllConstant) {
+                        
+                        output.Append("case ");
+                    } 
+                    else {
+                        
+                        if (!thisIsTheFirstCase) {
+                            
+                            output.Append("else ");
+                        }
+                        
+                        output.Append("if (__neu_enum_value == ");
+                    }
+
+                    output.Append(CodeGenExpr(indent, ewc.Expression, project));
+                    
+                    if (matchValuesAreAllConstant) {
+                        
+                        output.Append(":\n");
+                    } 
+                    else {
+
+                        output.Append(") {\n");
+                    }
+                    
+                    output.Append(CodeGenIndent(indent + 1));
+                    output.Append(
+                        CodeGenWhenBody(
+                            indent + 1,
+                            ewc.Body,
+                            project,
+                            returnTypeId));
+                    
+                    if (matchValuesAreAllConstant) {
+                        
+                        output.Append("break;\n");
+                    } 
+                    else {
+                        
+                        output.Append('}');
+                    }
+
+                    break;
+                }
+
+                default: {
+
+                    throw new Exception();
+                }
+            }
+
+            output.Append('\n');
+        }
+
+        if (matchValuesAreAllConstant) {
+            
+            output.Append("}\n");
+        }
+
+        if (returnTypeId == Compiler.VoidTypeId) {
+            
+            output.Append("return NeuInternal::ExplicitValue<void>();\n");
+        }
+        
+        output.Append("}()))");
 
         return output.ToString();
     }
@@ -3145,335 +3764,42 @@ public static partial class CodeGenFunctions {
 
                 var exprType = project.Types[we.Expression.GetTypeIdOrTypeVar()];
 
-                Int32? _id = null;
+                Int32? _enumId = exprType switch {
 
-                switch (exprType) {
+                    GenericEnumInstance gei => gei.EnumId,
+                    EnumType et => et.EnumId,
+                    _ => null
+                };
 
-                    case GenericEnumInstance i: {
+                switch (_enumId) {
 
-                        _id = i.EnumId;
+                    case Int32 enumId: {
 
-                        break;
-                    }
+                        var _enum = project.Enums[enumId];
 
-                    case EnumType e: {
-
-                        _id = e.EnumId;
-
-                        break;
-                    }
-
-                    default: {
-
-                        throw new Exception("Expected enum type");
-                    }
-                }
-
-                var id = _id ?? throw new Exception();
-
-                var _enum = project.Enums[id];
-
-                var needsDeref = _enum.DefinitionType == DefinitionType.Class;
-
-                switch (_enum.UnderlyingTypeId) {
-
-                    case Int32 _: {
-
-                        output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN(([&]() -> NeuInternal::ExplicitValueOrReturn<");
-                        output.Append(CodeGenType(we.TypeId, project));
-                        output.Append(", ");
-                        output.Append("_NeuCurrentFunctionReturnType");
-                        output.Append("> { \n");
-                        output.Append("switch (");
-                        if (needsDeref) {
-                            output.Append('*');
-                        }
-                        output.Append(CodeGenExpr(indent, we.Expression, project));
-                        output.Append(") {\n");
-
-                        foreach (var _case in we.Cases) {
-
-                            output.Append("case ");
-                            output.Append(
-                                CodeGenTypePossiblyAsNamespace(
-                                    we.Expression.GetTypeIdOrTypeVar(), 
-                                    project, 
-                                    true));
-                            output.Append("::");
-                        
-                            switch (_case) {
-
-                                case CheckedEnumVariantWhenCase evwc: {
-
-                                    output.Append(evwc.VariantName);
-                                    output.Append(":\n");
-                                    output.Append(CodeGenIndent(indent));
-
-                                    switch (evwc.Body) {
-
-                                        case CheckedExpressionWhenBody e: {
-
-                                            output.Append("return NeuInternal::ExplicitValue(");
-                                            output.Append(CodeGenExpr(0, e.Expression, project));
-                                            output.Append(");");
-                                            break;
-                                        }
-
-                                        case CheckedBlockWhenBody b: {
-
-                                            output.Append(CodeGenBlock(indent, b.Block, project));
-                                            output.Append("break;\n");
-
-                                            break;
-                                        }
-                                    }
-
-                                    break;
-                                }
-
-                                default: {
-
-                                    break;
-                                }
-                            }
-
-                            output.Append('\n');
-                        }
-
-                        output.Append("}\n");
-                        output.Append("}()))");
+                        output.Append(
+                            CodeGenEnumMatch(
+                                _enum,
+                                we.Expression,
+                                we.Cases,
+                                we.TypeId,
+                                we.ValuesAreAllConstant,
+                                indent,
+                                project));
 
                         break;
                     }
 
                     default: {
 
-                        output.Append("NEU_RESOLVE_EXPLICIT_VALUE_OR_RETURN((");
-                        output.Append(CodeGenExpr(indent, we.Expression, project));
-
-                        output.Append(')');
-
-                        if (needsDeref) {
-
-                            output.Append("->");
-                        } 
-                        else {
-
-                            output.Append('.');
-                        }
-
-                        output.Append("visit(");
-
-                        var first = true;
-
-                        foreach (var _case in we.Cases) {
-
-                            if (!first) {
-
-                                output.Append(", ");
-                            }
-                            else {
-
-                                first = false;
-                            }
-
-                            output.Append("[&] (");
-
-                            switch (_case) {
-
-                                case CheckedEnumVariantWhenCase evwc: {
-
-                                    Int32? _enumId = null;
-
-                                    var type = project.Types[evwc.SubjectTypeId];
-
-                                    switch (type) {
-
-                                        case GenericEnumInstance gei: {
-
-                                            _enumId = gei.EnumId;
-
-                                            break;
-                                        }
-
-                                        case EnumType et: {
-
-                                            _enumId = et.EnumId;
-
-                                            break;
-                                        }
-
-                                        default: {
-
-                                            throw new Exception("Expected enum type");
-                                        }
-                                    }
-
-                                    var enumId = _enumId ?? throw new Exception();
-
-                                    var _enum2 = project.Enums[enumId];
-
-                                    var variant = _enum2.Variants[evwc.VariantIndex];
-
-                                    switch (variant) {
-
-                                        case CheckedTypedEnumVariant t: {
-
-                                            output.Append("typename ");
-                                            output.Append(
-                                                CodeGenTypePossiblyAsNamespace(
-                                                    evwc.SubjectTypeId, 
-                                                    project,
-                                                    true));
-                                            output.Append("::");
-                                            output.Append(t.Name);
-                                            output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
-                                            output.Append(CodeGenType(we.TypeId, project));
-                                            output.Append(", ");
-                                            output.Append("_NeuCurrentFunctionReturnType");
-                                            output.Append(">");
-                                            output.Append(" {\n");
-                                            output.Append("   ");
-
-                                            if (evwc.VariantArguments.Any()) {
-
-                                                var v = project
-                                                    .FindVarInScope(evwc.ScopeId, evwc.VariantArguments[0].Item2)
-                                                    ?? throw new Exception();
-
-                                                output.Append(CodeGenType(v.TypeId, project));
-                                                output.Append(" const& ");
-                                                output.Append(evwc.VariantArguments[0].Item2);
-                                                output.Append(" = __neu_match_value.value;\n");
-                                            }
-
-                                            break;
-                                        }
-
-                                        case CheckedUntypedEnumVariant u: {
-
-                                            output.Append("typename ");
-                                            output.Append(
-                                                CodeGenTypePossiblyAsNamespace(
-                                                    evwc.SubjectTypeId, 
-                                                    project,
-                                                    true));
-                                            output.Append("::");
-                                            output.Append(u.Name);
-                                            output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
-                                            output.Append(CodeGenType(we.TypeId, project));
-                                            output.Append(", ");
-                                            output.Append("_NeuCurrentFunctionReturnType");
-                                            output.Append(">");
-                                            output.Append(" {\n");
-
-                                            break;
-                                        }
-
-                                        case CheckedStructLikeEnumVariant s: {
-
-                                            output.Append("typename ");
-                                            output.Append(
-                                                CodeGenTypePossiblyAsNamespace(
-                                                    evwc.SubjectTypeId, 
-                                                    project,
-                                                    true));
-                                            output.Append("::");
-                                            output.Append(s.Name);
-                                            output.Append(" const& __neu_match_value) -> NeuInternal::ExplicitValueOrReturn<");
-                                            output.Append(CodeGenType(we.TypeId, project));
-                                            output.Append(", ");
-                                            output.Append("_NeuCurrentFunctionReturnType");
-                                            output.Append(">");
-                                            output.Append(" {\n");
-
-                                            if (evwc.VariantArguments.Any()) {
-
-                                                foreach (var arg in evwc.VariantArguments) {
-
-                                                    var v = project
-                                                        .FindVarInScope(evwc.ScopeId, arg.Item2)
-                                                        ?? throw new Exception();
-
-                                                    output.Append(CodeGenType(v.TypeId, project));
-                                                    output.Append(" const& ");
-                                                    output.Append(arg.Item2);
-                                                    output.Append(" = __neu_match_value.");
-                                                    output.Append(arg.Item1 ?? throw new Exception());
-                                                    output.Append(";\n");
-                                                }
-                                            }
-
-                                            break;
-                                        }
-
-                                        case CheckedWithValueEnumVariant w: {
-
-                                            throw new Exception("Unreachable?");
-                                        }
-
-                                        default: {
-
-                                            throw new Exception();
-                                        }
-                                    }
-
-                                    switch (evwc.Body) {
-
-                                        case CheckedBlockWhenBody b: {
-
-                                            output.Append(CodeGenBlock(indent + 1, b.Block, project));
-                                            output.Append("\nreturn NeuInternal::ExplicitValue<");
-                                            output.Append(CodeGenType(we.TypeId, project));
-                                            output.Append(">();\n");
-
-                                            break;
-                                        }
-
-                                        case CheckedExpressionWhenBody e: {
-
-                                            if (e.Expression.GetTypeIdOrTypeVar() == Compiler.VoidTypeId) {
-
-                                                output.Append("   return (");
-                                                output.Append(CodeGenExpr(
-                                                    indent + 1,
-                                                    e.Expression,
-                                                    project));
-                                                output.Append("), NeuInternal::ExplicitValue<void>();\n");
-                                            }
-                                            else {
-
-                                                output.Append("   return NeuInternal::ExplicitValue(");
-                                                output.Append(CodeGenExpr(
-                                                    indent + 1,
-                                                    e.Expression,
-                                                    project));
-                                                output.Append(");\n");
-                                            }
-
-                                            break;
-                                        }
-
-                                        default: {
-
-                                            throw new Exception();
-                                        }
-                                    }
-                                
-                                    break;
-                                }
-
-                                default: {
-
-                                    throw new Exception();
-                                }
-                            }
-
-                            output.Append("}\n");
-                        }
-
-                        output.Append(")");
-                        output.Append(")");
+                        output.Append(
+                            CodeGenGenericMatch(
+                                we.Expression,
+                                we.Cases,
+                                we.TypeId,
+                                we.ValuesAreAllConstant,
+                                indent,
+                                project));
 
                         break;
                     }

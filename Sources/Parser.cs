@@ -1606,18 +1606,60 @@ public partial class WhenCase {
         
         public WhenBody Body { get; init; }
 
+        public Span MarkerSpan { get; init; }
+
         ///
 
         public EnumVariantWhenCase(
             List<(String, Span)> variantName,
             List<(String?, String)> variantArguments,
             Span argumentsSpan,
-            WhenBody body) {
+            WhenBody body,
+            Span markerSpan) {
 
             this.VariantName = variantName;
             this.VariantArguments = variantArguments;
             this.ArgumentsSpan = argumentsSpan;
             this.Body = body;
+            this.MarkerSpan = markerSpan;
+        }
+    }
+
+    public partial class CatchAllWhenCase: WhenCase {
+
+        public WhenBody Body { get; init; }
+
+        public Span MarkerSpan { get; init; }
+
+        ///
+
+        public CatchAllWhenCase(
+            WhenBody body,
+            Span markerSpan) {
+
+            this.Body = body;
+            this.MarkerSpan = markerSpan;
+        }
+    }
+
+    public partial class ExpressionWhenCase: WhenCase {
+
+        public ParsedExpression MatchedExpression { get; init; }
+        
+        public WhenBody Body { get; init; }
+
+        public Span MarkerSpan { get; init; }
+
+        ///
+
+        public ExpressionWhenCase(
+            ParsedExpression matchedExpression,
+            WhenBody body,
+            Span markerSpan) {
+
+            this.MatchedExpression = matchedExpression;
+            this.Body = body;
+            this.MarkerSpan = markerSpan;
         }
     }
 
@@ -4925,145 +4967,199 @@ public static partial class ParserFunctions {
         ref int index) {
 
         // case:
+        // 'else' '=>' (expression | block)
         // QualifiedName('(' ((name ':')? expression),* ')')? '=>' (expression | block)
+        // '(' expression ')' '=>' (expression | block)
 
         Error? error = null;
 
-        var pattern = new List<(String, Span)>();
+        Func<WhenBody, WhenCase>? _makeCase = null;
 
-        while (tokens.ElementAtOrDefault(index) is NameToken nt) {
+        var loop = true;
 
-            index += 1;
+        while (loop) {
 
-            if (tokens.ElementAtOrDefault(index) is PeriodToken) {
+            if (tokens.ElementAtOrDefault(index) is NameToken nt 
+                && nt.Value == "else") {
 
                 index += 1;
-            }
-            else {
 
-                pattern.Add((nt.Value, nt.Span));
+                var span1 = new Span(
+                    fileId: tokens[index - 1].Span.FileId,
+                    start: tokens[index - 1].Span.Start,
+                    end: tokens[index - 1].Span.End);
+
+                _makeCase = (x) => {
+
+                    return new CatchAllWhenCase(x, span1);
+                };
 
                 break;
             }
 
-            pattern.Add((nt.Value, nt.Span));
-        }
+            if (tokens.ElementAtOrDefault(index) is LParenToken) {
 
-        var arguments = new List<(String?, String)>();
-        
-        var hasParens = false;
+                var (expr1, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
-        var argsStart = index;
+                error = error ?? err;
 
-        if (tokens.ElementAtOrDefault(index) is LParenToken) {
+                _makeCase = (x) => {
 
-            hasParens = true;
-            
-            index += 1;
+                    return new ExpressionWhenCase(
+                        matchedExpression: expr1,
+                        body: x,
+                        markerSpan: expr1.GetSpan());
+                };
 
-            var cont = true;
+                break;
+            }
 
-            while (cont 
-                && index < tokens.Count
-                && !(tokens.ElementAtOrDefault(index) is RParenToken)) {
+            var patternStartIndex = index;
 
-                if (tokens.ElementAtOrDefault(index) is NameToken nt) {
+            var pattern = new List<(String, Span)>();
 
-                    if (tokens.ElementAtOrDefault(index + 1) is ColonToken) {
+            while (tokens.ElementAtOrDefault(index) is NameToken nt2) {
 
-                        index += 1;
+                index += 1;
 
-                        if (tokens.ElementAtOrDefault(index) is ColonToken) {
+                if (tokens.ElementAtOrDefault(index) is PeriodToken) {
 
-                            index += 1;
-                        }
-                        else {
-
-                            error = new ParserError(
-                                "expected ':' after explicit pattern argument name",
-                                tokens.ElementAtOrDefault(index)!.Span);
-
-                            cont = false;
-                        
-                            break;
-                        }
-
-                        if (tokens.ElementAtOrDefault(index) is NameToken binding) {
-
-                            index += 1;
-
-                            arguments.Add((nt.Value, binding.Value));
-                        }
-                        else {
-
-                            error = new ParserError(
-                                "expected pattern argument name",
-                                tokens.ElementAtOrDefault(index)!.Span);
-
-                            cont = false;
-
-                            break;
-                        }
-
-                        if (tokens.ElementAtOrDefault(index) is CommaToken) {
-
-                            index += 1;
-                        }
-                    }
-                    else {
-
-                        if (tokens.ElementAtOrDefault(index) is NameToken binding) {
-
-                            index += 1;
-
-                            arguments.Add((null, binding.Value));
-                        }
-                        else {
-
-                            error = new ParserError(
-                                "expected pattern argument name",
-                                tokens.ElementAtOrDefault(index)!.Span);
-
-                            cont = false;
-
-                            break;
-                        }
-
-                        if (tokens.ElementAtOrDefault(index) is CommaToken) {
-
-                            index += 1;
-                        }
-                    }
+                    index += 1;
                 }
                 else {
 
-                    if (tokens.ElementAtOrDefault(index) is NameToken binding) {
+                    pattern.Add((nt2.Value, nt2.Span));
+
+                    break;
+                }
+                
+                pattern.Add((nt2.Value, nt2.Span));
+            }
+
+            var arguments = new List<(String?, String)>();
+
+            var hasParens = false;
+
+            var argsStart = index;
+
+            if (tokens.ElementAtOrDefault(index) is LParenToken) {
+
+                hasParens = true;
+
+                index += 1;
+
+                while (!(tokens.ElementAtOrDefault(index) is RParenToken)) {
+
+                    if (tokens.ElementAtOrDefault(index) is NameToken nt2) {
+
+                        if (tokens.ElementAtOrDefault(index + 1) is ColonToken) {
+
+                            index += 1; 
+
+                            if (tokens.ElementAtOrDefault(index) is ColonToken) {
+
+                                index += 1;
+                            }
+                            else {
+
+                                error = error ??
+                                    new ParserError(
+                                        "expected ':' after explicit pattern argument name",
+                                        tokens[index].Span);
+
+                                break;
+                            }
+
+                            if (tokens.ElementAtOrDefault(index) is NameToken binding) {
+
+                                index += 1;
+
+                                arguments.Add((nt2.Value, binding.Value));
+                            }   
+                            else {
+
+                                error = error ?? 
+                                    new ParserError(
+                                        "expected pattern argument name",
+                                        tokens[index].Span);
+
+                                break;
+                            }
+
+                            if (tokens.ElementAtOrDefault(index) is CommaToken) {
+
+                                index += 1;
+                            }
+                        }
+                        else {
+
+                            if (tokens.ElementAtOrDefault(index) is NameToken binding2) {
+
+                                index += 1;
+
+                                arguments.Add((null, binding2.Value));
+                            }
+                            else {
+
+                                error = error ??
+                                    new ParserError(
+                                        "expected pattern argument name",
+                                        tokens[index].Span);
+
+                                break;
+                            }
+
+                            if (tokens.ElementAtOrDefault(index) is CommaToken) {
+
+                                index += 1;
+                            }
+                        }
+                    }
+                    else if (tokens.ElementAtOrDefault(index) is NameToken binding3) {
 
                         index += 1;
 
-                        arguments.Add((null, binding.Value));
+                        arguments.Add((null, binding3.Value));
                     }
                     else {
 
-                        error = new ParserError(
-                            "expected pattern argument name",
-                            tokens.ElementAtOrDefault(index)!.Span);
-
-                        cont = false;
+                        error = error ??
+                            new ParserError(
+                                "expected pattern argument name",
+                                tokens[index].Span);
 
                         break;
                     }
                 }
             }
 
+            if (hasParens) {
+
+                index += 1;
+            }
+
+            var markerSpan = new Span(
+                fileId: tokens[patternStartIndex].Span.FileId,
+                start: tokens[patternStartIndex].Span.Start,
+                end: tokens[index - 1].Span.End);
+
+            _makeCase = (x) => {
+
+                return new EnumVariantWhenCase(
+                    variantName: pattern,
+                    variantArguments: arguments,
+                    argumentsSpan: new Span(
+                        fileId: tokens[argsStart].Span.FileId,
+                        start: tokens[argsStart].Span.Start,
+                        end: tokens[argsStart].Span.End),
+                    body: x,
+                    markerSpan: markerSpan);
+            };
+
+            break;
         }
 
-        if (hasParens) {
-
-            index += 1;
-        }
-
-        var argsEnd = index;
+        Func<WhenBody, WhenCase> makeCase = _makeCase ?? throw new Exception();
 
         if (tokens.ElementAtOrDefault(index) is FatArrowToken) {
 
@@ -5071,9 +5167,10 @@ public static partial class ParserFunctions {
         }
         else {
 
-            error = new ParserError(
-                "expected '=>' after pattern case",
-                tokens.ElementAtOrDefault(index)!.Span);
+            error = 
+                new ParserError(
+                    "expected '=>' after pattern case",
+                    tokens[index].Span);
         }
 
         if (tokens.ElementAtOrDefault(index) is LCurlyToken) {
@@ -5084,16 +5181,7 @@ public static partial class ParserFunctions {
 
             error = error ?? err;
 
-            return (
-                new EnumVariantWhenCase(
-                    variantName: pattern,
-                    variantArguments: arguments,
-                    argumentsSpan: new Span(
-                        fileId: tokens[argsStart].Span.FileId,
-                        start: tokens[argsStart].Span.Start,
-                        end: tokens[argsEnd - 1].Span.End),
-                    body: new BlockWhenBody(block)),
-                error);
+            return (makeCase(new BlockWhenBody(block)), error);
         }
         else {
 
@@ -5101,16 +5189,7 @@ public static partial class ParserFunctions {
 
             error = error ?? err;
 
-            return (
-                new EnumVariantWhenCase(
-                    variantName: pattern,
-                    variantArguments: arguments,
-                    argumentsSpan: new Span(
-                        fileId: tokens[argsStart].Span.FileId,
-                        start: tokens[argsStart].Span.Start,
-                        end: tokens[argsEnd - 1].Span.End),
-                    body: new ExpressionWhenBody(expr)),
-                error);
+            return (makeCase(new ExpressionWhenBody(expr)), error);
         }
     }
 
@@ -5137,6 +5216,8 @@ public static partial class ParserFunctions {
         }
 
         index += 1;
+
+        SkipNewLines(tokens, ref index);
 
         while (!(tokens.ElementAtOrDefault(index) is RCurlyToken)) {
 

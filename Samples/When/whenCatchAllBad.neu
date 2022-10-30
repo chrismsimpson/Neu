@@ -1,0 +1,13 @@
+enum Foo {
+    a
+}
+
+func main() {
+    
+    let x = Foo.a()
+    
+    when x {
+        else => 1
+        else => 2
+    }
+}

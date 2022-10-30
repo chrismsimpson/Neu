@@ -9,11 +9,14 @@ func main(args: [String]) {
     }
 
     var file = File.openForReading(args[1])
+
     var array: [UInt8] = [UInt8(0)]
 
     while file.read(array) != 0 {
-        for idx in 0..array.size() {
-            print("{:c}", array[idx])
+
+        for index in 0..array.size() {
+
+            print("{:c}", array[index])
         }
     }
 }

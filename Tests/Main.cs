@@ -1,5 +1,5 @@
 
-namespace Neu;
+namespace NeuTests;
 
 public static partial class Program {
 
@@ -98,7 +98,19 @@ public static partial class Program {
                             }
                             else {
 
-                                WriteLine($"Test failed: {path}");
+                                // WriteLine($"Test failed: {path}");
+
+                                Write($" ......");
+
+                                Console.ForegroundColor = ConsoleColor.Red;
+
+                                Write($" Failed\n");
+
+                                Console.ForegroundColor = og;
+
+                                Neu.Program.DisplayError(compiler, err.Content, err.GetSpan());
+
+                                
 
                                 return new ErrorOrVoid(err);
                             }
@@ -137,7 +149,7 @@ public static partial class Program {
                     }
 
                     var (binStdOut, binStdErr, binSuccess) = 
-                        Process
+                        Neu.Process
                             .Run(name: exeName);
 
                     var baselineText = File.Exists(outputPath)
@@ -261,6 +273,7 @@ public static partial class Program {
                 TestNamespaces();
                 TestWeak();
                 TestCodeGen();
+                TestWhen();
 
                 break;
             }
@@ -436,5 +449,10 @@ public static partial class Program {
     public static ErrorOrVoid TestCodeGen() {
 
         return TestSamples("./Tests/CodeGen");
+    }
+
+    public static ErrorOrVoid TestWhen() {
+
+        return TestSamples("./Samples/When");
     }
 }
