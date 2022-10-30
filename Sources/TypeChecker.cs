@@ -8078,6 +8078,10 @@ public static partial class TypeCheckerFunctions {
                             }
                         }
                     }
+                    else if (lhs is CheckedIndexedDictionaryExpression) {
+
+                        return (lhsTypeId, null);
+                    }
                 }
 
                 if (lhsTypeId != rhsTypeId) {

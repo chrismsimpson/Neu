@@ -1,0 +1,5 @@
+func main() {
+    var dict = Dictionary<Int32, String>()
+    dict[0] = "foo"
+    printLine("0: {}", dict[0])
+}

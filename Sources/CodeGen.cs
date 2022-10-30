@@ -4112,6 +4112,20 @@ public static partial class CodeGenFunctions {
 
                     default: {
 
+                        if (binOp.Operator == BinaryOperator.Assign) {
+
+                            if (binOp.Lhs is CheckedIndexedDictionaryExpression id) {
+
+                                output.Append(CodeGenExpr(0, id.Expression, project));
+                                output.Append(".set(");
+                                output.Append(CodeGenExpr(0, id.Index, project));
+                                output.Append(", ");
+                                output.Append(CodeGenExpr(0, binOp.Rhs, project));
+                                output.Append("))");
+                                return output.ToString();
+                            }
+                        }
+
                         output.Append(CodeGenExpr(indent, binOp.Lhs, project));
 
                         switch (binOp.Operator) {
