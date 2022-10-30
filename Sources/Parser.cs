@@ -7187,6 +7187,8 @@ public static partial class ParserFunctions {
                             new ParserError(
                                 "Can't fill an Array with more than one expression",
                                 tokens.ElementAt(index).Span);
+
+                        index += 1;
                     }
 
                     break;
