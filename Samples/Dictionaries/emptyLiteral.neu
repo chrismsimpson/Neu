@@ -1,0 +1,5 @@
+func main() {
+    var dict: [String: [Int64: Int64]] = [:]
+    dict.set(key: "a", value: [10: 20])
+    printLine("{}", dict.get("a")!.get(10)!)
+}

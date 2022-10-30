@@ -7192,6 +7192,41 @@ public static partial class ParserFunctions {
                     break;
                 }
 
+                case ColonToken _: {
+
+                    index += 1;
+
+                    if (!dictOutput.Any()) {
+
+                        if (index < tokens.Count && tokens[index] is RSquareToken) {
+
+                            index += 1;
+
+                            isDictionary = true;
+
+                            cont = false;
+
+                            break;
+                        }
+                        else {
+
+                            error = error ??
+                                new ParserError(
+                                    "Expected ']'",
+                                    tokens[index].Span);
+                        }
+                    }
+                    else {
+
+                        error = error ??
+                            new ParserError(
+                                "Missing key in dictionary literal",
+                                tokens[index].Span);
+                    }
+
+                    break;
+                }
+
                 default: {
 
                     var (expr, err) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
