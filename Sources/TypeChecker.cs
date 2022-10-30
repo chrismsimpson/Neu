@@ -6612,18 +6612,7 @@ public static partial class TypeCheckerFunctions {
 
                     case GenericInstance gd when gd.StructId == dictStructId: {
 
-                        var valueTypeId = gd.TypeIds[1];
-
-                        var optionalStructId = project
-                            .FindStructInScope(0, "Optional")
-                            ?? throw new Exception("internal error: Optional builtin definition not found");
-
-                        var innerTypeId = project.FindOrAddTypeId(
-                            new GenericInstance(
-                                optionalStructId, 
-                                new List<Int32>(new [] { valueTypeId })));
-
-                        exprType = innerTypeId;
+                        exprType = gd.TypeIds[0];
 
                         var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, exprType);
 
@@ -8155,7 +8144,6 @@ public static partial class TypeCheckerFunctions {
         Int32 scopeId,
         Project project) {
 
-        // CheckedFunction? callee = null;
         Int32? calleeId = null;
 
         DefinitionType? definitionType = null;
