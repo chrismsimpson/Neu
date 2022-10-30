@@ -3571,7 +3571,8 @@ public static partial class CodeGenFunctions {
 
                     default: {
 
-                        if (ce.Call.Linkage == FunctionLinkage.ImplicitConstructor) {
+                        if (ce.Call.Linkage == FunctionLinkage.ImplicitConstructor
+                            || ce.Call.Linkage == FunctionLinkage.ExternalClassConstructor) {
 
                             var typeId = ce.Call.TypeId;
 

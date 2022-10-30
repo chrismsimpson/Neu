@@ -648,7 +648,8 @@ public enum FunctionLinkage {
     Internal,
     External,
     ImplicitConstructor,
-    ImplicitEnumConstructor
+    ImplicitEnumConstructor,
+    ExternalClassConstructor
 }
 
 public enum DefinitionLinkage {

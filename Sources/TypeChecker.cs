@@ -1213,7 +1213,7 @@ public partial class CheckedFunction {
     
     public ParsedFunction? Function { get; set; }
 
-    public FunctionLinkage Linkage { get; init; }
+    public FunctionLinkage Linkage { get; set; }
 
     public bool IsInstantiated { get; set; }
 
@@ -4266,7 +4266,20 @@ public static partial class TypeCheckerFunctions {
                     visibility: uncheckedMember.Visibility));
         }
 
-        if (project.FindFuncInScope(chkStructScopeId, structure.Name) == null) {
+        if (project.FindFuncInScope(chkStructScopeId, structure.Name) is Int32 constructorId) {
+
+            if (structure.DefinitionType == DefinitionType.Class
+                && structure.DefinitionLinkage == DefinitionLinkage.External) {
+
+                // XXX: The parser always sets the linkage type of an extern class'
+                //      constructor to External, but we actually want to call the
+                //      class' ::create function, just like we do with a
+                //      ImplicitConstructor class.
+
+                project.Functions[constructorId].Linkage = FunctionLinkage.ExternalClassConstructor;
+            }
+        }
+        else {
 
             // No constructor found, so let's make one
 
