@@ -4075,10 +4075,6 @@ public static partial class TypeCheckerFunctions {
                 parameters: new List<CheckedParameter>(),
                 genericParameters: new List<FunctionGenericParameter>(),
                 funcScopeId: methodScopeId,
-                // block:
-                //     func.GenericParameters.Any()
-                //         ? null
-                //         : new CheckedBlock(),
                 block: new CheckedBlock(),
                 func: func,
                 linkage: func.Linkage,
@@ -6750,8 +6746,6 @@ public static partial class TypeCheckerFunctions {
                     }
                 }
 
-                // CHECK: Check genericParams is properly constructed
-
                 Int32? finalResultType = null;
 
                 var allVariantsAreConstants = true;
@@ -7214,6 +7208,10 @@ public static partial class TypeCheckerFunctions {
 
                     default: {
 
+                        var isEnumMatch = false;
+
+                        var isValueMatch = false;
+
                         var seenCatchAll = false;
 
                         foreach (var _case in we.Cases) {
@@ -7222,10 +7220,46 @@ public static partial class TypeCheckerFunctions {
 
                                 case EnumVariantWhenCase evwc: {
 
-                                    error = error ??
-                                        new TypeCheckError(
-                                            "Cannot use enum variant names to match non-enum type '{project.TypeNameForTypeId(subjectTypeId}'",
-                                            evwc.MarkerSpan);
+                                    if (isValueMatch) {
+
+                                        error = error ??
+                                            new TypeCheckError(
+                                                "Cannot have an enum match case in a match expression containing value matches",
+                                                evwc.MarkerSpan);
+                                    }
+                                    
+                                    isEnumMatch = true;
+
+                                    // We don't know what the enum type is, but we have the type var for it, so generate a generic enum match.
+                                    // note that this will be fully checked when this match expression is actually instantiated.
+
+                                    var (checkedBody, err2) = TypeCheckWhenBody(
+                                        evwc.Body,
+                                        scopeId,
+                                        project,
+                                        safetyMode,
+                                        genericParams,
+                                        ref finalResultType,
+                                        evwc.MarkerSpan);
+                                
+                                    error = error ?? err2;
+
+                                    if (finalResultType is Int32 typeId) {
+
+                                        if (typeId == Compiler.UnknownTypeId) {
+
+                                            finalResultType = null;
+                                        }
+                                    }
+
+                                    checkedCases.Add(
+                                        new CheckedEnumVariantWhenCase(
+                                            variantName: evwc.VariantName.Last().Item1,
+                                            variantArguments: evwc.VariantArguments,
+                                            subjectTypeId,
+                                            variantIndex: 0,
+                                            scopeId,
+                                            body: checkedBody));
 
                                     break;
                                 }
@@ -7340,6 +7374,18 @@ public static partial class TypeCheckerFunctions {
                                 }
 
                                 case ExpressionWhenCase ewc: {
+
+                                    if (isEnumMatch) {
+
+                                        error = error ??
+                                            new TypeCheckError(
+                                                "Cannot have a value match case in a match expression containing enum matches",
+                                                ewc.MarkerSpan);
+
+                                        continue;
+                                    }
+
+                                    isValueMatch = true;
 
                                     var (checkedExpr2, err5) = TypeCheckExpression(
                                         ewc.MatchedExpression,
@@ -8478,11 +8524,6 @@ public static partial class TypeCheckerFunctions {
                                 throw new Exception("internal error: previously resolved call is now unresolved");
 
                             var callee2 = project.Functions[calleeId2];
-
-                            // if (!callee2.IsInstantiated) {
-
-                            //     genericCheckedFunctionToInstantiate = calleeId2;
-                            // }
 
                             if (call.Args[idx].Item2 is ParsedVarExpression ve) {
 

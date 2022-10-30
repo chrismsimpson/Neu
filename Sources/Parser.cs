@@ -3406,13 +3406,6 @@ public static partial class ParserFunctions {
                         break;
                     }
 
-                    // case RCurlyToken _: {
-
-                    //     cont = false;
-
-                    //     break;
-                    // }
-
                     default: {
 
                         _enum.Variants.Add(
@@ -4097,8 +4090,6 @@ public static partial class ParserFunctions {
                                         returnType = retType;
 
                                         error = error ?? retTypeErr;
-
-                                        // index += 1;
 
                                         break;
                                     }
@@ -5919,8 +5910,6 @@ public static partial class ParserFunctions {
 
                     error = error ?? isTypeNameErr;
 
-                    // index += 1;
-
                     expr = new ParsedUnaryOpExpression(expr, new IsUnaryOperator(isTypeName), _span);
 
                     break;
@@ -6005,8 +5994,6 @@ public static partial class ParserFunctions {
                             break;
                         }
                     }
-
-                    // index += 1;
 
                     expr = new ParsedUnaryOpExpression(expr, new TypeCastUnaryOperator(cast), _span);
 
@@ -7887,8 +7874,6 @@ public static partial class ParserFunctions {
                                     }
 
                                     error = error ?? innerErr;
-
-                                    // index += 1;
 
                                     innerTypes.Add(innerTy);
 

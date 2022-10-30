@@ -442,12 +442,6 @@ public partial class Token {
             : base(span) { }
     }
 
-    // public partial class UnknownToken: Token {
-
-    //     public UnknownToken(Span span) 
-    //         : base(span) { }
-    // }
-
     public partial class GarbageToken: Token {
 
         public GarbageToken(Span span) 

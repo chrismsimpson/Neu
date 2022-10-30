@@ -433,6 +433,38 @@ constexpr auto continue_on_panic = false;
             return static_cast<OutputType>(input);
         }
     }
+
+
+
+
+    template<typename T>
+    struct _RemoveRefPointer {
+        
+        using Type = T;
+    };
+
+    template<typename T>
+    struct _RemoveRefPointer<NonNullRefPointer<T>> {
+        
+        using Type = T;
+    };
+
+    template<typename T>
+    using RemoveRefPointer = typename _RemoveRefPointer<RemoveConstVolatileReference<T>>::Type;
+
+    template<typename T>
+    ALWAYS_INLINE decltype(auto) derefIfRefPointer(T&& value) {
+
+        if constexpr (IsSpecializationOf<RemoveConstVolatileReference<T>, NonNullRefPointer>) {
+
+            return static_cast<CopyConst<RemoveReference<T>, RemoveRefPointer<T>>&>(*value);
+        }
+        else {
+
+            return static_cast<Conditional<IsRValueReference<T>, RemoveReference<T>, T>>(value);
+        }
+    }
+
 }
 
 using NeuInternal::fallibleIntegerCast;

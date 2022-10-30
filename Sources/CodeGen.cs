@@ -3031,7 +3031,11 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        if (matchValuesAreAllConstant) {
+        var isGenericEnum = cases.Any(c => c is CheckedEnumVariantWhenCase);
+
+        var _matchValuesAreAllConstant = matchValuesAreAllConstant && !isGenericEnum;
+
+        if (_matchValuesAreAllConstant && !isGenericEnum) {
     
             // Use a switch statement instead of if-else chains
 
@@ -3055,9 +3059,19 @@ public static partial class CodeGenFunctions {
             output.Append(", ");
             output.Append("_NeuCurrentFunctionReturnType");
             output.Append("> { \n");
-            output.Append("auto __neu_enum_value = ");
+
+            if (isGenericEnum) {
+                
+                output.Append("auto&& __neu_enum_value = NeuInternal::derefIfRefPointer(");
+            } 
+            else {
+                
+                output.Append("auto __neu_enum_value = (");
+            }
+
             output.Append(CodeGenExpr(indent, expr, project));
-            output.Append(";\n");
+
+            output.Append(");\n");
         }
 
         var first = true;
@@ -3075,12 +3089,53 @@ public static partial class CodeGenFunctions {
 
                 case CheckedEnumVariantWhenCase evwc: {
 
-                    throw new Exception("Attempted to do a generic match on an enum variant");
+                    output.Append("if (__neu_enum_value.template has<");
+
+                    var variantTypeBuilder = new StringBuilder();
+
+                    var variantTypeQualifier = CodeGenType(expr.GetTypeId(evwc.ScopeId, project), project);
+
+                    if (!IsNullOrWhiteSpace(variantTypeQualifier)) {
+
+                        variantTypeBuilder.Append("typename NeuInternal::RemoveRefPointer<");
+                        variantTypeBuilder.Append(variantTypeQualifier);
+                        variantTypeBuilder.Append(">::");
+                    }
+
+                    variantTypeBuilder.Append(evwc.VariantName);
+
+                    var variantTypeName = variantTypeBuilder.ToString();
+
+                    output.Append(variantTypeName);
+                    output.Append(">()) {\n");
+                    output.Append("auto& __neu_match_value = __neu_enum_value.template get<");
+                    output.Append(variantTypeName);
+                    output.Append(">();\n");
+
+                    foreach (var arg in evwc.VariantArguments) {
+
+                        output.Append("auto& ");
+                        output.Append(arg.Item2);
+                        output.Append(" = __neu_match_value.");
+                        output.Append(arg.Item1 ?? "value");
+                        output.Append(";\n");
+                    }
+
+                    output.Append(
+                        CodeGenWhenBody(
+                            indent + 1,
+                            evwc.Body,
+                            project,
+                            returnTypeId));
+
+                    output.Append("}\n");
+
+                    break;
                 }
 
                 case CheckedCatchAllWhenCase cawc: {
 
-                    if (matchValuesAreAllConstant) {
+                    if (_matchValuesAreAllConstant) {
                         
                         output.Append("default:\n");
                     } 
@@ -3101,7 +3156,7 @@ public static partial class CodeGenFunctions {
                             project,
                             returnTypeId));
                             
-                    if (matchValuesAreAllConstant) {
+                    if (_matchValuesAreAllConstant) {
 
                         output.Append("break;\n");
                     } 
@@ -3115,7 +3170,7 @@ public static partial class CodeGenFunctions {
 
                 case CheckedExpressionWhenCase ewc: {
 
-                    if (matchValuesAreAllConstant) {
+                    if (_matchValuesAreAllConstant) {
                         
                         output.Append("case ");
                     } 
@@ -3131,7 +3186,7 @@ public static partial class CodeGenFunctions {
 
                     output.Append(CodeGenExpr(indent, ewc.Expression, project));
                     
-                    if (matchValuesAreAllConstant) {
+                    if (_matchValuesAreAllConstant) {
                         
                         output.Append(":\n");
                     } 
@@ -3148,7 +3203,7 @@ public static partial class CodeGenFunctions {
                             project,
                             returnTypeId));
                     
-                    if (matchValuesAreAllConstant) {
+                    if (_matchValuesAreAllConstant) {
                         
                         output.Append("break;\n");
                     } 
@@ -3169,7 +3224,7 @@ public static partial class CodeGenFunctions {
             output.Append('\n');
         }
 
-        if (matchValuesAreAllConstant) {
+        if (_matchValuesAreAllConstant) {
             
             output.Append("}\n");
         }

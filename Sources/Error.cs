@@ -147,13 +147,6 @@ public partial class ErrorOr<Result> {
 
         this.Error = e;
     }
-
-    // public ErrorOr(
-    //     String content,
-    //     Span span) {
-
-    //     this.Error = new ParserError(content, span);
-    // }
 }
 
 public class ErrorOrVoid {
