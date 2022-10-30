@@ -1,0 +1,8 @@
+func main() {
+
+    let strC: CChar = '\n'
+
+    print("hello{}", strC)
+    
+    print("world")
+}

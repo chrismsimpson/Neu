@@ -3340,7 +3340,7 @@ public static partial class CodeGenFunctions {
             case CheckedCharacterConstantExpression cce: {
 
                 output.Append('\'');
-                output.Append(cce.Char);
+                output.Append(cce.Value);
                 output.Append('\'');
 
                 break;

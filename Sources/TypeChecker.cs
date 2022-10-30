@@ -2391,17 +2391,17 @@ public partial class CheckedExpression {
 
     public partial class CheckedCharacterConstantExpression: CheckedExpression {
 
-        public Char Char { get; init; }
+        public String Value { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public CheckedCharacterConstantExpression(
-            Char c,
+            String value,
             Span span) {
 
-            this.Char = c;
+            this.Value = value;
             this.Span = span;
         }
     }
@@ -6018,7 +6018,7 @@ public static partial class TypeCheckerFunctions {
                 var (_, err) = unifyWithTypeHint(project, Compiler.CCharTypeId);
 
                 return (
-                    new CheckedCharacterConstantExpression(cle.Char, cle.Span),
+                    new CheckedCharacterConstantExpression(cle.Value, cle.Span),
                     err);
             }
 

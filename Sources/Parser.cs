@@ -1726,17 +1726,17 @@ public partial class ParsedExpression {
 
     public partial class ParsedCharacterLiteralExpression: ParsedExpression {
 
-        public Char Char { get; init; }
+        public String Value { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public ParsedCharacterLiteralExpression(
-            Char c,
+            String value,
             Span span) {
 
-            this.Char = c;
+            this.Value = value;
             this.Span = span;
         }
     }
@@ -2339,7 +2339,7 @@ public static partial class ParsedExpressionFunctions {
                 l is ParsedCharacterLiteralExpression lc
                 && r is ParsedCharacterLiteralExpression rc:
 
-                return Equals(lc.Char, rc.Char);
+                return Equals(lc.Value, rc.Value);
             
             ///
 
@@ -5804,13 +5804,28 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                if (ct.Value.FirstOrDefault() is Char c) {
+                switch (ct.Value.FirstOrDefault()) {
 
-                    expr = new ParsedCharacterLiteralExpression(c, span);
-                }
-                else {
+                    case '\\' when ct.Value.Length == 2: {
 
-                    expr = new ParsedGarbageExpression(span);
+                        expr = new ParsedCharacterLiteralExpression(ct.Value, span);
+
+                        break;
+                    }
+
+                    case var _ when ct.Value.Length == 1: {
+
+                        expr = new ParsedCharacterLiteralExpression(ct.Value, span);
+
+                        break;
+                    }
+
+                    default: {
+
+                        expr = new ParsedGarbageExpression(span);
+
+                        break;
+                    }
                 }
 
                 break;
