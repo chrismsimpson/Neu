@@ -1,0 +1,7 @@
+func main() {
+    let x = Byte('\n')
+    let y = Byte('\"')
+    let z = Byte('\'')
+
+    printLine("{} {} {}", x, y, z)
+}

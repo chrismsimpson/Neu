@@ -2374,14 +2374,14 @@ public partial class CheckedExpression {
 
     public partial class CheckedByteConstantExpression: CheckedExpression {
 
-        public byte Value { get; init; }
+        public String Value { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public CheckedByteConstantExpression(
-            byte value,
+            String value,
             Span span) {
 
             this.Value = value;
@@ -6009,7 +6009,7 @@ public static partial class TypeCheckerFunctions {
                 var (_, err) = unifyWithTypeHint(project, Compiler.UInt8TypeId);
 
                 return (
-                    new CheckedByteConstantExpression(b.Byte, b.Span),
+                    new CheckedByteConstantExpression(b.Value, b.Span),
                     err);
             }
 

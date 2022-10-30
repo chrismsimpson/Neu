@@ -1743,17 +1743,17 @@ public partial class ParsedExpression {
 
     public partial class ParsedByteLiteralExpression: ParsedExpression {
 
-        public byte Byte { get; init; }
+        public String Value { get; init; }
 
         public Span Span { get; init; }
 
         ///
 
         public ParsedByteLiteralExpression(
-            byte b,
+            String value,
             Span span) {
 
-            this.Byte = b;
+            this.Value = value;
             this.Span = span;
         }
     }
@@ -2347,7 +2347,7 @@ public static partial class ParsedExpressionFunctions {
                 l is ParsedByteLiteralExpression lb
                 && r is ParsedByteLiteralExpression rb:
 
-                return Equals(lb.Byte, rb.Byte);
+                return Equals(lb.Value, rb.Value);
             
             ///
 
@@ -5835,13 +5835,28 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                if (bt.Value.FirstOrDefault() is char c) {
+                switch (bt.Value.FirstOrDefault()) {
 
-                    expr = new ParsedByteLiteralExpression((byte) c, span);
-                }
-                else {
+                    case '\\' when bt.Value.Length == 2: {
 
-                    expr = new ParsedGarbageExpression(span);
+                        expr = new ParsedByteLiteralExpression(bt.Value, span);
+
+                        break;
+                    }
+                    
+                    case var _ when bt.Value.Length == 1: {
+
+                        expr = new ParsedByteLiteralExpression(bt.Value, span);
+
+                        break;
+                    }
+
+                    default: {
+
+                        expr = new ParsedGarbageExpression(span);
+
+                        break;
+                    }
                 }
 
                 break;

@@ -3323,16 +3323,9 @@ public static partial class CodeGenFunctions {
 
             case CheckedByteConstantExpression b: {
 
-                if ((b.Value & 128) == 0) {
-
-                    output.Append('\'');
-                    output.Append(ToChar(b.Value));
-                    output.Append('\'');
-                } 
-                else {
-
-                    output.Append($"0x{b.Value}");
-                }
+                output.Append('\'');
+                output.Append(b.Value);
+                output.Append('\'');
 
                 break;
             }
