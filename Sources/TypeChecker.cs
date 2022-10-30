@@ -8508,12 +8508,16 @@ public static partial class TypeCheckerFunctions {
 
                         while (idx < call.Args.Count) {
 
+                            var param = project.Functions[calleeId].Parameters[idx + argOffset];
+
+                            var _typeHint = param.Variable.TypeId;
+
                             var (checkedArg, checkedArgErr) = TypeCheckExpression(
                                 call.Args[idx].Item2, 
                                 callerScopeId, 
                                 project, 
                                 safetyMode,
-                                null);
+                                _typeHint);
 
                             error = error ?? checkedArgErr;
 

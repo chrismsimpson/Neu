@@ -1,0 +1,7 @@
+func test(arr: [Double]) {
+    printLine("OK")
+}
+
+func main() {
+    test(arr: ["bad-type"])
+}
