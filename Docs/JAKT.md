@@ -35,6 +35,8 @@
 
 25/05/22: e19536f3fc28c633357b112ff7362f72ab18962b implement match
 
+25/05/22: ed766a25d54f7af5d009f92dbe86618842a1abab empty dict literals
+
 
 launch.json:
 ```

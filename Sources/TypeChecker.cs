@@ -6228,7 +6228,7 @@ public static partial class TypeCheckerFunctions {
 
                         innerTypeId = hintInnerType;
                     }
-                    else if (typeHint == null) {
+                    else if (typeHint == Compiler.UnknownTypeId) {
 
                         error = error ??
                             new TypeCheckError(
@@ -6320,7 +6320,7 @@ public static partial class TypeCheckerFunctions {
 
                         innerTypeId = hintInnerType;
                     }
-                    else if (typeHint == null) {
+                    else if (typeHint == Compiler.UnknownTypeId) {
 
                         error = error ??
                             new TypeCheckError(
@@ -6450,11 +6450,11 @@ public static partial class TypeCheckerFunctions {
 
                         keyTypeId = kh;
                     }
-                    else if (typeHint == null) {
+                    else if (typeHint == Compiler.UnknownTypeId) {
 
                         error = error ??
                             new TypeCheckError(
-                                "Cannot infer key type for Dictionary",
+                                "Cannot infer key type for Dictionary<K, V>",
                                 de.Span);
                     }
                 }
@@ -6465,7 +6465,7 @@ public static partial class TypeCheckerFunctions {
 
                         valueTypeId = vh;
                     }
-                    else if (typeHint == null) {
+                    else if (typeHint == Compiler.UnknownTypeId) {
 
                         error = error ?? 
                             new TypeCheckError(
