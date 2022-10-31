@@ -3979,7 +3979,7 @@ public static partial class CodeGenFunctions {
 
                                 if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
-                                    output.Append("saturatingIntegerCast");
+                                    output.Append("asSaturated");
                                 }
                                 else {
 
@@ -3993,7 +3993,7 @@ public static partial class CodeGenFunctions {
 
                                 if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
 
-                                    output.Append("truncatingIntegerCast");
+                                    output.Append("asTruncated");
                                 }
                                 else {
 

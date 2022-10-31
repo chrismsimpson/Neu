@@ -384,11 +384,11 @@ constexpr auto continue_on_panic = false;
     }
 
     template<typename OutputType, typename InputType>
-    ALWAYS_INLINE constexpr OutputType saturatingIntegerCast(InputType input) {
+    ALWAYS_INLINE constexpr OutputType asSaturated(InputType input) {
 
         if constexpr (IsEnum<InputType>) {
         
-            return saturatingIntegerCast<OutputType>(toUnderlying(input));
+            return asSaturated<OutputType>(toUnderlying(input));
         }
         else {
 
@@ -412,10 +412,11 @@ constexpr auto continue_on_panic = false;
     }
 
     template<typename OutputType, typename InputType>
-    ALWAYS_INLINE constexpr OutputType truncatingIntegerCast(InputType input) {
+    ALWAYS_INLINE constexpr OutputType asTruncated(InputType input) {
 
         if constexpr (IsEnum<InputType>) {
-            return truncatingIntegerCast<OutputType>(toUnderlying(input));
+            
+            return asTruncated<OutputType>(toUnderlying(input));
         } 
         else {
 
@@ -460,8 +461,8 @@ constexpr auto continue_on_panic = false;
 
 using NeuInternal::fallibleIntegerCast;
 using NeuInternal::infallibleIntegerCast;
-using NeuInternal::saturatingIntegerCast;
-using NeuInternal::truncatingIntegerCast;
+using NeuInternal::asSaturated;
+using NeuInternal::asTruncated;
 
 int main(int argc, char** argv) {
 
