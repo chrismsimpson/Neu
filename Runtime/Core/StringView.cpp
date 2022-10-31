@@ -5,7 +5,6 @@
  */
 
 #include <Core/AnyOf.h>
-#include <Core/ByteBuffer.h>
 #include <Core/Find.h>
 #include <Core/Function.h>
 #include <Core/StringView.h>
@@ -22,11 +21,6 @@ StringView::StringView(String const& string)
       m_length(string.length()) { }
 
 #endif
-
-StringView::StringView(ByteBuffer const& buffer)
-    : m_characters((char const*) buffer.data()), 
-      m_length(buffer.size()) { }
-
 
 Vector<StringView> StringView::splitView(char const separator, bool keepEmpty) const {
 

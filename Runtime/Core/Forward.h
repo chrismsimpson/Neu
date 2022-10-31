@@ -8,13 +8,6 @@
 
 #include <Core/Types.h>
 
-namespace Detail {
-
-    template<size_t inlineCapacity>
-    class ByteBuffer;
-}
-
-using ByteBuffer = Detail::ByteBuffer<32>;
 class Error;
 class GenericLexer;
 class String;

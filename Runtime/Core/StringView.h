@@ -50,15 +50,11 @@ public:
         : m_characters(reinterpret_cast<char const*>(bytes.data())), 
           m_length(bytes.size()) { }
 
-    StringView(ByteBuffer const&);
-
 #ifndef KERNEL
 
     StringView(String const&);
 
 #endif
-
-    explicit StringView(ByteBuffer&&) = delete;
 
 #ifndef KERNEL
 

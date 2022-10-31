@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Core/ByteBuffer.h>
 #include <Core/Format.h>
 #include <Core/Forward.h>
 #include <Core/RefPointer.h>
@@ -296,8 +295,6 @@ public:
 
         return m_impl->hash();
     }
-
-    [[nodiscard]] ByteBuffer toByteBuffer() const;
 
     template<typename BufferType>
     [[nodiscard]] static String copy(BufferType const& buffer, ShouldChomp shouldChomp = NoChomp) {

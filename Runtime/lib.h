@@ -10,7 +10,6 @@
 #include <Core/Badge.h>
 #include <Core/BitCast.h>
 #include <Core/BuiltinWrappers.h>
-#include <Core/ByteBuffer.h>
 #include <Core/CharacterTypes.h>
 #include <Core/Checked.h>
 #include <Core/CheckedFormatString.h>
