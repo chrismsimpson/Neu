@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Core/Result.h>
 #include <Core/StringView.h>
 
 class GenericLexer {

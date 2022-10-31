@@ -6,8 +6,8 @@
 
 #pragma once
 
-// NOTE: This macro works with any result type that has the expected APIs.
-//       It's designed with Result and Error in mind.
+// NOTE: These macros work with any result type that has the expected APIs.
+//       It's designed with ErrorOr in mind.
 
 #define TRY(...)                                        \
     ({                                                  \
