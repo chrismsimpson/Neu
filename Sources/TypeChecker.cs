@@ -4844,20 +4844,16 @@ public static partial class TypeCheckerFunctions {
                 return true;
 
             case CheckedIfStatement i when 
-                i.Expr is CheckedBooleanExpression expr: {
+                i.Expr is CheckedBooleanExpression expr
+                && expr.Value: {
 
-                if (expr.Value) {
+                return i.Block.DefinitelyReturns;
+            }
 
-                    return i.Block.DefinitelyReturns;
-                }
-                else if (i.Trailing is CheckedStatement elseStmt) {
+            case CheckedIfStatement i when
+                i.Trailing is CheckedStatement elseStmt: {
 
-                    return StatementDefinitelyReturns(elseStmt);
-                }
-                else {
-
-                    return false;
-                }
+                return i.Block.DefinitelyReturns && StatementDefinitelyReturns(elseStmt);
             }
 
             case CheckedBlockStatement b:
@@ -4869,9 +4865,6 @@ public static partial class TypeCheckerFunctions {
             case CheckedWhileStatement w:
                 return w.Block.DefinitelyReturns;
 
-            // case CheckedForStatement f: 
-            //     return f.Block.DefinitelyReturns;
-            
             default: 
                 return false;
         }

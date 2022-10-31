@@ -1441,6 +1441,11 @@ public static partial class LexerFunctions {
 
             var literalStart = index;
 
+            if (ToChar(bytes[index]) == '-') {
+
+                index += 1; // is negative
+            }
+
             var isHex = false;
 
             var isBinary = false;

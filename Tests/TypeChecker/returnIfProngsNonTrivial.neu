@@ -1,0 +1,12 @@
+func max(a: Int32, b: Int32) -> Int32 {
+    if a > b {
+        return a
+    }
+    else {
+        return b
+    }
+}
+
+func main() {
+    printLine("{}", max(a: Int32(123), b: Int32(-123)))
+}
