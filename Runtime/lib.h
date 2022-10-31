@@ -58,7 +58,6 @@
 #include <Core/TypedTransfer.h>
 #include <Core/Types.h>
 #include <Core/UnicodeUtils.h>
-#include <Core/Utf8View.h>
 #include <Core/Variant.h>
 #include <Core/Vector.h>
 #include <Core/WeakPointer.h>
@@ -73,7 +72,6 @@
 #include <Core/StringImpl.cpp>
 #include <Core/StringUtils.cpp>
 #include <Core/StringView.cpp>
-#include <Core/Utf8View.cpp>
 
 template<typename T, typename TraitsForT = Traits<T>, bool IsOrdered = false>
 class Set;
