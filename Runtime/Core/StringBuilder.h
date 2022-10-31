@@ -6,11 +6,10 @@
 
 #pragma once
 
-#include <Core/ByteBuffer.h>
 #include <Core/Format.h>
 #include <Core/Forward.h>
 #include <Core/StringView.h>
-
+#include <Builtins/Array.h>
 #include <stdarg.h>
 
 class StringBuilder {
@@ -19,7 +18,7 @@ public:
 
     using OutputType = String;
 
-    explicit StringBuilder(size_t initialCapacity = inlineCapacity);
+    explicit StringBuilder();
 
     ~StringBuilder() = default;
 
@@ -69,8 +68,6 @@ public:
 
 #endif
 
-    [[nodiscard]] ByteBuffer toByteBuffer() const;
-
     [[nodiscard]] StringView stringView() const;
 
     void clear();
@@ -78,8 +75,6 @@ public:
     [[nodiscard]] size_t length() const { return m_buffer.size(); }
 
     [[nodiscard]] bool isEmpty() const { return m_buffer.isEmpty(); }
-
-    void trim(size_t count) { m_buffer.resize(m_buffer.size() - count); }
 
     template<class SeparatorType, class CollectionType>
     void join(SeparatorType const& separator, CollectionType const& collection, StringView fmtstr = "{}"sv) {
@@ -105,11 +100,11 @@ private:
 
     ErrorOr<void> willAppend(size_t);
 
-    UInt8* data() { return m_buffer.data(); }
+    UInt8* data() { return m_buffer.unsafeData(); }
     
-    UInt8 const* data() const { return m_buffer.data(); }
-
+    UInt8 const* data() const { return const_cast<StringBuilder*>(this)->m_buffer.unsafeData(); }
+    
     static constexpr size_t inlineCapacity = 256;
 
-    Detail::ByteBuffer<inlineCapacity> m_buffer;
+    Array<UInt8> m_buffer;
 };

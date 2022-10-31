@@ -468,7 +468,7 @@ bool String::equalsIgnoringCase(StringView other) const {
 
 String String::reverse() const {
 
-    StringBuilder reversedString(length());
+    StringBuilder reversedString;
 
     for (size_t i = length(); i-- > 0;) {
         

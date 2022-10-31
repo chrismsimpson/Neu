@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-2-Clause
  */
 
-#include <Core/ByteBuffer.h>
+// #include <Core/ByteBuffer.h>
 #include <Core/Checked.h>
 #include <Core/std.h>
 #include <Core/StringBuilder.h>
@@ -13,34 +13,12 @@
 
 inline ErrorOr<void> StringBuilder::willAppend(size_t size) {
 
-    Checked<size_t> neededCapacity = m_buffer.size();
+    TRY(m_buffer.addCapacity(size));
 
-    neededCapacity += size;
-    
-    VERIFY(!neededCapacity.hasOverflow());
-    
-    // Prefer to completely use the existing capacity first
-    
-    if (neededCapacity <= m_buffer.capacity()) {
-
-        return { };
-    }
-
-    Checked<size_t> expandedCapacity = neededCapacity;
-    
-    expandedCapacity *= 2;
-    
-    VERIFY(!expandedCapacity.hasOverflow());
-    
-    TRY(m_buffer.tryEnsureCapacity(expandedCapacity.value()));
-    
     return { };
 }
 
-StringBuilder::StringBuilder(size_t initialCapacity) {
-
-    m_buffer.ensureCapacity(initialCapacity);
-}
+StringBuilder::StringBuilder() { }
 
 ErrorOr<void> StringBuilder::tryAppend(StringView string) {
     
@@ -51,7 +29,7 @@ ErrorOr<void> StringBuilder::tryAppend(StringView string) {
 
     TRY(willAppend(string.length()));
     
-    TRY(m_buffer.tryAppend(string.charactersWithoutNullTermination(), string.length()));
+    TRY(m_buffer.pushValues((UInt8 const*)string.charactersWithoutNullTermination(), string.length()));
     
     return { };
 }
@@ -59,8 +37,8 @@ ErrorOr<void> StringBuilder::tryAppend(StringView string) {
 ErrorOr<void> StringBuilder::tryAppend(char ch) {
 
     TRY(willAppend(1));
-    
-    TRY(m_buffer.tryAppend(ch));
+
+    TRY(m_buffer.push(ch));
     
     return { };
 }
@@ -85,13 +63,6 @@ void StringBuilder::append(char ch) {
     MUST(tryAppend(ch));
 }
 
-ByteBuffer StringBuilder::toByteBuffer() const {
-
-    // FIXME: Handle OOM failure.
-    
-    return ByteBuffer::copy(data(), length()).releaseValueButFixmeShouldPropagateErrors();
-}
-
 String StringBuilder::toString() const {
 
     if (isEmpty()) {
@@ -114,7 +85,7 @@ StringView StringBuilder::stringView() const {
 
 void StringBuilder::clear() {
 
-    m_buffer.clear();
+    m_buffer.resize(0);
 }
 
 ErrorOr<void> StringBuilder::tryAppendCodePoint(UInt32 codePoint) {
@@ -154,7 +125,6 @@ void StringBuilder::appendEscapedForJson(StringView string) {
 
     MUST(tryAppendEscapedForJson(string));
 }
-
 
 ErrorOr<void> StringBuilder::tryAppendEscapedForJson(StringView string) {
 
