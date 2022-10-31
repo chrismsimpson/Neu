@@ -347,7 +347,7 @@ public:
 
         auto value = move(at(size() - 1));
         
-        resize(size() - 1);
+        static_cast<void>(resize(size() - 1));
         
         return value;
     }    
