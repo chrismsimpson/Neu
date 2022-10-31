@@ -136,8 +136,9 @@ public static partial class Program {
 
                     var (stdOut, stdErr, success) = 
                         Compiler.Build(
-                            cppFilename,
-                            exeName,
+                            compilerPath: "clang++",
+                            runtimePath: "Runtime",
+                            inputCpp: cppFilename,
                             verbose: false);
 
                     if (!success) {

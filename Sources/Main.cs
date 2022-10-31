@@ -19,31 +19,82 @@ public static partial class ArgumentFunctions {
 
         return null;
     }
+
+    public static String? GetRuntimeDirectory(
+        this String[] args) {
+
+        for (var i = 0; i < args.Length; i++) {
+
+            var arg = args[i];
+
+            if (arg == "-R" || arg == "--runtime-path"
+                && (i + 1) < args.Length) {
+
+                return args[i + 1];
+            }
+        }
+
+        return null;
+    }
+
+    public static String? GetCPPCompilerPath(
+        this String[] args) {
+
+        for (var i = 0; i < args.Length; i++) {
+
+            var arg = args[i];
+
+            if (arg == "-C" || arg == "--cxx-compiler-path"
+                && (i + 1) < args.Length) {
+
+                return args[i + 1];
+            }
+        }
+
+        return null;
+    }
+
+    public static bool EmitCPPSourceOnly(
+        this String[] args) {
+
+        for (var i = 0; i < args.Length; i++) {
+
+            var arg = args[i];
+
+            if (arg == "-S" || arg == "--emit-cpp-source-only") {
+
+                return true;
+            }
+        }
+
+        return false;;
+    }
 }
 
 public static partial class Program {
 
     public static int Main(String[] args) {
 
-        var binDirectory = args.GetBinDirectory() switch {
+        var binDirectory = args.GetBinDirectory() ?? "./Build";
 
-            String b => b,
-            _ => "./Build"
-        };
+        var cppCompilerPath = args.GetCPPCompilerPath() ?? "clang++";
+
+        var runtimePath = args.GetRuntimeDirectory() ?? "./Runtime";
 
         switch (true) {
 
-            case var _ when 
-                args.Length > 1
-                && args[0] == "build"
-                && File.Exists(args[1]): {
+            // case var _ when 
+            //     args.Length > 1
+            //     && args[0] == "build"
+            //     && File.Exists(args[1]): {
 
-                Compiler.Build(
-                    path: args[1], 
-                    verbose: !args.Contains("--silent"));
+            //     Compiler.Build(
+            //         cppCompilerPath,
+            //         path: args[1], 
+            //         verbose: !args.Contains("--silent"));
 
-                return 0;
-            }
+            //     return 0;
+            // }
 
             case var _ when
                 args.Length > 0
@@ -86,6 +137,15 @@ public static partial class Program {
                             Directory.CreateDirectory(outPath);
 
                             File.WriteAllText(outFilePath, cppOrErr.Value);
+
+                            if (!args.EmitCPPSourceOnly()) {
+
+                                Compiler.Build(
+                                    cppCompilerPath,
+                                    runtimePath,
+                                    outFilePath,
+                                    verbose: !args.Contains("--silent"));
+                            }
 
                             break;
                         }
@@ -155,14 +215,14 @@ public static partial class Program {
 
             ///
 
-            case var _ when 
-                args.Length > 0
-                && args[0] == "build": {
+            // case var _ when 
+            //     args.Length > 0
+            //     && args[0] == "build": {
 
-                Console.Error.WriteLine(BUILD_USAGE);
+            //     Console.Error.WriteLine(BUILD_USAGE);
 
-                return 1;
-            }
+            //     return 1;
+            // }
 
             default: {
 
@@ -177,28 +237,27 @@ public static partial class Program {
 @"usage: neu [subtask] [-h]
 
 Subtasks:
-  build                     Build specified file
+  transpile (default)       Transpile then build specified file
   clean                     Clean build directory
-  transpile (default)       Transpile specified file to C++
 
 Options:
   -h                        Subtask specific help
 ";
 
-    public static readonly String BUILD_USAGE = 
-@"usage: neu build [-h] [OPTIONS] [FILES...]
+//     public static readonly String BUILD_USAGE = 
+// @"usage: neu build [-h] [OPTIONS] [FILES...]
 
-Flags:
-  -h, --help                Print this help and exit
+// Flags:
+//   -h, --help                Print this help and exit
   
-Options:
-  -o,--binary-dir PATH      Output directory for compiled FILES
-                            Defaults to $PWD/Build
+// Options:
+//   -o,--binary-dir PATH      Output directory for compiled FILES
+//                             Defaults to $PWD/Build
 
-Arguments:
-  FILES...                  List of files to compile. The outputs
-                            `<inputFilename>.cpp` in the binary directory.
-";
+// Arguments:
+//   FILES...                  List of files to compile. The outputs
+//                             `<inputFilename>.cpp` in the binary directory.
+// ";
 
     public static readonly String CLEAN_MESSAGE = 
 @"

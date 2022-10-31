@@ -4,18 +4,22 @@ namespace Neu;
 public partial class Compiler {
 
     public static (String StandardOutput, String StandardError, bool ExitedSuccessfully) Build(
-        String path,
+        String compilerPath,
+        String runtimePath,
+        String inputCpp,
         bool verbose) {
 
-        var ext = System.IO.Path.GetExtension(path);
+        var ext = System.IO.Path.GetExtension(inputCpp);
 
-        var exeName = path.Substring(0, path.Length - ext.Length);
+        var exeName = $"{inputCpp.Substring(0, inputCpp.Length - ext.Length)}.out";
 
-        return Build(path, exeName, verbose);
+        return Build(compilerPath, runtimePath, inputCpp, exeName, verbose);
     }
 
     public static (String StandardOutput, String StandardError, bool ExitedSuccessfully) Build(
-        String path,
+        String compilerPath,
+        String runtimePath,
+        String inputCpp,
         String exeName,
         bool verbose) {
 
@@ -38,9 +42,27 @@ public partial class Compiler {
             Console.ForegroundColor = og;
         };
 
+        var args = new String[] {
+            verbose
+                ? "-fcolor-diagnostics"
+                : "",
+            "-std=c++20",
+            // These warnings if enabled create loads of unnecessary noise:
+            "-Wno-unqualified-std-cast-call",
+            "-Wno-user-defined-literals",
+            "-DNEU_CONTINUE_ON_PANIC",
+            $"-I",
+            // Environment.CurrentDirectory,
+            runtimePath,
+            inputCpp,            
+            $"-o",
+            exeName
+        };
+
         return Process.Run(
-            name: "clang++",
-            arguments: $"-I{Environment.CurrentDirectory} -IRuntime {path} -o {exeName} -std=c++20 -Wno-user-defined-literals -DNEU_CONTINUE_ON_PANIC",
+            name: compilerPath,
+            // arguments: $"-I{Environment.CurrentDirectory} -IRuntime {runtimePath} -o {exeName} -std=c++20 -Wno-user-defined-literals -DNEU_CONTINUE_ON_PANIC",
+            arguments: Join(" ", args),
             dataReceived: verbose ? o : null,
             errorReceived: verbose ? e : null);
     }
