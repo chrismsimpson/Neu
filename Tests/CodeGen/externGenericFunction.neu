@@ -1,0 +1,7 @@
+// These generic extern functions shouldn't compile to anything.
+
+extern func doThingWithType<T>(anon input: T) -> T
+
+extern func doMoreThings<T, U>(anon input: U) -> T
+
+func main() { }

@@ -1392,6 +1392,17 @@ public static partial class CodeGenFunctions {
         
         var output = new StringBuilder();
 
+        // Extern generics need to be in the header anyways, so we can't codegen for them.
+
+        if ((new [] { 
+                FunctionLinkage.External,
+                FunctionLinkage.ExternalClassConstructor
+            }).Contains(fun.Linkage)
+            && fun.GenericParameters.Any() ) {
+        
+            return output.ToString();
+        }
+
         if (fun.Linkage == FunctionLinkage.External) {
 
             output.Append("extern ");
@@ -1537,6 +1548,17 @@ public static partial class CodeGenFunctions {
         CheckedFunction fun,
         Int32? containingStruct,
         Project project) {
+
+        // Extern generics need to be in the header anyways, so we can't codegen for them.
+
+        if ((new [] { 
+                FunctionLinkage.External,
+                FunctionLinkage.ExternalClassConstructor
+            }).Contains(fun.Linkage)
+            && fun.GenericParameters.Any()) {
+
+            return String.Empty;
+        }
 
         var output = new StringBuilder();
 
