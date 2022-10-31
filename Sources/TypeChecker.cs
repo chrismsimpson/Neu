@@ -4409,7 +4409,7 @@ public static partial class TypeCheckerFunctions {
 
             genericParams.Add(new ParameterFunctionGenericParameter(typeVarTypeId));
 
-            if (!func.MustInstantiate) {
+            if (!func.MustInstantiate || func.Linkage == FunctionLinkage.External) {
 
                 if (project.AddTypeToScope(
                     checkedFuncScopeId, 

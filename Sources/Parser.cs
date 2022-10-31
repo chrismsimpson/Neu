@@ -2972,6 +2972,8 @@ public static partial class ParserFunctions {
 
                                                 error = error ?? err;
 
+                                                fun.MustInstantiate = true;
+
                                                 parsedNamespace.Functions.Add(fun);
 
                                                 break;
