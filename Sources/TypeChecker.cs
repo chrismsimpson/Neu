@@ -6802,6 +6802,10 @@ public static partial class TypeCheckerFunctions {
 
                         var seenCatchAll = false;
 
+                        Span? catchAllSpan = null;
+
+                        var coveredVariants = new HashSet<String>();
+
                         foreach (var c in we.Cases) {
 
                             switch (c) {
@@ -6816,6 +6820,8 @@ public static partial class TypeCheckerFunctions {
                                                 cawc.MarkerSpan);
                                     }
                                     else {
+
+                                        catchAllSpan = cawc.MarkerSpan;
 
                                         seenCatchAll = true;
                                     }
@@ -6946,6 +6952,8 @@ public static partial class TypeCheckerFunctions {
 
                                                 case CheckedUntypedEnumVariant u: {
 
+                                                    coveredVariants.Add(u.Name);
+
                                                     if (evwc.VariantArguments.Any()) {
 
                                                         error = error ?? 
@@ -6958,6 +6966,8 @@ public static partial class TypeCheckerFunctions {
                                                 }
 
                                                 case CheckedTypedEnumVariant t: {
+
+                                                    coveredVariants.Add(t.Name);
 
                                                     if (evwc.VariantArguments.Any()) {
 
@@ -6988,6 +6998,8 @@ public static partial class TypeCheckerFunctions {
 
                                                 case CheckedWithValueEnumVariant w: {
 
+                                                    coveredVariants.Add(w.Name);
+
                                                     if (evwc.VariantArguments.Any()) {
 
                                                         error = error ?? 
@@ -7000,6 +7012,8 @@ public static partial class TypeCheckerFunctions {
                                                 }
 
                                                 case CheckedStructLikeEnumVariant s: {
+
+                                                    coveredVariants.Add(s.Name);
 
                                                     var variantName = s.Name;
 
@@ -7214,6 +7228,66 @@ public static partial class TypeCheckerFunctions {
 
                                     throw new Exception();
                                 }
+                            }
+                        }
+
+                        // Check if all the variants are matched
+
+                        var _enum2 = project.Enums[enumId];
+
+                        var missingVariants = _enum2
+                            .Variants
+                            .Select(v => {
+                                switch (v) {
+
+                                    case CheckedWithValueEnumVariant w:
+                                        return w.Name;
+                                
+                                    case CheckedUntypedEnumVariant u:
+                                        return u.Name;
+
+                                    case CheckedTypedEnumVariant t:
+                                        return t.Name;
+
+                                    case CheckedStructLikeEnumVariant s:
+                                        return s.Name;
+
+                                    default:
+                                        throw new Exception();
+                                }
+                            })
+                            .Where(name => !coveredVariants.Contains(name))
+                            .ToList();
+
+                        switch ((!missingVariants.Any(), seenCatchAll)) {
+
+                            case (false, false): {
+
+                                error = error ??
+                                    new TypecheckErrorWithHint(
+                                        $"match expression is not exhaustive, missing variants are: {Join(", ", missingVariants)}",
+                                        we.Span,
+                                        "add an irrefutable 'else' pattern or handle the missing variants",
+                                        we.Expression.GetSpan());
+
+                                break;
+                            }
+
+                            case (true, true): {
+
+                                error = error ??
+                                    new TypecheckErrorWithHint(
+                                        "all variants are covered, but an irrefutable pattern is also present",
+                                        we.Span,
+                                        "remove this pattern",
+                                        catchAllSpan ?? throw new Exception());
+
+                                break;
+                            }
+
+                            default: {
+
+                                break;
                             }
                         }
 
@@ -7452,6 +7526,14 @@ public static partial class TypeCheckerFunctions {
                                     throw new Exception();
                                 }
                             }
+                        }
+
+                        if (isValueMatch && !seenCatchAll) {
+
+                            error = error ?? 
+                                new TypeCheckError(
+                                    "match expression is not exhaustive, a value match must contain an irrefutable 'else' pattern",
+                                    we.Span);
                         }
 
                         break;

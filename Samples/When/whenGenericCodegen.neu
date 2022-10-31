@@ -12,7 +12,6 @@ func genericEnum<T>(anon x: T) -> Int64 {
         a(y) => y
         b => 2
         c => 3
-        else => 0
     }
 }
 

@@ -4,5 +4,8 @@ enum Bar {
 
 func main() {
     let foo = Bar.value()
-    [1: when foo { }]
+    [1: when foo {
+        else => {
+        }
+    }]
 }
