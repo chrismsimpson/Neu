@@ -7,7 +7,6 @@
 #include <Core/CharacterTypes.h>
 #include <Core/Format.h>
 #include <Core/GenericLexer.h>
-#include <Core/IntegralMath.h>
 #include <Core/StringBuilder.h>
 #include <Core/kstdio.h>
 
@@ -489,87 +488,6 @@ ErrorOr<void> FormatBuilder::putInt64(
 
     TRY(putUInt64(static_cast<UInt64>(value), base, prefix, upperCase, zeroPad, align, minWidth, fill, signMode, isNegative));
     
-    return { };
-}
-
-ErrorOr<void> FormatBuilder::putFixedPoint(
-    Int64 integerValue,
-    UInt64 fractionValue,
-    UInt64 fractionOne,
-    UInt8 base,
-    bool upperCase,
-    bool zeroPad,
-    Align align,
-    size_t minWidth,
-    size_t precision,
-    char fill,
-    SignMode signMode) {
-
-    StringBuilder stringBuilder;
-    FormatBuilder formatBuilder { stringBuilder };
-
-    bool isNegative = integerValue < 0;
-
-    if (isNegative) {
-
-        integerValue = -integerValue;
-    }
-
-    TRY(formatBuilder.putUInt64(static_cast<UInt64>(integerValue), base, false, upperCase, false, Align::Right, 0, ' ', signMode, isNegative));
-
-    if (precision > 0) {
-
-        // FIXME: This is a terrible approximation but doing it properly would be a lot of work. If someone is up for that, a good
-        // place to start would be the following video from CppCon 2019:
-        // https://youtu.be/4P_kbF0EbZM (Stephan T. Lavavej “Floating-Point <charconv>: Making Your Code 10x Faster With C++17's Final Boss”)
-
-        UInt64 scale = pow<UInt64>(10, precision);
-
-        auto fraction = (scale * fractionValue) / fractionOne; // TODO: overflows
-        
-        if (isNegative) {
-            
-            fraction = scale - fraction;
-        }
-
-        while (fraction != 0 && fraction % 10 == 0) {
-
-            fraction /= 10;
-        }
-
-        size_t visiblePrecision = 0; {
-
-            auto fractionTmp = fraction;
-            
-            for (; visiblePrecision < precision; ++visiblePrecision) {
-
-                if (fractionTmp == 0) {
-
-                    break;
-                }
-
-                fractionTmp /= 10;
-            }
-        }
-
-        if (zeroPad || visiblePrecision > 0) {
-
-            TRY(stringBuilder.tryAppend('.'));
-        }
-
-        if (visiblePrecision > 0) {
-
-            TRY(formatBuilder.putUInt64(fraction, base, false, upperCase, true, Align::Right, visiblePrecision));
-        }
-
-        if (zeroPad && (precision - visiblePrecision) > 0) {
-
-            TRY(formatBuilder.putUInt64(0, base, false, false, true, Align::Right, precision - visiblePrecision));
-        }
-    }
-
-    TRY(putString(stringBuilder.stringView(), align, minWidth, NumericLimits<size_t>::max(), fill));
-
     return { };
 }
 

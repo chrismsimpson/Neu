@@ -85,7 +85,7 @@ StringView StringBuilder::stringView() const {
 
 void StringBuilder::clear() {
 
-    m_buffer.resize(0);
+    (void) m_buffer.resize(0);
 }
 
 ErrorOr<void> StringBuilder::tryAppendCodePoint(UInt32 codePoint) {

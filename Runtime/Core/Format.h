@@ -12,7 +12,6 @@
 #include <Core/AnyOf.h>
 #include <Core/LinearArray.h>
 #include <Core/Error.h>
-#include <Core/FixedPoint.h>
 #include <Core/Forward.h>
 #include <Core/Optional.h>
 #include <Core/StringView.h>
@@ -248,18 +247,18 @@ public:
         char fill = ' ',
         SignMode signMode = SignMode::OnlyIfNeeded);
 
-    ErrorOr<void> putFixedPoint(
-        Int64 integerValue,
-        UInt64 fractionValue,
-        UInt64 fractionOne,
-        UInt8 base = 10,
-        bool upperCase = false,
-        bool zeroPad = false,
-        Align align = Align::Right,
-        size_t minWidth = 0,
-        size_t precision = 6,
-        char fill = ' ',
-        SignMode signMode = SignMode::OnlyIfNeeded);
+    // ErrorOr<void> putFixedPoint(
+    //     Int64 integerValue,
+    //     UInt64 fractionValue,
+    //     UInt64 fractionOne,
+    //     UInt8 base = 10,
+    //     bool upperCase = false,
+    //     bool zeroPad = false,
+    //     Align align = Align::Right,
+    //     size_t minWidth = 0,
+    //     size_t precision = 6,
+    //     char fill = ' ',
+    //     SignMode signMode = SignMode::OnlyIfNeeded);
 
 #ifndef KERNEL
 
@@ -637,58 +636,6 @@ struct Formatter<long double> : StandardFormatter {
 };
 
 #endif
-
-
-template<size_t precision, typename Underlying>
-struct Formatter<FixedPoint<precision, Underlying>> : StandardFormatter {
-
-    Formatter() = default;
-
-    explicit Formatter(StandardFormatter formatter)
-        : StandardFormatter(formatter) { }
-
-    ErrorOr<void> format(FormatBuilder& builder, FixedPoint<precision, Underlying> value) {
-
-        UInt8 base;
-        
-        bool upperCase;
-
-        if (m_mode == Mode::Default || m_mode == Mode::Float) {
-            
-            base = 10;
-            
-            upperCase = false;
-        } 
-        else if (m_mode == Mode::Hexfloat) {
-            
-            base = 16;
-            
-            upperCase = false;
-        } 
-        else if (m_mode == Mode::HexfloatUppercase) {
-            
-            base = 16;
-            
-            upperCase = true;
-        } 
-        else {
-            
-            VERIFY_NOT_REACHED();
-        }
-
-        m_width = m_width.valueOr(0);
-        
-        m_precision = m_precision.valueOr(6);
-
-        Int64 integer = value.ltrunk();
-        
-        constexpr UInt64 one = static_cast<Underlying>(1) << precision;
-        
-        UInt64 fractionRaw = value.raw() & (one - 1);
-        
-        return builder.putFixedPoint(integer, fractionRaw, one, base, upperCase, m_zeroPad, m_align, m_width.value(), m_precision.value(), m_fill, m_signMode);
-    }
-};
 
 template<>
 struct Formatter<std::nullptr_t> : Formatter<FlatPointer> {

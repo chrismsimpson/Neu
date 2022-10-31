@@ -16,14 +16,12 @@
 #include <Core/Debug.h>
 #include <Core/Error.h>
 #include <Core/Find.h>
-#include <Core/FixedPoint.h>
 #include <Core/Format.h>
 #include <Core/Function.h>
 #include <Core/GenericLexer.h>
 #include <Core/HashFunctions.h>
 #include <Core/HashMap.h>
 #include <Core/HashTable.h>
-#include <Core/IntegralMath.h>
 #include <Core/IterationDecision.h>
 #include <Core/Iterator.h>
 #include <Core/LinearArray.h>

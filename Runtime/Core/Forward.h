@@ -48,9 +48,6 @@ class HashMap;
 template<typename K, typename V, typename KeyTraits = Traits<K>>
 using OrderedHashMap = HashMap<K, V, KeyTraits, true>;
 
-template<size_t precision, typename Underlying = Int32>
-class FixedPoint;
-
 template<typename>
 class Function;
 
