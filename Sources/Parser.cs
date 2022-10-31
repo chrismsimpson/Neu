@@ -1341,12 +1341,16 @@ public partial class ParsedReturnStatement: ParsedStatement {
 
     public ParsedExpression Expr { get; init; }
 
+    public Span Span { get; init; }
+
     ///
 
     public ParsedReturnStatement(
-        ParsedExpression expr) {
+        ParsedExpression expr,
+        Span span) {
 
         this.Expr = expr;
+        this.Span = span;
     }
 }
 
@@ -4153,7 +4157,7 @@ public static partial class ParserFunctions {
 
                             var _block = new ParsedBlock();
 
-                            _block.Statements.Add(new ParsedReturnStatement(fae));
+                            _block.Statements.Add(new ParsedReturnStatement(fae, nameSpan));
 
                             block = _block;
 
@@ -4289,6 +4293,8 @@ public static partial class ParserFunctions {
     public static (ParsedStatement, Error?) ParseStatement(List<Token> tokens, ref int index) {
 
         Trace($"ParseStatement: {tokens.ElementAt(index)}");
+
+        var start = tokens[index].Span;
 
         Error? error = null;
 
@@ -4516,7 +4522,12 @@ public static partial class ParserFunctions {
                 error = error ?? exprErr;
 
                 return (
-                    new ParsedReturnStatement(expr),
+                    new ParsedReturnStatement(
+                        expr,
+                        new Span(
+                            fileId: start.FileId,
+                            start: start.Start,
+                            end: tokens[index - 1].Span.End)),
                     error
                 );
             }

@@ -400,6 +400,8 @@ public partial class Project {
 
     public Int32? CurrentFunctionIndex { get; set; } 
 
+    public bool InsideDefer { get; set; }
+
     ///
 
     public Project() {
@@ -416,6 +418,7 @@ public partial class Project {
         this.Scopes = new List<Scope>(new [] { projectGlobalScope });
         this.Types = new List<NeuType>();
         this.CurrentFunctionIndex = null;
+        this.InsideDefer = false;
     }
 }
 
@@ -5182,7 +5185,13 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedDeferStatement ds: {
 
+                var wasInsideDefer = project.InsideDefer;
+
+                project.InsideDefer = true;
+
                 var (checkedStmt, err) = TypeCheckStatement(ds.Statement, scopeId, project, safetyMode);
+
+                project.InsideDefer = wasInsideDefer;
 
                 return (
                     new CheckedDeferStatement(checkedStmt),
@@ -5366,9 +5375,19 @@ public static partial class TypeCheckerFunctions {
                     safetyMode,
                     _retType);
 
+                error = error ?? outputErr;
+
+                if (project.InsideDefer) {
+
+                    error = error ??
+                        new TypeCheckError(
+                            "'return' is not allowed inside 'defer'",
+                            rs.Span);
+                }
+
                 return (
                     new CheckedReturnStatement(output), 
-                    outputErr);
+                    error);
             }
 
             case ParsedBlockStatement bs: {

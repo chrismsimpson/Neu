@@ -1,0 +1,14 @@
+func foo() {
+
+    defer {
+        
+        return 2
+    }
+
+    return 1
+}
+
+func main() {
+
+    printLine("foo returned {}", foo())
+}
