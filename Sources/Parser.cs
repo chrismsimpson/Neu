@@ -2551,18 +2551,6 @@ public partial class TypeCast {
             : base(type) { }
     }
 
-    public partial class SaturatingTypeCast: TypeCast {
-
-        public SaturatingTypeCast(ParsedType type)
-            : base(type) { }
-    }
-    
-    public partial class TruncatingTypeCast: TypeCast {
-
-        public TruncatingTypeCast(ParsedType type)
-            : base(type) { }
-    }
-
 public static partial class TypeCastFunctions {
 
     public static bool Eq(TypeCast l, TypeCast r) {
@@ -2574,12 +2562,6 @@ public static partial class TypeCastFunctions {
 
             case var _ when l is InfallibleTypeCast li && r is InfallibleTypeCast ri:
                 return ParsedTypeFunctions.Eq(li.Type, ri.Type);
-
-            case var _ when l is SaturatingTypeCast ls && r is SaturatingTypeCast rs:
-                return ParsedTypeFunctions.Eq(ls.Type, rs.Type);
-
-            case var _ when l is TruncatingTypeCast lt && r is TruncatingTypeCast rt:
-                return ParsedTypeFunctions.Eq(lt.Type, rt.Type);
 
             default:
                 return false;
@@ -2599,16 +2581,6 @@ public static partial class TypeCastFunctions {
             case InfallibleTypeCast i: {
 
                 return i.Type;
-            }
-
-            case SaturatingTypeCast s: {
-
-                return s.Type;
-            }
-
-            case TruncatingTypeCast t: {
-
-                return t.Type;
             }
 
             default: {
@@ -6000,32 +5972,6 @@ public static partial class ParserFunctions {
                             break;
                         }
 
-                        case NameToken nt2 when nt2.Value == "truncated": {
-
-                            index += 1;
-
-                            var (typename, err) = ParseTypeName(tokens, ref index);
-
-                            error = error ?? err;
-
-                            cast = new TruncatingTypeCast(typename);
-
-                            break;
-                        }
-
-                        case NameToken nt2 when nt2.Value == "saturated": {
-
-                            index += 1;
-
-                            var (typename, err) = ParseTypeName(tokens, ref index);
-
-                            error = error ?? err;
-
-                            cast = new SaturatingTypeCast(typename);
-
-                            break;
-                        }
-
                         default: {
 
                             error = error ?? 
@@ -6033,7 +5979,7 @@ public static partial class ParserFunctions {
                                     "Invalid cast syntax",
                                     _span);
 
-                            cast = new TruncatingTypeCast(new ParsedEmptyType());
+                            cast = new FallibleTypeCast(new ParsedEmptyType());
 
                             break;
                         }

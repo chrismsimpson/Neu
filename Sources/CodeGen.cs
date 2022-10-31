@@ -3975,34 +3975,6 @@ public static partial class CodeGenFunctions {
                                 break;
                             }
 
-                            case CheckedSaturatingTypeCast _: {
-
-                                if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
-
-                                    output.Append("asSaturated");
-                                }
-                                else {
-
-                                    output.Append("dynamic_cast");
-                                }
-
-                                break;
-                            }
-
-                            case CheckedTruncatingTypeCast _: {
-
-                                if (NeuTypeFunctions.IsInteger(unaryOp.Type)) {
-
-                                    output.Append("asTruncated");
-                                }
-                                else {
-
-                                    output.Append("dynamic_cast");
-                                }
-
-                                break;
-                            }
-
                             default: {
 
                                 break;

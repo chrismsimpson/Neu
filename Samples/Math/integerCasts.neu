@@ -5,9 +5,9 @@ func main() {
 
     let c = 127 as! Int8
     let d = -127 as! Int8
-    let e = -200 as saturated Int8
-    let f = -127 as truncated Int8
-    let g = 128 as truncated Int8
+    let e: Int8 = asSaturated(Int32(-200))
+    let f: Int8 = asTruncated(Int32(-127))
+    let g: Int8 = asTruncated(Int32(128))
 
     // as Should not eat the token after the type
     let h = (1 as! Int8)

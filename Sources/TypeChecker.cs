@@ -2025,30 +2025,6 @@ public partial class CheckedTypeCast {
         }
     }
 
-    public partial class CheckedSaturatingTypeCast: CheckedTypeCast {
-
-        public Int32 TypeId { get; init; }
-
-        ///
-
-        public CheckedSaturatingTypeCast(Int32 typeId) {
-
-            this.TypeId = typeId;
-        }
-    }
-
-    public partial class CheckedTruncatingTypeCast: CheckedTypeCast {
-
-        public Int32 TypeId { get; init; }
-
-        ///
-
-        public CheckedTruncatingTypeCast(Int32 typeId) {
-
-            this.TypeId = typeId;
-        }
-    }
-
 public static partial class CheckedTypeCastFunctions {
 
     public static bool Eq(CheckedTypeCast l, CheckedTypeCast r) {
@@ -2059,12 +2035,6 @@ public static partial class CheckedTypeCastFunctions {
                 return lc.TypeId == rc.TypeId;
 
             case var _ when l is CheckedInfallibleTypeCast lc && r is CheckedInfallibleTypeCast rc:
-                return lc.TypeId == rc.TypeId;
-
-            case var _ when l is CheckedSaturatingTypeCast lc && r is CheckedSaturatingTypeCast rc:
-                return lc.TypeId == rc.TypeId;
-
-            case var _ when l is CheckedTruncatingTypeCast lc && r is CheckedTruncatingTypeCast rc:
                 return lc.TypeId == rc.TypeId;
 
             default:
@@ -2082,12 +2052,6 @@ public static partial class CheckedTypeCastFunctions {
 
             case CheckedInfallibleTypeCast i:
                 return i.TypeId;
-
-            case CheckedSaturatingTypeCast s:
-                return s.TypeId;
-
-            case CheckedTruncatingTypeCast tt:
-                return tt.TypeId;
 
             default: 
                 throw new Exception();
@@ -5852,20 +5816,6 @@ public static partial class TypeCheckerFunctions {
                             case InfallibleTypeCast _: {
 
                                 checkedCast = new CheckedInfallibleTypeCast(typeId);
-
-                                break;
-                            }
-
-                            case SaturatingTypeCast _: {
-
-                                checkedCast = new CheckedSaturatingTypeCast(typeId);
-
-                                break;
-                            }
-
-                            case TruncatingTypeCast _: {
-
-                                checkedCast = new CheckedTruncatingTypeCast(typeId);
 
                                 break;
                             }
