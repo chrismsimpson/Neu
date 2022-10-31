@@ -8,7 +8,6 @@
 #include <Core/Assertions.h>
 #include <Core/Atomic.h>
 #include <Core/BitCast.h>
-#include <Core/BuiltinWrappers.h>
 #include <Core/CharacterTypes.h>
 #include <Core/Checked.h>
 #include <Core/CheckedFormatString.h>
@@ -25,7 +24,6 @@
 #include <Core/IterationDecision.h>
 #include <Core/Iterator.h>
 #include <Core/LinearArray.h>
-#include <Core/Math.h>
 #include <Core/Memory.h>
 #include <Core/NonCopyable.h>
 #include <Core/NonNullRefPointer.h>
