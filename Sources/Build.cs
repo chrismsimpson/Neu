@@ -50,6 +50,7 @@ public partial class Compiler {
             // These warnings if enabled create loads of unnecessary noise:
             "-Wno-unqualified-std-cast-call",
             "-Wno-user-defined-literals",
+            "-Wno-deprecated-declarations",
             "-DNEU_CONTINUE_ON_PANIC",
             $"-I",
             // Environment.CurrentDirectory,
