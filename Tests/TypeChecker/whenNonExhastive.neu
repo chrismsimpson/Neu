@@ -1,0 +1,10 @@
+enum Foo {
+    x
+    y
+}
+
+func main() {
+    when Foo.x() {
+        y => 0
+    }
+}

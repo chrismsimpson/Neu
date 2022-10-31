@@ -1,0 +1,12 @@
+enum Foo {
+    x
+    y
+}
+
+func main() {
+    when Foo.x() {
+        x => 1
+        y => 0
+        else => 123
+    }
+}
