@@ -6605,7 +6605,7 @@ public static partial class TypeCheckerFunctions {
 
                     case GenericInstance gd when gd.StructId == dictStructId: {
 
-                        exprType = gd.TypeIds[0];
+                        exprType = gd.TypeIds[1];
 
                         var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, exprType);
 
@@ -7973,6 +7973,24 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
+    public static (Int32, Error?) UnifyWithType(
+        Int32 expectedType,
+        Int32 foundType,
+        Span span,
+        Project project) {
+
+        var genericInferences = new Dictionary<Int32, Int32>();
+
+        var err = CheckTypesForCompat(
+            expectedType, 
+            foundType, 
+            genericInferences, 
+            span, 
+            project);
+
+        return (expectedType, err);
+    }
+
     public static (Int32, Error?) TypeCheckBinaryOperation(
         CheckedExpression lhs,
         BinaryOperator op,
@@ -8035,7 +8053,51 @@ public static partial class TypeCheckerFunctions {
                 break;
             }
 
-            case BinaryOperator.Assign:
+            case BinaryOperator.Assign: {
+
+                if (!lhs.IsMutable()) {
+
+                    return (
+                        lhsTypeId,
+                        new TypeCheckError(
+                            "assignment to immutable variable",
+                            span));
+                }
+
+                if (rhs is CheckedOptionalNoneExpression) {
+
+                    // if the right expression is None then the left expression must be an optional
+                    var lhsType1 = project.Types[lhsTypeId];
+                    
+                    var optionalStructId1 = project
+                        .FindStructInScope(0, "Optional")
+                        ?? throw new Exception("internal error: can't find builtin Optional type");
+
+                    if (lhsType1 is GenericInstance gi) {
+                        
+                        if (gi.StructId == optionalStructId1) {
+                            
+                            return (lhsTypeId, null);
+                        }
+                    }
+                }
+
+                var (typeId1, err) = UnifyWithType(lhsTypeId, rhsTypeId, rhs.GetSpan(), project);
+
+                if (err is Error e) {
+
+                    return (
+                        typeId1,
+                        new TypeCheckError(
+                            $"Assignment between incompatible types ('{project.TypeNameForTypeId(lhsTypeId)}' and '{project.TypeNameForTypeId(rhsTypeId)}')",
+                            span));
+                }
+                else {
+
+                    return (typeId1, null);
+                }
+            }
+
             case BinaryOperator.AddAssign:
             case BinaryOperator.SubtractAssign:
             case BinaryOperator.MultiplyAssign:
@@ -8046,6 +8108,10 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.BitwiseXorAssign:
             case BinaryOperator.BitwiseLeftShiftAssign:
             case BinaryOperator.BitwiseRightShiftAssign: {
+
+                // This branch can be the same as the above BinaryOp.Assign branch.
+                // unify_with_type uses check_types_for_compact which does the same
+                // as below.
 
                 var weakPointerStructId = project
                     .FindStructInScope(0, "WeakPointer") 
@@ -8072,10 +8138,6 @@ public static partial class TypeCheckerFunctions {
                                 }
                             }
                         }
-                    }
-                    else if (lhs is CheckedIndexedDictionaryExpression) {
-
-                        return (lhsTypeId, null);
                     }
                 }
 
@@ -8129,7 +8191,6 @@ public static partial class TypeCheckerFunctions {
         return (typeId, null);
     }
 
-    // public static (CheckedFunction?, DefinitionType?, Error?) ResolveCall(
     public static (Int32?, DefinitionType?, Error?) ResolveCall(
         ParsedCall call,
         List<ResolvedNamespace> namespaces,

@@ -1,0 +1,7 @@
+func main() {
+    var a: String? = none
+    a = "hello"
+    printLine("{}", a!)
+    a = none
+    printLine("{}", a ?? "PASS")
+}
