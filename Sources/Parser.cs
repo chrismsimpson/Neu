@@ -7633,97 +7633,97 @@ public static partial class ParserFunctions {
 
         Trace($"ParseTypeName: {tokens.ElementAt(index)}");
 
-        // var (vectorType, parseVectorTypeErr) = ParseArrayType(tokens, ref index);
-
         var (shorthandType, parseShorthandTypeErr) = ParseShorthandType(tokens, ref index);
 
         error = error ?? parseShorthandTypeErr;
 
         if (!(shorthandType is ParsedEmptyType)) {
 
-            return (shorthandType, error);
+            uncheckedType = shorthandType;
         }
+        else {
 
-        switch (tokens.ElementAt(index)) {
+            switch (tokens.ElementAt(index)) {
 
-            case NameToken nt: {
+                case NameToken nt: {
 
-                if (nt.Value == "raw" || nt.Value == "weak") {
+                    if (nt.Value == "raw" || nt.Value == "weak") {
 
-                    index += 1;
+                        index += 1;
 
-                    if (index < tokens.Count) {
+                        if (index < tokens.Count) {
 
-                        var typenameStart = tokens[index].Span;
+                            var typenameStart = tokens[index].Span;
 
-                        var (childParsedType, err) = ParseTypeName(tokens, ref index);
+                            var (childParsedType, err) = ParseTypeName(tokens, ref index);
 
-                        error = error ?? err;
+                            error = error ?? err;
 
-                        if (nt.Value == "raw") {
-    
-                            uncheckedType = new ParsedRawPointerType(
-                                childParsedType,
-                                new Span(
-                                    fileId: start.FileId,
-                                    start: start.Start,
-                                    end: tokens.ElementAt(index - 1).Span.End));
-                        }
-                        else if (nt.Value == "weak") {
+                            if (nt.Value == "raw") {
+        
+                                uncheckedType = new ParsedRawPointerType(
+                                    childParsedType,
+                                    new Span(
+                                        fileId: start.FileId,
+                                        start: start.Start,
+                                        end: tokens.ElementAt(index - 1).Span.End));
+                            }
+                            else if (nt.Value == "weak") {
 
-                            switch (childParsedType) {
+                                switch (childParsedType) {
 
-                                case ParsedOptionalType opt: {
+                                    case ParsedOptionalType opt: {
 
-                                    uncheckedType = new ParsedWeakPointerType(
-                                        opt.Type,
-                                        new Span(
-                                            fileId: start.FileId,
-                                            start: start.Start,
-                                            end: tokens[index - 1].Span.End));
-
-                                    break;
-                                }
-                                default: {
-
-                                    Trace("ERROR: missing `?` after weak pointer type name");
-
-                                    error = error ?? 
-                                        new ParserError(
-                                            "missing `?` after weak pointer type name",
+                                        uncheckedType = new ParsedWeakPointerType(
+                                            opt.Type,
                                             new Span(
-                                                fileId: typenameStart.FileId,
-                                                start: typenameStart.Start,
+                                                fileId: start.FileId,
+                                                start: start.Start,
                                                 end: tokens[index - 1].Span.End));
 
-                                    break;
+                                        break;
+                                    }
+                                    default: {
+
+                                        Trace("ERROR: missing `?` after weak pointer type name");
+
+                                        error = error ?? 
+                                            new ParserError(
+                                                "missing `?` after weak pointer type name",
+                                                new Span(
+                                                    fileId: typenameStart.FileId,
+                                                    start: typenameStart.Start,
+                                                    end: tokens[index - 1].Span.End));
+
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
+                    else {
+
+                        typename = nt.Value;
+
+                        uncheckedType = new ParsedNameType(nt.Value, tokens.ElementAt(index).Span);
+
+                        index += 1;
+                    }
+
+                    break;
                 }
-                else {
 
-                    typename = nt.Value;
+                default: {
 
-                    uncheckedType = new ParsedNameType(nt.Value, tokens.ElementAt(index).Span);
+                    Trace("Error: expected type name");
 
-                    index += 1;
+                    error = error ??
+                        new ParserError(
+                            "expected type name",
+                            tokens[index].Span);
+
+                    break;
                 }
-
-                break;
-            }
-
-            default: {
-
-                Trace("ERROR: expected type name");
-
-                error = error ?? 
-                    new ParserError(
-                        "expected type name",
-                        tokens.ElementAt(index).Span);
-
-                break;
             }
         }
         
