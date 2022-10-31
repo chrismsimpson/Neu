@@ -87,3 +87,6 @@ extern class File {
 
     public func readAll(var this) throws -> [UInt8]
 }
+
+extern func asSaturated<U, T>(anon input: T) -> U
+extern func asTruncated<U, T>(anon input: T) -> U
