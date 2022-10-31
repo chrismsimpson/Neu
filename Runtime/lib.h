@@ -7,7 +7,6 @@
 #include <Core/AnyOf.h>
 #include <Core/Assertions.h>
 #include <Core/Atomic.h>
-#include <Core/Badge.h>
 #include <Core/BitCast.h>
 #include <Core/BuiltinWrappers.h>
 #include <Core/CharacterTypes.h>

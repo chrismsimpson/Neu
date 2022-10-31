@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Core/Badge.h>
 #include <Core/RefCounted.h>
 #include <Core/RefPointer.h>
 #include <Core/Span.h>
