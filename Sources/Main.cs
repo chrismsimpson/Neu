@@ -54,6 +54,39 @@ public static partial class ArgumentFunctions {
         return null;
     }
 
+    public static String? GetClangFormatPath(
+        this String[] args) {
+
+        for (var i = 0; i < args.Length; i++) {
+
+            var arg = args[i];
+
+            if (arg == "-F" || arg == "--clang-format-path"
+                && (i + 1) < args.Length) {
+
+                return args[i + 1];
+            }
+        }
+
+        return null;
+    }
+
+    public static bool PrettifyCPPSource(
+        this String[] args) {
+
+        for (var i = 0; i < args.Length; i++) {
+
+            var arg = args[i];
+
+            if (arg == "-p" || arg == "--prettify-cpp-source") {
+
+                return true;
+            }
+        }
+
+        return false;;
+    }
+
     public static bool EmitCPPSourceOnly(
         this String[] args) {
 
@@ -80,6 +113,8 @@ public static partial class Program {
         var cppCompilerPath = args.GetCPPCompilerPath() ?? "clang++";
 
         var runtimePath = args.GetRuntimeDirectory() ?? "./Runtime";
+
+        var clangFormatPath = args.GetClangFormatPath() ?? "clang-format";
 
         switch (true) {
 
@@ -137,6 +172,17 @@ public static partial class Program {
                             Directory.CreateDirectory(outPath);
 
                             File.WriteAllText(outFilePath, cppOrErr.Value);
+
+                            if (args.PrettifyCPPSource()) {
+
+                                _ = Process.Run(
+                                    clangFormatPath,
+                                    arguments: new [] {
+                                        "-i",
+                                        outFilePath,
+                                        "--style=WebKit"
+                                    });
+                            }
 
                             if (!args.EmitCPPSourceOnly()) {
 
