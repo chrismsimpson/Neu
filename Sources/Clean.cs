@@ -15,6 +15,16 @@ public partial class Compiler {
 
                     Directory.Delete(sub, true);
                 }
+
+                foreach (var file in Directory.GetFiles(dir)) {
+
+                    var ext = Path.GetExtension(file);
+
+                    if (ext == ".cpp" || ext == ".out") {
+
+                        File.Delete(file);
+                    }
+                }
             }
         }
     }
