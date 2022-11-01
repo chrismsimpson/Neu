@@ -2273,9 +2273,14 @@ public static partial class CodeGenFunctions {
                 output.Append("return { };");
                 output.Append("}();");
                 output.Append("if (_neu_tryResult.isError()) {");
-                output.Append("auto ");
-                output.Append(ts.Name);
-                output.Append(" = _neu_tryResult.releaseError();");
+
+                if (!IsNullOrWhiteSpace(ts.Name)) {
+                
+                    output.Append("auto ");
+                    output.Append(ts.Name);
+                    output.Append(" = _neu_tryResult.release_error();");
+                }
+
                 output.Append(CodeGenBlock(indent, ts.Block, project));
                 output.Append("}");
                 output.Append('}');
