@@ -283,27 +283,12 @@ public static partial class Program {
 @"usage: neu [subtask] [-h]
 
 Subtasks:
-  transpile (default)       Transpile then build specified file
+  build (default)       Transpile then build specified file
   clean                     Clean build directory
 
 Options:
   -h                        Subtask specific help
 ";
-
-//     public static readonly String BUILD_USAGE = 
-// @"usage: neu build [-h] [OPTIONS] [FILES...]
-
-// Flags:
-//   -h, --help                Print this help and exit
-  
-// Options:
-//   -o,--binary-dir PATH      Output directory for compiled FILES
-//                             Defaults to $PWD/Build
-
-// Arguments:
-//   FILES...                  List of files to compile. The outputs
-//                             `<inputFilename>.cpp` in the binary directory.
-// ";
 
     public static readonly String CLEAN_MESSAGE = 
 @"
