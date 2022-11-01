@@ -1,0 +1,10 @@
+class B {
+}
+
+class A {
+    b: B
+}
+
+func main() {
+    var a = A(b: [])
+}
