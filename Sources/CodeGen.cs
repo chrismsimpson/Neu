@@ -1,6 +1,23 @@
 
 namespace Neu;
 
+public partial class CodeGenContext {
+
+    public Stack<String> NamespaceStack { get; init; }
+
+    public StringBuilder DeferredOutput { get; init; }
+
+    ///
+
+    public CodeGenContext(
+        Stack<String> namespaceStack,
+        StringBuilder deferredOutput) {
+
+        this.NamespaceStack = namespaceStack;
+        this.DeferredOutput = deferredOutput;
+    }
+}
+
 public static partial class CodeGenFunctions {
 
     public static readonly int INDENT_SIZE = 4;
@@ -13,14 +30,21 @@ public static partial class CodeGenFunctions {
 
         output.Append("#include <lib.h>\n");
 
-        output.Append(CodeGenNamespace(project, scope));
+        var context = new CodeGenContext(
+            namespaceStack: new Stack<String>(),
+            deferredOutput: new StringBuilder());
+
+        output.Append(CodeGenNamespace(project, scope, context));
+
+        output.Append(context.DeferredOutput.ToString());
 
         return output.ToString();
     }
 
     public static String CodeGenNamespace(
         Project project,
-        Scope scope) {
+        Scope scope,
+        CodeGenContext context) {
             
         var output = new StringBuilder();
 
@@ -34,9 +58,11 @@ public static partial class CodeGenFunctions {
 
             if (childScope.NamespaceName is String name) {
 
+                context.NamespaceStack.Push(name);
                 output.Append($"namespace {name} {{\n");
-                output.Append(CodeGenNamespace(project, childScope));
+                output.Append(CodeGenNamespace(project, childScope, context));
                 output.Append("}\n");
+                context.NamespaceStack.Pop();
             }
         }
 
@@ -100,7 +126,7 @@ public static partial class CodeGenFunctions {
                     case EnumType et: {
 
                         var _enum = project.Enums[et.EnumId];
-                        var enumOutput = CodeGenEnum(_enum, project);
+                        var enumOutput = CodeGenEnum(_enum, project, context);
 
                         if (!IsNullOrWhiteSpace(enumOutput)) {
                             
@@ -114,7 +140,7 @@ public static partial class CodeGenFunctions {
                     case StructType st: {
 
                         var structure = project.Structs[st.StructId];
-                        var structOutput = CodeGenStruct(structure, project);
+                        var structOutput = CodeGenStruct(structure, project, context);
 
                         if (!IsNullOrWhiteSpace(structOutput)) {
                             
@@ -142,7 +168,7 @@ public static partial class CodeGenFunctions {
                 continue;
             }
 
-            var structOutput = CodeGenStruct(structure, project);
+            var structOutput = CodeGenStruct(structure, project, context);
 
             if (!IsNullOrWhiteSpace(structOutput)) {
 
@@ -162,7 +188,7 @@ public static partial class CodeGenFunctions {
                 continue;
             }
 
-            var enumOutput = CodeGenEnum(_enum, project);
+            var enumOutput = CodeGenEnum(_enum, project, context);
 
             if (!IsNullOrWhiteSpace(enumOutput)) {
 
@@ -265,21 +291,23 @@ public static partial class CodeGenFunctions {
 
     public static String CodeGenEnum(
         CheckedEnum _enum,
-        Project project) {
+        Project project,
+        CodeGenContext context) {
 
         if (_enum.DefinitionType == DefinitionType.Class) {
 
-            return CodeGenRecursiveEnum(_enum, project);
+            return CodeGenRecursiveEnum(_enum, project, context);
         }
         else {
 
-            return CodeGenNonRecursiveEnum(_enum, project);
+            return CodeGenNonRecursiveEnum(_enum, project, context);
         }
     }
 
     public static String CodeGenNonRecursiveEnum(
         CheckedEnum _enum,
-        Project project) {
+        Project project,
+        CodeGenContext context) {
 
         if (_enum.UnderlyingTypeId is Int32 typeId) {
 
@@ -611,7 +639,15 @@ public static partial class CodeGenFunctions {
             output.Append(";\n");
         }
 
+        output.Append(CodeGenEnumDebugDescriptionGetter(_enum));
+
         output.Append("};\n");
+
+        context.DeferredOutput.Append(
+            CodeGenCoreFormatter(
+                _enum.Name,
+                genericParamNames,
+                context));
 
         return output.ToString();
     }
@@ -862,7 +898,8 @@ public static partial class CodeGenFunctions {
 
     public static String CodeGenRecursiveEnum(
         CheckedEnum _enum,
-        Project project) {
+        Project project,
+        CodeGenContext context) {
 
         var output = new StringBuilder();
 
@@ -1194,7 +1231,15 @@ public static partial class CodeGenFunctions {
             output.Append("    }\n");
         }
 
+        output.Append(CodeGenEnumDebugDescriptionGetter(_enum));
+
         output.Append("};\n");
+
+        context.DeferredOutput.Append(
+            CodeGenCoreFormatter(
+                _enum.Name,
+                genericParameterNames,
+                context));
 
         return output.ToString();
     }
@@ -1264,21 +1309,275 @@ public static partial class CodeGenFunctions {
         }
     }
 
-    public static String CodeGenStruct(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public static String CodeGenEnumDebugDescriptionGetter(
+        CheckedEnum _enum) {
+
+        var output = new StringBuilder();
+
+        output.Append("String debugDescription() const { ");
+
+        output.Append("StringBuilder builder;");
+
+        output.Append("this->visit(");
+
+        for (var i = 0; i < _enum.Variants.Count; i++) {
+
+            var variant = _enum.Variants[i];
+
+            var name = variant switch {
+
+                CheckedUntypedEnumVariant u => u.Name,
+                CheckedTypedEnumVariant t => t.Name,
+                CheckedWithValueEnumVariant v => v.Name,
+                CheckedStructLikeEnumVariant s => s.Name,
+                _ => throw new Exception()
+            };
+
+            output.Append($"[&]([[maybe_unused]] {name} const& that) {{\n");
+        
+            output.Append($"builder.append(\"{_enum.Name}.{name}\");");
+
+            switch (variant) {
+
+                case CheckedStructLikeEnumVariant sv: {
+
+                    output.Append("builder.append(\"(\");");
+
+                    for (var j = 0; j < sv.Decls.Count; j++) {
+
+                        var field = sv.Decls[j];
+
+                        output.Append($"builder.append(\"{field.Name}: \");");
+
+                        if (field.TypeId == Compiler.StringTypeId) {
+                            
+                            output.Append("builder.append(\"\\\"\");");
+                        }
+
+                        output.Append($"builder.appendff(\"{{}}\", that.{field.Name});");
+
+                        if (field.TypeId == Compiler.StringTypeId) {
+
+                            output.Append("builder.append(\"\\\"\");");
+                        }
+
+                        if (j != (sv.Decls.Count - 1)) {
+
+                            output.Append("builder.append(\", \");");
+                        }
+                    }
+
+                    output.Append("builder.append(\")\");");
+
+                    break;
+                }
+
+                case CheckedTypedEnumVariant tv: {
+
+                    output.Append("builder.append(\"(\");");
+
+                    if (tv.TypeId == Compiler.StringTypeId) {
+
+                        output.Append("builder.append(\"\\\"\");");
+                    }
+
+                    output.Append("builder.appendff(\"{}\", that.value);");
+
+                    if (tv.TypeId == Compiler.StringTypeId) {
+
+                        output.Append("builder.append(\"\\\"\");");
+                    }
+
+                    output.Append("builder.append(\")\");");
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
+            }
+
+            output.Append('}');
+
+            if (i != (_enum.Variants.Count - 1)) {
+                
+                output.Append(',');
+            }
+        }
+
+        output.Append(");");
+        output.Append("return builder.toString();");
+        output.Append(" }");
+
+        return output.ToString();
+    }
+
+    public static String CodeGenDebugDescriptionGetter(
         CheckedStruct structure,
         Project project) {
+
+        var output = new StringBuilder();
+
+        output.Append("String debugDescription() const { ");
+
+        output.Append("StringBuilder builder;");
+
+        output.Append($"builder.append(\"{structure.Name}(\");");
+
+        for (var i = 0; i < structure.Fields.Count; i++) {
+
+            var field = structure.Fields[i];
+
+            output.Append(CodeGenIndent(INDENT_SIZE));
+
+            output.Append("builder.appendff(\"");
+            output.Append(field.Name);
+            output.Append(": {}");
+
+            if (i != (structure.Fields.Count - 1)) {
+
+                output.Append(", ");
+            }
+
+            output.Append("\", ");
+
+            switch (project.Types[field.TypeId]) {
+
+                case StructType st when project.Structs[st.StructId].DefinitionType == DefinitionType.Class: {
+
+                    output.Append('*');
+
+                    break;
+                }
+
+                default: {
+
+                    break;
+                }
+            }
+
+            output.Append(field.Name);
+
+            output.Append(");\n");
+        }
+
+        output.Append("builder.append(\")\");");
+        output.Append("return builder.toString();");
+        output.Append(" }");
+
+        return output.ToString();
+    }
+
+    public static String CodeGenCoreFormatter(
+        String name,
+        List<String> genericParameterNames,
+        CodeGenContext context) {
+
+        var templateArgs = Join(", ", genericParameterNames.Select(p => $"typename {p}"));
+
+        var genericTypeArgs = Join(", ", genericParameterNames);
+
+        var qualifiedNameBuilder = new StringBuilder();
+
+        foreach (var ns in context.NamespaceStack) {
+
+            qualifiedNameBuilder.Append(ns);
+            qualifiedNameBuilder.Append("::");
+        }
+
+        qualifiedNameBuilder.Append(name);
+
+        if (genericParameterNames.Any()) {
+
+            qualifiedNameBuilder.Append('<');
+            qualifiedNameBuilder.Append(genericTypeArgs);
+            qualifiedNameBuilder.Append(">\n");
+        }
+
+        var qualifiedName = qualifiedNameBuilder.ToString();
+
+        var output = new StringBuilder();
+
+        // Begin Core namespace
+
+        output.Append("template<");
+        output.Append(templateArgs);
+        output.Append('>');
+        output.Append(
+            $"struct Formatter<{qualifiedName}> : Formatter<StringView> {{\n");
+        output.Append(
+            $"    ErrorOr<void> format(FormatBuilder& builder, {qualifiedName} const& value)\n");
+        output.Append("{ ");
+        output.Append("return Formatter<StringView>::format(builder, value.debugDescription()); }");
+
+        output.Append("};");
+
+        // End Core namespace
+
+        return output.ToString();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    public static String CodeGenStruct(
+        CheckedStruct structure,
+        Project project,
+        CodeGenContext context) {
+
+        var output = new StringBuilder();
 
         if (structure.DefinitionLinkage == DefinitionLinkage.External) {
 
             return String.Empty;
         }
 
-        var output = new StringBuilder();
-
         if (structure.GenericParameters.Any()) {
 
             output.Append("template <");
         }
+
+        var genericParameterNames = structure
+            .GenericParameters
+            .Select(p => {
+                switch (project.Types[p]) {
+
+                    case TypeVariable tv:
+                        return tv.Name;
+
+                    default:
+                        throw new Exception("Unreachable");
+                }
+            })
+            .ToList();
 
         var first = true;
 
@@ -1381,8 +1680,16 @@ public static partial class CodeGenFunctions {
             }
         }
 
+        output.Append(CodeGenDebugDescriptionGetter(structure, project));
+
         output.Append("};");
 
+        context.DeferredOutput.Append(
+            CodeGenCoreFormatter(
+                structure.Name,
+                genericParameterNames,
+                context));
+        
         return output.ToString();
     }
 

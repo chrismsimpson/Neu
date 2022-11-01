@@ -22,4 +22,4 @@ Instead of literal suffixes (e.g. `0u8`), there are literal casts (e.g. `UInt8(0
 
 There is no `usize`, instead there is `UInt` & `Int` that map to C's `size_t` & `ssize_t`, respectively, which effectively serves the same purpose. That is, platform/width specific or 'native' primitives (e.g. 32-bit or 64-bit). Primitives created at lex time using C#'s BigInteger (which itself could be a native primitive I guess).
 
-For pattern matching, I have opted to use the word `when` rather than `match`. Felt cute, might delete later.
+For pattern matching, I have opted to use the word `when` (borrowed from C#) rather than `match`. Felt cute, might delete later.
