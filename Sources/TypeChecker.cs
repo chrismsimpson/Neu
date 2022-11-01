@@ -402,6 +402,23 @@ public partial class Project {
 
     public bool InsideDefer { get; set; }
 
+
+    public Int32? CachedArrayStructId { get; set; }
+    
+    public Int32? CachedDictionaryStructId { get; set; }
+    
+    public Int32? CachedErrorStructId { get; set; }
+    
+    public Int32? CachedOptionalStructId { get; set; }
+    
+    public Int32? CachedRangeStructId { get; set; }
+    
+    public Int32? CachedSetStructId { get; set; }
+    
+    public Int32? CachedTupleStructId { get; set; }
+    
+    public Int32? CachedWeakPointerStructId { get; set; }
+
     ///
 
     public Project() {
@@ -419,6 +436,15 @@ public partial class Project {
         this.Types = new List<NeuType>();
         this.CurrentFunctionIndex = null;
         this.InsideDefer = false;
+
+        this.CachedArrayStructId = null;
+        this.CachedDictionaryStructId = null;
+        this.CachedErrorStructId = null;
+        this.CachedOptionalStructId = null;
+        this.CachedRangeStructId = null;
+        this.CachedSetStructId = null;
+        this.CachedTupleStructId = null;
+        this.CachedWeakPointerStructId = null;
     }
 }
 
@@ -774,13 +800,11 @@ public static partial class ProjectFunctions {
         this Project project,
         Int32 typeId) {
 
-        var optionalStructId = project
-            .FindStructInScope(0, "Optional")
-            ?? throw new Exception("internal error: can't find builtin Optional type");
-
-        var weakPointerStructId = project
-            .FindStructInScope(0, "WeakPointer")
-            ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+        // NOTE: Can't use get_*_struct_id here since it needs a Span.
+        
+        var optionalStructId = project.CachedOptionalStructId ?? throw new Exception();
+        
+        var weakPointerStructId = project.CachedWeakPointerStructId ?? throw new Exception();
 
         switch (project.Types[typeId]) {
 
@@ -948,6 +972,82 @@ public static partial class ProjectFunctions {
                 throw new Exception();
             }
         }
+    }
+
+    public static Int32 GetCachedStructId(
+        this Project project,
+        Int32? cachedStructId,
+        String name,
+        Span span) {
+
+        // FIXME: Currently not being able to get an internally used struct ID
+        //        causes a panic. In the future it would be nice to report it
+        //        as an internal compiler error instead.
+
+        switch (cachedStructId) {
+
+            case Int32 id:
+                return id;
+
+            default:
+                throw new Exception($"can't find builtin {name} type");
+        }
+    }
+
+    public static Int32 GetArrayStructId(
+        this Project project,
+        Span span) {
+
+        return project.GetCachedStructId(project.CachedArrayStructId, "Array", span);
+    }
+
+    public static Int32 GetDictionaryStrutId(
+        this Project project,
+        Span span) {
+
+        return project.GetCachedStructId(project.CachedDictionaryStructId, "Dictionary", span);
+    }
+
+    public static Int32 GetErrorStructId(
+        this Project project,
+        Span span) {
+        
+        return project.GetCachedStructId(project.CachedErrorStructId, "Error", span);
+    }
+
+    public static Int32 GetOptionalStructId(
+        this Project project,
+        Span span) {
+        
+        return project.GetCachedStructId(project.CachedOptionalStructId, "Optional", span);
+    }
+
+    public static Int32 GetRangeStructId(
+        this Project project,
+        Span span) {
+        
+        return project.GetCachedStructId(project.CachedRangeStructId, "Range", span);
+    }
+
+    public static Int32 GetSetStructId(
+        this Project project,
+        Span span) {
+        
+        return project.GetCachedStructId(project.CachedSetStructId, "Set", span);
+    }
+
+    public static Int32 GetTupleStructId(
+        this Project project,
+        Span span) {
+        
+        return project.GetCachedStructId(project.CachedTupleStructId, "Tuple", span);
+    }
+
+    public static Int32 GetWeakPointerStructId(
+        this Project project,
+        Span span) {
+        
+        return project.GetCachedStructId(project.CachedWeakPointerStructId, "WeakPtr", span);
     }
 }
 
@@ -4199,6 +4299,45 @@ public static partial class TypeCheckerFunctions {
             error = error ?? e2;
         }
 
+        if (parentScopeId == 0) {
+
+            // Cache various well-known struct IDs as they're used internally in
+            // other Neu code.
+
+            if (project.CachedArrayStructId == null && structure.Name == "Array") {
+                
+                project.CachedArrayStructId = structId;
+            } 
+            else if (project.CachedDictionaryStructId == null && structure.Name == "Dictionary") {
+                
+                project.CachedDictionaryStructId = structId;
+            } 
+            else if (project.CachedErrorStructId == null && structure.Name == "Error") {
+                
+                project.CachedErrorStructId = structId;
+            } 
+            else if (project.CachedOptionalStructId == null && structure.Name == "Optional") {
+                
+                project.CachedOptionalStructId = structId;
+            } 
+            else if (project.CachedRangeStructId == null && structure.Name == "Range") {
+                
+                project.CachedRangeStructId = structId;
+            } 
+            else if (project.CachedSetStructId == null && structure.Name == "Set") {
+                
+                project.CachedSetStructId = structId;
+            }
+            else if (project.CachedTupleStructId == null && structure.Name == "Tuple") {
+                
+                project.CachedTupleStructId = structId;
+            } 
+            else if (project.CachedWeakPointerStructId == null && structure.Name == "WeakPointer") {
+                
+                project.CachedWeakPointerStructId = structId;
+            }
+        }
+
         return error;
     }
 
@@ -4882,9 +5021,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? err;
 
-                var errorStructId = project
-                    .FindStructInScope(0, "Error")
-                    ?? throw new Exception("internal error: Error builtin definition not found");
+                var errorStructId = project.GetErrorStructId(tryStmt.Span);
 
                 var errorDecl = new CheckedVariable(
                     name: tryStmt.Name,
@@ -5201,9 +5338,7 @@ public static partial class TypeCheckerFunctions {
                     checkedExpr = promotedExpr;
                 }
 
-                var weakPointerStructId = project
-                    .FindStructInScope(0, "WeakPointer")
-                    ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+                var weakPointerStructId = project.GetWeakPointerStructId(vds.Decl.Span);
 
                 switch (project.Types[checkedTypeId]) {
 
@@ -5640,9 +5775,7 @@ public static partial class TypeCheckerFunctions {
                             re.Span);
                 }
 
-                var rangeStructId = project
-                    .FindStructInScope(0, "Range")
-                    ?? throw new Exception("internal error: Range builtin definition not found");
+                var rangeStructId = project.GetRangeStructId(re.Span);
 
                 var _typeId = new GenericInstance(
                     rangeStructId, 
@@ -5880,13 +6013,9 @@ public static partial class TypeCheckerFunctions {
 
                 var type = project.Types[ckdExpr.GetTypeId(scopeId, project)];
 
-                var optionalStructId = project
-                    .FindStructInScope(0, "Optional") 
-                    ?? throw new Exception("internal error: can't find builtin Optional type");
-
-                var weakPointerStructId = project
-                    .FindStructInScope(0, "WeakPointer")
-                    ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+                var optionalStructId = project.GetOptionalStructId(e.Span);
+                
+                var weakPointerStructId = project.GetWeakPointerStructId(e.Span);
 
                 var typeId = Compiler.UnknownTypeId;
 
@@ -6126,9 +6255,7 @@ public static partial class TypeCheckerFunctions {
 
                 var output = new List<CheckedExpression>();
 
-                var arrayStructId = project
-                    .FindStructInScope(0, "Array")
-                    ?? throw new Exception("internal error: Array builtin definition not found");
+                var arrayStructId = project.GetArrayStructId(ve.Span);
 
                 Int32? innerHint = null;
 
@@ -6236,9 +6363,7 @@ public static partial class TypeCheckerFunctions {
 
                 var output = new List<CheckedExpression>();
 
-                var setStructId = project
-                    .FindStructInScope(0, "Set")
-                    ?? throw new Exception("internal error: Set builtin definition not found");
+                var setStructId = project.GetSetStructId(se.Span);
 
                 Int32? innerHint = null;
 
@@ -6328,9 +6453,7 @@ public static partial class TypeCheckerFunctions {
 
                 var output = new List<(CheckedExpression, CheckedExpression)>();
 
-                var dictStructId = project
-                    .FindStructInScope(0, "Dictionary")
-                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+                var dictStructId = project.GetDictionaryStrutId(de.Span);
 
                 Int32? keyHint = null;
 
@@ -6492,9 +6615,7 @@ public static partial class TypeCheckerFunctions {
                     checkedItems.Add(checkedItemExpr);
                 }
 
-                var tupleStructId = project
-                    .FindStructInScope(0, "Tuple")
-                    ?? throw new Exception("internal error: Tuple builtin definition not found");
+                var tupleStructId = project.GetTupleStructId(te.Span);
 
                 var typeId = project
                     .FindOrAddTypeId(new GenericInstance(tupleStructId, checkedTypes));
@@ -6523,13 +6644,9 @@ public static partial class TypeCheckerFunctions {
 
                 var exprType = Compiler.UnknownTypeId;
 
-                var arrayStructId = project
-                    .FindStructInScope(0, "Array")
-                    ?? throw new Exception("internal error: Array builtin definition not found");
+                var arrayStructId = project.GetArrayStructId(ie.Span);
 
-                var dictStructId = project
-                    .FindStructInScope(0, "Dictionary")
-                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+                var dictStructId = project.GetDictionaryStrutId(ie.Span);
 
                 var type = project.Types[checkedExpr.GetTypeId(scopeId, project)];
 
@@ -6619,9 +6736,7 @@ public static partial class TypeCheckerFunctions {
 
                 var typeId = Compiler.UnknownTypeId;
 
-                var tupleStructId = project
-                    .FindStructInScope(0, "Tuple")
-                    ?? throw new Exception("internal error: Tuple builtin definition not found");
+                var tupleStructId = project.GetTupleStructId(ite.Span);
 
                 var checkedExprType = project.Types[checkedExpr.GetTypeId(scopeId, project)];
 
@@ -8164,9 +8279,7 @@ public static partial class TypeCheckerFunctions {
                 // unify_with_type uses check_types_for_compact which does the same
                 // as below.
 
-                var weakPointerStructId = project
-                    .FindStructInScope(0, "WeakPointer") 
-                    ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+                var weakPointerStructId = project.GetWeakPointerStructId(span);
 
                 if (project.Types[lhsTypeId] is GenericInstance gi) {
 
@@ -8904,13 +9017,9 @@ public static partial class TypeCheckerFunctions {
 
         var lhsType = project.Types[lhsTypeId];
 
-        var optionalStructId = project
-            .FindStructInScope(0, "Optional") 
-            ?? throw new Exception("internal error: can't find builtin Optional type");
+        var optionalStructId = project.GetOptionalStructId(span);
 
-        var weakPointerStructId = project
-            .FindStructInScope(0, "WeakPointer") 
-            ?? throw new Exception("internal error: can't find builtin WeakPointer type");
+        var weakPointerStructId = project.GetWeakPointerStructId(span);
 
         // This skips the type compatibility check if assigning a T to a T? or to a
         // weak T? without going through `Some`
@@ -9184,42 +9293,6 @@ public static partial class TypeCheckerFunctions {
 
                 switch (rhsType) {
 
-                    // case GenericInstance gi: {
-
-                    //     if (st.StructId == gi.StructId) {
-
-                    //         var args = gi.TypeIds.ToList();
-
-                    //         // Same struct, perhaps this is an instantiation of it
-
-                    //         var lhsStruct = project.Structs[st.StructId];
-
-                    //         if (args.Count != lhsStruct.GenericParameters.Count) {
-
-                    //             return new TypeCheckError(
-                    //                 $"mismatched number of generic parameters for {lhsStruct.Name}",
-                    //                 span);
-                    //         }
-
-                    //         var idx = 0;
-
-                    //         var lhsArgTypeId = lhsStruct.GenericParameters[idx];
-                    //         var rhsArgTypeId = args[idx];
-
-                    //         while (idx < args.Count) {
-
-                    //             if (CheckTypesForCompat(lhsArgTypeId, rhsArgTypeId, genericInferences, span, project) is Error e3) {
-
-                    //                 return e3;
-                    //             }
-
-                    //             idx += 1;
-                    //         }
-                    //     }
-
-                    //     break;
-                    // }
-
                     case GenericInstance gi when st.StructId == gi.StructId: {
 
                         // Same struct, perhaps this is an instantiation of it
@@ -9433,9 +9506,7 @@ public static partial class TypeCheckerFunctions {
                     checkedTypes.Add(_typeId);
                 }
 
-                var tupleStructId = project
-                    .FindStructInScope(0, "Tuple") 
-                    ?? throw new Exception("internal error: Tuple builtin definition not found");
+                var tupleStructId = project.GetTupleStructId(t.Span);
 
                 // FIXME: Tuple is not a generic type since we don't have variadic generics yet, however
                 // we don't actually check if the stuct_id is actually generic or not, so the type checking
@@ -9453,9 +9524,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? innerTypeErr;
 
-                var vectorStructId = project
-                    .FindStructInScope(0, "Array")
-                    ?? throw new Exception("internal error: Array builtin definition not found");
+                var vectorStructId = project.GetArrayStructId(vt.Span);
 
                 var typeId = project.FindOrAddTypeId(new GenericInstance(vectorStructId, new List<Int32>(new [] { innerType })));
 
@@ -9474,9 +9543,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? valueErr;
 
-                var dictStructId = project
-                    .FindStructInScope(0, "Dictionary") 
-                    ?? throw new Exception("internal error: Dictionary builtin definition not found");
+                var dictStructId = project.GetDictionaryStrutId(dt.Span);
 
                 var typeId = project.FindOrAddTypeId(
                     new GenericInstance(
@@ -9494,9 +9561,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? err;
 
-                var setStructId = project
-                    .FindStructInScope(0, "Set")
-                    ?? throw new Exception("internal error: Set builtin definition not found");
+                var setStructId = project.GetSetStructId(st.Span);
 
                 var typeId = project.FindOrAddTypeId(new GenericInstance(setStructId, new List<Int32>(new [] { innerTypeId })));
 
@@ -9509,9 +9574,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? err;
 
-                var optionalStructId = project
-                    .FindStructInScope(0, "Optional")
-                    ?? throw new Exception("internal error: Optional builtin definition not found");
+                var optionalStructId = project.GetOptionalStructId(opt.Span);
 
                 var typeId = project.FindOrAddTypeId(new GenericInstance(optionalStructId, new List<Int32>(new [] { innerType })));
 
@@ -9526,9 +9589,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? err;
 
-                var weakPointerStructId = project
-                    .FindStructInScope(0, "WeakPointer") 
-                    ?? throw new Exception("internal error: WeakPointer builtin definition not found");
+                var weakPointerStructId = project.GetWeakPointerStructId(wp.Span);
 
                 var typeId = project
                     .FindOrAddTypeId(new GenericInstance(weakPointerStructId, new List<Int32>(new [] { innerTypeId })));
