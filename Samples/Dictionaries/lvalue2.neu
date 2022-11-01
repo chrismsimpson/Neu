@@ -1,0 +1,5 @@
+func main() {
+    var dict = ["a": 1]
+    dict["a"] += 4
+    printLine("{}", dict["a"])
+}

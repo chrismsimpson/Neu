@@ -4509,9 +4509,9 @@ public static partial class CodeGenFunctions {
 
                 output.Append("((");
                 output.Append(CodeGenExpr(indent, ide.Expression, project));
-                output.Append(").get(");
+                output.Append(")[");
                 output.Append(CodeGenExpr(indent, ide.Index, project));
-                output.Append(").value())");
+                output.Append("])");
 
                 break;
             }
