@@ -18,6 +18,10 @@ extern struct String {
     func length(this) -> UInt
 }
 
+extern struct ArrayIterator<T> {
+    func next(var this) -> T?
+}
+
 extern struct Array<T> {
     func isEmpty(this) -> Bool
     func size(this) -> UInt
@@ -27,6 +31,7 @@ extern struct Array<T> {
     func resize(var this, anon size: UInt) throws
     func push(var this, anon value: T) throws
     func pop(var this) -> T?
+    func iterator(this) -> ArrayIterator<T>
 }
 
 extern struct Optional<T> {
