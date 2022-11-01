@@ -130,6 +130,27 @@ public static partial class Program {
             }
 
             case var _ when
+                args.Length > 0
+                && args[0] == "dummy": {
+
+                var compiler = new Compiler();
+
+                var filename = "./Build/foo.cpp";
+
+                var contents = UTF8.GetBytes("#include <lib.h>\n\nErrorOr<int> NeuInternal::main(const Array<String> args)\n{\n    return (static_cast<Int64>(0LL));\n}");
+
+                File.WriteAllBytes(filename, contents);
+
+                var (stdOut, stdErr, success) = Compiler.Build(
+                    cppCompilerPath,
+                    runtimePath,
+                    filename,
+                    verbose: !args.Contains("--silent"));
+
+                return success ? 0 : 1;
+            }
+
+            case var _ when
                 args.Where(x => File.Exists(x)).Any(): {
 
                 var compiler = new Compiler();

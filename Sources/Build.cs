@@ -48,7 +48,8 @@ public partial class Compiler {
                 : "",
             "-std=c++20",
             // These warnings if enabled create loads of unnecessary noise:
-            "-Wno-unqualified-std-cast-call",
+            "-Wno-unknown-warning-option",
+            "-Wno-unqualified-std-cast-call", // complains without -Wno-unknown-warning-option
             "-Wno-user-defined-literals",
             "-Wno-deprecated-declarations",
             "-DNEU_CONTINUE_ON_PANIC",

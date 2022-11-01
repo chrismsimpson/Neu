@@ -70,9 +70,20 @@ public partial class Compiler {
 
         return TypeCheckerFunctions.TypeCheckNamespace(file, 0, project);
     }
-    
+
     public ErrorOr<String> ConvertToCPP(
         String filename) {
+
+        var contents = File.ReadAllBytes(filename);
+
+        return ConvertToCPP(
+            filename,
+            contents);
+    }
+    
+    public ErrorOr<String> ConvertToCPP(
+        String filename,
+        byte[] contents) {
 
         var project = new Project();
 
@@ -85,7 +96,7 @@ public partial class Compiler {
 
         Trace($"-----------------------------");
 
-        var contents = File.ReadAllBytes(filename);
+        // var contents = File.ReadAllBytes(filename);
         
         this.RawFiles.Add((filename, contents));
 
