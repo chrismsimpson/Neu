@@ -118,19 +118,6 @@ public static partial class Program {
 
         switch (true) {
 
-            // case var _ when 
-            //     args.Length > 1
-            //     && args[0] == "build"
-            //     && File.Exists(args[1]): {
-
-            //     Compiler.Build(
-            //         cppCompilerPath,
-            //         path: args[1], 
-            //         verbose: !args.Contains("--silent"));
-
-            //     return 0;
-            // }
-
             case var _ when
                 args.Length > 0
                 && args[0] == "clean": {
@@ -261,15 +248,6 @@ public static partial class Program {
 
             ///
 
-            // case var _ when 
-            //     args.Length > 0
-            //     && args[0] == "build": {
-
-            //     Console.Error.WriteLine(BUILD_USAGE);
-
-            //     return 1;
-            // }
-
             default: {
 
                 Console.Error.WriteLine(USAGE);
@@ -283,7 +261,7 @@ public static partial class Program {
 @"usage: neu [subtask] [-h]
 
 Subtasks:
-  build (default)       Transpile then build specified file
+  build (default)           Transpile then build specified file
   clean                     Clean build directory
 
 Options:
