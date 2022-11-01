@@ -1,4 +1,5 @@
 extern struct StringBuilder {
+    func StringBuilder() -> StringBuilder
     func append(var this, anon s: raw CChar)
     func toString(var this) -> String
 }
