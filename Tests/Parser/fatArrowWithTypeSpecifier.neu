@@ -1,0 +1,9 @@
+class S {
+    public func getAnswer() -> Int32 => 42
+}
+
+func greeting() -> String => "Hello"
+
+func main() {
+    printLine("{} friends! The answer is {}", greeting(), S.getAnswer())
+}
