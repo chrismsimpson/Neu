@@ -684,6 +684,8 @@ public partial class ParsedFunction {
 
     public FunctionLinkage Linkage { get; init; }
 
+    public Span? ReturnTypeSpan { get; init; }
+
     public bool MustInstantiate { get; set; }
 
     ///
@@ -703,6 +705,7 @@ public partial class ParsedFunction {
             throws: false,
             returnType: 
                 new ParsedEmptyType(),
+            returnTypeSpan: null,
             linkage,
             mustInstantiate: false) { }
 
@@ -715,6 +718,7 @@ public partial class ParsedFunction {
         ParsedBlock block,
         bool throws,
         ParsedType returnType,
+        Span? returnTypeSpan,
         FunctionLinkage linkage,
         bool mustInstantiate) {
 
@@ -726,6 +730,7 @@ public partial class ParsedFunction {
         this.Block = block;
         this.Throws = throws;
         this.ReturnType = returnType;
+        this.ReturnTypeSpan = returnTypeSpan;
         this.Linkage = linkage;
         this.MustInstantiate = mustInstantiate;
     }
@@ -4032,73 +4037,125 @@ public static partial class ParserFunctions {
 
                     ParsedType returnType = new ParsedEmptyType();
 
+                    // ParsedExpression? fatArrowExpr = null;
+
+                    // if ((index + 2) < tokens.Count) {
+
+                    //     switch (tokens.ElementAt(index)) {
+
+                    //         case FatArrowToken _: {
+
+                    //             index += 1;
+
+                    //             var (arrowExpr, arrowExprErr) = ParseExpression(
+                    //                 tokens,
+                    //                 ref index,
+                    //                 ExpressionKind.ExpressionWithoutAssignment);
+
+                    //             returnType = new ParsedEmptyType();
+
+                    //             fatArrowExpr = arrowExpr;
+
+                    //             error = error ?? arrowExprErr;
+
+                    //             index += 1;
+
+                    //             break;
+                    //         }
+
+                    //         case MinusToken _: {
+
+                    //             index += 1;
+
+                    //             switch (tokens.ElementAt(index)) {
+
+                    //                 case GreaterThanToken: {
+
+                    //                     index += 1;
+
+                    //                     var (retType, retTypeErr) = ParseTypeName(tokens, ref index);
+
+                    //                     returnType = retType;
+
+                    //                     error = error ?? retTypeErr;
+
+                    //                     break;
+                    //                 }
+
+                    //                 ///
+
+                    //                 default: {
+
+                    //                     Trace("ERROR: expected ->");
+
+                    //                     error = error ?? new ParserError(
+                    //                         "expected ->",
+                    //                         tokens.ElementAt(index - 1).Span);
+
+                    //                     break;
+                    //                 }
+                    //             }
+
+                    //             break;
+                    //         }
+
+                    //         default: {
+
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+
+                    //  accept return type specification with '->'
+
+                    Span? returnTypeSpan = null;
+
+                    if (tokens[index] is MinusToken) {
+
+                        index += 1;
+
+                        if (!(tokens[index] is GreaterThanToken)) {
+
+                            error = error ??
+                                new ParserError(
+                                    "expected ->",
+                                    tokens[index - 1].Span);
+                        }
+
+                        var start = index;
+
+                        var fileId = tokens[index].Span.FileId;
+
+                        index += 1;
+
+                        var (retType, err) = ParseTypeName(tokens, ref index);
+
+                        returnType = retType;
+
+                        error = error ?? err;
+
+                        returnTypeSpan = new Span(
+                            fileId,
+                            start,
+                            end: tokens[index - 1].Span.End);
+                    }
+
+                    // Accept an (optional) fat arrow
+
                     ParsedExpression? fatArrowExpr = null;
 
-                    if ((index + 2) < tokens.Count) {
+                    if (tokens[index] is FatArrowToken) {
 
-                        switch (tokens.ElementAt(index)) {
+                        index += 1;
 
-                            case FatArrowToken _: {
+                        var (_fatArrowExpr, fatArrorErr) = ParseExpression(
+                            tokens, 
+                            ref index, 
+                            ExpressionKind.ExpressionWithoutAssignment);
 
-                                index += 1;
+                        error = error ?? fatArrorErr;
 
-                                var (arrowExpr, arrowExprErr) = ParseExpression(
-                                    tokens,
-                                    ref index,
-                                    ExpressionKind.ExpressionWithoutAssignment);
-
-                                returnType = new ParsedEmptyType();
-
-                                fatArrowExpr = arrowExpr;
-
-                                error = error ?? arrowExprErr;
-
-                                index += 1;
-
-                                break;
-                            }
-
-                            case MinusToken _: {
-
-                                index += 1;
-
-                                switch (tokens.ElementAt(index)) {
-
-                                    case GreaterThanToken: {
-
-                                        index += 1;
-
-                                        var (retType, retTypeErr) = ParseTypeName(tokens, ref index);
-
-                                        returnType = retType;
-
-                                        error = error ?? retTypeErr;
-
-                                        break;
-                                    }
-
-                                    ///
-
-                                    default: {
-
-                                        Trace("ERROR: expected ->");
-
-                                        error = error ?? new ParserError(
-                                            "expected ->",
-                                            tokens.ElementAt(index - 1).Span);
-
-                                        break;
-                                    }
-                                }
-
-                                break;
-                            }
-
-                            default: {
-
-                                break;
-                            }
-                        }
+                        fatArrowExpr = _fatArrowExpr;
                     }
 
                     if (index >= tokens.Count) {
@@ -4122,6 +4179,7 @@ public static partial class ParserFunctions {
                                 block: new ParsedBlock(),
                                 throws,
                                 returnType,
+                                returnTypeSpan,
                                 linkage,
                                 mustInstantiate: true),
                             error);
@@ -4164,6 +4222,7 @@ public static partial class ParserFunctions {
                             block,
                             throws,
                             returnType,
+                            returnTypeSpan,
                             linkage,
                             mustInstantiate: false),
                         error);

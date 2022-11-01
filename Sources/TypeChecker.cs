@@ -4894,6 +4894,10 @@ public static partial class TypeCheckerFunctions {
                 error = error ?? e1;
             }
         }
+    
+        // Set current function index before a block type check so that
+        // method return type is checked against its implementation
+        project.CurrentFunctionIndex = methodId;
 
         var (block, chkBlockErr) = TypeCheckBlock(func.Block, funcScopeId, project, SafetyMode.Safe);
 
