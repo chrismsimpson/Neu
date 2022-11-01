@@ -8,6 +8,7 @@
 
 #include <Core/Format.h>
 #include <Core/Forward.h>
+#include <Core/String.h>
 #include <Core/StringView.h>
 #include <Builtins/Array.h>
 #include <stdarg.h>
@@ -107,4 +108,39 @@ private:
     static constexpr size_t inlineCapacity = 256;
 
     Array<UInt8> m_buffer;
+};
+
+template<typename T>
+struct Formatter<Array<T>> : Formatter<StringView> {
+
+    ErrorOr<void> format(FormatBuilder& builder, Array<T> const& value) {
+
+        StringBuilder stringBuilder;
+
+        stringBuilder.append("[");
+
+        for (size_t i = 0; i < value.size(); ++i) {
+
+            if constexpr (IsSame<String, T>) {
+
+                stringBuilder.append("\"");
+            }
+
+            stringBuilder.appendff("{}", value[i]);
+
+            if constexpr (IsSame<String, T>) {
+
+                stringBuilder.append("\"");
+            }
+
+            if (i != value.size() - 1) {
+
+                stringBuilder.append(",");
+            }
+        }
+        
+        stringBuilder.append("]");
+
+        return Formatter<StringView>::format(builder, stringBuilder.toString());
+    }
 };
