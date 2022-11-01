@@ -4246,7 +4246,7 @@ public static partial class TypeCheckerFunctions {
                 project.Functions[constructorId].Linkage = FunctionLinkage.ExternalClassConstructor;
             }
         }
-        else {
+        else if (structure.DefinitionLinkage != DefinitionLinkage.External) {
 
             // No constructor found, so let's make one
 
@@ -9184,37 +9184,74 @@ public static partial class TypeCheckerFunctions {
 
                 switch (rhsType) {
 
-                    case GenericInstance gi: {
+                    // case GenericInstance gi: {
 
-                        if (st.StructId == gi.StructId) {
+                    //     if (st.StructId == gi.StructId) {
 
-                            var args = gi.TypeIds.ToList();
+                    //         var args = gi.TypeIds.ToList();
 
-                            // Same struct, perhaps this is an instantiation of it
+                    //         // Same struct, perhaps this is an instantiation of it
 
-                            var lhsStruct = project.Structs[st.StructId];
+                    //         var lhsStruct = project.Structs[st.StructId];
 
-                            if (args.Count != lhsStruct.GenericParameters.Count) {
+                    //         if (args.Count != lhsStruct.GenericParameters.Count) {
 
-                                return new TypeCheckError(
-                                    $"mismatched number of generic parameters for {lhsStruct.Name}",
-                                    span);
+                    //             return new TypeCheckError(
+                    //                 $"mismatched number of generic parameters for {lhsStruct.Name}",
+                    //                 span);
+                    //         }
+
+                    //         var idx = 0;
+
+                    //         var lhsArgTypeId = lhsStruct.GenericParameters[idx];
+                    //         var rhsArgTypeId = args[idx];
+
+                    //         while (idx < args.Count) {
+
+                    //             if (CheckTypesForCompat(lhsArgTypeId, rhsArgTypeId, genericInferences, span, project) is Error e3) {
+
+                    //                 return e3;
+                    //             }
+
+                    //             idx += 1;
+                    //         }
+                    //     }
+
+                    //     break;
+                    // }
+
+                    case GenericInstance gi when st.StructId == gi.StructId: {
+
+                        // Same struct, perhaps this is an instantiation of it
+
+                        var lhsStruct = project.Structs[st.StructId];
+
+                        if (gi.TypeIds.Count != lhsStruct.GenericParameters.Count) {
+
+                            return new TypeCheckError(
+                                $"mismatched number of generic parameters for {lhsStruct.Name}",
+                                span);
+                        }
+
+                        var idx = 0;
+
+                        var lhsArgTypeId = lhsStruct.GenericParameters[idx];
+
+                        var rhsArgTypeId = gi.TypeIds[idx];
+
+                        while (idx < gi.TypeIds.Count) {
+
+                            if (CheckTypesForCompat(
+                                lhsArgTypeId, 
+                                rhsArgTypeId, 
+                                genericInferences, 
+                                span, 
+                                project) is Error e) {
+
+                                return e;
                             }
 
-                            var idx = 0;
-
-                            var lhsArgTypeId = lhsStruct.GenericParameters[idx];
-                            var rhsArgTypeId = args[idx];
-
-                            while (idx < args.Count) {
-
-                                if (CheckTypesForCompat(lhsArgTypeId, rhsArgTypeId, genericInferences, span, project) is Error e3) {
-
-                                    return e3;
-                                }
-
-                                idx += 1;
-                            }
+                            idx += 1;
                         }
 
                         break;
