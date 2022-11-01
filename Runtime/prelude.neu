@@ -46,6 +46,10 @@ extern struct WeakPointer<T> {
     func clear(var this)
 }
 
+extern struct DictionaryIterator<K, V> {
+    func next(var this) -> (K, V)?
+}
+
 extern struct Dictionary<K, V> {
     func get(this, anon key: K) -> V?
     func contains(this, anon key: K) -> Bool
@@ -58,6 +62,7 @@ extern struct Dictionary<K, V> {
     func keys(this) -> [K]
     func hash(this) -> UInt32
     func Dictionary<A, B>() -> [A: B]
+    func iterator(this) -> DictionaryIterator<K, V>
 }
 
 extern struct SetIterator<T> {

@@ -9,11 +9,46 @@
 #include <Core/HashMap.h>
 #include <Core/NonNullRefPointer.h>
 #include <Core/RefCounted.h>
+#include <Core/Tuple.h>
 
 template<typename K, typename V>
 struct DictionaryStorage : public RefCounted<DictionaryStorage<K, V>> {
 
     HashMap<K, V> map;
+};
+
+template<typename K, typename V>
+class DictionaryIterator {
+
+    using Storage = DictionaryStorage<K, V>;
+
+    using Iterator = typename HashMap<K, V>::IteratorType;
+
+public:
+
+    DictionaryIterator(NonNullRefPointer<Storage> storage)
+        : m_storage(move(storage)), 
+          m_iterator(m_storage->map.begin()) { }
+
+    Optional<Tuple<K, V>> next() {
+
+        if (m_iterator == m_storage->map.end()) {
+
+            return { };
+        }
+
+        auto res = *m_iterator;
+
+        ++m_iterator;
+
+        return Tuple<K, V>(res.key, res.value);
+    }
+
+private:
+
+    NonNullRefPointer<Storage> m_storage;
+
+    Iterator m_iterator;
 };
 
 template<typename K, typename V>
@@ -85,6 +120,8 @@ public:
         
         return dictionary;
     }
+
+    DictionaryIterator<K, V> iterator() const { return DictionaryIterator<K, V> { m_storage }; }
 
 private:
 
