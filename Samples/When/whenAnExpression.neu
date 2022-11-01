@@ -1,0 +1,7 @@
+func main() {
+    let i = 0
+    when i + 1 {
+        (1) => printLine("PASS")
+        else => printLine("FAIL")
+    }
+}

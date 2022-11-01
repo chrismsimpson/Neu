@@ -5337,7 +5337,8 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (operand, operandErr) = ParseOperand(tokens, ref index);
+                // var (operand, operandErr) = ParseOperand(tokens, ref index);
+                var (operand, operandErr) = ParseExpression(tokens, ref index, ExpressionKind.ExpressionWithoutAssignment);
 
                 error = error ?? operandErr;
 
