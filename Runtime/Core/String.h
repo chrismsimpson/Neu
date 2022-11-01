@@ -9,7 +9,6 @@
 #include <Core/Format.h>
 #include <Core/Forward.h>
 #include <Core/RefPointer.h>
-#include <Core/StringBuilder.h>
 #include <Core/StringImpl.h>
 #include <Core/StringUtils.h>
 #include <Core/Traits.h>
@@ -79,16 +78,6 @@ public:
     [[nodiscard]] static String bijectiveBaseFrom(size_t value, unsigned base = 26, StringView map = { });
 
     [[nodiscard]] static String romanNumberFrom(size_t value);
-
-    template<class SeparatorType, class CollectionType>
-    [[nodiscard]] static String join(SeparatorType const& separator, CollectionType const& collection, StringView fmtstr = "{}"sv) {
-
-        StringBuilder builder;
-        
-        builder.join(separator, collection, fmtstr);
-        
-        return builder.build();
-    }
 
     [[nodiscard]] bool matches(StringView mask, CaseSensitivity = CaseSensitivity::CaseInsensitive) const;
 
