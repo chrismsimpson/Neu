@@ -385,7 +385,7 @@ public static partial class Program {
 
         while (lineIndex < lineSpans.Count) {
 
-            if (span.Start >= lineSpans[lineIndex].Item1 && span.Start < lineSpans[lineIndex].Item2) {
+            if (span.Start >= lineSpans[lineIndex].Item1 && span.Start <= lineSpans[lineIndex].Item2) {
 
                 if (lineIndex > 0) {
 
@@ -438,17 +438,6 @@ public static partial class Program {
 
                 lineIndex += 1;
             }
-        }
-
-        if (span.Start == span.End && span.Start == fileContents.Length && lineIndex > 0) {
-
-            PrintSourceLine(
-                severity,
-                fileContents,
-                lineSpans[lineIndex - 1],
-                span,
-                lineIndex - 1,
-                largestLineNumber);
         }
 
         Console.ForegroundColor = ogColor;
