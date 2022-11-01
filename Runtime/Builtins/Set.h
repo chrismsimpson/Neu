@@ -9,42 +9,36 @@
 #include <Core/HashTable.h>
 #include <initializer_list>
 
-template<typename T, typename TraitsForT, bool IsOrdered>
-class Set : public HashTable<T, TraitsForT, IsOrdered> {
+template<typename T>
+struct SetStorage : public RefCounted<SetStorage<T>> {
+
+    HashTable<T> table;
+};
+
+template<typename T>
+class Set : public HashTable<T> {
 
 private:
 
-    using HashTableType = HashTable<T, TraitsForT, IsOrdered>;
+    using Storage = SetStorage<T>;
 
 public:
 
-    using HashTableType::HashTable;
+    bool remove(T const& value) { return m_storage->table.remove(value); }
 
-    Set(std::initializer_list<T> list) {
+    bool contains(T const& value) const { return m_storage->table.contains(value); }
 
-        MUST(ensureCapacity(list.size()));
-
-        for (auto& item : list) {
-
-            MUST(add(item));
-        }
-    }
-
-    using HashTableType::contains;
-
-    ErrorOr<HashSetResult> add(T const& value) { return HashTableType::trySet(value); }
+    ErrorOr<HashSetResult> add(T const& value) { return m_storage->table.set(value); }
     
-    ErrorOr<HashSetResult> add(T&& value) { return HashTableType::trySet(move(value)); }
-    
-    ErrorOr<void> ensureCapacity(size_t capacity) { return HashTableType::tryEnsureCapacity(capacity); }
+    ErrorOr<HashSetResult> add(T&& value) { return m_storage->table.set(move(value)); }
 
-    using HashTableType::capacity;
-    
-    using HashTableType::clear;
-    
-    using HashTableType::remove;
-    
-    using HashTableType::size;
+    ErrorOr<void> ensureCapacity(size_t capacity) { return m_storage->table.tryEnsureCapacity(capacity); }
+
+    size_t capacity() const { return m_storage->table.capacity(); }
+
+    size_t size() const { return m_storage->table.size(); }
+
+    void clear() { m_storage->table.clear(); }
 
     [[nodiscard]] UInt32 hash() const {
 
@@ -57,4 +51,32 @@ public:
 
         return hash;
     }
+
+    static ErrorOr<Set> createEmpty() {
+
+        auto storage = TRY(adoptNonNullRefOrErrorNomem(new (nothrow) Storage));
+
+        return Set { move(storage) };
+    }
+
+    static ErrorOr<Set> createWithValues(std::initializer_list<T> list) {
+
+        auto set = TRY(createEmpty());
+
+        TRY(set.ensureCapacity(list.size()));
+
+        for (auto& value : list) {
+
+            TRY(set.add(value));
+        }
+
+        return set;
+    }
+
+private:
+
+    explicit Set(NonNullRefPointer<Storage> storage)
+        : m_storage(move(storage)) { }
+
+    NonNullRefPointer<Storage> m_storage;
 };

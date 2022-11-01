@@ -66,7 +66,7 @@
 #include <Core/StringUtils.cpp>
 #include <Core/StringView.cpp>
 
-template<typename T, typename TraitsForT = Traits<T>, bool IsOrdered = false>
+template<typename T>
 class Set;
 
 #include <Builtins/Array.h>

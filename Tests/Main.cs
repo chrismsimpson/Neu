@@ -98,8 +98,6 @@ public static partial class Program {
                             }
                             else {
 
-                                // WriteLine($"Test failed: {path}");
-
                                 Write($" ......");
 
                                 Console.ForegroundColor = ConsoleColor.Red;
@@ -108,9 +106,7 @@ public static partial class Program {
 
                                 Console.ForegroundColor = og;
 
-                                Neu.Program.DisplayError(compiler, err.Content, err.GetSpan());
-
-                                
+                                Neu.Program.DisplayError(compiler, err.Content, err.GetSpan());                               
 
                                 return new ErrorOrVoid(err);
                             }

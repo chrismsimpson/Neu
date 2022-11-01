@@ -1,0 +1,10 @@
+func foo(set: var {Int64}) throws {
+    set.add(4)
+    set.add(5)
+}
+
+func main() {
+    var set = {1, 2, 3}
+    foo(set)
+    printLine("{}", set.size());
+}

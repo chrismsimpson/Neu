@@ -2278,7 +2278,7 @@ public static partial class CodeGenFunctions {
                 
                     output.Append("auto ");
                     output.Append(ts.Name);
-                    output.Append(" = _neu_tryResult.release_error();");
+                    output.Append(" = _neu_tryResult.releaseError();");
                 }
 
                 output.Append(CodeGenBlock(indent, ts.Block, project));
@@ -4446,7 +4446,7 @@ public static partial class CodeGenFunctions {
                     _ => throw new Exception("Internal error: Set doesn't have inner type")
                 };
 
-                output.Append($"(Set<{CodeGenType(valueTypeId, project)}>({{");
+                output.Append($"(TRY(Set<{CodeGenType(valueTypeId, project)}>::createWithValues({{");
 
                 var first = true;
 
@@ -4464,7 +4464,7 @@ public static partial class CodeGenFunctions {
                     output.Append(CodeGenExpr(indent, value, project));
                 }
                 
-                output.Append("}))");
+                output.Append("})))");
 
                 break;
             }
