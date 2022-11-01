@@ -378,3 +378,13 @@ String operator+(String const&, String const&);
 
 String escapeHtmlEntities(StringView html);
 
+template<typename T>
+struct Formatter<NonNullRefPointer<T>> : Formatter<StringView> {
+
+    ErrorOr<void> format(FormatBuilder& builder, NonNullRefPointer<T> const& value) {
+
+        auto str = String::formatted("{}", *value);
+
+        return Formatter<StringView>::format(builder, str);
+    }
+};

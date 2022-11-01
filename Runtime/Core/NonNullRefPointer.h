@@ -263,15 +263,6 @@ inline NonNullRefPointer<T> adoptRef(T& object) {
     return NonNullRefPointer<T>(NonNullRefPointer<T>::Adopt, object);
 }
 
-template<typename T>
-struct Formatter<NonNullRefPointer<T>> : Formatter<const T*> {
-
-    ErrorOr<void> format(FormatBuilder& builder, NonNullRefPointer<T> const& value) {
-
-        return Formatter<const T*>::format(builder, value.pointer());
-    }
-};
-
 template<typename T, typename U>
 inline void swap(NonNullRefPointer<T>& a, NonNullRefPointer<U>& b) requires(IsConvertible<U*, T*>) {
 
