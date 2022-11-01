@@ -2989,6 +2989,8 @@ public static partial class ParserFunctions {
 
                                                 Trace("ERROR: unexpected keyword");
 
+                                                index += 1;
+
                                                 error = error ??
                                                     new ParserError(
                                                         "unexpected keyword",
@@ -3003,12 +3005,14 @@ public static partial class ParserFunctions {
 
                                     default: {
 
-                                        Trace("ERROR: unexpected keyword");
+                                        Trace("ERROR: unexpected token");
+
+                                        index += 1;
 
                                         error = error ??
                                             new ParserError(
-                                                "unexpected keyword",
-                                                nt.Span);
+                                                "unexpected token",
+                                                tokens[index].Span);
 
                                         break;
                                     }
