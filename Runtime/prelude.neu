@@ -60,6 +60,10 @@ extern struct Dictionary<K, V> {
     func Dictionary<A, B>() -> [A: B]
 }
 
+extern struct SetIterator<T> {
+    func next(var this) -> T?
+}
+
 extern struct Set<V> {
     func contains(this, anon value: V) -> Bool
     func add(var this, anon value: V) throws
@@ -70,6 +74,7 @@ extern struct Set<V> {
     func capacity(this) -> UInt
     func hash(this) -> UInt32
     func Set<A>() -> Set<A>
+    func iterator(this) -> SetIterator<V>
 }
 
 extern struct Tuple { }

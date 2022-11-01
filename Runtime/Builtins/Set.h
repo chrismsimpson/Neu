@@ -16,6 +16,41 @@ struct SetStorage : public RefCounted<SetStorage<T>> {
 };
 
 template<typename T>
+class SetIterator {
+
+    using Storage = SetStorage<T>;
+
+    using Iterator = typename HashTable<T>::Iterator;
+
+public:
+
+    SetIterator(NonNullRefPointer<Storage> storage)
+        : m_storage(move(storage)), 
+          m_iterator(m_storage->table.begin()) { }
+
+    Optional<T> next() {
+
+        if (m_iterator == m_storage->table.end()) {
+
+            return { };
+        }
+
+        auto res = *m_iterator;
+
+        ++m_iterator;
+
+        return res;
+    }
+
+private:
+
+    NonNullRefPointer<Storage> m_storage;
+
+    Iterator m_iterator;
+};
+
+
+template<typename T>
 class Set : public HashTable<T> {
 
 private:
@@ -72,6 +107,8 @@ public:
 
         return set;
     }
+
+    SetIterator<T> iterator() const { return SetIterator<T> { m_storage }; }
 
 private:
 
