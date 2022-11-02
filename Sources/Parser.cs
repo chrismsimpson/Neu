@@ -4326,6 +4326,8 @@ public static partial class ParserFunctions {
             return (block, error);
         }
 
+        SkipNewLines(tokens, ref index);
+
         var start = tokens.ElementAt(index).Span;
 
         index += 1;
@@ -5267,8 +5269,6 @@ public static partial class ParserFunctions {
         }
 
         if (tokens.ElementAtOrDefault(index) is LCurlyToken) {
-
-            index += 1;
 
             var (block, err) = ParseBlock(tokens, ref index);
 
