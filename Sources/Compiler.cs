@@ -152,6 +152,12 @@ public partial class Compiler {
         return this.RawFiles[fileId].Item2;
     }
 
+    public String GetFileName(
+        Int32 fileId) {
+
+        return this.RawFiles[fileId].Item1;
+    }
+
     public static byte[] Prelude() {
 
         return File.ReadAllBytes("./Runtime/prelude.neu");

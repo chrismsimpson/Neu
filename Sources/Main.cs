@@ -357,6 +357,8 @@ public static partial class Program {
 
         var fileContents = parser.GetFileContents(span.FileId);
 
+        var fileName = parser.GetFileName(span.FileId);
+
         var lineSpans = LineSpans(fileContents);
 
         var lineIndex = 0;
@@ -365,11 +367,23 @@ public static partial class Program {
 
         var width = $"{largestLineNumber}".Length;
 
-        WriteLine($"{new String('-', width + 3)}");
+        // WriteLine($"{new String('-', width + 3)}");
 
         while (lineIndex < lineSpans.Count) {
 
             if (span.Start >= lineSpans[lineIndex].Item1 && span.Start <= lineSpans[lineIndex].Item2) {
+
+                var columnIndex = span.Start - lineSpans[lineIndex].Item1;
+
+                Console.ForegroundColor = ogColor;
+
+                Write($"{new String('-', width + 3)} ");
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+
+                Write($"{fileName}:{lineIndex + 1}:{columnIndex + 1}\n");
+                
+                Console.ForegroundColor = ogColor;
 
                 if (lineIndex > 0) {
 
