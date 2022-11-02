@@ -213,3 +213,28 @@ struct Formatter<Dictionary<K, V>> : Formatter<StringView> {
     }
 };
 
+template<typename... Ts>
+struct Formatter<Tuple<Ts...>> : Formatter<StringView> {
+
+    ErrorOr<void> format(FormatBuilder& builder, Tuple<Ts...> const& tuple) {
+
+        StringBuilder stringBuilder;
+        
+        stringBuilder.append("(");
+        
+        if constexpr (sizeof...(Ts) > 0) {
+            
+            tuple.applyAsArgs([&] (auto first, auto... args) {
+                
+                appendValue(stringBuilder, first);
+                
+                ((stringBuilder.append(", "), append_value(stringBuilder, args)),...);
+            });
+        }
+
+        stringBuilder.append(")");
+        
+        return Formatter<StringView>::format(builder, stringBuilder.toString());
+    }
+};
+
