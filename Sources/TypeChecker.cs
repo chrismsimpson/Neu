@@ -400,6 +400,8 @@ public partial class Project {
 
     public Int32? CurrentFunctionIndex { get; set; } 
 
+    public Int32? CurrentStructTypeId { get; set; }
+
     public bool InsideDefer { get; set; }
 
 
@@ -435,6 +437,7 @@ public partial class Project {
         this.Scopes = new List<Scope>(new [] { projectGlobalScope });
         this.Types = new List<NeuType>();
         this.CurrentFunctionIndex = null;
+        this.CurrentStructTypeId = null;
         this.InsideDefer = false;
 
         this.CachedArrayStructId = null;
@@ -4093,6 +4096,8 @@ public static partial class TypeCheckerFunctions {
 
         var structTypeId = project.FindOrAddTypeId(new StructType(structId));
 
+        project.CurrentStructTypeId = structTypeId;
+
         var structScopeId = project.CreateScope(parentScopeId);
 
         var _genericParameters = new List<Int32>();
@@ -4341,6 +4346,8 @@ public static partial class TypeCheckerFunctions {
             }
         }
 
+        project.CurrentStructTypeId = null;
+
         return error;
     }
 
@@ -4359,6 +4366,8 @@ public static partial class TypeCheckerFunctions {
         var chkStructScopeId = chkStruct.ScopeId;
 
         var structTypeId = project.FindOrAddTypeId(new StructType(structId));
+
+        project.CurrentStructTypeId = structTypeId;
 
         foreach (var uncheckedMember in structure.Fields) {
 
@@ -4451,6 +4460,8 @@ public static partial class TypeCheckerFunctions {
             error = error ?? typeChkErr;
         }
         
+        project.CurrentStructTypeId = null;
+
         return error;
     }
 
