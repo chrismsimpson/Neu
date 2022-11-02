@@ -1,0 +1,9 @@
+namespace NS {
+    
+    func foo() { }
+}
+
+func main() {
+    NS.foo()
+    NS.Foo.foo()
+}

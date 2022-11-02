@@ -1,0 +1,18 @@
+namespace Outer {
+    namespace Inner {
+        struct Struct {
+            func method(this) => printLine("PASS 1")
+            func staticFunction() => printLine("PASS 2")
+        }
+        func freeFunctionInInnerNamespace() => printLine("PASS 3")
+    }
+    func freeFunctionInOuterNamespace() => printLine("PASS 4")
+}
+
+func main() {
+    var s = Outer.Inner.Struct()
+    s.method()
+    Outer.Inner.Struct.staticFunction()
+    Outer.Inner.freeFunctionInInnerNamespace()
+    Outer.freeFunctionInOuterNamespace()
+}
