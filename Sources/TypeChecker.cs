@@ -8699,11 +8699,16 @@ public static partial class TypeCheckerFunctions {
 
                     linkage = callee.Linkage;
 
+                    var scopeContainingCallee = project
+                        .Scopes[callee.FuncScopeId]
+                        .Parent 
+                        ?? throw new Exception("Function should have a parent scope");
+
                     // Make sure we are allowed to access this method
 
                     var accessibilityError = CheckAccessibility(
                         callerScopeId, 
-                        callee.FuncScopeId, 
+                        scopeContainingCallee, 
                         callee, 
                         span, 
                         project);
