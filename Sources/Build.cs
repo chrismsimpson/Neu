@@ -51,9 +51,9 @@ public partial class Compiler {
                 ? "-fcolor-diagnostics"
                 : "",
             "-std=c++20",
-            // These warnings if enabled create loads of unnecessary noise:
+            // Don't complain about unsupported -W flags below.
             "-Wno-unknown-warning-option",
-            "-Wno-unqualified-std-cast-call", // complains without -Wno-unknown-warning-option
+            "-Wno-unqualified-std-cast-call",
             "-Wno-user-defined-literals",
             "-Wno-deprecated-declarations",
             "-DNEU_CONTINUE_ON_PANIC",
