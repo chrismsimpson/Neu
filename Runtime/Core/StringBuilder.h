@@ -111,6 +111,22 @@ private:
 };
 
 template<typename T>
+void appendValue(StringBuilder& stringBuilder, T const& value) {
+
+    if constexpr (IsSame<String, T>) {
+
+        stringBuilder.append("\"");
+    }
+
+    stringBuilder.appendff("{}", value);
+
+    if constexpr (IsSame<String, T>) {
+
+        stringBuilder.append("\"");
+    }
+}
+
+template<typename T>
 struct Formatter<Array<T>> : Formatter<StringView> {
 
     ErrorOr<void> format(FormatBuilder& builder, Array<T> const& value) {
@@ -121,21 +137,11 @@ struct Formatter<Array<T>> : Formatter<StringView> {
 
         for (size_t i = 0; i < value.size(); ++i) {
 
-            if constexpr (IsSame<String, T>) {
-
-                stringBuilder.append("\"");
-            }
-
-            stringBuilder.appendff("{}", value[i]);
-
-            if constexpr (IsSame<String, T>) {
-
-                stringBuilder.append("\"");
-            }
+            appendValue(stringBuilder, value[i]);
 
             if (i != value.size() - 1) {
 
-                stringBuilder.append(",");
+                stringBuilder.append(", ");
             }
         }
         
