@@ -1,1 +1,1 @@
-Can't access variable 'mudaAmount' from scope none
+Can't access variable 'mudaAmount' from scope none, because it is marked private

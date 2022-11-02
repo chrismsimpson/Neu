@@ -1,1 +1,1 @@
-Can't access function 'parts' from scope none
+Can't access function 'parts' from scope none, because it is marked private

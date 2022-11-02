@@ -3448,7 +3448,7 @@ public static partial class TypeCheckerFunctions {
             case PrivateVisibility _ when !Scope.CanAccess(ownScopeId, memberScopeId, project): {
 
                 return new TypeCheckError(
-                    $"Can't access {member.GetKind()} '{member.GetName()}' from scope {project.Scopes[ownScopeId].NamespaceName ?? "none"}",
+                    $"Can't access {member.GetKind()} '{member.GetName()}' from scope {project.Scopes[ownScopeId].NamespaceName ?? "none"}, because it is marked private",
                     span);
             }
 
