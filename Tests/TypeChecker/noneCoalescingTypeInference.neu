@@ -1,0 +1,5 @@
+func main() {
+    let myOptional: Int64? = 5
+    let y = myOptional ?? 6
+    printLine("{}", y)
+}

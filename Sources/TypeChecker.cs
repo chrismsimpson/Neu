@@ -8237,6 +8237,42 @@ public static partial class TypeCheckerFunctions {
 
         switch (op) {
 
+            case BinaryOperator.NoneCoalescing: {
+
+                // 1. LHS must be Optional<T>.
+                // 2. RHS must be T.
+                // 3. Resulting type is T.
+
+                switch (project.Types[lhsTypeId]) {
+
+                    case GenericInstance gi when gi.StructId == project.GetOptionalStructId(span): {
+
+                        // Extract T from Optional<T>
+
+                        var innerTypeId = gi.TypeIds[0];
+
+                        if (innerTypeId == rhsTypeId) {
+                            
+                            // Success: LHS is T? and RHS is T.
+                            
+                            return (innerTypeId, null);
+                        }
+
+                        break;
+                    }
+                    default: {
+
+                        break;
+                    }
+                }
+
+                return (
+                    lhsTypeId,
+                    new TypeCheckError(
+                        $"None coalescing (??) with incompatible types ('{project.TypeNameForTypeId(lhsTypeId)}' and '{project.TypeNameForTypeId(rhsTypeId)}')",
+                        span));
+            }
+
             case BinaryOperator.LessThan:
             case BinaryOperator.LessThanOrEqual:
             case BinaryOperator.GreaterThan:
