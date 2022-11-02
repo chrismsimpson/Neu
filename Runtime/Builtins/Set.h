@@ -69,6 +69,8 @@ public:
 
     ErrorOr<void> ensureCapacity(size_t capacity) { return m_storage->table.tryEnsureCapacity(capacity); }
 
+    bool isEmpty() const { return m_storage->table.isEmpty(); }
+
     size_t capacity() const { return m_storage->table.capacity(); }
 
     size_t size() const { return m_storage->table.size(); }
