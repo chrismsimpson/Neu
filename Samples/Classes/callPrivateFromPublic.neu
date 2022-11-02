@@ -1,0 +1,19 @@
+class Class {
+    
+    func privateFunction(this) {
+        
+        printLine("PASS")
+    }
+    
+    public func publicFunction(this) {
+        
+        this.privateFunction()
+    }
+}
+
+func main() {
+    
+    let c = Class()
+    
+    c.publicFunction()
+}
