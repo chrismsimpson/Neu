@@ -3260,8 +3260,6 @@ public partial class CheckedCall {
     
     public Int32 TypeId { get; init; }
 
-    public DefinitionType? CalleeDefinitionType { get; init; }
-
     ///
 
     public CheckedCall(
@@ -3271,8 +3269,7 @@ public partial class CheckedCall {
         List<(String, CheckedExpression)> args,
         List<Int32> typeArgs,
         FunctionLinkage linkage,
-        Int32 typeId,
-        DefinitionType? calleeDefinitionType) {
+        Int32 typeId) {
 
         this.Namespace = ns;
         this.Name = name;
@@ -3281,7 +3278,6 @@ public partial class CheckedCall {
         this.TypeArgs = typeArgs;
         this.Linkage = linkage;
         this.TypeId = typeId;
-        this.CalleeDefinitionType = calleeDefinitionType;
     }
 }
 
@@ -7927,8 +7923,7 @@ public static partial class TypeCheckerFunctions {
                                         args: checkedArgs,
                                         typeArgs: new List<Int32>(),
                                         linkage: FunctionLinkage.Internal,
-                                        typeId: Compiler.UnknownTypeId,
-                                        calleeDefinitionType: null), // CHECK
+                                        typeId: Compiler.UnknownTypeId),
                                     mce.Span,
                                     Compiler.UnknownTypeId),
                                 error);
@@ -8425,7 +8420,7 @@ public static partial class TypeCheckerFunctions {
         return (typeId, null);
     }
 
-    public static (Int32?, DefinitionType?, Error?) ResolveCall(
+    public static (Int32?, Error?) ResolveCall(
         ParsedCall call,
         List<ResolvedNamespace> namespaces,
         Span span,
@@ -8433,8 +8428,6 @@ public static partial class TypeCheckerFunctions {
         Project project) {
 
         Int32? calleeId = null;
-
-        DefinitionType? definitionType = null;
         
         Error? error = null;
 
@@ -8447,8 +8440,6 @@ public static partial class TypeCheckerFunctions {
 
                 var structure = project.Structs[structId];
 
-                definitionType = structure.DefinitionType;
-
                 // Look for the constructor
 
                 if (project.FindStructInScope(structure.ScopeId, call.Name) is Int32 _structId) {
@@ -8457,13 +8448,11 @@ public static partial class TypeCheckerFunctions {
 
                     if (project.FindFuncInScope(_structure.ScopeId, call.Name) is Int32 _funcId) {
 
-                        // callee = project.Functions[_funcId];
                         calleeId = _funcId;
                     }
                 }
                 else if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId1) {
 
-                    // callee = project.Functions[funcId1];
                     calleeId = funcId1;
                 }
 
@@ -8472,7 +8461,7 @@ public static partial class TypeCheckerFunctions {
                     namespaces[0].GenericParameters = structure.GenericParameters;
                 }
 
-                return (calleeId, definitionType, error);
+                return (calleeId, error);
             }
             else if (project.FindEnumInScope(scopeId, ns) is Int32 enumId) {
                 
@@ -8480,7 +8469,6 @@ public static partial class TypeCheckerFunctions {
 
                 if (project.FindFuncInScope(_enum.ScopeId, call.Name) is Int32 funcId) {
 
-                    // callee = project.Functions[funcId];
                     calleeId = funcId;
                 }
 
@@ -8489,7 +8477,7 @@ public static partial class TypeCheckerFunctions {
                     namespaces[0].GenericParameters = _enum.GenericParameters;
                 }
 
-                return (calleeId, definitionType, error);
+                return (calleeId, error);
             }
             else if (project.FindNamespaceInScope(scopeId, ns)is Int32 namespaceId) {
 
@@ -8499,26 +8487,21 @@ public static partial class TypeCheckerFunctions {
 
                     if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 nsStructFuncId) {
 
-                        // callee = project.Functions[nsStructFuncId];
                         calleeId = nsStructFuncId;
                     }
                 }
                 else if (project.FindFuncInScope(namespaceId, call.Name) is Int32 nsFuncId) {
 
-                    // callee = project.Functions[nsFuncId];
                     calleeId = nsFuncId;
                 }
 
-                return (calleeId, definitionType, error);
+                return (calleeId, error);
             }
             else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId2) {
 
-                // callee = project.Functions[funcId2];
                 calleeId = funcId2;
 
-                definitionType = DefinitionType.Struct;
-
-                return (calleeId, definitionType, error);
+                return (calleeId, error);
             }
             else {
 
@@ -8527,7 +8510,7 @@ public static partial class TypeCheckerFunctions {
                         $"unknown namespace or class: {ns}",
                         span);
 
-                return (calleeId, definitionType, error);
+                return (calleeId, error);
             }
         }
         else {
@@ -8542,13 +8525,11 @@ public static partial class TypeCheckerFunctions {
 
                 if (project.FindFuncInScope(_structure.ScopeId, call.Name) is Int32 _funcId) {
 
-                    // callee = project.Functions[_funcId];
                     calleeId = _funcId;
                 }
             }
             else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId3) {
 
-                // callee = project.Functions[funcId3];
                 calleeId = funcId3;
             }
             
@@ -8560,7 +8541,7 @@ public static partial class TypeCheckerFunctions {
                         span);
             }
 
-            return (calleeId, definitionType, error);
+            return (calleeId, error);
         }
     }
 
@@ -8577,8 +8558,6 @@ public static partial class TypeCheckerFunctions {
         var checkedArgs = new List<(String, CheckedExpression)>();
 
         Error? error = null;
-
-        DefinitionType? calleDefType = null;
 
         var returnTypeId = Compiler.UnknownTypeId;
 
@@ -8647,7 +8626,7 @@ public static partial class TypeCheckerFunctions {
 
             default: {
 
-                var (_calleeId, _calleDefType, resolveErr) = ResolveCall(
+                var (_calleeId, resolveErr) = ResolveCall(
                     call,
                     resolvedNamespaces,
                     span,
@@ -8655,8 +8634,6 @@ public static partial class TypeCheckerFunctions {
                     project);
 
                 error = error ?? resolveErr;
-
-                calleDefType = _calleDefType;
 
                 if (_calleeId is Int32 calleeId) {
 
@@ -8810,7 +8787,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? checkedArgErr;
 
-                            var (_calleeId2, _, _) = ResolveCall(
+                            var (_calleeId2, _) = ResolveCall(
                                 call, 
                                 resolvedNamespaces,
                                 span, 
@@ -8953,8 +8930,10 @@ public static partial class TypeCheckerFunctions {
                 checkedArgs,
                 typeArgs,
                 linkage,
-                returnTypeId,
-                calleDefType),
+                returnTypeId
+                // ,
+                // calleDefType
+                ),
             error);
     }
 
