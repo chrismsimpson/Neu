@@ -11,6 +11,7 @@
 #include <Core/String.h>
 #include <Core/StringView.h>
 #include <Builtins/Array.h>
+#include <Builtins/Set.h>
 #include <stdarg.h>
 
 class StringBuilder {
@@ -146,6 +147,33 @@ struct Formatter<Array<T>> : Formatter<StringView> {
         }
         
         stringBuilder.append("]");
+
+        return Formatter<StringView>::format(builder, stringBuilder.toString());
+    }
+};
+
+template<typename T>
+struct Formatter<Set<T>> : Formatter<StringView> {
+
+    ErrorOr<void> format(FormatBuilder& builder, Set<T> const& set) {
+
+        StringBuilder stringBuilder;
+        
+        stringBuilder.append("{");
+        
+        auto iter = set.iterator();
+
+        for (size_t i = 0; i < set.size(); ++i) {
+            
+            appendValue(stringBuilder, iter.next().value());
+
+            if (i != set.size() - 1) {
+
+                stringBuilder.append(", ");
+            }
+        }
+        
+        stringBuilder.append("}");
 
         return Formatter<StringView>::format(builder, stringBuilder.toString());
     }
