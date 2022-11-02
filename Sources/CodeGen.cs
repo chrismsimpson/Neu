@@ -3901,6 +3901,27 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case "format": {
+
+                        output.Append("String::formatted(");
+
+                        for (var i = 0; i < ce.Call.Args.Count; i++) {
+
+                            var param = ce.Call.Args[i];
+                        
+                            output.Append(CodeGenExpr(indent, param.Item2, project));
+
+                            if (i != ce.Call.Args.Count - 1) {
+
+                                output.Append(',');
+                            }
+                        }
+
+                        output.Append(')');
+
+                        break;
+                    }
+
                     ///
 
                     default: {

@@ -1,0 +1,7 @@
+func main() {
+    let hello = "Hello"
+    let friends = "friends"
+    let number = 123
+    let s = format("{} {} {}", hello, friends, number)
+    printLine("{}", s)
+}

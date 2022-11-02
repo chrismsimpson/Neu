@@ -8644,7 +8644,8 @@ public static partial class TypeCheckerFunctions {
 
             case "print" when structId == null:
             case "printLine" when structId == null:
-            case "warnLine" when structId == null: {
+            case "warnLine" when structId == null:
+            case "format" when structId == null: {
 
                 // FIXME: This is a hack since printLine() and warnLine() are hard-coded into codegen at the moment
 
@@ -8667,7 +8668,14 @@ public static partial class TypeCheckerFunctions {
                                 span);
                     }
 
-                    returnTypeId = Compiler.VoidTypeId;
+                    if (call.Name == "format") {
+
+                        returnTypeId = Compiler.StringTypeId;
+                    }
+                    else {
+
+                        returnTypeId = Compiler.VoidTypeId;
+                    }
 
                     checkedArgs.Add((arg.Item1, checkedArg));
                 }
