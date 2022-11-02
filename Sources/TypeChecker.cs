@@ -8431,118 +8431,129 @@ public static partial class TypeCheckerFunctions {
         
         Error? error = null;
 
-        if (call.Namespace.FirstOrDefault() is String ns) {
+        var currentScopdeId = scopeId;
 
-            // For now, assume class is our namespace
-            // In the future, we'll have real namespaces
+        foreach (var scopeName in call.Namespace) {
 
-            if (project.FindStructInScope(scopeId, ns) is Int32 structId) {
+            if (project.FindNamespaceInScope(currentScopdeId, scopeName) is Int32 _scopeId) {
 
-                var structure = project.Structs[structId];
+                currentScopdeId = _scopeId;
 
-                // Look for the constructor
+                continue;
+            }
+            else if (project.FindStructInScope(currentScopdeId, scopeName) is Int32 _structId) {
 
-                if (project.FindStructInScope(structure.ScopeId, call.Name) is Int32 _structId) {
+                var structure = project.Structs[_structId];
 
-                    var _structure = project.Structs[_structId];
-
-                    if (project.FindFuncInScope(_structure.ScopeId, call.Name) is Int32 _funcId) {
-
-                        calleeId = _funcId;
-                    }
-                }
-                else if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 funcId1) {
-
-                    calleeId = funcId1;
-                }
+                currentScopdeId = structure.ScopeId;
 
                 if (structure.GenericParameters.Any()) {
 
-                    namespaces[0].GenericParameters = structure.GenericParameters;
+                    // FIXME: This doesn't look right.
+
+                    namespaces[0].GenericParameters = structure.GenericParameters.ToList();
                 }
 
-                return (calleeId, error);
+                continue;
             }
-            else if (project.FindEnumInScope(scopeId, ns) is Int32 enumId) {
+            else if (project.FindEnumInScope(currentScopdeId, scopeName) is Int32 _enumId) {
+
+                var _enum = project.Enums[_enumId];
                 
-                var _enum = project.Enums[enumId];
-
-                if (project.FindFuncInScope(_enum.ScopeId, call.Name) is Int32 funcId) {
-
-                    calleeId = funcId;
-                }
-
+                currentScopdeId = _enum.ScopeId;
+                
                 if (_enum.GenericParameters.Any()) {
 
-                    namespaces[0].GenericParameters = _enum.GenericParameters;
+                    // FIXME: This doesn't look right.
+
+                    namespaces[0].GenericParameters = _enum.GenericParameters.ToList();
                 }
 
-                return (calleeId, error);
+                continue;
             }
-            else if (project.FindNamespaceInScope(scopeId, ns)is Int32 namespaceId) {
+            else if (call.Namespace.Count == 1
+                && call.Namespace.FirstOrDefault() is String firstNS
+                && !IsNullOrWhiteSpace(firstNS)
+                && Char.IsLower(firstNS[0])
+                && project.FindFuncInScope(scopeId, call.Name) is Int32 _funcId1) {
 
-                if (project.FindStructInScope(namespaceId, call.Name) is Int32 nsStructId) {
+                var _func = project.Functions[_funcId1];
 
-                    var structure = project.Structs[nsStructId];
+                currentScopdeId = _func.FuncScopeId;
 
-                    if (project.FindFuncInScope(structure.ScopeId, call.Name) is Int32 nsStructFuncId) {
+                if (_func.GenericParameters.Any()) {
 
-                        calleeId = nsStructFuncId;
-                    }
+                    // FIXME: As above
+
+                    namespaces[0].GenericParameters = _func
+                        .GenericParameters
+                        .Select(x => {
+
+                            switch (x) {
+
+                                case InferenceGuideFunctionGenericParameter i:
+                                    return i.TypeId;
+                                
+                                case ParameterFunctionGenericParameter p:
+                                    return p.TypeId;
+
+                                default:
+                                    throw new Exception($"Unreachable");
+                            }
+                        })
+                        .ToList();
                 }
-                else if (project.FindFuncInScope(namespaceId, call.Name) is Int32 nsFuncId) {
 
-                    calleeId = nsFuncId;
-                }
-
-                return (calleeId, error);
+                continue;
             }
-            else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId2) {
 
-                calleeId = funcId2;
-
-                return (calleeId, error);
-            }
-            else {
-
-                error = error ?? 
-                    new TypeCheckError(
-                        $"unknown namespace or class: {ns}",
-                        span);
-
-                return (calleeId, error);
-            }
+            error = error ??
+                new TypeCheckError(
+                    $"Not a namespace, enum, class, or struct: '{Join(".", call.Namespace)}'",
+                    span);
         }
-        else {
 
-            // FIXME: Support function overloading.
+        // 1. Look for a function with this name
 
-            // Look for the constructor
+        if (project.FindFuncInScope(currentScopdeId, call.Name) is Int32 _funcId) {
 
-            if (project.FindStructInScope(scopeId, call.Name) is Int32 _structId) {
+            calleeId = _funcId;
 
-                var _structure = project.Structs[_structId];
+            return (calleeId, error);
+        }
 
-                if (project.FindFuncInScope(_structure.ScopeId, call.Name) is Int32 _funcId) {
+        // 2. Look for a struct, class or enum constructor with this name
 
-                    calleeId = _funcId;
-                }
-            }
-            else if (project.FindFuncInScope(scopeId, call.Name) is Int32 funcId3) {
+        if (project.FindStructInScope(currentScopdeId, call.Name) is Int32 _structId2) {
 
-                calleeId = funcId3;
-            }
-            
-            if (calleeId == null) {
+            var structure2 = project.Structs[_structId2];
 
-                error = error ?? 
-                    new TypeCheckError(
-                        $"call to unknown function: {call.Name}", 
-                        span);
+            if (project.FindFuncInScope(structure2.ScopeId, call.Name) is Int32 _funcId2) {
+
+                return (_funcId2, error);
             }
 
             return (calleeId, error);
         }
+
+        if (project.FindEnumInScope(currentScopdeId, call.Name) is Int32 _enumId2) {
+
+            var _enum = project.Enums[_enumId2];
+            
+            if (project.FindFuncInScope(_enum.ScopeId, call.Name) is Int32 _funcId3) {
+                
+                return (_funcId3, error);
+            }
+
+            return (calleeId, error);
+        }
+
+        error = error ??
+            new TypeCheckError(
+                $"call to unknown function: {call.Name}",
+                span);
+
+        return (calleeId, error);
     }
 
     public static (CheckedCall, Error?) TypeCheckCall(

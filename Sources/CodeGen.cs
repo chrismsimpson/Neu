@@ -3,14 +3,14 @@ namespace Neu;
 
 public partial class CodeGenContext {
 
-    public Stack<String> NamespaceStack { get; init; }
+    public List<String> NamespaceStack { get; init; }
 
     public StringBuilder DeferredOutput { get; init; }
 
     ///
 
     public CodeGenContext(
-        Stack<String> namespaceStack,
+        List<String> namespaceStack,
         StringBuilder deferredOutput) {
 
         this.NamespaceStack = namespaceStack;
@@ -31,7 +31,7 @@ public static partial class CodeGenFunctions {
         output.Append("#include <lib.h>\n");
 
         var context = new CodeGenContext(
-            namespaceStack: new Stack<String>(),
+            namespaceStack: new List<String>(),
             deferredOutput: new StringBuilder());
 
         output.Append(CodeGenNamespace(project, scope, context));
@@ -58,7 +58,7 @@ public static partial class CodeGenFunctions {
 
             if (childScope.NamespaceName is String name) {
 
-                context.NamespaceStack.Push(name);
+                context.NamespaceStack.Add(name);
                 output.Append($"namespace {name} {{\n");
                 output.Append(CodeGenNamespace(project, childScope, context));
                 output.Append("}\n");
