@@ -1,0 +1,23 @@
+class Limited {
+
+    restricted(A) func getSecret() => "Shhhh! Don't tell anyone!"
+    
+    restricted(A,B) func openTheBankVault() => "Open sesame!"
+}
+
+class A {
+
+    public func doThings() {
+
+        printLine("The secret is: {}", Limited.getSecret())
+
+        printLine("{}", Limited.openTheBankVault())
+    }
+}
+
+class B { }
+
+func main() {
+    
+    A.doThings()
+}

@@ -3455,6 +3455,58 @@ public static partial class TypeCheckerFunctions {
                     span);
             }
 
+            case RestrictedVisibility rv: {
+
+                switch (project.CurrentStructTypeId) {
+
+                    case Int32 ownTypeId: {
+
+                        // Only structs/classes can be listed in `restricted()`.
+
+                        if (project.Types[ownTypeId] is StructType st) {
+
+                            foreach (var whitelistedType in rv.Types) {
+
+                                var (typeId, err) = TypeCheckTypeName(whitelistedType, memberScopeId, project);
+
+                                if (err is not null) {
+
+                                    return err;
+                                }
+
+                                if (typeId == ownTypeId) {
+
+                                    return null;
+                                }
+                            }
+
+                            return new TypecheckErrorWithHint(
+                                $"Can't access {member.GetKind()} '{member.GetName()}' from '{project.Structs[st.StructId].Name}', because '{project.Structs[st.StructId].Name}' is not in the restricted whitelist",
+                                span,
+                                "Whitelist declared here",
+                                rv.Span);
+                        }
+                        else {
+
+                            return new TypecheckErrorWithHint(
+                                $"Can't access {member.GetKind()} '{member.GetName()}' from scope '{project.Scopes[ownScopeId].NamespaceName}', because it is not in the restricted whitelist",
+                                span,
+                                "Whitelist declared here",
+                                rv.Span);
+                        }
+                    }
+
+                    default: {
+
+                        return new TypecheckErrorWithHint(
+                            $"Can't access {member.GetKind()} '{member.GetName()}' from scope '{project.Scopes[ownScopeId].NamespaceName}', because it is marked restricted",
+                            span,
+                            "Whitelist declared here",
+                            rv.Span);
+                    }
+                }
+            }            
+
             default: {
 
                 return null;
@@ -8615,6 +8667,12 @@ public static partial class TypeCheckerFunctions {
                         genericCheckedFunctionToInstantiate = calleeId;
                     }
 
+                    calleeThrows = callee.Throws;
+
+                    returnTypeId = callee.ReturnTypeId;
+
+                    linkage = callee.Linkage;
+
                     // Make sure we are allowed to access this method
 
                     var accessibilityError = CheckAccessibility(
@@ -8625,12 +8683,6 @@ public static partial class TypeCheckerFunctions {
                         project);
 
                     error = error ?? accessibilityError;
-
-                    calleeThrows = callee.Throws;
-
-                    returnTypeId = callee.ReturnTypeId;
-                    
-                    linkage = callee.Linkage;
 
                     // If the user gave us explicit type arguments, let's use them in our substitutions
 
