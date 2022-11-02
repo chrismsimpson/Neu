@@ -24,6 +24,7 @@ extern struct ArrayIterator<T> {
 
 extern struct Array<T> {
     func isEmpty(this) -> Bool
+    func contains(this, anon value: T) -> Bool
     func size(this) -> UInt
     func capacity(this) -> UInt
     func ensureCapacity(this, anon capacity: UInt) throws

@@ -1,0 +1,5 @@
+func main() {
+    let arr = ["Well", "Hello", "Friends", "!"]
+    printLine("{}", arr.contains("Hello"))
+    printLine("{}", arr.contains("Goodbye"))
+}
