@@ -415,7 +415,7 @@ public partial class ParsedVarDecl {
     ///
 
     public ParsedVarDecl(Span span)
-        : this(String.Empty, new ParsedEmptyType(), false, span, Visibility.Public) { }
+        : this(String.Empty, new ParsedEmptyType(), false, span, new PublicVisibility()) { }
 
     public ParsedVarDecl(
         String name,
@@ -694,7 +694,7 @@ public partial class ParsedFunction {
         FunctionLinkage linkage)
         : this(
             String.Empty,
-            visibility: Visibility.Public,
+            visibility: new PublicVisibility(),
             new Span(
                 fileId: 0, 
                 start: 0, 
@@ -738,11 +738,43 @@ public partial class ParsedFunction {
 
 ///
 
-public enum Visibility {
+// public enum Visibility {
     
-    Public,
-    Private
+//     Public,
+//     Private
+// }
+
+public partial class Visibility {
+
+    public Visibility() { }
 }
+
+    public partial class PublicVisibility: Visibility {
+
+        public PublicVisibility() { }
+    }
+
+    public partial class PrivateVisibility: Visibility {
+
+        public PrivateVisibility() { }
+    }
+
+    public partial class RestrictedVisibility: Visibility {
+
+        public List<ParsedType> Types { get; init; }
+
+        public Span Span { get; init; }
+
+        ///
+
+        public RestrictedVisibility(
+            List<ParsedType> types,
+            Span span) {
+
+            this.Types = types;
+            this.Span = span;
+        }
+    }
 
 ///
 
@@ -2808,7 +2840,7 @@ public static partial class ParserFunctions {
                                 tokens, 
                                 ref index, 
                                 FunctionLinkage.Internal,
-                                Visibility.Public);
+                                new PublicVisibility());
 
                             error = error ?? err;
 
@@ -2945,7 +2977,7 @@ public static partial class ParserFunctions {
                                                     tokens, 
                                                     ref index, 
                                                     FunctionLinkage.External,
-                                                    Visibility.Public);
+                                                    new PublicVisibility());
 
                                                 error = error ?? err;
 
@@ -3288,7 +3320,7 @@ public static partial class ParserFunctions {
 
                             // Fields in struct-like enums are always public.
 
-                            var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index, Visibility.Public);
+                            var (decl, varDeclParseErr) = ParseVariableDeclaration(tokens, ref index, new PublicVisibility());
 
                             error = error ?? varDeclParseErr;
 
@@ -3652,8 +3684,8 @@ public static partial class ParserFunctions {
                                 };
 
                                 var visibility = lastVisibility ?? definitionType switch {
-                                    DefinitionType.Class => Visibility.Private,
-                                    DefinitionType.Struct => Visibility.Public,
+                                    DefinitionType.Class => new PrivateVisibility(),
+                                    DefinitionType.Struct => new PublicVisibility(),
                                     _ => throw new Exception()
                                 };
 
@@ -3675,7 +3707,7 @@ public static partial class ParserFunctions {
 
                             case NameToken nt2 when nt2.Value == "public": {
 
-                                lastVisibility = Visibility.Public;
+                                lastVisibility = new PublicVisibility();
 
                                 index += 1;
 
@@ -3684,9 +3716,96 @@ public static partial class ParserFunctions {
 
                             case NameToken nt2 when nt2.Value == "private": {
 
-                                lastVisibility = Visibility.Private;
+                                lastVisibility = new PrivateVisibility();
 
                                 index += 1;
+
+                                continue;
+                            }
+
+                            case NameToken nt2 when nt2.Value == "restricted": {
+
+                                var restrictedStart = tokens[index].Span;
+
+                                index += 1;
+
+                                if (!(tokens[index] is LParenToken)) {
+
+                                    error = error ?? 
+                                        new ParserError(
+                                            "Expected '('",
+                                            tokens[index].Span);
+
+                                    contFields = false;
+
+                                    break;
+                                }
+
+                                index += 1;
+
+                                var whitelistedTypes = new List<ParsedType>();
+
+                                while (index < tokens.Count && !(tokens.ElementAtOrDefault(index) is RParenToken)) {
+
+                                    SkipNewLines(tokens, ref index);
+
+                                    var (parsedType, typeErr) = ParseTypeName(tokens, ref index);
+
+                                    if (typeErr is Error te) {
+
+                                        error = error ?? te;
+
+                                        break;
+                                    }
+                                    else {
+
+                                        whitelistedTypes.Add(parsedType);
+                                    }
+
+                                    SkipNewLines(tokens, ref index);
+
+                                    if (index < tokens.Count && tokens[index] is CommaToken) {
+
+                                        index += 1;
+                                    }
+
+                                    SkipNewLines(tokens, ref index);
+                                }
+
+                                if (!whitelistedTypes.Any()) {
+
+                                    error = error ??
+                                        new ParserError(
+                                            "Type list cannot be empty",
+                                            tokens[index].Span);
+
+                                    contFields = false;
+
+                                    break;
+                                }
+
+                                if (!(tokens[index] is RParenToken)) {
+
+                                    error = error ??
+                                        new ParserError(
+                                            "Expected ')'",
+                                            tokens[index].Span);
+
+                                    contFields = false;
+
+                                    break;
+                                }
+
+                                index += 1;
+
+                                lastVisibility = new RestrictedVisibility(
+                                    whitelistedTypes,
+                                    new Span(
+                                        restrictedStart.FileId,
+                                        restrictedStart.Start,
+                                        tokens[index - 1].Span.End));
+
+                                // By using continue, we skip the "visibility consumed"-check
 
                                 continue;
                             }
@@ -3697,8 +3816,8 @@ public static partial class ParserFunctions {
 
                                 var visibility = lastVisibility
                                     ?? (definitionType == DefinitionType.Class 
-                                        ? Visibility.Private 
-                                        : Visibility.Public);
+                                        ? new PrivateVisibility()
+                                        : new PublicVisibility());
 
                                 lastVisibility = null;
 
@@ -3738,6 +3857,11 @@ public static partial class ParserFunctions {
 
                                 break;
                             }
+                        }
+
+                        if (!contFields) {
+
+                            break;
                         }
 
                         if (lastVisibility is Visibility v) {
@@ -3963,7 +4087,7 @@ public static partial class ParserFunctions {
 
                                 // Now lets parse a parameter
 
-                                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index, Visibility.Public);
+                                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index, new PublicVisibility());
 
                                 error = error ?? varDeclErr;
 
@@ -4506,7 +4630,7 @@ public static partial class ParserFunctions {
 
                 index += 1;
 
-                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index, Visibility.Public);
+                var (varDecl, varDeclErr) = ParseVariableDeclaration(tokens, ref index, new PublicVisibility());
 
                 error = error ?? varDeclErr;
 
