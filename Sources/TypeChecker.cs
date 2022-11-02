@@ -5763,37 +5763,6 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        Func<Project, Int32, (Int32, Error?)> unifyWithTypeHint = (project, typeId) => {
-
-            if (typeHint is Int32 hint) {
-
-                if (hint == Compiler.UnknownTypeId) {
-
-                    return (typeId, null);
-                }
-
-                var genericInterface = new Dictionary<Int32, Int32>();
-
-                var err = CheckTypesForCompat(
-                    hint,
-                    typeId,
-                    genericInterface,
-                    expr.GetSpan(),
-                    project);
-
-                if (err != null) {
-
-                    return (typeId, err);
-                }
-
-                return (
-                    SubstituteTypeVarsInType(typeId, genericInterface, project),
-                    null);
-            }
-
-            return (typeId, null);
-        };
-
         switch (expr) {
 
             case ParsedRangeExpression re: {
@@ -5849,7 +5818,7 @@ public static partial class TypeCheckerFunctions {
 
                 var typeId = project.FindOrAddTypeId(_typeId);
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, re.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -5897,7 +5866,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? chkBinOpErr;
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, e.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6109,7 +6078,7 @@ public static partial class TypeCheckerFunctions {
                     }
                 }
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, e.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6142,7 +6111,7 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? checkedCallErr;
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, checkedCall.TypeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(checkedCall.TypeId, typeHint, e.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6155,7 +6124,7 @@ public static partial class TypeCheckerFunctions {
 
                 // FIXME: Don't ignore type hint unification errors
 
-                var (unifiedTypeId, _) = unifyWithTypeHint(project, ne.Value.GetTypeId());
+                var (unifiedTypeId, _) = UnifyWithType(ne.Value.GetTypeId(), typeHint, ne.Span, project);
 
                 return (
                     new CheckedNumericConstantExpression(
@@ -6167,7 +6136,7 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedQuotedStringExpression e: {
 
-                var (_, err) = unifyWithTypeHint(project, Compiler.StringTypeId);
+                var (_, err) = UnifyWithType(Compiler.StringTypeId, typeHint, e.Span, project);
 
                 return (
                     new CheckedQuotedStringExpression(e.Value, e.Span),
@@ -6176,7 +6145,7 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedByteLiteralExpression b: {
 
-                var (_, err) = unifyWithTypeHint(project, Compiler.UInt8TypeId);
+                var (_, err) = UnifyWithType(Compiler.UInt8TypeId, typeHint, b.Span, project);
 
                 return (
                     new CheckedByteConstantExpression(b.Value, b.Span),
@@ -6185,7 +6154,7 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedCharacterLiteralExpression cle: {
 
-                var (_, err) = unifyWithTypeHint(project, Compiler.CCharTypeId);
+                var (_, err) = UnifyWithType(Compiler.CCharTypeId, typeHint, cle.Span, project);
 
                 return (
                     new CheckedCharacterConstantExpression(cle.Value, cle.Span),
@@ -6196,7 +6165,7 @@ public static partial class TypeCheckerFunctions {
 
                 if (project.FindVarInScope(scopeId, e.Value) is CheckedVariable v) {
 
-                    var (_, err) = unifyWithTypeHint(project, v.TypeId);
+                    var (_, err) = UnifyWithType(v.TypeId, typeHint, e.Span, project);
 
                     return (
                         new CheckedVarExpression(v, e.Span),
@@ -6408,7 +6377,7 @@ public static partial class TypeCheckerFunctions {
                 var typeId = project
                     .FindOrAddTypeId(new GenericInstance(arrayStructId, new List<Int32>(new [] { innerTypeId })));
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, ve.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6498,7 +6467,7 @@ public static partial class TypeCheckerFunctions {
                 var typeId = project
                     .FindOrAddTypeId(new GenericInstance(setStructId, new List<Int32>(new [] { innerTypeId })));
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, se.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6644,7 +6613,7 @@ public static partial class TypeCheckerFunctions {
                             dictStructId, 
                             new List<Int32>(new [] { keyTypeId, valueTypeId })));
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, de.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6686,7 +6655,7 @@ public static partial class TypeCheckerFunctions {
                 var typeId = project
                     .FindOrAddTypeId(new GenericInstance(tupleStructId, checkedTypes));
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, te.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -6742,7 +6711,7 @@ public static partial class TypeCheckerFunctions {
                             }
                         }
 
-                        var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, exprType);
+                        var (unifiedTypeId, unifyErr) = UnifyWithType(exprType, typeHint, ie.Span, project);
 
                         error = error ?? unifyErr;
 
@@ -6759,7 +6728,7 @@ public static partial class TypeCheckerFunctions {
 
                         exprType = gd.TypeIds[1];
 
-                        var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, exprType);
+                        var (unifiedTypeId, unifyErr) = UnifyWithType(exprType, typeHint, ie.Span, project);
 
                         error = error ?? unifyErr;
 
@@ -6779,7 +6748,7 @@ public static partial class TypeCheckerFunctions {
                                 "index used on value that can't be indexed",
                                 ie.Expression.GetSpan());
 
-                        var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, exprType);
+                        var (unifiedTypeId, unifyErr) = UnifyWithType(exprType, typeHint, ie.Span, project);
 
                         error = error ?? unifyErr;
 
@@ -6846,7 +6815,7 @@ public static partial class TypeCheckerFunctions {
                     }
                 }
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, ite.Span, project);
 
                 error = error ?? unifyErr;
 
@@ -7673,7 +7642,7 @@ public static partial class TypeCheckerFunctions {
 
                 if (finalResultType is Int32 frt) {
 
-                    var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, frt);
+                    var (unifiedTypeId, unifyErr) = UnifyWithType(frt, typeHint, we.Span, project);
 
                     error = error ?? unifyErr;
 
@@ -7721,7 +7690,7 @@ public static partial class TypeCheckerFunctions {
 
                                 var resolvedTypeId = ResolveTypeVar(member.TypeId, scopeId, project);
 
-                                var (unifiedType, _) = unifyWithTypeHint(project, resolvedTypeId);
+                                var (unifiedType, _) = UnifyWithType(resolvedTypeId, typeHint, ise.Span, project);
 
                                 var _structure = project.Structs[structId];
 
@@ -7759,7 +7728,7 @@ public static partial class TypeCheckerFunctions {
                     }
                 }
 
-                var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                var (unifiedTypeId, unifyErr) = UnifyWithType(typeId, typeHint, ise.Span, project);
 
                 error = unifyErr;
 
@@ -7798,7 +7767,7 @@ public static partial class TypeCheckerFunctions {
                                 safetyMode,
                                 typeHint);
 
-                            var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, checkedCall.TypeId);
+                            var (unifiedTypeId, unifyErr) = UnifyWithType(checkedCall.TypeId, typeHint, mce.Span, project);
 
                             error = error ?? unifyErr;
 
@@ -7844,7 +7813,7 @@ public static partial class TypeCheckerFunctions {
 
                             error = error ?? err;
 
-                            var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, checkedCall.TypeId);
+                            var (unifiedTypeId, unifyErr) = UnifyWithType(checkedCall.TypeId, typeHint, mce.Span, project);
 
                             error = error ?? unifyErr;
 
@@ -7875,7 +7844,7 @@ public static partial class TypeCheckerFunctions {
 
                             var typeId = checkedCall.TypeId;
 
-                            var (unifiedTypeId, unifyErr) = unifyWithTypeHint(project, typeId);
+                            var (unifiedTypeId, unifyErr) = UnifyWithType(checkedCall.TypeId, typeHint, mce.Span, project);
 
                             error = error ?? unifyErr;
 
@@ -8205,21 +8174,33 @@ public static partial class TypeCheckerFunctions {
     }
 
     public static (Int32, Error?) UnifyWithType(
-        Int32 expectedType,
         Int32 foundType,
+        Int32? expectedType,
         Span span,
         Project project) {
 
-        var genericInferences = new Dictionary<Int32, Int32>();
+        if (expectedType is Int32 hint) {
 
-        var err = CheckTypesForCompat(
-            expectedType, 
-            foundType, 
-            genericInferences, 
-            span, 
-            project);
+            if (hint == Compiler.UnknownTypeId) {
 
-        return (expectedType, err);
+                return (foundType, null);
+            }
+
+            var genericInterface = new Dictionary<Int32, Int32>();
+
+            var err = CheckTypesForCompat(hint, foundType, genericInterface, span, project);
+
+            if (err is not null) {
+
+                return (foundType, err);
+            }
+
+            return (
+                SubstituteTypeVarsInType(foundType, genericInterface, project),
+                null);
+        }
+
+        return (foundType, null);
     }
 
     public static (Int32, Error?) TypeCheckBinaryOperation(
@@ -8355,7 +8336,7 @@ public static partial class TypeCheckerFunctions {
                     }
                 }
 
-                var (typeId1, err) = UnifyWithType(lhsTypeId, rhsTypeId, rhs.GetSpan(), project);
+                var (typeId1, err) = UnifyWithType(rhsTypeId, lhsTypeId, rhs.GetSpan(), project);
 
                 if (err is Error e) {
 
