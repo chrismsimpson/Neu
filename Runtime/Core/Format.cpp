@@ -17,7 +17,6 @@
 #ifdef KERNEL
 
 #else
-#    include <math.h>
 #    include <stdio.h>
 #    include <string.h>
 #endif
@@ -508,7 +507,7 @@ ErrorOr<void> FormatBuilder::putF64(
 
     FormatBuilder formatBuilder { stringBuilder };
 
-    if (isnan(value) || isinf(value)) {
+    if (__builtin_isnan(value) || __builtin_isinf(value)) {
 
         if (value < 0.0) {
 
@@ -523,7 +522,7 @@ ErrorOr<void> FormatBuilder::putF64(
             TRY(stringBuilder.tryAppend(' '));
         }
 
-        if (isnan(value)) {
+        if (__builtin_isnan(value)) {
 
             TRY(stringBuilder.tryAppend(upperCase ? "NAN"sv : "nan"sv));
         }
@@ -610,7 +609,7 @@ ErrorOr<void> FormatBuilder::putF80(
     
     FormatBuilder formatBuilder { stringBuilder };
 
-    if (isnan(value) || isinf(value)) {
+    if (__builtin_isnan(value) || __builtin_isinf(value)) {
 
         if (value < 0.0l) {
 
@@ -625,7 +624,7 @@ ErrorOr<void> FormatBuilder::putF80(
             TRY(stringBuilder.tryAppend(' '));
         }
 
-        if (isnan(value)) {
+        if (__builtin_isnan(value)) {
 
             TRY(stringBuilder.tryAppend(upperCase ? "NAN"sv : "nan"sv));
         }
