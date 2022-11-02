@@ -128,6 +128,10 @@ public static partial class Program {
 
                     File.WriteAllText(cppFilename, cppString);
 
+                var exeExt = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                    ? ".exe"
+                    : ".out";
+
                     var exeName = $"{cppFilename.Substring(0, cppFilename.Length - ext.Length)}.out";
 
                     var (stdOut, stdErr, success) = 

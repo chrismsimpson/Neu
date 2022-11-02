@@ -20,7 +20,7 @@ public partial class Compiler {
 
                     var ext = Path.GetExtension(file);
 
-                    if (ext == ".cpp" || ext == ".out") {
+                    if (ext == ".cpp" || ext == ".out" || ext == ".exe") {
 
                         File.Delete(file);
                     }

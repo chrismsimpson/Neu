@@ -11,7 +11,11 @@ public partial class Compiler {
 
         var ext = System.IO.Path.GetExtension(inputCpp);
 
-        var exeName = $"{inputCpp.Substring(0, inputCpp.Length - ext.Length)}.out";
+        var exeExt = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? ".exe"
+            : ".out";
+
+        var exeName = $"{inputCpp.Substring(0, inputCpp.Length - ext.Length)}{exeExt}";       
 
         return Build(compilerPath, runtimePath, inputCpp, exeName, verbose);
     }
