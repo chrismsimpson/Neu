@@ -11,6 +11,7 @@
 #include <Core/String.h>
 #include <Core/StringView.h>
 #include <Builtins/Array.h>
+#include <Builtins/Dictionary.h>
 #include <Builtins/Set.h>
 #include <stdarg.h>
 
@@ -178,3 +179,37 @@ struct Formatter<Set<T>> : Formatter<StringView> {
         return Formatter<StringView>::format(builder, stringBuilder.toString());
     }
 };
+
+template<typename K, typename V>
+struct Formatter<Dictionary<K, V>> : Formatter<StringView> {
+
+    ErrorOr<void> format(FormatBuilder& builder, Dictionary<K, V> const& dict) {
+
+        StringBuilder stringBuilder;
+
+        stringBuilder.append("[");
+
+        auto iter = dict.iterator();
+
+        for (size_t i = 0; i < dict.size(); ++i) {
+
+            auto item = iter.next().value();
+
+            appendValue(stringBuilder, item.template get<0>());
+
+            stringBuilder.append(": ");
+
+            appendValue(stringBuilder, item.template get<1>());
+
+            if (i != dict.size() - 1) {
+
+                stringBuilder.append(", ");
+            }
+        }
+
+        stringBuilder.append("]");
+        
+        return Formatter<StringView>::format(builder, stringBuilder.toString());
+    }
+};
+
