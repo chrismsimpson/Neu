@@ -4376,8 +4376,29 @@ public static partial class CodeGenFunctions {
 
                     case BinaryOperator.NoneCoalescing: {
 
+                        var rhsType = project.Types[binOp.Rhs.GetTypeIdOrTypeVar()];
+
+                        var optionalStructId = project.CachedOptionalStructId ?? throw new Exception();
+
                         output.Append(CodeGenExpr(indent, binOp.Lhs, project));
-                        output.Append(".valueOrLazyEvaluated([&] { return ");
+
+                        switch (rhsType) {
+
+                            case GenericInstance gi when gi.StructId == optionalStructId: {
+
+                                output.Append(".valueOrLazyEvaluatedOptional([&] { return ");
+
+                                break;
+                            }
+
+                            default: {
+
+                                output.Append(".valueOrLazyEvaluated([&] { return ");
+
+                                break;
+                            }
+                        }
+                        
                         output.Append(CodeGenExpr(indent, binOp.Rhs, project));
                         output.Append("; })");
 

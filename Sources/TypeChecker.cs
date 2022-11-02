@@ -8221,12 +8221,19 @@ public static partial class TypeCheckerFunctions {
             case BinaryOperator.NoneCoalescing: {
 
                 // 1. LHS must be Optional<T>.
-                // 2. RHS must be T.
-                // 3. Resulting type is T.
+                // 2. RHS must be Optional<T> or T.
+                // 3. Resulting type is Optional<T> or T, respectively.
 
                 switch (project.Types[lhsTypeId]) {
 
                     case GenericInstance gi when gi.StructId == project.GetOptionalStructId(span): {
+
+                        // Success: LHS is T? and RHS is T?.
+
+                        if (lhsTypeId == rhsTypeId) {
+
+                            return (lhsTypeId, null);
+                        }
 
                         // Extract T from Optional<T>
 

@@ -1,0 +1,17 @@
+func main() {
+    let myFirstNone: Int64? = none
+    let mySecondNone: Int64? = none
+
+    let myFirstSome: Int64? = 6
+    let mySecondSome: Int64? = 7
+
+    let a = myFirstNone ?? mySecondNone ?? 1
+    let b = myFirstNone ?? mySecondSome ?? 2
+    let c = myFirstNone ?? mySecondNone ?? mySecondNone ?? mySecondNone ?? 3
+    let d = myFirstSome ?? mySecondSome ?? 4
+
+    printLine("{}", a)
+    printLine("{}", b)
+    printLine("{}", c)
+    printLine("{}", d)
+}
