@@ -8262,7 +8262,13 @@ public static partial class TypeCheckerFunctions {
                     }
                     default: {
 
-                        break;
+                        return (
+                            lhsTypeId,
+                            new TypecheckErrorWithHint(
+                                $"None coalescing (??) with incompatible types ('{project.TypeNameForTypeId(lhsTypeId)}' and '{project.TypeNameForTypeId(rhsTypeId)}')",
+                                span,
+                                "Left side of ?? must be an Optional but isn't",
+                                lhs.GetSpan()));
                     }
                 }
 
