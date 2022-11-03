@@ -1,0 +1,15 @@
+func foo(anon n: Int8) {
+    printLine("foo called with {}", n)
+}
+
+func main() {
+    foo(1)
+    defer {
+        foo(3)
+        defer {
+            foo(5)
+        }
+        foo(4)
+    }
+    foo(2)
+}

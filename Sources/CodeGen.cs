@@ -4405,6 +4405,16 @@ public static partial class CodeGenFunctions {
                         break;
                     }
 
+                    case BinaryOperator.NoneCoalescingAssign: {
+
+                        output.Append(CodeGenExpr(indent, binOp.Lhs, project));
+                        output.Append(".lazyEmplace([&] { return ");
+                        output.Append(CodeGenExpr(indent, binOp.Rhs, project));
+                        output.Append("; })");
+
+                        break;
+                    }
+
                     case BinaryOperator.ArithmeticRightShift: {
 
                         output.Append("NeuInternal::arithmeticShiftRight(");

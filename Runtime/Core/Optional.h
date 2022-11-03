@@ -185,6 +185,17 @@ public:
         new (&m_storage) T(forward<Parameters>(parameters)...);
     }
 
+    template<typename Callback>
+    ALWAYS_INLINE Optional<T>& lazyEmplace(Callback callback) {
+
+        if (!m_hasValue) {
+
+            emplace(callback());
+        }
+
+        return *this;
+    }
+
     [[nodiscard]] ALWAYS_INLINE bool hasValue() const { return m_hasValue; }
 
     [[nodiscard]] ALWAYS_INLINE T& value() & {

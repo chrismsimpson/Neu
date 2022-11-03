@@ -8218,7 +8218,8 @@ public static partial class TypeCheckerFunctions {
 
         switch (op) {
 
-            case BinaryOperator.NoneCoalescing: {
+            case BinaryOperator.NoneCoalescing:
+            case BinaryOperator.NoneCoalescingAssign: {
 
                 // 1. LHS must be Optional<T>.
                 // 2. RHS must be Optional<T> or T.

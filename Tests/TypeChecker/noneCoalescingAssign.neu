@@ -1,0 +1,8 @@
+func main() {
+    
+    var i: String? = none
+    
+    i ??= "mayb"
+    
+    printLine(i ?? "hello")
+}

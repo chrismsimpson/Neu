@@ -2777,7 +2777,8 @@ public enum BinaryOperator {
     BitwiseXorAssign,
     BitwiseLeftShiftAssign,
     BitwiseRightShiftAssign,
-    NoneCoalescing
+    NoneCoalescing,
+    NoneCoalescingAssign
 }
 
 ///
@@ -6703,6 +6704,19 @@ public static partial class ParserFunctions {
                         span));
             }
 
+            case QuestionQuestionEqualToken _: {
+
+                Trace("ERROR: assignment not allowed in this position");
+
+                index += 1;
+                
+                return (
+                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescingAssign, span),
+                    new ValidationError(
+                        "assignment is not allowed in this position",
+                        span));
+            }
+
             case DoubleEqualToken _: {
                 
                 index += 1;
@@ -7008,6 +7022,15 @@ public static partial class ParserFunctions {
 
                 return (
                     new ParsedOperatorExpression(BinaryOperator.ModuloAssign, span),
+                    null);
+            }
+
+            case QuestionQuestionEqualToken _: {
+
+                index += 1;
+
+                return (
+                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescingAssign, span),
                     null);
             }
 

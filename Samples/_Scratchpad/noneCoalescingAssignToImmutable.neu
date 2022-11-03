@@ -1,0 +1,6 @@
+// meant to go in ./Tests/TypeChecker/
+func main() {
+    let i: String? = none
+    i ??= "mayb"
+    printLine(i ?? "hello")
+}

@@ -406,6 +406,13 @@ public partial class Token {
             : base(span) { }
     }
 
+    public partial class QuestionQuestionEqualToken: Token {
+
+        public QuestionQuestionEqualToken(
+            Span span)
+            : base(span) { }
+    }
+
     public partial class CommaToken: Token {
 
         public CommaToken(Span span)
@@ -966,16 +973,21 @@ public static partial class LexerFunctions {
 
                     index += 1;
 
-                    if (index < bytes.Length) {
+                    if (index + 1 < bytes.Length && ToChar(bytes[index]) == '?' && ToChar(bytes[index + 1]) == '=') {
 
-                        if (ToChar(bytes[index]) == '?') {
+                        index += 2;
 
-                            index += 1;
+                        output.Add(new QuestionQuestionEqualToken(new Span(fileId, start, start + 3)));
 
-                            output.Add(new QuestionQuestionToken(new Span(fileId, start, start + 2)));
+                        continue;
+                    }
+                    else if (index < bytes.Length && ToChar(bytes[index]) == '?') {
 
-                            continue;
-                        }
+                        index += 1;
+
+                        output.Add(new QuestionQuestionToken(new Span(fileId, start, start + 2)));
+
+                        continue;
                     }
 
                     output.Add(new QuestionToken(new Span(fileId, start, start + 1)));
