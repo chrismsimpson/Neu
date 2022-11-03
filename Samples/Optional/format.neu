@@ -1,0 +1,10 @@
+struct Foo {
+    x: Int64?
+}
+
+func main() {
+    
+    let y: Int64? = none
+    
+    printLine("{}, {}", y, Foo(x: 5))
+}
