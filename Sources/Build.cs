@@ -9,7 +9,7 @@ public partial class Compiler {
         String inputCpp,
         bool verbose) {
 
-        var ext = System.IO.Path.GetExtension(inputCpp);
+        var ext = Path.GetExtension(inputCpp);
 
         var exeExt = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? ".exe"
