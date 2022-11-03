@@ -37,6 +37,8 @@
 
 25/05/22: ed766a25d54f7af5d009f92dbe86618842a1abab empty dict literals
 
+28/05/22: f824115ca5d5491f8de1a45ca9db1e6929195340 delete example
+
 
 launch.json:
 ```
