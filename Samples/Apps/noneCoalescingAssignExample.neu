@@ -1,8 +1,0 @@
-func main() {
-
-    var val: String? = "mystr"
-    
-    val ??= "mystr2"
-    
-    printLine(val ?? "str3")
-}
