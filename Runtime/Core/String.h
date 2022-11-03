@@ -388,3 +388,19 @@ struct Formatter<NonNullRefPointer<T>> : Formatter<StringView> {
         return Formatter<StringView>::format(builder, str);
     }
 };
+
+template<typename T>
+struct Formatter<Optional<T>> : Formatter<StringView> {
+
+    ErrorOr<void> format(FormatBuilder& builder, Optional<T> const& value) {
+
+        if (!value.hasValue()) {
+
+            return Formatter<StringView>::format(builder, "none");
+        }
+
+        auto str = String::formatted("{}", *value);
+
+        return Formatter<StringView>::format(builder, str);
+    }
+};
