@@ -4124,6 +4124,8 @@ public static partial class ParserFunctions {
                                     "expected parameter",
                                     tokens.ElementAt(index).Span);
 
+                                cont = false;
+
                                 break;
                             }
                         }
