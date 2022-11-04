@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Core/IterationDecision.h>
 #include <Core/Platform.h>
 #include <Core/std.h>
 

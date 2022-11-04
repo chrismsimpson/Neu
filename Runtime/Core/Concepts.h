@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Core/Forward.h>
-#include <Core/IterationDecision.h>
 #include <Core/std.h>
 
 namespace Concepts {
@@ -115,17 +114,6 @@ namespace Concepts {
 
     ///
 
-    template<typename Func, typename... Args>
-    concept IteratorFunction = requires(Func func, Args... args) {
-
-        {
-            func(args...)
-        }
-        -> SameAs<IterationDecision>;
-    };
-
-    ///
-
     template<typename T, typename EndT>
     concept IteratorPairWith = requires(T it, EndT end) {
         
@@ -150,7 +138,6 @@ using Concepts::FloatingPoint;
 using Concepts::Fundamental;
 using Concepts::Integral;
 using Concepts::IterableContainer;
-using Concepts::IteratorFunction;
 using Concepts::IteratorPairWith;
 using Concepts::OneOf;
 using Concepts::OneOfIgnoringConstVolatile;

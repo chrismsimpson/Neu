@@ -21,7 +21,6 @@
 #include <Core/HashFunctions.h>
 #include <Core/HashMap.h>
 #include <Core/HashTable.h>
-#include <Core/IterationDecision.h>
 #include <Core/Iterator.h>
 #include <Core/LinearArray.h>
 #include <Core/Memory.h>
