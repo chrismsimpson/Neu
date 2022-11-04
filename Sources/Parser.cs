@@ -2811,9 +2811,48 @@ public static partial class IListFunctions {
 
 public static partial class ParserFunctions {
 
+    public static (ParsedNamespace, Error?) ParseImport(
+        List<Token> tokens,
+        ref int index,
+        Compiler compiler) {
+
+        Error? error = null;
+
+        index += 1;
+
+        if (index < tokens.Count) {
+
+            if (tokens[index] is NameToken moduleName) {
+
+                index += 1;
+
+                var (ns, err) = compiler.FindAndIncludeModule(moduleName.Value, moduleName.Span);
+
+                ns.Name = moduleName.Value;
+
+                return (ns, err);
+            }
+            else {
+
+            }
+        }
+        else {
+
+            error = error ??
+                new ParserError(
+                    "expected name after import keyword",
+                    tokens[index - 1].Span);
+        }
+
+        return (
+            new ParsedNamespace(), 
+            error);
+    } 
+
     public static (ParsedNamespace, Error?) ParseNamespace(
         List<Token> tokens,
-        ref int index) {
+        ref int index,
+        Compiler compiler) {
 
         Trace($"ParseNamespace");
 
@@ -2939,7 +2978,7 @@ public static partial class ParserFunctions {
 
                                     index += 1;
 
-                                    var (ns, nsErr) = ParseNamespace(tokens, ref index);
+                                    var (ns, nsErr) = ParseNamespace(tokens, ref index, compiler);
 
                                     error = error ?? nsErr;
 
@@ -2956,6 +2995,17 @@ public static partial class ParserFunctions {
                                     parsedNamespace.Namespaces.Add(ns);
                                 }
                             }
+
+                            break;
+                        }
+
+                        case "import": {
+
+                            var (ns, err) = ParseImport(tokens, ref index, compiler);
+
+                            error = error ?? err;
+
+                            parsedNamespace.Namespaces.Add(ns);
 
                             break;
                         }

@@ -30,13 +30,68 @@ public partial class Compiler {
 
     public const Int32 StringTypeId     = 17;
 
+    public List<String> IncludePaths { get; init; }
+
     public List<(String, byte[])> RawFiles { get; init; }
 
     ///
 
     public Compiler() {
 
+        this.IncludePaths = new List<String>();
+
         this.RawFiles = new List<(String, byte[])>();
+    }
+
+    ///
+
+    public (ParsedNamespace, Error?) IncludeFile(
+        String path) {
+
+        var contents = File.ReadAllBytes(path);
+
+        return this.IncludeFile(path, contents);
+    }
+
+    public (ParsedNamespace, Error?) IncludeFile(
+        String path,
+        byte[] contents) {
+
+        this.RawFiles.Add((path, contents));
+
+        var (lexed, lexErr) = LexerFunctions.Lex(
+            this.RawFiles.Count - 1, 
+            this.RawFiles[this.RawFiles.Count - 1].Item2);
+
+        if (lexErr is Error le) {
+
+            return (new ParsedNamespace(), le);
+        }
+
+        var index = 0;
+        
+        return ParserFunctions.ParseNamespace(lexed, ref index, this);
+    }
+
+    public (ParsedNamespace, Error?) FindAndIncludeModule(
+        String moduleName,
+        Span span) {
+
+        foreach (var path in this.IncludePaths) {
+
+            var filename = Path.Combine(path, $"{moduleName}.neu");
+
+            if (File.Exists(filename)) {
+
+                return this.IncludeFile(filename);
+            }
+        }
+
+        return (
+            new ParsedNamespace(),
+            new ParserError(
+                $"Module '{moduleName}' not found",
+                span));
     }
 
     public Error? IncludePrelude(
@@ -64,7 +119,7 @@ public partial class Compiler {
 
         var index = 0;
 
-        var (file, _) = ParserFunctions.ParseNamespace(lexed, ref index);
+        var (file, _) = ParserFunctions.ParseNamespace(lexed, ref index, this);
 
         // Scope ID 0 is the global project-level scope that all files can see
 
@@ -73,17 +128,6 @@ public partial class Compiler {
 
     public ErrorOr<String> ConvertToCPP(
         String filename) {
-
-        var contents = File.ReadAllBytes(filename);
-
-        return ConvertToCPP(
-            filename,
-            contents);
-    }
-    
-    public ErrorOr<String> ConvertToCPP(
-        String filename,
-        byte[] contents) {
 
         var project = new Project();
 
@@ -96,22 +140,16 @@ public partial class Compiler {
 
         Trace($"-----------------------------");
 
-        // var contents = File.ReadAllBytes(filename);
-        
-        this.RawFiles.Add((filename, contents));
+        // TODO: We also want to be able to accept include paths from CLI
 
-        var (lexed, lexErr) = LexerFunctions.Lex(
-            this.RawFiles.Count - 1, 
-            this.RawFiles[this.RawFiles.Count - 1].Item2);
+        var parentDir = Directory
+            .GetParent(filename)?
+            .FullName
+            ?? throw new Exception("Cannot find parent directory of file");
 
-        if (lexErr is Error le) {
+        this.IncludePaths.Add(parentDir);
 
-            return new ErrorOr<String>(le);
-        }
-
-        var index = 0;
-        
-        var (parsedFile, parseErr) = ParserFunctions.ParseNamespace(lexed, ref index);
+        var (parsedFile, parseErr) = this.IncludeFile(filename);
 
         if (parseErr is Error pe) {
 
