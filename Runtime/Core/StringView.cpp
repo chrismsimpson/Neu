@@ -8,7 +8,6 @@
 #include <Core/Find.h>
 #include <Core/Function.h>
 #include <Core/StringView.h>
-#include <Core/Vector.h>
 
 #ifndef KERNEL
 #    include <Core/String.h>

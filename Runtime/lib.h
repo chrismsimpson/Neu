@@ -49,7 +49,6 @@
 #include <Core/Types.h>
 #include <Core/UnicodeUtils.h>
 #include <Core/Variant.h>
-#include <Core/Vector.h>
 #include <Core/WeakPointer.h>
 #include <Core/Weakable.h>
 #include <Core/kmalloc.h>

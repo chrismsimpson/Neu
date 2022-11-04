@@ -8,7 +8,6 @@
 
 #include <Core/HashTable.h>
 #include <Core/Optional.h>
-#include <Core/Vector.h>
 
 #include <initializer_list>
 
@@ -296,20 +295,6 @@ public:
     }
 
     ///
-
-    [[nodiscard]] Vector<K> keys() const {
-
-        Vector<K> list;
-
-        list.ensureCapacity(size());
-
-        for (auto& it : *this) {
-
-            list.uncheckedAppend(it.key);
-        }
-
-        return list;
-    }
 
     [[nodiscard]] UInt32 hash() const {
 

@@ -78,8 +78,5 @@ class RefPointer;
 template<typename T>
 class WeakPointer;
 
-template<typename T, size_t inlineCapacity = 0>
-requires(!IsRValueReference<T>) class Vector;
-
 template<typename T, typename ErrorType = Error>
 class [[nodiscard]] ErrorOr;

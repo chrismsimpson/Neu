@@ -419,16 +419,6 @@ public:
         return array;
     }
 
-    Array(Vector<T> const& vec) {
-
-        MUST(ensureCapacity(vec.size()));
-
-        for (auto value : vec) {
-
-            MUST(push(move(value)));
-        }
-    }
-
     T* unsafeData() {
 
         if (!m_storage) {

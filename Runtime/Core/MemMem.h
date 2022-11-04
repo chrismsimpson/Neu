@@ -6,11 +6,10 @@
 
 #pragma once
 
-#include <Core/LinearArray.h>
 #include <Core/Assertions.h>
+#include <Core/LinearArray.h>
 #include <Core/Span.h>
 #include <Core/Types.h>
-#include <Core/Vector.h>
 
 namespace {
 
@@ -57,12 +56,10 @@ namespace {
     template<typename HaystackIterT>
     inline Optional<size_t> memmem(HaystackIterT const& haystackBegin, HaystackIterT const& haystackEnd, Span<const UInt8> needle) requires(requires { (*haystackBegin).data(); (*haystackBegin).size(); }) {
         
+        int table[needle.size()];
+
         auto prepareKmpPartialTable = [&] {
             
-            Vector<int, 64> table;
-            
-            table.resize(needle.size());
-
             size_t position = 1;
             
             int candidate = 0;
@@ -94,7 +91,7 @@ namespace {
             return table;
         };
 
-        auto table = prepareKmpPartialTable();
+        prepareKmpPartialTable();
         
         size_t totalHaystackIndex = 0;
         
