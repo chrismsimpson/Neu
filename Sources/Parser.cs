@@ -4223,6 +4223,11 @@ public static partial class ParserFunctions {
                             tokens.ElementAt(tokens.Count - 1).Span);
                     }
 
+                    if (funNameToken.Value == "main") {
+                        
+                        throws = true;
+                    }
+
                     if (linkage == FunctionLinkage.External) {
 
                         return (
