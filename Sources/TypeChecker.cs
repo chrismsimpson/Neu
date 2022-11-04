@@ -1358,8 +1358,20 @@ public static partial class CheckedFunctionFunctions {
     public static ParsedFunction GetParsedFunction(
         this CheckedFunction func) {
 
-        return func.Function
-            ?? throw new Exception();
+        var f = func.Function ?? throw new Exception();
+
+        return new ParsedFunction(
+            name: f.Name,
+            visibility: f.Visibility,
+            nameSpan: f.NameSpan,
+            parameters: f.Parameters.ToList(),
+            genericParameters: f.GenericParameters.ToList(),
+            block: f.Block,
+            throws: f.Throws,
+            returnType: f.ReturnType,
+            returnTypeSpan: f.ReturnTypeSpan,
+            linkage: f.Linkage,
+            mustInstantiate: f.MustInstantiate);
     }
 
     public static bool IsStatic(
@@ -4634,33 +4646,35 @@ public static partial class TypeCheckerFunctions {
 
         error = error ?? err;
 
-        checkedFunction.ReturnTypeId = funcReturnTypeId;
+        var (block, _) = TypeCheckBlock(
+            block: func.Block,
+            parentScopeId: func.GenericParameters.Any()
+                ? checkScope ?? throw new Exception("Generic function with generic parameters must have a check scope")
+                : funcScopeId,
+            project,
+            SafetyMode.Safe);
 
-        if (func.GenericParameters.Any()) {
+        Int32 returnTypeId;
 
-            var (block, _) = TypeCheckBlock(
-                func.Block,
-                checkScope ?? throw new Exception(""),
-                project,
-                SafetyMode.Safe);
+        if (funcReturnTypeId == Compiler.UnknownTypeId) {
 
-            var returnTypeId = Compiler.VoidTypeId;
+            if (block.Stmts.LastOrDefault() is CheckedReturnStatement ret) {
 
-            if (funcReturnTypeId == Compiler.UnknownTypeId) {
-
-                if (block.Stmts.LastOrDefault() is CheckedReturnStatement r) {
-
-                    returnTypeId = r.Expr.GetTypeId(funcScopeId, project);
-                }
+                returnTypeId = ret.Expr.GetTypeId(funcScopeId, project);
             }
             else {
 
-                returnTypeId = ResolveTypeVar(funcReturnTypeId, parentScopeId, project);
+                returnTypeId = Compiler.VoidTypeId;
             }
-
-            checkedFunction.Block = block;
-            checkedFunction.ReturnTypeId = returnTypeId;
         }
+        else {
+
+            returnTypeId = ResolveTypeVar(funcReturnTypeId, parentScopeId, project);
+        }
+
+        checkedFunction.Block = block;
+
+        checkedFunction.ReturnTypeId = returnTypeId;
 
         project.Functions[funcId] = checkedFunction;
 
@@ -4738,7 +4752,7 @@ public static partial class TypeCheckerFunctions {
         ParsedFunction func,
         Int32 parentScopeId,
         Project project) {
-        
+
         if (func.GenericParameters.Any() && !func.MustInstantiate) {
 
             return null;
@@ -4800,7 +4814,7 @@ public static partial class TypeCheckerFunctions {
 
         error = error ?? typeCheckReturnTypeErr;
 
-        // If the return type is unknown, and the function starts with a return statement,
+        // If the return type is unknown, and the function ends with a return statement,
         // we infer the return type from its expression.
 
         Int32 returnTypeId;
@@ -4809,7 +4823,10 @@ public static partial class TypeCheckerFunctions {
 
             if (block.Stmts.LastOrDefault() is CheckedReturnStatement ret) {
 
-                returnTypeId = ret.Expr.GetTypeId(functionScopeId, project);
+                returnTypeId = ResolveTypeVar(
+                    ret.Expr.GetTypeId(functionScopeId, project), 
+                    parentScopeId, 
+                    project);
             }
             else {
 
