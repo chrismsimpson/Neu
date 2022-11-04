@@ -1,0 +1,7 @@
+func foo(anon n: Int32 = 1) {
+    printLine("{}", n)
+}
+
+func main() {
+    foo(2)
+}
