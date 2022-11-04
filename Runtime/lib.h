@@ -10,7 +10,6 @@
 #include <Core/BitCast.h>
 #include <Core/CharacterTypes.h>
 #include <Core/Checked.h>
-#include <Core/CheckedFormatString.h>
 #include <Core/Concepts.h>
 #include <Core/Debug.h>
 #include <Core/Error.h>

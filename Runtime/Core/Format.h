@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <Core/CheckedFormatString.h>
-
 #include <Core/AllOf.h>
 #include <Core/AnyOf.h>
 #include <Core/Error.h>
@@ -246,19 +244,6 @@ public:
         size_t minWidth = 0,
         char fill = ' ',
         SignMode signMode = SignMode::OnlyIfNeeded);
-
-    // ErrorOr<void> putFixedPoint(
-    //     Int64 integerValue,
-    //     UInt64 fractionValue,
-    //     UInt64 fractionOne,
-    //     UInt8 base = 10,
-    //     bool upperCase = false,
-    //     bool zeroPad = false,
-    //     Align align = Align::Right,
-    //     size_t minWidth = 0,
-    //     size_t precision = 6,
-    //     char fill = ' ',
-    //     SignMode signMode = SignMode::OnlyIfNeeded);
 
 #ifndef KERNEL
 
@@ -582,39 +567,39 @@ ErrorOr<void> vformat(StringBuilder&, StringView fmtstr, TypeErasedFormatParams&
 void vout(FILE*, StringView fmtstr, TypeErasedFormatParams&, bool newline = false);
 
 template<typename... Parameters>
-void out(FILE* file, CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+void out(FILE* file, StringView&& fmtstr, Parameters const&... parameters) {
 
     VariadicFormatParams variadicFormatParams { parameters... };
     
-    vout(file, fmtstr.view(), variadicFormatParams);
+    vout(file, fmtstr, variadicFormatParams);
 }
 
 template<typename... Parameters>
-void outLine(FILE* file, CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+void outLine(FILE* file, StringView&& fmtstr, Parameters const&... parameters) {
 
     VariadicFormatParams variadicFormatParams { parameters... };
     
-    vout(file, fmtstr.view(), variadicFormatParams, true);
+    vout(file, fmtstr, variadicFormatParams, true);
 }
 
 inline void outLine(FILE* file) { fputc('\n', file); }
 
 template<typename... Parameters>
-void out(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) { out(stdout, move(fmtstr), parameters...); }
+void out(StringView&& fmtstr, Parameters const&... parameters) { out(stdout, move(fmtstr), parameters...); }
 
 template<typename... Parameters>
-void outLine(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) { outLine(stdout, move(fmtstr), parameters...); }
+void outLine(StringView&& fmtstr, Parameters const&... parameters) { outLine(stdout, move(fmtstr), parameters...); }
 
 inline void outLine() { outLine(stdout); }
 
 template<typename... Parameters>
-void warn(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+void warn(StringView&& fmtstr, Parameters const&... parameters) {
 
     out(stderr, move(fmtstr), parameters...);
 }
 
 template<typename... Parameters>
-void warnLine(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) { outLine(stderr, move(fmtstr), parameters...); }
+void warnLine(StringView&& fmtstr, Parameters const&... parameters) { outLine(stderr, move(fmtstr), parameters...); }
 
 inline void warnLine() { outLine(stderr); }
 
@@ -630,11 +615,11 @@ inline void warnLine() { outLine(stderr); }
 void vDebugLine(StringView fmtstr, TypeErasedFormatParams&);
 
 template<typename... Parameters>
-void debugLine(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+void debugLine(StringView&& fmtstr, Parameters const&... parameters) {
 
     VariadicFormatParams variadicFormatParams { parameters... };
     
-    vDebugLine(fmtstr.view(), variadicFormatParams);
+    vDebugLine(fmtstr, variadicFormatParams);
 }
 
 inline void debugLine() { debugLine(""); }
@@ -646,7 +631,7 @@ void setDebugEnabled(bool);
 void vDebugMessageLine(StringView fmtstr, TypeErasedFormatParams&);
 
 template<typename... Parameters>
-void debugMessageLine(CheckedFormatString<Parameters...>&& fmt, Parameters const&... parameters)
+void debugMessageLine(StringView&& fmt, Parameters const&... parameters)
 {
     VariadicFormatParams variadicFormatParams { parameters... };
 
@@ -661,7 +646,7 @@ void vCriticalDebugMessageLine(StringView fmtstr, TypeErasedFormatParams&);
 // a very unstable situation
 
 template<typename... Parameters>
-void criticalDebugMessageLine(CheckedFormatString<Parameters...>&& fmt, Parameters const&... parameters)
+void criticalDebugMessageLine(StringView&& fmt, Parameters const&... parameters)
 {
     VariadicFormatParams variadicFormatParams { parameters... };
 

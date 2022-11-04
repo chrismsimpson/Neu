@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Core/CheckedFormatString.h>
 #include <Core/Format.h>
 #include <Core/Forward.h>
 #include <Core/NonNullRefPointer.h>
@@ -135,11 +134,11 @@ public:
     [[nodiscard]] static ErrorOr<String> vformatted(StringView fmtstr, TypeErasedFormatParams&);
 
     template<typename... Parameters>
-    [[nodiscard]] static ErrorOr<String> formatted(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+    [[nodiscard]] static ErrorOr<String> formatted(StringView&& fmtstr, Parameters const&... parameters) {
 
         VariadicFormatParams variadicFormatParameters { parameters... };
 
-        return vformatted(fmtstr.view(), variadicFormatParameters);
+        return vformatted(fmtstr, variadicFormatParameters);
     }
 
     StringView view() const { return { cString(), length() }; }

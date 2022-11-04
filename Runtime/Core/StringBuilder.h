@@ -30,11 +30,11 @@ public:
     ErrorOr<void> tryAppend(char);
 
     template<typename... Parameters>
-    ErrorOr<void> tryAppendff(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+    ErrorOr<void> tryAppendff(StringView&& fmtstr, Parameters const&... parameters) {
 
         VariadicFormatParams variadicFormatParams { parameters... };
 
-        return vformat(*this, fmtstr.view(), variadicFormatParams);
+        return vformat(*this, fmtstr, variadicFormatParams);
     }
 
     ErrorOr<void> tryAppend(char const*, size_t);
@@ -54,11 +54,11 @@ public:
     void appendEscapedForJson(StringView);
 
     template<typename... Parameters>
-    void appendff(CheckedFormatString<Parameters...>&& fmtstr, Parameters const&... parameters) {
+    void appendff(StringView&& fmtstr, Parameters const&... parameters) {
 
         VariadicFormatParams variadicFormatParams { parameters... };
         
-        MUST(vformat(*this, fmtstr.view(), variadicFormatParams));
+        MUST(vformat(*this, fmtstr, variadicFormatParams));
     }
 
     [[nodiscard]] ErrorOr<String> toString() const;
