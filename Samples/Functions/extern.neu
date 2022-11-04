@@ -1,4 +1,4 @@
 func main() {
     let s = String.number(5 + 10)
-    printLine("Five plus ten = " + s)
+    printLine("Five plus ten = {}", s)
 }

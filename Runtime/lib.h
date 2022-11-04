@@ -38,7 +38,6 @@
 #include <Core/String.h>
 #include <Core/StringBuilder.h>
 #include <Core/StringHash.h>
-#include <Core/StringImpl.h>
 #include <Core/StringUtils.h>
 #include <Core/StringView.h>
 #include <Core/Traits.h>
@@ -60,7 +59,6 @@
 #include <Core/GenericLexer.cpp>
 #include <Core/String.cpp>
 #include <Core/StringBuilder.cpp>
-#include <Core/StringImpl.cpp>
 #include <Core/StringUtils.cpp>
 #include <Core/StringView.cpp>
 
@@ -138,7 +136,7 @@ constexpr auto continue_on_panic = false;
         
         if (checked.hasOverflow()) {
 
-            panic(String::formatted("Overflow in checked addition '{} + {}'", value, other));
+            panic(MUST(String::formatted("Overflow in checked addition '{} + {}'", value, other)));
         }
 
         return checked.valueUnchecked();
@@ -153,7 +151,7 @@ constexpr auto continue_on_panic = false;
 
         if (checked.hasOverflow()) {
 
-            panic(String::formatted("Overflow in checked subtraction '{} - {}'", value, other));
+            panic(MUST(String::formatted("Overflow in checked subtraction '{} - {}'", value, other)));
         }
 
         return checked.valueUnchecked();
@@ -168,7 +166,7 @@ constexpr auto continue_on_panic = false;
         
         if (checked.hasOverflow()) {
 
-            panic(String::formatted("Overflow in checked multiplication '{} * {}'", value, other));
+            panic(MUST(String::formatted("Overflow in checked multiplication '{} * {}'", value, other)));
         }
 
         return checked.valueUnchecked();
@@ -185,11 +183,11 @@ constexpr auto continue_on_panic = false;
 
             if (other == 0) {
 
-                panic(String::formatted("Division by zero in checked division '{} / {}'", value, other));
+                panic(MUST(String::formatted("Division by zero in checked division '{} / {}'", value, other)));
             }
             else {
 
-                panic(String::formatted("Overflow in checked division '{} / {}'", value, other));
+                panic(MUST(String::formatted("Overflow in checked division '{} / {}'", value, other)));
             }
         }
 
@@ -207,11 +205,11 @@ constexpr auto continue_on_panic = false;
 
             if (other == 0) {
 
-                panic(String::formatted("Division by zero in checked modulo '{} % {}'", value, other));
+                panic(MUST(String::formatted("Division by zero in checked modulo '{} % {}'", value, other)));
             }
             else {
 
-                panic(String::formatted("Overflow in checked modulo '{} % {}'", value, other));
+                panic(MUST(String::formatted("Overflow in checked modulo '{} % {}'", value, other)));
             }
         }
 
@@ -468,7 +466,7 @@ int main(int argc, char** argv) {
 
     for (int i = 0; i < argc; ++i) {
 
-        MUST(args.push(argv[i]));
+        MUST(args.push(MUST(String::copy(StringView(argv[i])))));
     }
 
     auto result = NeuInternal::main(move(args));

@@ -6,7 +6,7 @@ func main() {
     }
     
     let y = when "foo" {
-        ("f" + "oo") => "bar"
+        ("foo") => "bar"
         else => "baz"
     }
 

@@ -1,14 +1,14 @@
 extern struct StringBuilder {
     func StringBuilder() -> StringBuilder
     func append(var this, anon s: raw CChar)
-    func toString(var this) -> String
+    func toString(var this) throws -> String
 }
 
 func main() {
     var s = StringBuilder()
 
-    s.append("abc".characters());
-    s.append("123".characters());
+    s.append("abc".cString());
+    s.append("123".cString());
 
     printLine("{}", s.toString())
 }

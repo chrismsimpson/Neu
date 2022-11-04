@@ -1,6 +1,9 @@
 func area(width: Int64, height: Int64) => width * height
-func greeting(name: String) => "Hello, " + name + "!"
-func greet(name: String) => printLine(greeting(name: name))
+func greeting(name: String) throws -> String => format("Hello, {}!", name)
+func greet(name: String) throws {
+    printLine("{}", greeting(name))
+} 
+
 
 func main() {
     let a = area(width: 5, height: 10)

@@ -19,8 +19,6 @@ class StringBuilder {
 
 public:
 
-    using OutputType = String;
-
     explicit StringBuilder();
 
     ~StringBuilder() = default;
@@ -63,13 +61,7 @@ public:
         MUST(vformat(*this, fmtstr.view(), variadicFormatParams));
     }
 
-#ifndef KERNEL
-
-    [[nodiscard]] String build() const;
-
-    [[nodiscard]] String toString() const;
-
-#endif
+    [[nodiscard]] ErrorOr<String> toString() const;
 
     [[nodiscard]] StringView stringView() const;
 
@@ -149,7 +141,7 @@ struct Formatter<Array<T>> : Formatter<StringView> {
         
         stringBuilder.append("]");
 
-        return Formatter<StringView>::format(builder, stringBuilder.toString());
+        return Formatter<StringView>::format(builder, TRY(stringBuilder.toString()));
     }
 };
 
@@ -176,7 +168,7 @@ struct Formatter<Set<T>> : Formatter<StringView> {
         
         stringBuilder.append("}");
 
-        return Formatter<StringView>::format(builder, stringBuilder.toString());
+        return Formatter<StringView>::format(builder, TRY(stringBuilder.toString()));
     }
 };
 
@@ -209,7 +201,7 @@ struct Formatter<Dictionary<K, V>> : Formatter<StringView> {
 
         stringBuilder.append("]");
         
-        return Formatter<StringView>::format(builder, stringBuilder.toString());
+        return Formatter<StringView>::format(builder, TRY(stringBuilder.toString()));
     }
 };
 
@@ -228,13 +220,13 @@ struct Formatter<Tuple<Ts...>> : Formatter<StringView> {
                 
                 appendValue(stringBuilder, first);
                 
-                ((stringBuilder.append(", "), append_value(stringBuilder, args)),...);
+                ((stringBuilder.append(", "), append_value(stringBuilder, args)), ...);
             });
         }
 
         stringBuilder.append(")");
         
-        return Formatter<StringView>::format(builder, stringBuilder.toString());
+        return Formatter<StringView>::format(builder, TRY(stringBuilder.toString()));
     }
 };
 

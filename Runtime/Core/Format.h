@@ -10,9 +10,9 @@
 
 #include <Core/AllOf.h>
 #include <Core/AnyOf.h>
-#include <Core/LinearArray.h>
 #include <Core/Error.h>
 #include <Core/Forward.h>
+#include <Core/LinearArray.h>
 #include <Core/Optional.h>
 #include <Core/StringView.h>
 
@@ -806,31 +806,8 @@ template<>
 struct Formatter<Error> : Formatter<FormatString> {
 
     ErrorOr<void> format(FormatBuilder& builder, Error const& error) {
-
-    #if defined(__os__) && defined(OS)
-
-        if (error.isErrno()) {
-
-            return Formatter<FormatString>::format(builder, "Error(errno={})", error.code());
-        }
-
-        return Formatter<FormatString>::format(builder, "Error({})", error.stringLiteral());
-
-    #else
-
-        if (error.isSyscall()) {
-
-            return Formatter<FormatString>::format(builder, "{}: {} (errno={})", error.stringLiteral(), strerror(error.code()), error.code());
-        }
-
-        if (error.isErrno()) {
-
-            return Formatter<FormatString>::format(builder, "{} (errno={})", strerror(error.code()), error.code());
-        }
-
-        return Formatter<FormatString>::format(builder, "{}", error.stringLiteral());
-
-    #endif
+        
+        return Formatter<FormatString>::format(builder, "Error(code={})", error.code());
     }
 };
 

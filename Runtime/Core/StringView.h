@@ -83,7 +83,6 @@ public:
     
     [[nodiscard]] constexpr ConstIterator end() const { return ConstIterator::end(*this); }
 
-
     [[nodiscard]] constexpr unsigned hash() const {
 
         if (isEmpty()) {
@@ -102,10 +101,6 @@ public:
     
     [[nodiscard]] bool endsWith(char) const;
 
-    [[nodiscard]] bool matches(StringView mask, CaseSensitivity = CaseSensitivity::CaseInsensitive) const;
-
-    [[nodiscard]] bool matches(StringView mask, Vector<MaskSpan>&, CaseSensitivity = CaseSensitivity::CaseInsensitive) const;
-
     [[nodiscard]] bool contains(char) const;
 
     [[nodiscard]] bool contains(StringView, CaseSensitivity = CaseSensitivity::CaseSensitive) const;
@@ -115,16 +110,6 @@ public:
     [[nodiscard]] StringView trim(StringView characters, TrimMode mode = TrimMode::Both) const { return StringUtils::trim(*this, characters, mode); }
     
     [[nodiscard]] StringView trimWhitespace(TrimMode mode = TrimMode::Both) const { return StringUtils::trimWhitespace(*this, mode); }
-
-#ifndef KERNEL
-    
-    [[nodiscard]] String toLowercaseString() const;
-
-    [[nodiscard]] String toUppercaseString() const;
-    
-    [[nodiscard]] String toTitlecaseString() const;
-
-#endif
 
     [[nodiscard]] Optional<size_t> find(char needle, size_t start = 0) const {
 
@@ -137,7 +122,7 @@ public:
 
     // FIXME: Implement find_last(StringView) for API symmetry.
 
-    [[nodiscard]] Vector<size_t> findAll(StringView needle) const;
+    [[nodiscard]] ErrorOr<Array<size_t>> findAll(StringView needle) const;
 
     using SearchDirection = StringUtils::SearchDirection;
 
@@ -163,12 +148,6 @@ public:
         return substringView(start, length() - start);
     }
 
-    [[nodiscard]] Vector<StringView> splitView(char, bool keepEmpty = false) const;
-
-    [[nodiscard]] Vector<StringView> splitView(StringView, bool keepEmpty = false) const;
-
-    [[nodiscard]] Vector<StringView> splitViewIf(Function<bool(char)> const& predicate, bool keepEmpty = false) const;
-
     template<VoidFunction<StringView> Callback>
     void forEachSplitView(char separator, bool keepEmpty, Callback callback) const {
 
@@ -176,50 +155,6 @@ public:
 
         forEachSplitView(seperatorView, keepEmpty, callback);
     }
-
-
-    template<VoidFunction<StringView> Callback>
-    void forEachSplitView(StringView separator, bool keepEmpty, Callback callback) const {
-
-        VERIFY(!separator.isEmpty());
-
-        if (isEmpty()) {
-
-            return;
-        }
-
-        StringView view { *this };
-
-        auto maybeSeparatorIndex = find(separator);
-        
-        while (maybeSeparatorIndex.hasValue()) {
-            
-            auto separatorIndex = maybeSeparatorIndex.value();
-            
-            auto partWithSeparator = view.substringView(0, separatorIndex + separator.length());
-            
-            if (keepEmpty || separatorIndex > 0) {
-
-                callback(partWithSeparator.substringView(0, separatorIndex));
-            }
-            
-            view = view.substringViewStartingAfterSubstring(partWithSeparator);
-            
-            maybeSeparatorIndex = view.find(separator);
-        }
-
-        if (keepEmpty || !view.isEmpty()) {
-
-            callback(view);
-        }
-    }
-
-    // Create a Vector of StringViews split by line endings. As of CommonMark
-    // 0.29, the spec defines a line ending as "a newline (U+000A), a carriage
-    // return (U+000D) not followed by a newline, or a carriage return and a
-    // following newline.".
-
-    [[nodiscard]] Vector<StringView> lines(bool considerCarriageReturn = true) const;
 
     template<typename T = int>
     Optional<T> toInt() const;
@@ -243,12 +178,6 @@ public:
     //     StringView substr { "oo" };
     //
     // would not work.
-
-    [[nodiscard]] StringView substringViewStartingFromSubstring(StringView substring) const;
-
-    [[nodiscard]] StringView substringViewStartingAfterSubstring(StringView substring) const;
-
-    [[nodiscard]] bool copyCharactersToBuffer(char* buffer, size_t bufferSize) const;
 
     constexpr bool operator==(char const* cstring) const {
 
@@ -345,22 +274,12 @@ public:
 
     constexpr bool operator>=(StringView other) const { return compare(other) >= 0; }
 
-#ifndef KERNEL
-
-    [[nodiscard]] String toString() const;
-
-#endif
+    [[nodiscard]] ErrorOr<String> toString() const;
 
     [[nodiscard]] bool isWhitespace() const {
 
         return StringUtils::isWhitespace(*this);
     }
-
-#ifndef KERNEL
-
-    [[nodiscard]] String replace(StringView needle, StringView replacement, bool allOccurrences = false) const;
-
-#endif
 
     [[nodiscard]] size_t count(StringView needle) const {
 

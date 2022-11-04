@@ -9,118 +9,12 @@
 #include <Core/MemMem.h>
 #include <Core/Memory.h>
 #include <Core/Optional.h>
+#include <Core/String.h>
 #include <Core/StringBuilder.h>
 #include <Core/StringUtils.h>
 #include <Core/StringView.h>
-#include <Core/Vector.h>
-
-#ifndef KERNEL
-#    include <Core/String.h>
-#endif
 
 namespace StringUtils {
-
-    bool matches(StringView str, StringView mask, CaseSensitivity caseSensitivity, Vector<MaskSpan>* matchSpans) {
-
-        auto recordSpan = [&matchSpans](size_t start, size_t length) {
-
-            if (matchSpans) {
-
-                matchSpans->append({ start, length });
-            }
-        };
-
-        if (str.isNull() || mask.isNull()) {
-
-            return str.isNull() && mask.isNull();
-        }
-
-        if (mask == "*"sv) {
-
-            recordSpan(0, str.length());
-            
-            return true;
-        }
-
-        char const* stringPtr = str.charactersWithoutNullTermination();
-        
-        char const* stringStart = str.charactersWithoutNullTermination();
-        
-        char const* stringEnd = stringPtr + str.length();
-        
-        char const* maskPtr = mask.charactersWithoutNullTermination();
-        
-        char const* maskEnd = maskPtr + mask.length();
-
-        while (stringPtr < stringEnd && maskPtr < maskEnd) {
-
-            auto stringStartPtr = stringPtr;
-
-            switch (*maskPtr) {
-
-            case '*':
-
-                if (maskPtr == maskEnd - 1) {
-                    
-                    recordSpan(stringPtr - stringStart, stringEnd - stringPtr);
-                    
-                    return true;
-                }
-
-                while (stringPtr < stringEnd && !matches({ stringPtr, static_cast<size_t>(stringEnd - stringPtr) }, { maskPtr + 1, static_cast<size_t>(maskEnd - maskPtr - 1) }, caseSensitivity)) {
-
-                    ++stringPtr;
-                }
-                
-                recordSpan(stringStartPtr - stringStart, stringPtr - stringStartPtr);
-                
-                --stringPtr;
-                
-                break;
-
-            ///
-
-            case '?':
-
-                recordSpan(stringPtr - stringStart, 1);
-                
-                break;
-
-            ///
-
-            default:
-                
-                auto p = *maskPtr;
-                
-                auto ch = *stringPtr;
-                
-                if (caseSensitivity == CaseSensitivity::CaseSensitive ? p != ch : toAsciiLowercase(p) != toAsciiLowercase(ch)) {
-
-                    return false;
-                }
-
-                break;
-            }
-
-            ++stringPtr;
-            
-            ++maskPtr;
-        }
-
-        if (stringPtr == stringEnd) {
-
-            // Allow ending '*' to contain nothing.
-            
-            while (maskPtr != maskEnd && *maskPtr == '*') {
-                
-                recordSpan(stringPtr - stringStart, 0);
-                
-                ++maskPtr;
-            }
-        }
-
-        return stringPtr == stringEnd && maskPtr == maskEnd;
-    }
 
     template<typename T>
     Optional<T> convertToInt(StringView str, TrimWhitespace trimWhitespace) {
@@ -606,9 +500,9 @@ namespace StringUtils {
         return { };
     }
 
-    Vector<size_t> findAll(StringView haystack, StringView needle) {
+    ErrorOr<Array<size_t>> findAll(StringView haystack, StringView needle) {
 
-        Vector<size_t> positions;
+        Array<size_t> positions;
 
         size_t currentPosition = 0;
         
@@ -623,7 +517,7 @@ namespace StringUtils {
                 break;
             }
             
-            positions.append(currentPosition + *maybePosition);
+            TRY(positions.push(currentPosition + *maybePosition));
             
             currentPosition += *maybePosition + 1;
         }
@@ -661,129 +555,6 @@ namespace StringUtils {
 
         return { };
     }
-
-    #ifndef KERNEL
-
-    String toSnakecase(StringView str) {
-
-        auto shouldInsertUnderscore = [&](auto i, auto currentChar) {
-
-            if (i == 0) {
-
-                return false;
-            }
-            
-            auto previousCh = str[i - 1];
-            
-            if (isAsciiLowerAlpha(previousCh) && isAsciiUpperAlpha(currentChar)) {
-
-                return true;
-            }
-
-            if (i >= str.length() - 1) {
-
-                return false;
-            }
-
-            auto nextCh = str[i + 1];
-
-            if (isAsciiUpperAlpha(currentChar) && isAsciiLowerAlpha(nextCh)) {
-
-                return true;
-            }
-
-            return false;
-        };
-
-        StringBuilder builder;
-
-        for (size_t i = 0; i < str.length(); ++i) {
-
-            auto ch = str[i];
-
-            if (shouldInsertUnderscore(i, ch)) {
-
-                builder.append('_');
-            }
-
-            builder.appendAsLowercase(ch);
-        }
-
-        return builder.toString();
-    }
-
-    String toTitlecase(StringView str) {
-
-        StringBuilder builder;
-        
-        bool nextIsUpper = true;
-
-        for (auto ch : str) {
-
-            if (nextIsUpper) {
-
-                builder.appendCodePoint(toAsciiUppercase(ch));
-            }
-            else {
-
-                builder.appendCodePoint(toAsciiLowercase(ch));
-            }
-
-            nextIsUpper = ch == ' ';
-        }
-
-        return builder.toString();
-    }
-
-    String replace(StringView str, StringView needle, StringView replacement, bool allOccurrences) {
-
-        if (str.isEmpty()) {
-
-            return str;
-        }
-
-        Vector<size_t> positions;
-
-        if (allOccurrences) {
-
-            positions = str.findAll(needle);
-
-            if (!positions.size()) {
-
-                return str;
-            }
-        } 
-        else {
-
-            auto pos = str.find(needle);
-
-            if (!pos.hasValue()) {
-
-                return str;
-            }
-
-            positions.append(pos.value());
-        }
-
-        StringBuilder replacedString;
-        
-        size_t lastPosition = 0;
-        
-        for (auto& position : positions) {
-
-            replacedString.append(str.substringView(lastPosition, position - lastPosition));
-            
-            replacedString.append(replacement);
-            
-            lastPosition = position + needle.length();
-        }
-
-        replacedString.append(str.substringView(lastPosition, str.length() - lastPosition));
-        
-        return replacedString.build();
-    }
-
-    #endif
 
     // TODO: Benchmark against KMP (MemMem.h) and switch over if it's faster for short strings too
 

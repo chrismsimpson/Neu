@@ -9,6 +9,7 @@
 
 #include <Core/Concepts.h>
 #include <Core/Forward.h>
+#include <Builtins/Array.h>
 
 namespace Detail {
 
@@ -56,8 +57,6 @@ struct MaskSpan {
 
 namespace StringUtils {
 
-    bool matches(StringView str, StringView mask, CaseSensitivity = CaseSensitivity::CaseInsensitive, Vector<MaskSpan>* match_spans = nullptr);
-
     template<typename T = int>
     Optional<T> convertToInt(StringView, TrimWhitespace = TrimWhitespace::Yes);
 
@@ -90,7 +89,7 @@ namespace StringUtils {
     
     Optional<size_t> findLast(StringView haystack, char needle);
     
-    Vector<size_t> findAll(StringView haystack, StringView needle);
+    ErrorOr<Array<size_t>> findAll(StringView haystack, StringView needle);
     
     enum class SearchDirection {
         Forward,
@@ -99,11 +98,7 @@ namespace StringUtils {
     
     Optional<size_t> findAnyOf(StringView haystack, StringView needles, SearchDirection);
 
-    String toSnakecase(StringView);
-    
-    String toTitlecase(StringView);
+    ErrorOr<String> replace(StringView, StringView needle, StringView replacement, bool allOccurrences = false);
 
-    String replace(StringView, StringView needle, StringView replacement, bool allOccurrences = false);
-    
     size_t count(StringView, StringView needle);
 }

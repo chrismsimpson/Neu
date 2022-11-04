@@ -1332,7 +1332,7 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append("String debugDescription() const { ");
+        output.Append("ErrorOr<String> debugDescription() const { ");
 
         output.Append("StringBuilder builder;");
 
@@ -1438,7 +1438,7 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        output.Append("String debugDescription() const { ");
+        output.Append("ErrorOr<String> debugDescription() const { ");
 
         output.Append("StringBuilder builder;");
 
@@ -1528,7 +1528,7 @@ public static partial class CodeGenFunctions {
         output.Append(
             $"    ErrorOr<void> format(FormatBuilder& builder, {qualifiedName} const& value)\n");
         output.Append("{ ");
-        output.Append("return Formatter<StringView>::format(builder, value.debugDescription()); }");
+        output.Append("return Formatter<StringView>::format(builder, MUST(value.debugDescription())); }");
 
         output.Append("};");
 
@@ -3903,7 +3903,7 @@ public static partial class CodeGenFunctions {
 
                     case "format": {
 
-                        output.Append("String::formatted(");
+                        output.Append("TRY(String::formatted(");
 
                         for (var i = 0; i < ce.Call.Args.Count; i++) {
 
@@ -3917,7 +3917,7 @@ public static partial class CodeGenFunctions {
                             }
                         }
 
-                        output.Append(')');
+                        output.Append("))");
 
                         break;
                     }

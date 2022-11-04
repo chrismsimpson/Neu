@@ -16,7 +16,7 @@ File::~File() {
 
 ErrorOr<NonNullRefPointer<File>> File::openForReading(String path) {
 
-    auto* stdioFile = fopen(path.characters(), "rb");
+    auto* stdioFile = fopen(path.cString(), "rb");
     
     if (!stdioFile) {
     
@@ -32,7 +32,7 @@ ErrorOr<NonNullRefPointer<File>> File::openForReading(String path) {
 
 ErrorOr<NonNullRefPointer<File>> File::openForWriting(String path) {
     
-    auto* stdioFile = fopen(path.characters(), "wb");
+    auto* stdioFile = fopen(path.cString(), "wb");
 
     if (!stdioFile) {
 

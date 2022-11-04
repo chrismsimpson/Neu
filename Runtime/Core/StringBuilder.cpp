@@ -63,19 +63,14 @@ void StringBuilder::append(char ch) {
     MUST(tryAppend(ch));
 }
 
-String StringBuilder::toString() const {
+ErrorOr<String> StringBuilder::toString() const {
 
     if (isEmpty()) {
 
         return String::empty();
     }
 
-    return String((char const*) data(), length());
-}
-
-String StringBuilder::build() const {
-
-    return toString();
+    return String::copy(stringView());
 }
 
 StringView StringBuilder::stringView() const {
