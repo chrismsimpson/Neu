@@ -1,0 +1,5 @@
+import Foo
+
+func main() {
+    Foo.bar()
+}

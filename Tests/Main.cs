@@ -275,6 +275,7 @@ public static partial class Program {
                 TestWeak();
                 TestCodeGen();
                 TestWhen();
+                TestImports();
 
                 break;
             }
@@ -455,5 +456,10 @@ public static partial class Program {
     public static ErrorOrVoid TestWhen() {
 
         return TestSamples("./Samples/When");
+    }
+
+    public static ErrorOrVoid TestImports() {
+
+        return TestSamples("./Samples/Imports");
     }
 }

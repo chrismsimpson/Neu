@@ -2834,6 +2834,10 @@ public static partial class ParserFunctions {
             }
             else {
 
+                error = error ??
+                    new ParserError(
+                        "Expected module name after import keyword",
+                        tokens[index].Span);
             }
         }
         else {
