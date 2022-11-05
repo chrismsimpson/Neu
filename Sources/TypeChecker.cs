@@ -4883,35 +4883,37 @@ public static partial class TypeCheckerFunctions {
 
         error = error ?? err;
 
-        var (block, _) = TypeCheckBlock(
-            block: func.Block,
-            parentScopeId: func.GenericParameters.Any()
-                ? checkScope ?? throw new Exception("Generic function with generic parameters must have a check scope")
-                : funcScopeId,
-            project,
-            SafetyMode.Safe);
+        checkedFunction.ReturnTypeId = funcReturnTypeId;
 
-        Int32 returnTypeId;
+        if (func.GenericParameters.Any()) {
 
-        if (funcReturnTypeId == Compiler.UnknownTypeId) {
+            var (block, _) = TypeCheckBlock(
+                func.Block,
+                checkScope ?? throw new Exception("Generic function with generic parameters must have a check scope"),
+                project,
+                SafetyMode.Safe);
 
-            if (block.Stmts.LastOrDefault() is CheckedReturnStatement ret) {
+            Int32 returnTypeId;
 
-                returnTypeId = ret.Expr.GetTypeId(funcScopeId, project);
+            if (funcReturnTypeId == Compiler.UnknownTypeId) {
+
+                if (block.Stmts.LastOrDefault() is CheckedReturnStatement ret) {
+
+                    returnTypeId = ret.Expr.GetTypeId(funcScopeId, project);
+                }
+                else {
+
+                    returnTypeId = Compiler.VoidTypeId;
+                }
             }
             else {
 
-                returnTypeId = Compiler.VoidTypeId;
+                returnTypeId = ResolveTypeVar(funcReturnTypeId, parentScopeId, project);
             }
+
+            checkedFunction.Block = block;
+            checkedFunction.ReturnTypeId = returnTypeId;            
         }
-        else {
-
-            returnTypeId = ResolveTypeVar(funcReturnTypeId, parentScopeId, project);
-        }
-
-        checkedFunction.Block = block;
-
-        checkedFunction.ReturnTypeId = returnTypeId;
 
         project.Functions[funcId] = checkedFunction;
 
@@ -5051,7 +5053,7 @@ public static partial class TypeCheckerFunctions {
 
         error = error ?? typeCheckReturnTypeErr;
 
-        // If the return type is unknown, and the function ends with a return statement,
+        // If the return type is unknown, and the function starts with a return statement,
         // we infer the return type from its expression.
 
         Int32 returnTypeId;
@@ -5060,10 +5062,7 @@ public static partial class TypeCheckerFunctions {
 
             if (block.Stmts.LastOrDefault() is CheckedReturnStatement ret) {
 
-                returnTypeId = ResolveTypeVar(
-                    ret.Expr.GetTypeId(functionScopeId, project), 
-                    parentScopeId, 
-                    project);
+                returnTypeId = ret.Expr.GetTypeId(functionScopeId, project);
             }
             else {
 

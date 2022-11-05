@@ -1,0 +1,13 @@
+func id<T>(z: T) => z
+
+func bar() {
+    let y: UInt8 = id(z: UInt8(188))
+}
+
+func foobar(x: UInt32) -> UInt32 {
+    return x
+}
+
+func main(args: [String]) {
+
+}
