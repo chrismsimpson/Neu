@@ -8,5 +8,5 @@ enum Foo {
 
 func main() {
     let x = Foo.bar()
-    x.test() // Should not compile, access voilation.
+    x.test() // Should not compile, access violation.
 }
