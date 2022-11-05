@@ -1,0 +1,6 @@
+import Foo as Baz
+
+func main() {
+    
+    Baz.bar()
+}

@@ -2830,6 +2830,41 @@ public static partial class ParserFunctions {
 
                 ns.Name = moduleName.Value;
 
+                if (index < tokens.Count) {
+
+                    switch (tokens[index]) {
+
+                        case NameToken nt when nt.Value == "as": {
+
+                            index += 1;
+
+                            if (index < tokens.Count) {
+
+                                if (tokens[index] is NameToken alias) {
+
+                                    index += 1;
+
+                                    ns.Name = alias.Value;
+
+                                    return (ns, error);
+                                }
+                            }
+
+                            error = error ??
+                                new ParserError(
+                                    "Expected an identifier after 'as'",
+                                    moduleName.Span);
+
+                            break;
+                        }
+
+                        default: {
+
+                            break;
+                        }
+                    }
+                }
+
                 return (ns, err);
             }
             else {
