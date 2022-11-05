@@ -35,6 +35,9 @@ public static partial class ErrorFunctions {
 
             case ParserError pe: 
                 return pe.Span;
+
+            case ParserErrorWithHint peh:
+                return peh.Span;
            
             case TypeCheckError te:
                 return te.Span;
@@ -63,6 +66,29 @@ public partial class ParserError: Error {
         : base(ErrorType.Parser, content) {
 
         this.Span = span;
+    }
+}
+
+public partial class ParserErrorWithHint: Error {
+
+    public Span Span { get; init; }
+
+    public String HintString { get; init; }
+
+    public Span HintSpan { get; init; }
+
+    ///
+
+    public ParserErrorWithHint(
+        String content, 
+        Span span,
+        String hintString,
+        Span hintSpan)
+        : base(ErrorType.Parser, content) {
+
+        this.Span = span;
+        this.HintString = hintString;
+        this.HintSpan = hintSpan;
     }
 }
 

@@ -216,6 +216,15 @@ public static partial class Program {
                                     break;
                                 }
 
+                                case ParserErrorWithHint peh: {
+
+                                    DisplayError(compiler, peh.Content, peh.Span);
+
+                                    DisplayHint(compiler, peh.HintString, peh.HintSpan);
+
+                                    break;
+                                }
+
                                 case TypeCheckError te: {
 
                                     DisplayError(compiler, te.Content, te.Span);

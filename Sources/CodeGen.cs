@@ -272,6 +272,37 @@ public static partial class CodeGenFunctions {
             }
         }
 
+        foreach (var (_, enumId, _) in scope.Enums) {
+
+            var _enum = project.Enums[enumId];
+
+            if (_enum.DefinitionLinkage == DefinitionLinkage.External) {
+
+                continue;
+            }
+
+            if (_enum.GenericParameters.Any()) {
+
+                continue;
+            }
+
+            var _scope = project.Scopes[_enum.ScopeId];
+
+            foreach (var (_, funcId, _) in _scope.Funcs) {
+
+                var func = project.Functions[funcId];
+
+                if (func.Linkage != FunctionLinkage.ImplicitEnumConstructor) {
+
+                    var funcOutput = CodeGenFuncInNamespace(func, _enum.TypeId, project);
+
+                    output.Append(funcOutput);
+
+                    output.Append('\n');
+                }
+            }
+        }
+
         return output.ToString();
     }
 
@@ -640,6 +671,29 @@ public static partial class CodeGenFunctions {
         }
 
         output.Append(CodeGenEnumDebugDescriptionGetter(_enum));
+
+        var scope = project.Scopes[_enum.ScopeId];
+
+        foreach (var (_, funcId, _) in scope.Funcs) {
+
+            var func = project.Functions[funcId];
+
+            if (func.Linkage != FunctionLinkage.ImplicitEnumConstructor) {
+
+                output.Append(CodeGenIndent(INDENT_SIZE));
+
+                if (!_enum.GenericParameters.Any()) {
+
+                    output.Append(CodeGenFuncPredecl(func, project));
+                }
+                else {
+
+                    CodeGenFunc(func, project);
+                }
+
+                output.Append('\n');
+            }
+        }
 
         output.Append("};\n");
 
@@ -1233,6 +1287,30 @@ public static partial class CodeGenFunctions {
 
         output.Append(CodeGenEnumDebugDescriptionGetter(_enum));
 
+        var scope = project.Scopes[_enum.ScopeId];
+
+        foreach (var (_, funcId, _) in scope.Funcs) {
+
+            var func = project.Functions[funcId];
+
+            if (func.Linkage != FunctionLinkage.ImplicitEnumConstructor) {
+
+                output.Append(CodeGenIndent(INDENT_SIZE));
+
+                if (!_enum.GenericParameters.Any()) {
+
+                    output.Append(CodeGenFuncPredecl(func, project));
+                }
+                else {
+
+                    output.Append(CodeGenFunc(func, project));
+                }
+
+                output.Append('\n');
+            }
+        }
+
+
         output.Append("};\n");
 
         context.DeferredOutput.Append(
@@ -1353,26 +1431,26 @@ public static partial class CodeGenFunctions {
 
             output.Append($"[&]([[maybe_unused]] {name} const& that) {{\n");
         
-            output.Append($"builder.append(\"{_enum.Name}.{name}\");");
+            output.Append($"builder.append(\"{_enum.Name}.{name}\");\n");
 
             switch (variant) {
 
                 case CheckedStructLikeEnumVariant sv: {
 
-                    output.Append("builder.append(\"(\");");
+                    output.Append("builder.append(\"(\");\n");
 
                     for (var j = 0; j < sv.Decls.Count; j++) {
 
                         var field = sv.Decls[j];
 
-                        output.Append($"builder.append(\"{field.Name}: \");");
+                        output.Append($"builder.append(\"{field.Name}: \");\n");
 
                         if (field.TypeId == Compiler.StringTypeId) {
                             
                             output.Append("builder.append(\"\\\"\");");
                         }
 
-                        output.Append($"builder.appendff(\"{{}}\", that.{field.Name});");
+                        output.Append($"builder.appendff(\"{{}}\", that.{field.Name});\n");
 
                         if (field.TypeId == Compiler.StringTypeId) {
 
@@ -1385,28 +1463,28 @@ public static partial class CodeGenFunctions {
                         }
                     }
 
-                    output.Append("builder.append(\")\");");
+                    output.Append("builder.append(\")\");\n");
 
                     break;
                 }
 
                 case CheckedTypedEnumVariant tv: {
 
-                    output.Append("builder.append(\"(\");");
+                    output.Append("builder.append(\"(\");\n");
 
                     if (tv.TypeId == Compiler.StringTypeId) {
 
-                        output.Append("builder.append(\"\\\"\");");
+                        output.Append("builder.append(\"\\\"\");\n");
                     }
 
-                    output.Append("builder.appendff(\"{}\", that.value);");
+                    output.Append("builder.appendff(\"{}\", that.value);\n");
 
                     if (tv.TypeId == Compiler.StringTypeId) {
 
-                        output.Append("builder.append(\"\\\"\");");
+                        output.Append("builder.append(\"\\\"\");\n");
                     }
 
-                    output.Append("builder.append(\")\");");
+                    output.Append("builder.append(\")\");\n");
 
                     break;
                 }
@@ -2938,7 +3016,8 @@ public static partial class CodeGenFunctions {
 
         var output = new StringBuilder();
 
-        var needsDeref = _enum.DefinitionType == DefinitionType.Class;
+        var needsDeref = _enum.DefinitionType == DefinitionType.Class
+            || (expr is CheckedVarExpression _v && _v.Variable.Name == "this");
 
         switch (_enum.UnderlyingTypeId) {
 

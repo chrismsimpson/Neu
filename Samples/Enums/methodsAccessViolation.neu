@@ -1,0 +1,12 @@
+enum Foo {
+    bar
+
+    private func test(this) {
+
+    }
+}
+
+func main() {
+    let x = Foo.bar()
+    x.test() // Should not compile, access voilation.
+}

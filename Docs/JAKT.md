@@ -39,6 +39,8 @@
 
 28/05/22: f824115ca5d5491f8de1a45ca9db1e6929195340 delete example
 
+29/05/22: b1288a372aa3375e4d34a8b41dca6b5f450e9b2f implement enum methods
+
 
 launch.json:
 ```

@@ -1,0 +1,31 @@
+enum Foo {
+
+    id(Int32)
+    name(String)
+
+    private func nameImpl(this) throws -> String? {
+
+        when this {
+            name(n) => {
+                return n
+            }
+            id(i) => {
+                return format("anon:{}", i)
+            }
+        }
+
+        return none
+    }
+
+    func baz(this) throws {
+        return this.nameImpl()
+    }
+}
+
+func main() {
+
+    var foo = Foo.id(1)
+    var bar = Foo.name("Test")
+
+    printLine("Foo's name is {} and bar's name is {}!", foo.baz(), bar.baz())
+}

@@ -620,6 +620,8 @@ public partial class ParsedEnum {
 
     public ParsedType UnderlyingType { get; set; }
 
+    public List<ParsedFunction> Methods { get; init; }
+
     ///
 
     public ParsedEnum(
@@ -629,7 +631,8 @@ public partial class ParsedEnum {
         Span span,
         bool isRecursive,
         DefinitionLinkage definitionLinkage,
-        ParsedType underlyingType) {
+        ParsedType underlyingType,
+        List<ParsedFunction> methods) {
 
         this.Name = name;
         this.GenericParameters = genericParameters;
@@ -638,6 +641,7 @@ public partial class ParsedEnum {
         this.IsRecursive = isRecursive;
         this.DefinitionLinkage = definitionLinkage;
         this.UnderlyingType = underlyingType;
+        this.Methods = methods;
     }
 }
 
@@ -3239,7 +3243,8 @@ public static partial class ParserFunctions {
                 end: tokens[index].Span.End),
             isRecursive,
             definitionLinkage,
-            underlyingType: new ParsedEmptyType());
+            underlyingType: new ParsedEmptyType(),
+            methods: new List<ParsedFunction>());
 
         index += 1;
 
@@ -3324,11 +3329,24 @@ public static partial class ParserFunctions {
 
             SkipNewLines(tokens, ref index);
 
+            Visibility? lastVisiblityModifier = null;
+
+            Span? lastVisiblityModifierSpan = null;
+
             var cont = true;
 
             while (cont 
                 && index < tokens.Count 
                 && !(tokens[index] is RCurlyToken)) {
+
+                SkipNewLines(tokens, ref index);
+
+                if (tokens[index] is EolToken || tokens[index] is CommaToken) {
+
+                    index += 1;
+
+                    continue;
+                }
 
                 Trace($"parse_enum_variant({tokens[index]})");
 
@@ -3340,7 +3358,7 @@ public static partial class ParserFunctions {
 
                     error = error ?? 
                         new ParserError(
-                            "expected variant name",
+                            $"expected variant name or (public/private) 'function', not {variantName}",
                             tokens[index].Span);
 
                     cont = false;
@@ -3350,6 +3368,83 @@ public static partial class ParserFunctions {
 
                 var name = (variantName as NameToken)?.Value 
                     ?? throw new Exception();
+
+                switch (name) {
+
+                    case "func": {
+
+                        // Lets parse a method
+
+                        var funcLinkage = definitionLinkage switch {
+
+                            DefinitionLinkage.Internal => FunctionLinkage.Internal,
+                            DefinitionLinkage.External => FunctionLinkage.External,
+                            _ => throw new Exception()
+                        };
+
+                        var visibility = lastVisiblityModifier ?? new PublicVisibility();
+
+                        lastVisiblityModifier = null;
+
+                        var (func, err) = ParseFunction(tokens, ref index, funcLinkage, visibility);
+
+                        error = error ?? err;
+
+                        if (definitionLinkage == DefinitionLinkage.External) {
+
+                            func.MustInstantiate = true;
+                        }
+
+                        _enum.Methods.Add(func);
+
+                        SkipNewLines(tokens, ref index);
+
+                        continue;
+                    }
+
+                    case "public": {
+
+                        lastVisiblityModifier = new PublicVisibility();
+
+                        lastVisiblityModifierSpan = tokens[index].Span;
+
+                        index += 1;
+
+                        continue;
+                    }
+
+                    case "private": {
+
+                        lastVisiblityModifier = new PrivateVisibility();
+
+                        lastVisiblityModifierSpan = tokens[index].Span;
+
+                        index += 1;
+
+                        continue;
+                    }
+
+                    case var _ when lastVisiblityModifier is not null: {
+
+                        error = error ??
+                            new ParserErrorWithHint(
+                                "Only enum methods may have visibility modifiers",
+                                tokens[index].Span,
+                                "Remove this visibility modifier",
+                                lastVisiblityModifierSpan ?? throw new Exception());
+
+                        // We came, we saw, we errored, now continue checking everything else as if nothing had happened.
+
+                        lastVisiblityModifier = null;
+
+                        break;
+                    }
+
+                    default: {
+
+                        break;
+                    }
+                }
 
                 index += 1;
 
