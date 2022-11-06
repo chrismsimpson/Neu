@@ -1,0 +1,6 @@
+func marked() throws {
+}
+
+func unmarked() {
+    marked()
+}

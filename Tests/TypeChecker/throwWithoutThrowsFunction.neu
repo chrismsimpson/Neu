@@ -1,0 +1,4 @@
+func unmarked() {
+
+    throw Error.fromError(0)
+}
