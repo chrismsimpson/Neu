@@ -55,7 +55,7 @@ extern struct Dictionary<K, V> {
     func clear(var this)
     func size(this) -> UInt
     func capacity(this) -> UInt
-    func keys(this) -> [K]
+    func keys(this) throws -> [K]
     func hash(this) -> UInt32
     func Dictionary<A, B>() -> [A: B]
     func iterator(this) -> DictionaryIterator<K, V>
