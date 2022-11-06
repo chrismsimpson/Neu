@@ -1653,18 +1653,23 @@ public partial class CheckedBlock {
 
     public List<CheckedStatement> Stmts { get; init; }
 
+    public Int32 ScopeId { get; init; }
+
     public bool DefinitelyReturns { get; set; }
 
     ///
 
-    public CheckedBlock() 
-        : this(new List<CheckedStatement>(), false) { }
+    public CheckedBlock(
+        Int32 scopeId) 
+        : this(new List<CheckedStatement>(), scopeId, false) { }
 
     public CheckedBlock(
         List<CheckedStatement> stmts,
-        bool definitelyReturns) { 
+        Int32 scopeId,
+        bool definitelyReturns) {
 
         this.Stmts = stmts;
+        this.ScopeId = scopeId;
         this.DefinitelyReturns = definitelyReturns;
     }
 }
@@ -4239,6 +4244,8 @@ public static partial class TypeCheckerFunctions {
 
             var methodScopeId = project.CreateScope(enumScopeId, func.Throws);
 
+            var blockScopeId = project.CreateScope(methodScopeId, func.Throws);
+
             var isGeneric = _enum.GenericParameters.Any() || func.GenericParameters.Any();
 
             var checkedFunction = new CheckedFunction(
@@ -4249,7 +4256,7 @@ public static partial class TypeCheckerFunctions {
                 parameters: new List<CheckedParameter>(),
                 genericParameters: new List<FunctionGenericParameter>(),
                 funcScopeId: methodScopeId,
-                block: new CheckedBlock(),
+                block: new CheckedBlock(blockScopeId),
                 func: func,
                 linkage: func.Linkage,
                 isInstantiated: !isGeneric);
@@ -4502,6 +4509,8 @@ public static partial class TypeCheckerFunctions {
 
                             var funcScopeId = project.CreateScope(parentScopeId, _enum.IsRecursive);
 
+                            var blockScopeId = project.CreateScope(funcScopeId, _enum.IsRecursive);
+
                             var checkedConstructor = new CheckedFunction(
                                 name: u.Name,
                                 // Enum variant constructors are always visible.
@@ -4514,7 +4523,7 @@ public static partial class TypeCheckerFunctions {
                                     .Select(x => new InferenceGuideFunctionGenericParameter(project.FindTypeInScope(enumScopeId, x.Item1)!.Value) as FunctionGenericParameter)
                                     .ToList(),
                                 funcScopeId,
-                                block: new CheckedBlock(),
+                                block: new CheckedBlock(blockScopeId),
                                 func: null,
                                 linkage: FunctionLinkage.ImplicitEnumConstructor,
                                 isInstantiated: true); 
@@ -4664,6 +4673,8 @@ public static partial class TypeCheckerFunctions {
 
                             var funcScopeId = project.CreateScope(parentScopeId, _enum.IsRecursive);
 
+                            var blockScopeId = project.CreateScope(funcScopeId, _enum.IsRecursive);
+
                             var checkedConstructor = new CheckedFunction(
                                 name: s.Name,
                                 visibility: new PublicVisibility(),
@@ -4676,7 +4687,7 @@ public static partial class TypeCheckerFunctions {
                                         new InferenceGuideFunctionGenericParameter(project.FindTypeInScope(enumScopeId, x.Item1)!.Value) as FunctionGenericParameter)
                                     .ToList(),
                                 funcScopeId: funcScopeId,
-                                block: new CheckedBlock(),
+                                block: new CheckedBlock(blockScopeId),
                                 func: null,
                                 linkage: FunctionLinkage.ImplicitEnumConstructor,
                                 isInstantiated: true);
@@ -4745,6 +4756,8 @@ public static partial class TypeCheckerFunctions {
 
                             var funcScopeId = project.CreateScope(parentScopeId, _enum.IsRecursive);
 
+                            var blockScopeId = project.CreateScope(funcScopeId, _enum.IsRecursive);
+
                             var checkedConstructor = new CheckedFunction(
                                 name: t.Name,
                                 visibility: new PublicVisibility(),
@@ -4757,7 +4770,7 @@ public static partial class TypeCheckerFunctions {
                                     .Select(x => new InferenceGuideFunctionGenericParameter(project.FindTypeInScope(enumScopeId, x.Item1)!.Value) as FunctionGenericParameter)
                                     .ToList(),
                                 funcScopeId,
-                                block: new CheckedBlock(),
+                                block: new CheckedBlock(blockScopeId),
                                 func: null,
                                 linkage: FunctionLinkage.ImplicitEnumConstructor,
                                 isInstantiated: true);
@@ -4852,6 +4865,8 @@ public static partial class TypeCheckerFunctions {
 
             var methodScopeId = project.CreateScope(structScopeId, func.Throws);
 
+            var blockScopeId = project.CreateScope(methodScopeId, func.Throws);
+
             var isGeneric = 
                 structure.GenericParameters.Any()
                 || func.GenericParameters.Any();
@@ -4864,7 +4879,7 @@ public static partial class TypeCheckerFunctions {
                 parameters: new List<CheckedParameter>(),
                 genericParameters: new List<FunctionGenericParameter>(),
                 funcScopeId: methodScopeId,
-                block: new CheckedBlock(),
+                block: new CheckedBlock(blockScopeId),
                 func: func,
                 linkage: func.Linkage,
                 isInstantiated: !isGeneric || isExtern);
@@ -5131,7 +5146,11 @@ public static partial class TypeCheckerFunctions {
                             definitionSpan: field.Span)));
             }
 
-            var funcScopeId = project.CreateScope(parentScopeId, structure.DefinitionType == DefinitionType.Class);
+            var constructorCanThrow = structure.DefinitionType == DefinitionType.Class;
+
+            var funcScopeId = project.CreateScope(parentScopeId, constructorCanThrow);
+
+            var blockScopeId = project.CreateScope(funcScopeId, constructorCanThrow);
 
             var checkedConstructor = new CheckedFunction(
                 name: structure.Name,
@@ -5142,7 +5161,7 @@ public static partial class TypeCheckerFunctions {
                 parameters: constructorParams,
                 genericParameters: new List<FunctionGenericParameter>(),
                 funcScopeId,
-                block: new CheckedBlock(),
+                block: new CheckedBlock(blockScopeId),
                 func: null,
                 linkage: FunctionLinkage.ImplicitConstructor,
                 isInstantiated: true);
@@ -5192,6 +5211,8 @@ public static partial class TypeCheckerFunctions {
 
         var funcScopeId = project.CreateScope(parentScopeId, func.Throws);
 
+        var blockScopeId = project.CreateScope(funcScopeId, func.Throws);
+
         bool isGeneric;
 
         if (thisArgTypeId is Int32 someType) {
@@ -5218,7 +5239,7 @@ public static partial class TypeCheckerFunctions {
             parameters: new List<CheckedParameter>(),
             genericParameters: new List<FunctionGenericParameter>(),
             funcScopeId,
-            block: new CheckedBlock(),
+            block: new CheckedBlock(blockScopeId),
             func: func,
             linkage: func.Linkage,
             isInstantiated: !isGeneric);
@@ -5766,11 +5787,11 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        var checkedBlock = new CheckedBlock();
-
         var parentThrows = project.Scopes[parentScopeId].Throws;
 
         var blockScopeId = project.CreateScope(parentScopeId, parentThrows);
+
+        var checkedBlock = new CheckedBlock(blockScopeId);
 
         foreach (var stmt in block.Statements) {
 
