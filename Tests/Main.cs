@@ -44,7 +44,7 @@ public static partial class Program {
                     
                     // We have an output to compare to, let's do it.
 
-                    var compiler = new Compiler();
+                    var compiler = new Compiler(new List<String>());
 
                     var cppStringOrError = compiler.ConvertToCPP(sample);
 

@@ -36,9 +36,10 @@ public partial class Compiler {
 
     ///
 
-    public Compiler() {
+    public Compiler(
+        List<String> includePaths) {
 
-        this.IncludePaths = new List<String>();
+        this.IncludePaths = includePaths;
 
         this.RawFiles = new List<(String, byte[])>();
     }

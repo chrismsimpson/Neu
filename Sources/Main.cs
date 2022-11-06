@@ -3,14 +3,15 @@ namespace Neu;
 
 public static partial class ArgumentFunctions {
 
-    public static String? GetBinDirectory(
-        this String[] args) {
+    public static String? ValueFromKeys(
+        this String[] args,
+        params String[] keys) {
 
         for (var i = 0; i < args.Length; i++) {
 
             var arg = args[i];
 
-            if (arg == "-o" || arg == "--binary-dir"
+            if (keys.Contains(arg)
                 && (i + 1) < args.Length) {
 
                 return args[i + 1];
@@ -20,87 +21,49 @@ public static partial class ArgumentFunctions {
         return null;
     }
 
-    public static String? GetRuntimeDirectory(
-        this String[] args) {
+    public static bool ContainsAny(
+        this String[] args,
+        params String[] keys) {
 
         for (var i = 0; i < args.Length; i++) {
 
             var arg = args[i];
 
-            if (arg == "-R" || arg == "--runtime-path"
-                && (i + 1) < args.Length) {
-
-                return args[i + 1];
-            }
-        }
-
-        return null;
-    }
-
-    public static String? GetCPPCompilerPath(
-        this String[] args) {
-
-        for (var i = 0; i < args.Length; i++) {
-
-            var arg = args[i];
-
-            if (arg == "-C" || arg == "--cxx-compiler-path"
-                && (i + 1) < args.Length) {
-
-                return args[i + 1];
-            }
-        }
-
-        return null;
-    }
-
-    public static String? GetClangFormatPath(
-        this String[] args) {
-
-        for (var i = 0; i < args.Length; i++) {
-
-            var arg = args[i];
-
-            if (arg == "-F" || arg == "--clang-format-path"
-                && (i + 1) < args.Length) {
-
-                return args[i + 1];
-            }
-        }
-
-        return null;
-    }
-
-    public static bool PrettifyCPPSource(
-        this String[] args) {
-
-        for (var i = 0; i < args.Length; i++) {
-
-            var arg = args[i];
-
-            if (arg == "-p" || arg == "--prettify-cpp-source") {
+            if (keys.Contains(arg)) {
 
                 return true;
             }
         }
 
-        return false;;
+        return false;
     }
 
-    public static bool EmitCPPSourceOnly(
-        this String[] args) {
+    public static List<String> ValuesFromKeys(
+        this String[] args,
+        params String[] keys) {
+
+        var values = new List<String>();
 
         for (var i = 0; i < args.Length; i++) {
 
             var arg = args[i];
 
-            if (arg == "-S" || arg == "--emit-cpp-source-only") {
+            if (keys.Contains(arg)) {
+            
+                if ((i + 1) < args.Length) {
 
-                return true;
+                    i++;
+
+                    values.Add(args[i]);
+                }
+                else {
+
+                    throw new Exception();
+                }
             }
         }
 
-        return false;;
+        return values;
     }
 }
 
@@ -108,13 +71,30 @@ public static partial class Program {
 
     public static int Main(String[] args) {
 
-        var binDirectory = args.GetBinDirectory() ?? "./Build";
+        var arguments = args.ParseArguments();
 
-        var cppCompilerPath = args.GetCPPCompilerPath() ?? "clang++";
+        String binDirectory;
 
-        var runtimePath = args.GetRuntimeDirectory() ?? "./Runtime";
+        switch (arguments.BinaryDirectory) {
 
-        var clangFormatPath = args.GetClangFormatPath() ?? "clang-format";
+            case String dir: {
+
+                binDirectory = dir;
+
+                break;
+            }
+
+            default: {
+
+                var dir = Directory.GetCurrentDirectory();
+
+                binDirectory = Path.Combine(dir, "Build");
+
+                break;
+            }
+        }
+
+        Directory.CreateDirectory(binDirectory);
 
         switch (true) {
 
@@ -133,7 +113,7 @@ public static partial class Program {
                 args.Length > 0
                 && args[0] == "dummy": {
 
-                var compiler = new Compiler();
+                var compiler = new Compiler(arguments.IncludePaths);
 
                 var filename = "./Build/foo.cpp";
 
@@ -141,8 +121,14 @@ public static partial class Program {
 
                 File.WriteAllBytes(filename, contents);
 
+                var runtimePath = arguments.RuntimePath ?? "Runtime";
+
+                var defaultCxxCompilerPath = "clang++";
+
+                var cxxCompilerPath = arguments.CXXCompilerPath ?? defaultCxxCompilerPath;
+
                 var (stdOut, stdErr, success) = Compiler.Build(
-                    cppCompilerPath,
+                    cxxCompilerPath,
                     runtimePath,
                     filename,
                     verbose: !args.Contains("--silent"));
@@ -151,9 +137,9 @@ public static partial class Program {
             }
 
             case var _ when
-                args.Where(x => File.Exists(x)).Any(): {
+                arguments.InputFiles.Any(): {
 
-                var compiler = new Compiler();
+                var compiler = new Compiler(arguments.IncludePaths);
 
                 Error? firstError = null;
 
@@ -168,7 +154,7 @@ public static partial class Program {
                             && !IsNullOrWhiteSpace(cppOrErr.Value): {
 
                             var outFilePath = Path.Combine(
-                                binDirectory, 
+                                binDirectory,
                                 filename.StartsWith("./")
                                     ? filename.Substring(2, filename.Length - 2)
                                     : filename)
@@ -181,7 +167,11 @@ public static partial class Program {
 
                             File.WriteAllText(outFilePath, cppOrErr.Value);
 
-                            if (args.PrettifyCPPSource()) {
+                            if (arguments.PrettifyCppSource) {
+
+                                var defaultClangFormatPath = "clang-format";
+
+                                var clangFormatPath = arguments.ClangFormatPath ?? defaultClangFormatPath;
 
                                 _ = Process.Run(
                                     clangFormatPath,
@@ -192,10 +182,16 @@ public static partial class Program {
                                     });
                             }
 
-                            if (!args.EmitCPPSourceOnly()) {
+                            if (!arguments.EmitSourceOnly) {
+
+                                var runtimePath = arguments.RuntimePath ?? "Runtime";
+
+                                var defaultCxxCompilerPath = "clang++";
+
+                                var cxxCompilerPath = arguments.CXXCompilerPath ?? defaultCxxCompilerPath;
 
                                 Compiler.Build(
-                                    cppCompilerPath,
+                                    cxxCompilerPath,
                                     runtimePath,
                                     outFilePath,
                                     verbose: !args.Contains("--silent"));
@@ -291,17 +287,148 @@ public static partial class Program {
 @"usage: neu [subtask] [-h]
 
 Subtasks:
-  build (default)           Transpile then build specified file
-  clean                     Clean build directory
+  build (default)               Transpile then build specified file
+  clean                         Clean build directory
+
+Flags:
+  -h,--help                     Print this help and exit.
+  -p,--prettify-cpp-source      Run emitted C++ source through clang-format.
+  -S,--emit-cpp-source-only     Only emit the generated C++ source, do not compile.
 
 Options:
-  -h                        Subtask specific help
+  -o,--binary-dir PATH          Output directory for compiled files.
+                                Defaults to $PWD/build.
+  -C,--cxx-compiler-path PATH   Path of the C++ compiler to use when compiling the generated sources.
+                                Defaults to clang++.
+  -F,--clang-format-path PATH   Path to clang-format executable.
+                                Defaults to clang-format.
+  -R,--runtime-path PATH        Path of the Neu runtime headers.
+                                Defaults to $PWD/runtime.
+  -I,--include-path PATH        Add an include path for imported Neu files.
+                                Can be specified multiple times.
+
+Arguments:
+  FILES...                      List of files to compile. The outputs are
+                                `<input-filename>.cpp` in the binary directory.
 ";
 
     public static readonly String CLEAN_MESSAGE = 
 @"
 Clean successful
 ";
+}
+
+public partial class NeuArguments {
+
+    public String? BinaryDirectory { get; set; }
+
+    public List<String> InputFiles { get; init; }
+
+    public List<String> IncludePaths { get; init; }
+
+    public bool EmitSourceOnly { get; init; }
+
+    public String? CXXCompilerPath { get; set; }
+
+    public bool PrettifyCppSource { get; init; }
+
+    public String? ClangFormatPath { get; set; }
+
+    public String? RuntimePath { get; set; }
+
+    ///
+
+    public NeuArguments(       
+        String? binaryDirectory,
+        List<String> inputFiles,
+        List<String> includePaths,
+        bool emitSourceOnly,
+        String? cxxCompilerPath,
+        bool prettifyCppSource,
+        String? clangFormatPath,
+        String? runtimePath) {
+
+        this.BinaryDirectory = binaryDirectory;
+        this.InputFiles = inputFiles;
+        this.IncludePaths = includePaths;
+        this.EmitSourceOnly = emitSourceOnly;
+        this.CXXCompilerPath = cxxCompilerPath;
+        this.PrettifyCppSource = prettifyCppSource;
+        this.ClangFormatPath = clangFormatPath;
+        this.RuntimePath = runtimePath;
+    }
+}
+
+public static partial class Program {
+
+    public static NeuArguments ParseArguments(
+        this String[] args) {
+
+        var emitSourceOnly = args.ContainsAny("-S", "--emit-cpp-source-only");
+
+        var prettifyCppSource = args.ContainsAny("-p", "--prettify-cpp-source");
+
+        var includePaths = args.ValuesFromKeys("-I", "--include-path");
+
+        var arguments = new NeuArguments(
+            binaryDirectory: null,
+            inputFiles: new List<string>(),
+            includePaths,
+            emitSourceOnly,
+            cxxCompilerPath: null,
+            prettifyCppSource,
+            clangFormatPath: null,
+            runtimePath: null);
+
+        if (args.ValueFromKeys("-o", "--binary-dir") is String binDirectory) {
+
+            arguments.BinaryDirectory = binDirectory;
+        }
+       
+        if (args.ValueFromKeys("-C", "--cxx-compiler-path") is String cxxCompilerPath) {
+        
+            arguments.CXXCompilerPath = cxxCompilerPath;
+        }
+
+        if (args.ValueFromKeys("-F", "--clang-format-path") is String clangFormatPath) {
+        
+            arguments.ClangFormatPath = clangFormatPath;
+        }
+
+        if (args.ValueFromKeys("-R", "--runtime-path") is String runtimePath) {
+        
+            arguments.RuntimePath = runtimePath;
+        }
+
+        for (var i = 0; i < args.Length; i++) {
+
+            var arg = args[i];
+
+            if (arg.StartsWith('-')) {
+
+                // if a flag
+
+                continue;
+            }
+
+            if (!arg.EndsWith(".neu")) {
+
+                // if not a neu file (i.e. a path or bin)
+
+                continue;
+            }
+
+            if (!File.Exists(arg)) {
+
+                throw new Exception($"neu: error: file '{arg}' not found or inaccessible");
+            }
+
+            arguments.InputFiles.Add(arg);
+        }
+
+        return arguments;
+    }
+
 }
 
 public enum MessageSeverity {
@@ -375,8 +502,6 @@ public static partial class Program {
         var largestLineNumber = lineSpans.Count;
 
         var width = $"{largestLineNumber}".Length;
-
-        // WriteLine($"{new String('-', width + 3)}");
 
         while (lineIndex < lineSpans.Count) {
 
