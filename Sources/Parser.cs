@@ -2468,100 +2468,68 @@ public static partial class ParsedExpressionFunctions {
 
         switch (expr) {
 
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.Multiply 
-                || opExpr.Operator == BinaryOperator.Modulo
-                || opExpr.Operator == BinaryOperator.Divide:
+            case ParsedOperatorExpression opExpr: {
 
-                return 100;
+                switch (opExpr.Operator) {
 
-            ///
+                    case BinaryOperator.Multiply:
+                    case BinaryOperator.Modulo:
+                    case BinaryOperator.Divide:
+                        return 100;
 
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.Add 
-                || opExpr.Operator == BinaryOperator.Subtract:
+                    case BinaryOperator.Add:
+                    case BinaryOperator.Subtract:
+                        return 90;
 
-                return 90;
+                    case BinaryOperator.BitwiseLeftShift:
+                    case BinaryOperator.BitwiseRightShift:
+                    case BinaryOperator.ArithmeticLeftShift:
+                    case BinaryOperator.ArithmeticRightShift: 
+                        return 85;
 
-            ///
+                    case BinaryOperator.LessThan:
+                    case BinaryOperator.LessThanOrEqual:
+                    case BinaryOperator.GreaterThan:
+                    case BinaryOperator.GreaterThanOrEqual:
+                    case BinaryOperator.Equal:
+                    case BinaryOperator.NotEqual:
+                        return 80;
 
-            case ParsedOperatorExpression opExpr when
-                opExpr.Operator == BinaryOperator.BitwiseLeftShift
-                || opExpr.Operator == BinaryOperator.BitwiseRightShift
-                || opExpr.Operator == BinaryOperator.ArithmeticLeftShift
-                || opExpr.Operator == BinaryOperator.ArithmeticRightShift: 
-                
-                return 85;
+                    case BinaryOperator.BitwiseAnd:
+                        return 73;
 
-            ///
+                    case BinaryOperator.BitwiseXor:
+                        return 72;
 
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.LessThan
-                || opExpr.Operator == BinaryOperator.LessThanOrEqual
-                || opExpr.Operator == BinaryOperator.GreaterThan
-                || opExpr.Operator == BinaryOperator.GreaterThanOrEqual
-                || opExpr.Operator == BinaryOperator.Equal
-                || opExpr.Operator == BinaryOperator.NotEqual:
-                
-                return 80;
+                    case BinaryOperator.BitwiseOr:
+                        return 72;
 
-            ///
+                    case BinaryOperator.LogicalAnd:
+                        return 70;
 
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.BitwiseAnd:
+                    case BinaryOperator.LogicalOr:
+                    case BinaryOperator.NoneCoalescing:
+                        return 69;
 
-                return 73;
+                    case BinaryOperator.Assign:
+                    case BinaryOperator.BitwiseAndAssign:
+                    case BinaryOperator.BitwiseOrAssign:
+                    case BinaryOperator.BitwiseXorAssign:
+                    case BinaryOperator.BitwiseLeftShiftAssign:
+                    case BinaryOperator.BitwiseRightShiftAssign:
+                    case BinaryOperator.AddAssign:
+                    case BinaryOperator.SubtractAssign:
+                    case BinaryOperator.MultiplyAssign:
+                    case BinaryOperator.ModuloAssign:
+                    case BinaryOperator.DivideAssign:
+                        return 50;
 
-            ///
-
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.BitwiseXor:
-
-                return 72;
-
-            ///
-
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.BitwiseOr:
-
-                return 72;
-
-            ///
-
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.LogicalAnd:
-
-                return 70;
-
-            ///
-
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.LogicalOr
-                || opExpr.Operator == BinaryOperator.NoneCoalescing:
-
-                return 69;
-
-            ///
-
-            case ParsedOperatorExpression opExpr when 
-                opExpr.Operator == BinaryOperator.Assign
-                || opExpr.Operator == BinaryOperator.BitwiseAndAssign
-                || opExpr.Operator == BinaryOperator.BitwiseOrAssign
-                || opExpr.Operator == BinaryOperator.BitwiseXorAssign
-                || opExpr.Operator == BinaryOperator.BitwiseLeftShiftAssign
-                || opExpr.Operator == BinaryOperator.BitwiseRightShiftAssign
-                || opExpr.Operator == BinaryOperator.AddAssign
-                || opExpr.Operator == BinaryOperator.SubtractAssign
-                || opExpr.Operator == BinaryOperator.MultiplyAssign
-                || opExpr.Operator == BinaryOperator.ModuloAssign
-                || opExpr.Operator == BinaryOperator.DivideAssign:
-
-                return 50;
-
-            ///
+                    default:
+                        return 0;
+                }
+            }
 
             default:
-
                 return 0;
         }
     }
