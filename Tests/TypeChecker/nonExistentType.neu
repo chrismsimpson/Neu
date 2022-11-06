@@ -1,0 +1,4 @@
+func main() {
+    let foo: ThisTypeDoesNotExist = 42
+    printLine("{}", foo)
+}

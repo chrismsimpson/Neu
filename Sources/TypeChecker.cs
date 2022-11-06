@@ -4068,9 +4068,9 @@ public static partial class TypeCheckerFunctions {
                                         mutable: false,
                                         visibility: new PublicVisibility(),
                                         u.Span),
-                                    u.Span);
+                                    u.Span).Error;
 
-                                error = error ?? varErr.Error;
+                                error = error ?? varErr;
                             }
                         }
                         else {
@@ -4168,9 +4168,9 @@ public static partial class TypeCheckerFunctions {
                                 mutable: false,
                                 visibility: new PublicVisibility(),
                                 w.Span),
-                            w.Span);
+                            w.Span).Error;
                         
-                        error = error ?? varErr.Error;
+                        error = error ?? varErr;
                     }
 
                     break;
@@ -5023,10 +5023,11 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var var in paramVars) {
 
-            if (project.AddVarToScope(functionScopeId, var, func.NameSpan).Error is Error e1) {
+            var err = project
+                .AddVarToScope(functionScopeId, var, func.NameSpan)
+                .Error;
 
-                error = error ?? e1;
-            }
+            error = error ?? err;
         }
 
         // Do this once to resolve concrete types (if any)
@@ -5245,10 +5246,11 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var variable in paramVars) {
 
-            if (project.AddVarToScope(funcScopeId, variable, func.NameSpan).Error is Error e1) {
+            var err = project
+                .AddVarToScope(funcScopeId, variable, func.NameSpan)
+                .Error;
 
-                error = error ?? e1;
-            }
+            error = error ?? err;
         }
     
         // Set current function index before a block type check so that
@@ -5392,11 +5394,12 @@ public static partial class TypeCheckerFunctions {
 
                 var catchScopeId = project.CreateScope(scopeId);
 
-                if (project.AddVarToScope(catchScopeId, errorDecl, tryStmt.Span).Error is Error e) {
+                var err2 = project
+                    .AddVarToScope(catchScopeId, errorDecl, tryStmt.Span)
+                    .Error;
 
-                    error = error ?? e;
-                }
-
+                error = error ?? err2;
+                
                 var (checkedCatchBlock, catchBlockErr) = TypeCheckBlock(tryStmt.Block, catchScopeId, project, safetyMode);
 
                 error = error ?? catchBlockErr;
@@ -5726,18 +5729,19 @@ public static partial class TypeCheckerFunctions {
                     mutable: vds.Decl.Mutable,
                     visibility: vds.Decl.Visibility);
 
-                if (project.AddVarToScope(
-                    scopeId,
-                    new CheckedVariable(
-                        name: checkedVarDecl.Name, 
-                        typeId: checkedVarDecl.TypeId, 
-                        mutable: checkedVarDecl.Mutable,
-                        visibility: checkedVarDecl.Visibility,
-                        definitionSpan: checkedVarDecl.Span),
-                    checkedVarDecl.Span).Error is Error e) {
+                var e = project
+                    .AddVarToScope(
+                        scopeId,
+                        new CheckedVariable(
+                            name: checkedVarDecl.Name, 
+                            typeId: checkedVarDecl.TypeId, 
+                            mutable: checkedVarDecl.Mutable,
+                            visibility: checkedVarDecl.Visibility,
+                            definitionSpan: checkedVarDecl.Span),
+                        checkedVarDecl.Span)
+                    .Error;
 
-                    error = error ?? e;
-                }
+                error = error ?? e;
 
                 return (
                     new CheckedVarDeclStatement(checkedVarDecl, checkedExpr),
@@ -7505,10 +7509,11 @@ public static partial class TypeCheckerFunctions {
 
                                     foreach (var (v, span) in vars) {
 
-                                        if (project.AddVarToScope(newScopeId, v, span).Error is Error addVarErr) {
+                                        var addVarErr = project
+                                            .AddVarToScope(newScopeId, v, span)
+                                            .Error;
 
-                                            error = error ?? addVarErr;
-                                        }
+                                        error = error ?? addVarErr;
                                     }
 
                                     switch (evwc.Body) {
