@@ -171,13 +171,6 @@ public static partial class Program {
 
                     var exeName = $"{cppFilename.Substring(0, cppFilename.Length - ext.Length)}.out";
 
-                    // var (stdOut, stdErr, success) = 
-                    //     Compiler.Build(
-                    //         compilerPath: "clang++",
-                    //         runtimePath: "Runtime",
-                    //         inputCpp: cppFilename,
-                    //         verbose: false);
-
                     var (stdOut, stdErr, success) =
                         Neu.Process.Run(
                             "clang++", 
