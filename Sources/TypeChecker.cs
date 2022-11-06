@@ -5672,6 +5672,8 @@ public static partial class TypeCheckerFunctions {
 
                 var (checkedTypeId, typenameErr) = TypeCheckTypeName(vds.Decl.Type, scopeId, project);
 
+                error = error ?? typenameErr;
+
                 var (checkedExpr, exprErr) = TypeCheckExpression(vds.Expr, scopeId, project, safetyMode, checkedTypeId);
 
                 error = error ?? exprErr;
@@ -5680,10 +5682,6 @@ public static partial class TypeCheckerFunctions {
                     && checkedExpr.GetTypeId(scopeId, project) != Compiler.UnknownTypeId) {
 
                     checkedTypeId = checkedExpr.GetTypeId(scopeId, project);
-                }
-                else {
-
-                    error = error ?? typenameErr;
                 }
 
                 var (promotedExpr, tryPromoteErr) = TryPromoteConstantExprToType(
