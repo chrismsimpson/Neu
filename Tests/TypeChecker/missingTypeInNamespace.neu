@@ -1,0 +1,14 @@
+extern struct StringBuilder {
+    func append(var this, anon s: UInt8)
+    func toString(var this) throws -> String
+    func StringBuilder() -> StringBuilder
+}
+
+namespace lexer {
+    struct Lexer {
+    }
+}
+
+func main(args: [String]) {
+    var tokens: [Token] = []
+}
