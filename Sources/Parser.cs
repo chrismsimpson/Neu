@@ -6694,312 +6694,121 @@ public static partial class ParserFunctions {
 
         switch (tokens.ElementAt(index)) {
 
-            case QuestionQuestionToken _: {
+            case QuestionQuestionToken _:
+            case PlusToken _:
+            case MinusToken _:
+            case AsteriskToken _:
+            case ForwardSlashToken _:
+            case PercentToken _: {
+
+                var op = tokens[index] switch {
+                    QuestionQuestionToken _ => BinaryOperator.NoneCoalescing,
+                    PlusToken _ => BinaryOperator.Add,
+                    MinusToken _ => BinaryOperator.Subtract,
+                    AsteriskToken _ => BinaryOperator.Multiply,
+                    ForwardSlashToken _ => BinaryOperator.Divide,
+                    PercentToken _ => BinaryOperator.Modulo,
+                    _ => throw new Exception("Internal error: Couldn't match token contents"),
+                };
 
                 index += 1;
 
                 return (
-                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescing, span),
+                    new ParsedOperatorExpression(op, span),
                     null);
             }
 
-            case NameToken nt when nt.Value == "and": {
+            case NameToken nt when nt.Value == "and" || nt.Value == "or": {
 
-                index += 1;
+                var op = nt.Value switch {
 
-                return (new ParsedOperatorExpression(BinaryOperator.LogicalAnd, span), null);
-            }
-
-            case NameToken nt when nt.Value == "or": {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.LogicalOr, span), null);
-            }
-
-            case PlusToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Add, span), null);
-            }
-
-            case MinusToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Subtract, span), null);
-            }
-
-            case AsteriskToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Multiply, span), null);
-            }
-
-            case ForwardSlashToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Divide, span), null);
-            }
-
-            case PercentToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Modulo, span), null);
-            }
-
-            case EqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-                
-                index += 1;
-                
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.Assign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case LeftShiftEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
+                    "and" => BinaryOperator.LogicalAnd,
+                    "or" => BinaryOperator.LogicalOr,
+                    _ => throw new Exception("Internal error: Couldn't match token contents"),
+                };
 
                 index += 1;
 
                 return (
-                    new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
+                    new ParsedOperatorExpression(op, span),
+                    null);
             }
 
-            case RightShiftEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case AmpersandEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.BitwiseAndAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case PipeEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.BitwiseOrAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case CaretEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.BitwiseXorAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case PlusEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.AddAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-            
-            case MinusEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.SubtractAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case AsteriskEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.MultiplyAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case ForwardSlashEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.DivideAssign, span), 
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
-            case PercentEqualToken _: {
-
-                Trace("ERROR: assignment not allowed in this position");
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.ModuloAssign, span),
-                    new ValidationError(
-                        "assignment is not allowed in this position",
-                        span));
-            }
-
+            case EqualToken _:
+            case LeftShiftEqualToken _:
+            case RightShiftEqualToken _:
+            case AmpersandEqualToken _:
+            case PipeEqualToken _:
+            case CaretEqualToken _:
+            case PlusEqualToken _:
+            case MinusEqualToken _:
+            case AsteriskEqualToken _:
+            case ForwardSlashEqualToken _:
+            case PercentEqualToken _:
             case QuestionQuestionEqualToken _: {
 
                 Trace("ERROR: assignment not allowed in this position");
 
+                var op = tokens[index] switch {
+                    EqualToken _ => BinaryOperator.Assign,
+                    LeftShiftEqualToken _ => BinaryOperator.BitwiseLeftShiftAssign,
+                    RightShiftEqualToken _ => BinaryOperator.BitwiseRightShiftAssign,
+                    AmpersandEqualToken _ => BinaryOperator.BitwiseAndAssign,
+                    PipeEqualToken _ => BinaryOperator.BitwiseOrAssign,
+                    CaretEqualToken _ => BinaryOperator.BitwiseXorAssign,
+                    PlusEqualToken _ => BinaryOperator.AddAssign,
+                    MinusEqualToken _ => BinaryOperator.SubtractAssign,
+                    AsteriskEqualToken _ => BinaryOperator.MultiplyAssign,
+                    ForwardSlashEqualToken _ => BinaryOperator.DivideAssign,
+                    PercentEqualToken _ => BinaryOperator.ModuloAssign,
+                    QuestionQuestionEqualToken _ => BinaryOperator.NoneCoalescingAssign,
+                    _ => throw new Exception("Internal error: Couldn't match token contents"),
+                };
+
                 index += 1;
-                
+
                 return (
-                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescingAssign, span),
+                    new ParsedOperatorExpression(op, span),
                     new ValidationError(
                         "assignment is not allowed in this position",
                         span));
             }
-
-            case DoubleEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.Equal, span), null);
-            }
-            
-            case NotEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.NotEqual, span), null);
-            }
-            
-            case LessThanToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.LessThan, span), null);
-            }
-            
-            case LessThanOrEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
-            }
-            
-            case GreaterThanToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.GreaterThan, span), null);
-            }
-            
-            case GreaterThanOrEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
-            }
-
-            case AmpersandToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseAnd, span), null);
-            }
-
-            case PipeToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseOr, span), null);
-            }
-
-            case CaretToken _: {
-    
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseXor, span), null);
-            }
-
-            case LeftShiftToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
-            }
-
-            case RightShiftToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
-            }
-
-            case LeftArithmeticShiftToken _: {
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
-                    null);
-            }
-
+        
+            case DoubleEqualToken _:
+            case NotEqualToken _:
+            case LessThanToken _:
+            case LessThanOrEqualToken _:
+            case GreaterThanToken _:
+            case GreaterThanOrEqualToken _:
+            case AmpersandToken _:
+            case PipeToken _:
+            case CaretToken _:
+            case LeftShiftToken _:
+            case RightShiftToken _:
+            case LeftArithmeticShiftToken _:
             case RightArithmeticShiftToken _: {
 
+                var op = tokens[index] switch {
+                    DoubleEqualToken => BinaryOperator.Equal,
+                    NotEqualToken => BinaryOperator.NotEqual,
+                    LessThanToken => BinaryOperator.LessThan,
+                    LessThanOrEqualToken => BinaryOperator.LessThanOrEqual,
+                    GreaterThanToken => BinaryOperator.GreaterThan,
+                    GreaterThanOrEqualToken => BinaryOperator.GreaterThanOrEqual,
+                    AmpersandToken => BinaryOperator.BitwiseAnd,
+                    PipeToken => BinaryOperator.BitwiseOr,
+                    CaretToken => BinaryOperator.BitwiseXor,
+                    LeftShiftToken => BinaryOperator.BitwiseLeftShift,
+                    RightShiftToken => BinaryOperator.BitwiseRightShift,
+                    LeftArithmeticShiftToken => BinaryOperator.ArithmeticLeftShift,
+                    RightArithmeticShiftToken => BinaryOperator.ArithmeticRightShift,
+                    _ => throw new Exception("Internal error: Couldn't match token contents")
+                };
+
                 index += 1;
 
                 return (
-                    new ParsedOperatorExpression(BinaryOperator.ArithmeticRightShift, span),
+                    new ParsedOperatorExpression(op, span),
                     null);
             }
 
@@ -7026,245 +6835,93 @@ public static partial class ParserFunctions {
 
         switch (tokens.ElementAt(index)) {
 
-            case QuestionQuestionToken _: {
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescing, span),
-                    null);
-            }
-
-            case PlusToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Add, span), null);
-            }
-
-            case MinusToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Subtract, span), null);
-            }
-
-            case AsteriskToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Multiply, span), null);
-            }
-
-            case ForwardSlashToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Divide, span), null);
-            }
-
-            case PercentToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.Modulo, span), null);
-            }
-
-            case NameToken nt when nt.Value == "and": {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.LogicalAnd, span), null);
-            }
-
-            case NameToken nt when nt.Value == "or": {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.LogicalOr, span), null);
-            }
-
-            case AmpersandToken _: {
-
-                index += 1;
-            
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseAnd, span), null);
-            }
-
-            case PipeToken _: {
-
-                index += 1;
-            
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseOr, span), null);
-            }
-
-            case CaretToken _: {
-
-                index += 1;
-            
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseXor, span), null);
-            }
-
-            case LeftShiftToken _: {
-
-                index += 1;
-            
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShift, span), null);
-            }
-
-            case RightShiftToken _: {
-
-                index += 1;
-            
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseRightShift, span), null);
-            }
-
-            case LeftArithmeticShiftToken _: {
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.ArithmeticLeftShift, span),
-                    null);
-            }
-
-            case RightArithmeticShiftToken _: {
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.ArithmeticRightShift, span),
-                    null);
-            }
-
-            case EqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.Assign, span), null);
-            }
-
-            case LeftShiftEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseLeftShiftAssign, span), null);
-            }
-
-            case RightShiftEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseRightShiftAssign, span), null);
-            }
-
-            case AmpersandEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseAndAssign, span), null);
-            }
-
-            case PipeEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseOrAssign, span), null);
-            }
-
-            case CaretEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.BitwiseXorAssign, span), null);
-            }
-
-            case PlusEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.AddAssign, span), null);
-            }
-            
-            case MinusEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.SubtractAssign, span), null);
-            }
-
-            case AsteriskEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.MultiplyAssign, span), null);
-            }
-
-            case ForwardSlashEqualToken _: {
-
-                index += 1;
-
-                return (new ParsedOperatorExpression(BinaryOperator.DivideAssign, span), null);
-            }
-
-            case PercentEqualToken _: {
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.ModuloAssign, span),
-                    null);
-            }
-
-            case QuestionQuestionEqualToken _: {
-
-                index += 1;
-
-                return (
-                    new ParsedOperatorExpression(BinaryOperator.NoneCoalescingAssign, span),
-                    null);
-            }
-
-            case DoubleEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.Equal, span), null);
-            }
-            
-            case NotEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.NotEqual, span), null);
-            }
-            
-            case LessThanToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.LessThan, span), null);
-            }
-            
-            case LessThanOrEqualToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.LessThanOrEqual, span), null);
-            }
-            
-            case GreaterThanToken _: {
-                
-                index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.GreaterThan, span), null);
-            }
-            
+            case QuestionQuestionToken _:
+            case PlusToken _:
+            case MinusToken _:
+            case AsteriskToken _:
+            case ForwardSlashToken _:
+            case PercentToken _:
+            case AmpersandToken _:
+            case PipeToken _:
+            case CaretToken _:
+            case LeftShiftToken _:
+            case RightShiftToken _:
+            case LeftArithmeticShiftToken _:
+            case RightArithmeticShiftToken _:
+            case EqualToken _:
+            case LeftShiftEqualToken _:
+            case RightShiftEqualToken _: 
+            case AmpersandEqualToken _:
+            case PipeEqualToken _:
+            case CaretEqualToken _:
+            case PlusEqualToken _:
+            case MinusEqualToken _:
+            case AsteriskEqualToken _:
+            case ForwardSlashEqualToken _:
+            case PercentEqualToken _:
+            case QuestionQuestionEqualToken _:
+            case DoubleEqualToken _:
+            case NotEqualToken _:
+            case LessThanToken _:
+            case LessThanOrEqualToken _:
+            case GreaterThanToken _:
             case GreaterThanOrEqualToken _: {
-                
+
+                var op = tokens[index] switch {
+                    QuestionQuestionToken => BinaryOperator.NoneCoalescing,
+                    PlusToken => BinaryOperator.Add,
+                    MinusToken => BinaryOperator.Subtract,
+                    AsteriskToken => BinaryOperator.Multiply,
+                    ForwardSlashToken => BinaryOperator.Divide,
+                    PercentToken => BinaryOperator.Modulo,
+                    AmpersandToken => BinaryOperator.BitwiseAnd,
+                    PipeToken => BinaryOperator.BitwiseOr,
+                    CaretToken => BinaryOperator.BitwiseXor,
+                    LeftShiftToken => BinaryOperator.BitwiseLeftShift,
+                    RightShiftToken => BinaryOperator.BitwiseRightShift,
+                    LeftArithmeticShiftToken => BinaryOperator.ArithmeticLeftShift,
+                    RightArithmeticShiftToken => BinaryOperator.ArithmeticRightShift,
+                    EqualToken => BinaryOperator.Assign,
+                    LeftShiftEqualToken => BinaryOperator.BitwiseLeftShiftAssign,
+                    RightShiftEqualToken => BinaryOperator.BitwiseRightShiftAssign,
+                    AmpersandEqualToken => BinaryOperator.BitwiseAndAssign,
+                    PipeEqualToken => BinaryOperator.BitwiseOrAssign,
+                    CaretEqualToken => BinaryOperator.BitwiseXorAssign,
+                    PlusEqualToken => BinaryOperator.AddAssign,
+                    MinusEqualToken => BinaryOperator.SubtractAssign,
+                    AsteriskEqualToken => BinaryOperator.MultiplyAssign,
+                    ForwardSlashEqualToken => BinaryOperator.DivideAssign,
+                    PercentEqualToken => BinaryOperator.ModuloAssign,
+                    QuestionQuestionEqualToken => BinaryOperator.NoneCoalescingAssign,
+                    DoubleEqualToken => BinaryOperator.Equal,
+                    NotEqualToken => BinaryOperator.NotEqual,
+                    LessThanToken => BinaryOperator.LessThan,
+                    LessThanOrEqualToken => BinaryOperator.LessThanOrEqual,
+                    GreaterThanToken => BinaryOperator.GreaterThan,
+                    GreaterThanOrEqualToken => BinaryOperator.GreaterThanOrEqual,
+                    _ => throw new Exception("Internal error: Couldn't match token contents")
+                };
+
                 index += 1;
-                
-                return (new ParsedOperatorExpression(BinaryOperator.GreaterThanOrEqual, span), null);
+
+                return (
+                    new ParsedOperatorExpression(op, span), 
+                    null);
+            }
+
+            case NameToken nt when nt.Value == "and" || nt.Value == "or": {
+
+                var op = nt.Value switch {
+                    "and" => BinaryOperator.LogicalAnd,
+                    "or" => BinaryOperator.LogicalOr,
+                    _ => throw new Exception("Internal error: Couldn't match token contents") 
+                };
+
+                index += 1;
+
+                return (
+                    new ParsedOperatorExpression(op, span), 
+                    null);
             }
 
             default: {
