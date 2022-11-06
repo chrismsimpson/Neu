@@ -5632,6 +5632,16 @@ public static partial class TypeCheckerFunctions {
                             ts.Expr.GetSpan());
                 }
 
+                var scope = project.Scopes[scopeId];
+
+                if (!scope.Throws) {
+
+                    error = error ??
+                        new TypeCheckError(
+                            "Throw statement needs to be in a try statement or a function marked as throws",
+                            ts.Expr.GetSpan());
+                }
+
                 return (
                     new CheckedThrowStatement(checkedExpr),
                     error);
@@ -9268,6 +9278,16 @@ public static partial class TypeCheckerFunctions {
                     returnTypeId = callee.ReturnTypeId;
 
                     linkage = callee.Linkage;
+
+                    var callerScope = project.Scopes[callerScopeId];
+
+                    if (callee.Throws && !callerScope.Throws) {
+
+                        error = error ??
+                            new TypeCheckError(
+                                "Call to function that may throw needs to be in a try statement or a function marked as throws",
+                                span);
+                    }
 
                     var scopeContainingCallee = project
                         .Scopes[callee.FuncScopeId]
