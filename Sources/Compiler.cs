@@ -98,6 +98,8 @@ public partial class Compiler {
     public Error? IncludePrelude(
         Project project) {
 
+        Error? error = null;
+
         // First, let's make types for all the builtin types
         // This order *must* match the order of the constants the typechecker expects
 
@@ -124,7 +126,15 @@ public partial class Compiler {
 
         // Scope ID 0 is the global project-level scope that all files can see
 
-        return TypeCheckerFunctions.TypeCheckNamespace(file, 0, project);
+        var e1 = TypeCheckerFunctions.TypeCheckNamespacePredecl(file, 0, project);
+
+        error = error ?? e1;
+
+        var e2 = TypeCheckerFunctions.TypeCheckNamespaceDeclarations(file, 0, project);
+
+        error = error ?? e2;
+
+        return error;
     }
 
     public ErrorOr<String> ConvertToCPP(
@@ -165,11 +175,18 @@ public partial class Compiler {
 
         var fileScopeId = project.Scopes.Count - 1;
 
-        var _nsErr = TypeCheckerFunctions.TypeCheckNamespace(parsedFile, fileScopeId, project);
+        var nsPredeclErr = TypeCheckerFunctions.TypeCheckNamespacePredecl(parsedFile, fileScopeId, project);
 
-        if (_nsErr is Error nsErr) {
+        if (nsPredeclErr is not null) {
 
-            return new ErrorOr<String>(nsErr);
+            return new ErrorOr<String>(nsPredeclErr);
+        }
+
+        var nsDeclErr = TypeCheckerFunctions.TypeCheckNamespaceDeclarations(parsedFile, fileScopeId, project);
+
+        if (nsDeclErr is not null) {
+
+            return new ErrorOr<String>(nsDeclErr);
         }
 
         if (CheckCodeGenPreconditions(project) is Error preCondErr) {

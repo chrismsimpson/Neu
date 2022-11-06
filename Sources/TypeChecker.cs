@@ -3778,29 +3778,188 @@ public static partial class TypeCheckerFunctions {
         }
     }
 
-    public static Error? TypeCheckNamespace(
+    // public static Error? TypeCheckNamespace(
+    //     ParsedNamespace parsedNamespace,
+    //     Int32 scopeId,
+    //     Project project) {
+
+    //     Error? error = null;
+
+    //     var projectStructLength = project.Structs.Count;
+
+    //     var projectEnumLength = project.Enums.Count;
+
+    //     foreach (var ns in parsedNamespace.Namespaces) {
+
+    //         // Do full typechecks of all the namespaces that are children of this namespace
+
+    //         var namespaceScopeId = project.CreateScope(scopeId, false);
+
+    //         project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
+
+    //         project.Scopes[scopeId].Children.Add(namespaceScopeId);
+        
+    //         TypeCheckNamespace(ns, namespaceScopeId, project);
+    //     }
+
+    //     for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
+            
+    //         // Bring the struct names into scope for future typechecking
+
+    //         var structure = parsedNamespace.Structs.ElementAt(_structId);
+
+    //         var structId = _structId + projectStructLength;
+
+    //         project.Types.Add(new StructType(structId));
+
+    //         var structTypeId = project.Types.Count - 1;
+
+    //         if (project.AddTypeToScope(
+    //             scopeId, 
+    //             structure.Name, 
+    //             structTypeId, 
+    //             structure.Span).Error is Error e1) {
+
+    //             error = error ?? e1;
+    //         }
+
+    //     }
+
+    //     for (Int32 _enumId = 0; _enumId < parsedNamespace.Enums.Count; _enumId++) {
+
+    //         // Bring the enum names into scope for future typechecking
+
+    //         var _enum = parsedNamespace.Enums[_enumId];
+
+    //         var enumId = _enumId + projectEnumLength;
+
+    //         project.Types.Add(new EnumType(enumId));
+
+    //         var enumTypeId = project.Types.Count - 1;
+
+    //         if (project.AddTypeToScope(scopeId, _enum.Name, enumTypeId, _enum.Span).Error is Error e) {
+
+    //             error = error ?? e;
+    //         }
+    //     }
+
+    //     for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
+
+    //         // Typecheck the protype of the struct
+
+    //         var structure = parsedNamespace.Structs.ElementAt(_structId);
+
+    //         var structId = _structId + projectStructLength;
+
+    //         if (TypeCheckStructPredecl(structure, structId, scopeId, project) is Error err) {
+
+    //             error = error ?? err;
+    //         }
+    //     }
+
+    //     for (Int32 _enumId = 0; _enumId < parsedNamespace.Enums.Count; _enumId++) {
+
+    //         // Typecheck the protype of the enum
+
+    //         var _enum = parsedNamespace.Enums[_enumId];
+
+    //         var enumId = _enumId + projectEnumLength;
+
+    //         if (TypeCheckEnumPredecl(_enum, enumId, scopeId, project) is Error e2) {
+
+    //             error = error ?? e2;
+    //         }
+    //     }
+
+    //     for (Int32 enumId = 0; enumId < parsedNamespace.Enums.Count; enumId++) {
+
+    //         // Finish typechecking the full enum
+
+    //         var _enum = parsedNamespace.Enums[enumId];
+
+    //         var err = TypeCheckEnum(
+    //             _enum,
+    //             enumId + projectEnumLength,
+    //             project.FindTypeInScope(scopeId, _enum.Name) ?? throw new Exception(),
+    //             project.Enums[enumId + projectEnumLength].ScopeId,
+    //             scopeId,
+    //             project);
+            
+    //         error = error ?? err;
+    //     }
+
+    //     var projectFunctionLength = project.Functions.Count;
+
+    //     foreach (var fun in parsedNamespace.Functions) {
+            
+    //         // Ensure we know the function prototypes ahead of time, so that
+    //         // and calls can find and resolve to them
+            
+    //         var chkFuncPredeclErr = TypeCheckFuncPredecl(
+    //             fun, scopeId, null, project);
+
+    //         error = error ?? chkFuncPredeclErr;
+    //     }
+
+    //     for (Int32 structId = 0; structId < parsedNamespace.Structs.Count; structId++) {
+
+    //         // Finish typechecking the full struct (including methods)
+
+    //         var structure = parsedNamespace.Structs.ElementAt(structId);
+
+    //         var chkStructErr = TypeCheckStruct(
+    //             structure, 
+    //             structId + projectStructLength,
+    //             scopeId, 
+    //             project);
+
+    //         error = error ?? chkStructErr;
+    //     }
+
+    //     for (Int32 i = 0; i < parsedNamespace.Functions.Count; i++) {
+
+    //         var func = parsedNamespace.Functions[i];
+
+    //         // Typecheck the function bodies
+
+    //         project.CurrentFunctionIndex = i + projectFunctionLength;
+
+    //         var err = TypeCheckFunc(func, scopeId, project);
+
+    //         error = error ?? err;
+
+    //         project.CurrentFunctionIndex = null;
+    //     }
+
+    //     return error;
+    // }
+
+    public static Error? TypeCheckNamespacePredecl(
         ParsedNamespace parsedNamespace,
         Int32 scopeId,
         Project project) {
 
         Error? error = null;
 
-        var projectStructLength = project.Structs.Count;
-
-        var projectEnumLength = project.Enums.Count;
-
         foreach (var ns in parsedNamespace.Namespaces) {
 
             // Do full typechecks of all the namespaces that are children of this namespace
 
-            var namespaceScopeId = project.CreateScope(scopeId, false);
+            if (!IsNullOrWhiteSpace(ns.Name)) {
 
-            project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
+                var namespaceScopeId = project.CreateScope(scopeId, false);
 
-            project.Scopes[scopeId].Children.Add(namespaceScopeId);
-        
-            TypeCheckNamespace(ns, namespaceScopeId, project);
+                project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
+
+                project.Scopes[scopeId].Children.Add(namespaceScopeId);
+            
+                TypeCheckNamespacePredecl(ns, namespaceScopeId, project);
+            }
         }
+
+        var projectStructLength = project.Structs.Count;
+
+        var projectEnumLength = project.Enums.Count;
 
         for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
             
@@ -3888,8 +4047,6 @@ public static partial class TypeCheckerFunctions {
             error = error ?? err;
         }
 
-        var projectFunctionLength = project.Functions.Count;
-
         foreach (var fun in parsedNamespace.Functions) {
             
             // Ensure we know the function prototypes ahead of time, so that
@@ -3901,19 +4058,80 @@ public static partial class TypeCheckerFunctions {
             error = error ?? chkFuncPredeclErr;
         }
 
-        for (Int32 structId = 0; structId < parsedNamespace.Structs.Count; structId++) {
+        return error;
+    }
 
+    public static Error? TypeCheckNamespaceDeclarations(
+        ParsedNamespace parsedNamespace,
+        Int32 scopeId,
+        Project project) {
+
+        Error? error = null;
+
+        foreach (var ns in parsedNamespace.Namespaces) {
+
+            if (!IsNullOrWhiteSpace(ns.Name)) {
+
+                // Finish typecheck of the named namespaces
+
+                var namespaceScopeId = project
+                    .FindNamespaceInScope(scopeId, ns.Name)
+                     ?? throw new Exception("internal error: can't find previously added namespace");
+
+                TypeCheckNamespaceDeclarations(ns, namespaceScopeId, project);
+            }
+            else {
+
+                // Create a typecheck the unnamed namespace (aka a block scope)
+                
+                WriteLine("created a namespace for empty scope");
+
+                var namespaceScopeId = project.CreateScope(scopeId, false);
+
+                project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
+                project.Scopes[scopeId].Children.Add(namespaceScopeId);
+                
+                TypeCheckNamespacePredecl(ns, namespaceScopeId, project);
+                
+                var err = TypeCheckNamespaceDeclarations(
+                    parsedNamespace, 
+                    namespaceScopeId, 
+                    project);
+
+                error = error ?? err;
+            }
+        }
+
+        // for (Int32 enumId = 0; enumId < parsedNamespace.Enums.Count; enumId++) {
+
+        //     // Finish typechecking the full enum
+
+        //     var _enum = parsedNamespace.Enums[enumId];
+
+        //     var err = TypeCheckEnum(
+        //         _enum,
+        //         enumId + projectEnumLength,
+        //         project.FindTypeInScope(scopeId, _enum.Name) ?? throw new Exception(),
+        //         project.Enums[enumId + projectEnumLength].ScopeId,
+        //         scopeId,
+        //         project);
+            
+        //     error = error ?? err;
+        // }
+
+        for (Int32 _structId = 0; _structId < parsedNamespace.Structs.Count; _structId++) {
+
+            var structure = parsedNamespace.Structs.ElementAt(_structId);
+            
             // Finish typechecking the full struct (including methods)
 
-            var structure = parsedNamespace.Structs.ElementAt(structId);
+            var structId = project
+                .FindStructInScope(scopeId, structure.Name)
+                ?? throw new Exception("internal error: can't find struct that has been previous added");
 
-            var chkStructErr = TypeCheckStruct(
-                structure, 
-                structId + projectStructLength,
-                scopeId, 
-                project);
+            var err = TypeCheckStruct(structure, structId, scopeId, project);
 
-            error = error ?? chkStructErr;
+            error = error ?? err;
         }
 
         for (Int32 i = 0; i < parsedNamespace.Functions.Count; i++) {
@@ -3922,7 +4140,11 @@ public static partial class TypeCheckerFunctions {
 
             // Typecheck the function bodies
 
-            project.CurrentFunctionIndex = i + projectFunctionLength;
+            var funcId = project
+                .FindFuncInScope(scopeId, func.Name) 
+                ?? throw new Exception("internal error: can't find function that has been previous added");
+
+            project.CurrentFunctionIndex = funcId;
 
             var err = TypeCheckFunc(func, scopeId, project);
 
