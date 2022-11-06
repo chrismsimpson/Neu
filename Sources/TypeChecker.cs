@@ -440,6 +440,50 @@ public static partial class NeuTypeFunctions {
             }
         }
     }
+
+    public static int NumberOfEditsBetween(string source1, string source2) { //O(n*m)
+    
+        var source1Length = source1.Length;
+        var source2Length = source2.Length;
+
+        var matrix = new int[source1Length + 1, source2Length + 1];
+
+        // First calculation, if one entry is empty return full length
+
+        if (source1Length == 0) {
+
+            return source2Length;
+        }
+
+        if (source2Length == 0) {
+
+            return source1Length;
+        }
+
+        // Initialization of matrix with row size source1Length and columns size source2Length
+
+        for (var i = 0; i <= source1Length; matrix[i, 0] = i++) { }
+        
+        for (var j = 0; j <= source2Length; matrix[0, j] = j++) { }
+
+        // Calculate rows and collumns distances
+
+        for (var i = 1; i <= source1Length; i++) {
+
+            for (var j = 1; j <= source2Length; j++) {
+
+                var cost = (source2[j - 1] == source1[i - 1]) ? 0 : 1;
+
+                matrix[i, j] = Math.Min(
+                    Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
+                    matrix[i - 1, j - 1] + cost);
+            }
+        }
+
+        // return result
+
+        return matrix[source1Length, source2Length];
+    }
 }
 
 ///
@@ -592,6 +636,20 @@ public static partial class ProjectFunctions {
         return null;
     }
 
+    public static String? FindMostSimilarVarNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String varName) {
+
+        return project
+            .FindMostSimilarItemNameInScope(
+                scopeId, 
+                varName, 
+                scope => {
+                    return scope.Vars.Select(x => x.Name).ToList();
+                });
+    }
+
     public static ErrorOrVoid AddStructToScope(
         this Project project,
         Int32 scopeId,
@@ -671,6 +729,73 @@ public static partial class ProjectFunctions {
         return null;
     }
 
+    public static String? FindMostSimilarItemNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String itemName,
+        Func<Scope, List<String>> itemNamesFromScope) {
+
+        Int32? mistakes = null;
+
+        String? mostSimilarName = null;
+
+        Int32? currentId = scopeId;
+
+        while (currentId is not null) {
+
+            var scope = project.Scopes[currentId.Value];
+
+            foreach (var item in itemNamesFromScope(scope)) {
+
+                var currentMistakes = NeuTypeFunctions.NumberOfEditsBetween(item, itemName);
+
+                if (mistakes is not null) {
+
+                    if (currentMistakes < mistakes) {
+
+                        mistakes = currentId;
+
+                        mostSimilarName = item;
+                    }
+                }
+                else {
+
+                    mistakes = currentMistakes;
+
+                    mostSimilarName = item;
+                }
+            }
+
+            currentId = scope.Parent;
+        }
+
+        if (mistakes is not null) {
+
+            // Surely no one would misspell half the word
+
+            if (mistakes > itemName.Length / 2) {
+
+                return null;
+            }
+        }
+
+        return mostSimilarName;
+    }
+
+    public static String? FindMostSimilarStructNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String structure) {
+
+        return project
+            .FindMostSimilarItemNameInScope(
+                scopeId, 
+                structure, 
+                scope => {
+                    return scope.Structs.Select(x => x.Item1).ToList();
+                });
+    }
+
     public static Int32? FindEnumInScope(
         this Project project,
         Int32 scopeId,
@@ -694,6 +819,20 @@ public static partial class ProjectFunctions {
         }
 
         return null;
+    }
+
+    public static String? FindMostSimilarEnumNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String enumName) {
+
+        return project
+            .FindMostSimilarItemNameInScope(
+                scopeId,
+                enumName,
+                scope => {
+                    return scope.Enums.Select(x => x.Item1).ToList();
+                });
     }
 
     // Find the namespace in the current scope, or one of its parents
@@ -726,6 +865,32 @@ public static partial class ProjectFunctions {
         }
 
         return null;
+    }
+
+    public static String? FindMostSimilarNamespaceNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String namespaceName) {
+
+        return project.FindMostSimilarItemNameInScope(
+            scopeId,
+            namespaceName,
+            scope => {
+
+                var items = new List<String>();
+
+                foreach (var childScopeId in scope.Children) {
+
+                    var childScope = project.Scopes[childScopeId];
+
+                    if (childScope.NamespaceName is String n) {
+
+                        items.Add(n);
+                    }
+                }
+
+                return items;
+            });
     }
 
     // Find namespace in the current scope, but not any of its parents (strictly in the current scope)
@@ -805,6 +970,20 @@ public static partial class ProjectFunctions {
         return null;
     }
 
+    public static String? FindMostSimilarFunctionNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String functionName) {
+
+        return project
+            .FindMostSimilarItemNameInScope(
+                scopeId,
+                functionName,
+                scope => {
+                    return scope.Funcs.Select(x => x.Item1).ToList();
+                });
+    }
+
     public static ErrorOrVoid AddTypeToScope(
         this Project project,
         Int32 scopeId,
@@ -855,6 +1034,19 @@ public static partial class ProjectFunctions {
         }
 
         return null;
+    }
+
+    public static String? FindMostSimilarTypeNameInScope(
+        this Project project,
+        Int32 scopeId,
+        String typeName) {
+
+        return project.FindMostSimilarItemNameInScope(
+            scopeId,
+            typeName,
+            scope => {
+                return scope.Types.Select(x => x.Item1).ToList();
+            });
     }
 
     public static String TypeNameForTypeId(
@@ -6467,6 +6659,23 @@ public static partial class TypeCheckerFunctions {
                         new CheckedVarExpression(v, e.Span),
                         err);
                 }
+                else if (project.FindMostSimilarVarNameInScope(scopeId, e.Value) is String mostSimilarVar) {
+
+                    return (
+                        new CheckedVarExpression(
+                            new CheckedVariable(
+                                name: e.Value,
+                                typeId: typeHint ?? Compiler.UnknownTypeId,
+                                mutable: false,
+                                visibility: new PublicVisibility(),
+                                definitionSpan: e.Span),
+                            e.Span),
+                        new TypecheckErrorWithHint(
+                            $"variable '{e.Value}' not found",
+                            e.Span,
+                            $"Did you mean '{mostSimilarVar}'?",
+                            e.Span));
+                }
                 else {
                     
                     return (
@@ -8849,6 +9058,22 @@ public static partial class TypeCheckerFunctions {
                 continue;
             }
 
+            var _similarName = project.FindMostSimilarNamespaceNameInScope(currentScopdeId, scopeName);
+
+            _similarName = _similarName ?? project.FindMostSimilarStructNameInScope(currentScopdeId, scopeName);
+
+            _similarName = _similarName ?? project.FindMostSimilarEnumNameInScope(currentScopdeId, scopeName);
+
+            if (!IsNullOrWhiteSpace(_similarName)) {
+
+                error = error ?? 
+                    new TypecheckErrorWithHint(
+                        $"Not a namespace, enum, class, or struct: '{Join(".", call.Namespace)}'",
+                        span,
+                        $"Did you mean '{_similarName}'?",
+                        span);
+            }
+
             error = error ??
                 new TypeCheckError(
                     $"Not a namespace, enum, class, or struct: '{Join(".", call.Namespace)}'",
@@ -8890,9 +9115,25 @@ public static partial class TypeCheckerFunctions {
             return (calleeId, error);
         }
 
+        var similarName = project.FindMostSimilarFunctionNameInScope(currentScopdeId, call.Name);
+
+        similarName = similarName ?? project.FindMostSimilarStructNameInScope(currentScopdeId, call.Name);
+
+        similarName = similarName ?? project.FindMostSimilarEnumNameInScope(currentScopdeId, call.Name);
+
+        if (!IsNullOrWhiteSpace(similarName)) {
+
+            error = error ??
+                new TypecheckErrorWithHint(
+                    $"Call to unknown function: '{call.Name}'",
+                    span,
+                    $"Did you mean '{similarName}'?",
+                    span);
+        }
+
         error = error ??
             new TypeCheckError(
-                $"call to unknown function: {call.Name}",
+                $"Call to unknown function: '{call.Name}'",
                 span);
 
         return (calleeId, error);
@@ -9893,11 +10134,24 @@ public static partial class TypeCheckerFunctions {
 
                             default: {
 
-                                return (
-                                    Compiler.UnknownTypeId, 
-                                    new TypeCheckError(
-                                        "unknown type",
-                                        nt.Span));
+                                if (project.FindMostSimilarTypeNameInScope(scopeId, x) is String similarName) {
+
+                                    return (
+                                        Compiler.UnknownTypeId,
+                                        new TypecheckErrorWithHint(
+                                            "Unknown type",
+                                            nt.Span,
+                                            $"Did you mean '{similarName}'?",
+                                            nt.Span));
+                                }
+                                else {
+
+                                    return (
+                                        Compiler.UnknownTypeId, 
+                                        new TypeCheckError(
+                                            "Unknown type",
+                                            nt.Span));
+                                }
                             }
                         }
                     }
