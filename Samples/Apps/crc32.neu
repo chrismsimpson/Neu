@@ -31,7 +31,7 @@ func main(args: [String]) {
         return 1
     }
 
-    var file = fopen(args[1].characters(), "r".characters())
+    var file = fopen(args[1].cString(), "r".cString())
     defer fclose(file)
 
     let table = makeLookupTable()

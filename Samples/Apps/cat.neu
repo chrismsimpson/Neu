@@ -18,7 +18,7 @@ func main(args: [String]) {
 
     let filename = args[1]
 
-    var file = fopen(filename.characters(), "r".characters())
+    var file = fopen(filename.cString(), "r".cString())
 
     defer fclose(file)
 
