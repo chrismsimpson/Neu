@@ -6,6 +6,28 @@ public static partial class Process {
     public static (String StandardOutput, String StandardError, bool ExitedSuccessfully) Run(
         String name,
         String[] arguments,
+        String[] commonArguments,
+        Action<String>? dataReceived = null,
+        Action<String>? errorReceived = null) {
+
+        var combined = new String[arguments.Length + commonArguments.Length];
+
+        for (var i = 0; i < arguments.Length; i++) {
+
+            combined[i] = arguments[i];
+        }
+
+        for (var i = 0; i < commonArguments.Length; i++) {
+
+            combined[i + arguments.Length] = commonArguments[i];
+        }
+
+        return Run(name, combined, dataReceived, errorReceived);
+    }
+
+    public static (String StandardOutput, String StandardError, bool ExitedSuccessfully) Run(
+        String name,
+        String[] arguments,
         Action<String>? dataReceived = null,
         Action<String>? errorReceived = null) {
 

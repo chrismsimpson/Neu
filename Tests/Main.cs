@@ -3,6 +3,43 @@ namespace NeuTests;
 
 public static partial class Program {
 
+    public static readonly String[] CommonArgs = new [] {
+        "-I",
+        ".",
+        "-I",
+        "Runtime",
+        "-std=c++20",
+        "-Wno-user-defined-literals",
+        "-DNEU_CONTINUE_ON_PANIC"
+    };
+
+    public static Lazy<String> PchFilename => new Lazy<String>(() => { 
+
+        var pchFilename = Path.Combine(
+            Path.GetTempPath(), 
+            $"Neu-{Guid.NewGuid()}lib.h.pch");
+
+        var (_, _, success) = 
+            Neu.Process.Run(
+                "clang++",
+                new [] {
+                    "-x",
+                    "c++-header",
+                    "Runtime/lib.h",
+                    "-o",
+                    pchFilename,
+                    "-fpch-instantiate-templates"
+                },
+                CommonArgs);
+
+        if (!success) {
+
+            throw new Exception("Failed to launch compiler for PCH generation.");
+        }
+
+        return pchFilename;
+    });
+
     public static ErrorOrVoid TestSamples(
         String path) {
 
@@ -134,12 +171,24 @@ public static partial class Program {
 
                     var exeName = $"{cppFilename.Substring(0, cppFilename.Length - ext.Length)}.out";
 
-                    var (stdOut, stdErr, success) = 
-                        Compiler.Build(
-                            compilerPath: "clang++",
-                            runtimePath: "Runtime",
-                            inputCpp: cppFilename,
-                            verbose: false);
+                    // var (stdOut, stdErr, success) = 
+                    //     Compiler.Build(
+                    //         compilerPath: "clang++",
+                    //         runtimePath: "Runtime",
+                    //         inputCpp: cppFilename,
+                    //         verbose: false);
+
+                    var (stdOut, stdErr, success) =
+                        Neu.Process.Run(
+                            "clang++", 
+                            new [] {
+                                cppFilename,
+                                "-o",
+                                exeName,
+                                "-include-pch",
+                                PchFilename.Value
+                            },
+                            CommonArgs);
 
                     if (!success) {
 
@@ -219,6 +268,8 @@ public static partial class Program {
         Console.Clear();
 
         Compiler.Clean();
+
+        ///
 
         ///
 
