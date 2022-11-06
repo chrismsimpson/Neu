@@ -6521,10 +6521,14 @@ public static partial class TypeCheckerFunctions {
 
                 error = error ?? ckdExprError;
 
-                var type = ckdExpr.GetTypeId(scopeId, project);
+                var typeId = ckdExpr.GetTypeId(scopeId, project);
+
+                var optionalType = new GenericInstance(project.GetOptionalStructId(e.Span), new List<Int32>(new [] { typeId }));
+
+                var optionalTypeId = project.FindOrAddTypeId(optionalType);
 
                 return (
-                    new CheckedOptionalSomeExpression(ckdExpr, e.Span, type),
+                    new CheckedOptionalSomeExpression(ckdExpr, e.Span, optionalTypeId),
                     error);
             }
 

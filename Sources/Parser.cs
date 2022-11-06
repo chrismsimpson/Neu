@@ -5682,7 +5682,7 @@ public static partial class ParserFunctions {
 
                             switch (nt.Value) {
 
-                                case "Some": {
+                                case "some": {
 
                                     index += 1;
 

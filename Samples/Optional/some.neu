@@ -1,0 +1,4 @@
+func main() {
+    let i = some(5)
+    printLine("{}", i ?? 0)
+}
