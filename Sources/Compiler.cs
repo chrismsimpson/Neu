@@ -159,7 +159,7 @@ public partial class Compiler {
 
         ///
 
-        var scope = new Scope(0);
+        var scope = new Scope(0, false);
 
         project.Scopes.Add(scope);
 

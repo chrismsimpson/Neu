@@ -41,6 +41,7 @@
 
 29/05/22: b1288a372aa3375e4d34a8b41dca6b5f450e9b2f implement enum methods
 
+29/05/22: cf5ef2d8a399465a195d57728429e31a03293a3e update expectation
 
 launch.json:
 ```

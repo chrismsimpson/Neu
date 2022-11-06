@@ -529,9 +529,8 @@ public partial class Project {
 
         // Top-level (project-global) scope has no parent scope
         // and is the parent scope of all file scopes
-        // var projectGlobalScope = new Scope()
-
-        var projectGlobalScope = new Scope(null);
+        
+        var projectGlobalScope = new Scope(null, false);
 
         this.Functions = new List<CheckedFunction>();
         this.Structs = new List<CheckedStruct>();
@@ -578,9 +577,10 @@ public static partial class ProjectFunctions {
 
     public static Int32 CreateScope(
         this Project project,
-        Int32 parentId) {
+        Int32 parentId,
+        bool throws) {
 
-        project.Scopes.Add(new Scope(parentId));
+        project.Scopes.Add(new Scope(parentId, throws));
 
         return project.Scopes.Count - 1;
     }
@@ -3565,10 +3565,13 @@ public partial class Scope {
 
     public List<Int32> Children { get; init; }
 
+    public bool Throws { get; init; }
+
     ///
 
     public Scope(
-        Int32? parent) 
+        Int32? parent,
+        bool throws) 
         : this(
             namespaceName: null,
             new List<CheckedVariable>(),
@@ -3577,7 +3580,8 @@ public partial class Scope {
             new List<(String, Int32, Span)>(),
             new List<(String, Int32, Span)>(),
             parent,
-            children: new List<Int32>()) { }
+            children: new List<Int32>(),
+            throws) { }
 
     public Scope(
         String? namespaceName,
@@ -3587,7 +3591,8 @@ public partial class Scope {
         List<(String, Int32, Span)> enums,
         List<(String, Int32, Span)> types,
         Int32? parent,
-        List<Int32> children) {
+        List<Int32> children,
+        bool throws) {
 
         this.NamespaceName = namespaceName;
         this.Vars = vars;
@@ -3597,6 +3602,7 @@ public partial class Scope {
         this.Parent = parent;
         this.Types = types;
         this.Children = children;
+        this.Throws = throws;
     }
 
     public static bool CanAccess(
@@ -3787,7 +3793,7 @@ public static partial class TypeCheckerFunctions {
 
             // Do full typechecks of all the namespaces that are children of this namespace
 
-            var namespaceScopeId = project.CreateScope(scopeId);
+            var namespaceScopeId = project.CreateScope(scopeId, false);
 
             project.Scopes[namespaceScopeId].NamespaceName = ns.Name;
 
@@ -3936,7 +3942,7 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        var enumScopeId = project.CreateScope(parentScopeId);
+        var enumScopeId = project.CreateScope(parentScopeId, false);
 
         var genericParameters = new List<Int32>();
 
@@ -4009,7 +4015,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var func in _enum.Methods) {
 
-            var methodScopeId = project.CreateScope(enumScopeId);
+            var methodScopeId = project.CreateScope(enumScopeId, func.Throws);
 
             var isGeneric = _enum.GenericParameters.Any() || func.GenericParameters.Any();
 
@@ -4063,7 +4069,7 @@ public static partial class TypeCheckerFunctions {
 
             if (isGeneric) {
 
-                checkScope = project.CreateScope(methodScopeId);
+                checkScope = project.CreateScope(methodScopeId, checkedFunction.Throws);
             }
 
             foreach (var param in func.Parameters) {
@@ -4272,7 +4278,7 @@ public static partial class TypeCheckerFunctions {
 
                         if (project.FindFuncInScope(enumScopeId, u.Name) is null) {
 
-                            var funcScopeId = project.CreateScope(parentScopeId);
+                            var funcScopeId = project.CreateScope(parentScopeId, _enum.IsRecursive);
 
                             var checkedConstructor = new CheckedFunction(
                                 name: u.Name,
@@ -4434,7 +4440,7 @@ public static partial class TypeCheckerFunctions {
                                             s.Span)))
                                 .ToList();
 
-                            var funcScopeId = project.CreateScope(parentScopeId);
+                            var funcScopeId = project.CreateScope(parentScopeId, _enum.IsRecursive);
 
                             var checkedConstructor = new CheckedFunction(
                                 name: s.Name,
@@ -4515,7 +4521,7 @@ public static partial class TypeCheckerFunctions {
                                             t.Span))
                                 });
 
-                            var funcScopeId = project.CreateScope(parentScopeId);
+                            var funcScopeId = project.CreateScope(parentScopeId, _enum.IsRecursive);
 
                             var checkedConstructor = new CheckedFunction(
                                 name: t.Name,
@@ -4584,7 +4590,7 @@ public static partial class TypeCheckerFunctions {
 
         project.CurrentStructTypeId = structTypeId;
 
-        var structScopeId = project.CreateScope(parentScopeId);
+        var structScopeId = project.CreateScope(parentScopeId, false);
 
         var _genericParameters = new List<Int32>();
 
@@ -4622,7 +4628,7 @@ public static partial class TypeCheckerFunctions {
 
         foreach (var func in structure.Methods) {
 
-            var methodScopeId = project.CreateScope(structScopeId);
+            var methodScopeId = project.CreateScope(structScopeId, func.Throws);
 
             var isGeneric = 
                 structure.GenericParameters.Any()
@@ -4678,7 +4684,7 @@ public static partial class TypeCheckerFunctions {
 
             if (isGeneric && !isExtern) {
 
-                checkScope = project.CreateScope(methodScopeId);
+                checkScope = project.CreateScope(methodScopeId, func.Throws);
             }
 
             foreach (var param in func.Parameters) {
@@ -4903,7 +4909,7 @@ public static partial class TypeCheckerFunctions {
                             definitionSpan: field.Span)));
             }
 
-            var funcScopeId = project.CreateScope(parentScopeId);
+            var funcScopeId = project.CreateScope(parentScopeId, structure.DefinitionType == DefinitionType.Class);
 
             var checkedConstructor = new CheckedFunction(
                 name: structure.Name,
@@ -4962,7 +4968,7 @@ public static partial class TypeCheckerFunctions {
 
         Error? error = null;
 
-        var funcScopeId = project.CreateScope(parentScopeId);
+        var funcScopeId = project.CreateScope(parentScopeId, func.Throws);
 
         bool isGeneric;
 
@@ -5034,7 +5040,7 @@ public static partial class TypeCheckerFunctions {
 
         if (isGeneric) {
 
-            checkScope = project.CreateScope(funcScopeId);
+            checkScope = project.CreateScope(funcScopeId, func.Throws);
         }
 
         var first = true;
@@ -5135,7 +5141,7 @@ public static partial class TypeCheckerFunctions {
 
         var func = _func.GetParsedFunction();
 
-        var scopeId = project.CreateScope(parentScopeId);
+        var scopeId = project.CreateScope(parentScopeId, func.Throws);
 
         Error? error = null;
 
@@ -5540,7 +5546,9 @@ public static partial class TypeCheckerFunctions {
 
         var checkedBlock = new CheckedBlock();
 
-        var blockScopeId = project.CreateScope(parentScopeId);
+        var parentThrows = project.Scopes[parentScopeId].Throws;
+
+        var blockScopeId = project.CreateScope(parentScopeId, parentThrows);
 
         foreach (var stmt in block.Statements) {
 
@@ -5571,7 +5579,9 @@ public static partial class TypeCheckerFunctions {
 
             case ParsedTryStatement tryStmt: {
 
-                var (checkedStmt, err) = TypeCheckStatement(tryStmt.Statement, scopeId, project, safetyMode);
+                var tryScopeId = project.CreateScope(scopeId, true);
+
+                var (checkedStmt, err) = TypeCheckStatement(tryStmt.Statement, tryScopeId, project, safetyMode);
 
                 error = error ?? err;
 
@@ -5584,7 +5594,7 @@ public static partial class TypeCheckerFunctions {
                     visibility: new PublicVisibility(),
                     definitionSpan: tryStmt.Span);
 
-                var catchScopeId = project.CreateScope(scopeId);
+                var catchScopeId = project.CreateScope(scopeId, false);
 
                 var err2 = project
                     .AddVarToScope(catchScopeId, errorDecl, tryStmt.Span)
@@ -7718,7 +7728,9 @@ public static partial class TypeCheckerFunctions {
                                         }
                                     }
 
-                                    var newScopeId = project.CreateScope(scopeId);
+                                    var parentThrows = project.Scopes[scopeId].Throws;
+
+                                    var newScopeId = project.CreateScope(scopeId, parentThrows);
 
                                     foreach (var (v, span) in vars) {
 
