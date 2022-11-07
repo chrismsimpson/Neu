@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "foo\nbar\n"
+
 func makeV() -> [String] {
     return ["foo", "bar"]
 }

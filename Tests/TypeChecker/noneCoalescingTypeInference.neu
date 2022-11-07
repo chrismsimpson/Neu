@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "5\n"
+
 func main() {
     let myOptional: Int64? = 5
     let y = myOptional ?? 6

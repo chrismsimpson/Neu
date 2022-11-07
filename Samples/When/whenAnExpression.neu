@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "PASS\n"
+
 func main() {
     let i = 0
     when i + 1 {

@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "The secret is: Shhhh! Don't tell anyone!\nOpen sesame!\n"
+
 class Limited {
 
     restricted(A) func getSecret() => "Shhhh! Don't tell anyone!"

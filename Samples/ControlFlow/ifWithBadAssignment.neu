@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "assignment is not allowed in this position"
+
 func main() {
     var x = 100;
 

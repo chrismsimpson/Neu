@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "Well, hello friends\n"
+
 namespace Greeters {
     func greet() {
         printLine("Well, hello friends")

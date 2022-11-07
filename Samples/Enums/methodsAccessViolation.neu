@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Can't access function 'test' from scope none, because it is marked private\n"
+
 enum Foo {
     bar
 

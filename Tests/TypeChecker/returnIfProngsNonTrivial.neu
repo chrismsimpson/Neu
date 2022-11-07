@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "123\n"
+
 func max(a: Int32, b: Int32) -> Int32 {
     if a > b {
         return a

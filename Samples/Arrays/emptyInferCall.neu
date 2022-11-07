@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "OK\n"
+
 func test(arr: [Double]) {
     printLine("OK")
 }

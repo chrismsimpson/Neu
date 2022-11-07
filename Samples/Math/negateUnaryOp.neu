@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "-14\n"
+
 func main() {
     printLine("{}", -(4 + 10))
 }

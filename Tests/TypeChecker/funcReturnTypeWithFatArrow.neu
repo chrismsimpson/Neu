@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Type mismatch: expected 'Int32', but got 'String'\n"
+
 class S {
     public func getValue() -> Int32 => "Hello"
 }

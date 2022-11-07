@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: ""
+
 func id<T>(z: T) => z
 
 func bar() {

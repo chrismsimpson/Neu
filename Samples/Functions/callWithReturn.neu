@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "hello foo\n"
+
 func greet() -> String {
     return "hello foo"
 }

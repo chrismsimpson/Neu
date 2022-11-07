@@ -1,3 +1,5 @@
+/// Expect:
+/// - output: "a = 1, b = 2, c = 69\na = 0, b = 1, c = 2\n"
 
 enum CuteLittleEnum: UInt64 {
     a = 1

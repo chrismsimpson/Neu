@@ -1,4 +1,5 @@
-// FIXME: changeValue() returns a value because a function that `throws` can't return void
+/// Expect:
+/// - output: "PASS\n"
 
 func changeValue(dictionary: var [String: String]) throws {
     dictionary.set(key: "foo", value: "PASS")

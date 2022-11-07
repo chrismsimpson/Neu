@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "one\n"
+
 func getFirst(anon v: [String]) => v[0]
 
 func main() {

@@ -24,4 +24,13 @@ public static partial class StringFunctions {
 
         return $"{sample.Substring(0, sample.Length - ext.Length)}.{newExt}";
     }
+
+    public static String SetExtension(
+        this String sample,
+        String newExt) {
+
+        var ext = Path.GetExtension(sample);
+
+        return sample.ReplacingExtension(ext, newExt);
+    }
 }

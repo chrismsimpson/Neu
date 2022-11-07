@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "foo\nbar\n"
+
 func changeValue(vector: var [String]) {
     vector[1] = "bar"
 }

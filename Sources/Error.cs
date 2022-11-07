@@ -4,6 +4,7 @@ namespace Neu;
 public enum ErrorType {
 
     IO,
+    String,
     Parser,
     TypeCheck,
     Validation
@@ -52,6 +53,13 @@ public static partial class ErrorFunctions {
                 throw new Exception();
         }
     }
+}
+
+public partial class StringError: Error {
+
+    public StringError(
+        String content)
+        : base(ErrorType.String, content) { }
 }
 
 public partial class ParserError: Error {

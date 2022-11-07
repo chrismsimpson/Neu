@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "2\nfalse\n5\n"
+
 func main() {
     let set1 = { "a", "b" }
     printLine("{}", set1.size())

@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "hello\n"
+
 func main() {
     // This is a comment
     printLine("hello")

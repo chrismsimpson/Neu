@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "OK\n"
+
 struct Foo {
     func bar(var this, baz: var Bar) {
         printLine("OK")

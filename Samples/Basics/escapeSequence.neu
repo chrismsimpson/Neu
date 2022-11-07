@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "hello\nworld\n"
+
 func main() {
 
     let strC: CChar = '\n'

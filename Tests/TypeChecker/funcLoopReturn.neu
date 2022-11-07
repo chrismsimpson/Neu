@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "684\n"
+
 func foo() -> Int32 {
     loop {
         return 684

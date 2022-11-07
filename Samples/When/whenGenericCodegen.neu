@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "1\n2\n3\n2\n2\n4\n2\n"
+
 func genericValue<T>(anon x: T) -> Int64 {
     return when x {
         (3) => 1

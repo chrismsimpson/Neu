@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Type mismatch: expected 'String', but got 'UInt64'\n"
+
 func main() {
     let foo: UInt64 = 0
     let bar: String = foo

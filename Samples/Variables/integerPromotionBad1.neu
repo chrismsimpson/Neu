@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Integer promotion failed\n"
+
 func main() {
     let i: UInt8 = 1000;
 }

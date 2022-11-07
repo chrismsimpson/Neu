@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "5\n"
+
 func foo() -> Int64 {
     for i in 1..10 {
         if i == 5 {

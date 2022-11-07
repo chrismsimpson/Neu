@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "PASS\nPASS\nzero: 0\n"
+
 func main() {
 
     let x: String? = "PASS"

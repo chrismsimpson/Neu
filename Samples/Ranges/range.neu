@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "45\n"
+
 func main() {
     var total = 0
 

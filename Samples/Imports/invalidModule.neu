@@ -1,3 +1,6 @@
-import baz
+/// Expect:
+/// - error: "Module 'Baz' not found"
+
+import Baz
 
 func main() { }

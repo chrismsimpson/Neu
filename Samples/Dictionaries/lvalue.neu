@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "0: foo\n"
+
 func main() {
     var dict = Dictionary<Int32, String>()
     dict[0] = "foo"

@@ -1,1 +1,0 @@
-Type mismatch: expected 'struct Foo<Int64>', but got 'struct Bar<Int64>'

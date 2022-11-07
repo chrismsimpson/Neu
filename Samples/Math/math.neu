@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "7\n"
+
 func subtract(x: Int64, y: Int64) {
     printLine("{}", x - y)
 }

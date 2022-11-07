@@ -1,8 +1,10 @@
+/// Expect:
+/// - output: "255\n1\n127\n-127\n-128\n-127\n-128\n1\n"
+
 func main() {
 
     let a: UInt8 = asSaturated(UInt32(500))
     let b: UInt8 = asTruncated(UInt32(257))
-
     let c = 127 as! Int8
     let d = -127 as! Int8
     let e: Int8 = asSaturated(Int32(-200))

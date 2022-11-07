@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "2 2\n"
+
 func main() {
     var set1: [Int64] = []
     set1.push(1)

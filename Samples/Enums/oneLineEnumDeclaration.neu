@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "Granny Smith\n"
+
 enum Apple { grannySmith }
 
 func appleName(apple: Apple) {

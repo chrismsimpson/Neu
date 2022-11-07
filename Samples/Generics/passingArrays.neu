@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "1\n"
+
 func dump<T>(anon v: [T]) { return v[0] }
 
 func main() {

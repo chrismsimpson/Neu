@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "300\n"
+
 struct Size {
     width: Int64
     height: Int64
@@ -7,8 +10,9 @@ struct Size {
     func volume(this) => .area() * 10
 }
 
-
 func main() {
+    
     let s = Size(width: 5, height: 6)
+    
     printLine("{}", s.volume())
 }

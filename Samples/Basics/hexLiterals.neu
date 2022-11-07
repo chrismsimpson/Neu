@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "5124095576030430\n0\n68719476735\n4294967295\n"
+
 func main() {
     printLine("{}", 0x123456789abcde)
     printLine("{}", 0x0)

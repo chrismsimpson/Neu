@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Assignment between incompatible types ('class Foo?' and 'Int64')\n"
+
 class Foo {
 }
 

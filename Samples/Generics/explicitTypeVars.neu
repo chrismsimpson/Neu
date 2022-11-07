@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "123\n"
+
 func main() {
     
     var item = Dictionary<String, Int64>()

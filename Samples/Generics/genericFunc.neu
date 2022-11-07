@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "3\n"
+
 func id<T>(anon x: T) => x
 
 func main() {

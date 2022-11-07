@@ -1,3 +1,6 @@
+/// Expect:
+/// - stderr: "Runtime error: Error(code=1)"
+
 struct Iter {
     func next(this) throws -> Int64? {
         throw Error.fromError(Int32(1))

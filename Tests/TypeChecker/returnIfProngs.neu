@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "123\n"
+
 func foo() -> Int32 {
     if true {
         return 123

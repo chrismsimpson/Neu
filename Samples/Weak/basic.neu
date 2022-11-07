@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "weakFoo hasValue? false\nweakFoo hasValue? true\nweakFoo hello: friends\nweakFoo hasValue? false\n"
+
 class Foo {
     public func hello(this) => "friends"
 }

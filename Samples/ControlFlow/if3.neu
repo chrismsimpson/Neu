@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "not 100\n"
+
 func main() {
     let x: Int64 = 80;
 

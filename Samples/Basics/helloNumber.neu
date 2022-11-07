@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "100\n100000000\n"
+
 func main() {
     printLine("{}", 100)
     printLine("{}", 100_000_000)

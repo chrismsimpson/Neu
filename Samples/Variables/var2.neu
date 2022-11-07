@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "101\n"
+
 func main() {
     var x: Int64 = 100
     x = x + 1

@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: ""
+
 // These generic extern functions shouldn't compile to anything.
 
 extern func doThingWithType<T>(anon input: T) -> T

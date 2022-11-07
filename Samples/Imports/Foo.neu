@@ -1,3 +1,5 @@
+/// Expect: Skip
+
 func bar() {
     printLine("PASS")
 }

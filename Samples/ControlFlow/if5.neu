@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "none of the above\n"
+
 func main() {
     let x: Int64 = 70
 

@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "3\n"
+
 func main() {
     var dict = ["a": 1, "b": 2]
 

@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "55\n"
+
 func main() {
     var x = [1, 2, 3]
     x[1] = 55

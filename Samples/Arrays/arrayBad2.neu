@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "index is not an integer"
+
 func main() {
     let x = [1, 2, 3]
     printLine("{}", x["bob"])

@@ -3,6 +3,51 @@ namespace NeuTests;
 
 public static partial class Program {
 
+    public static List<int> MatchIndices(this String str, char value) {
+    
+        var indices = new List<int>();
+
+        for (var i = 0; i < str.Length; i++) {
+
+            if (str[i] == value) {
+
+                indices.Add(i);
+            }
+        }
+        
+        return indices;
+    }
+
+    public static (String, String)? SplitOnce(this String str, char split) {
+
+        var i = str.IndexOf(split);
+
+        if (i >= 0 && (i + 2 < str.Length)) {
+
+            var a = str[0..i];
+
+            var b = str[(i + 1)..str.Length];
+
+            return (a, b);
+        }
+
+        return (str, String.Empty);
+    }
+
+    public static String TrimStartMatching(
+        this String str,
+        String match) {
+
+        var trimmed = str.TrimStart();
+
+        if (trimmed.StartsWith(match)) {
+
+            return trimmed.Substring(match.Length, trimmed.Length - match.Length);
+        }
+
+        return trimmed;
+    }
+
     public static readonly String[] CommonArgs = new [] {
         "-I",
         ".",
@@ -40,6 +85,214 @@ public static partial class Program {
         return pchFilename;
     });
 
+    public static ErrorOr<String> ParseQuotedString(
+        String s) {
+
+        var _s = s.Trim();
+
+        if (!_s.StartsWith('"') || !_s.EndsWith('"')) {
+
+            return new ErrorOr<String>(new StringError("Expected quoted string"));
+        }
+
+        var data = _s[1..(_s.Length - 1)];
+
+        var result = new StringBuilder();
+
+        var lastIndex = 0;
+
+        foreach (var i in data.MatchIndices('\\')) {
+
+            result.Append(data[lastIndex..i]);
+
+            var escapedChar = data[(i + 1)..(i + 2)];
+
+            switch (escapedChar) {
+
+                case "\"": {
+
+                    result.Append('"');
+                    
+                    break;
+                }
+
+                case "\\": {
+
+                    result.Append('\\');
+
+                    break;
+                }
+
+                case "a": {
+
+                    result.Append('\x07');
+
+                    break;
+                }
+
+                case "b": {
+
+                    result.Append('\x07');
+
+                    break;
+                }
+
+                case "f": {
+
+                    result.Append('\x08');
+
+                    break;
+                }
+
+                case "n": {
+
+                    result.Append('\n');
+
+                    break;
+                }
+
+                case "r": {
+
+                    result.Append('\r');
+
+                    break;
+                }
+
+                case "t": {
+
+                    result.Append('\t');
+
+                    break;
+                }
+
+                case "v": {
+
+                    result.Append('\x0b');
+
+                    break;
+                }
+
+                case var c: {
+
+                    return new ErrorOr<string>(new StringError($"Unknown escape sequence: \\{c}"));
+                }
+            }
+
+            lastIndex = i + 2;
+        }
+
+        result.Append(data[lastIndex..]);
+
+        return new ErrorOr<String>(result.ToString());
+    }
+
+    public static ErrorOr<(String?, String?, String?)> FindResults(
+        String path) {
+
+        String? output = null;
+        String? error = null;
+        String? stdErr = null;
+
+        if (File.ReadAllText(path) is String contents) {
+
+            contents = contents.Replace("\r\n", "\n");
+
+            var lines = contents.Split('\n');
+
+            var expectLines = lines.Where(line => line.StartsWith("/// ")).ToList();
+
+            Int32 SEEN_MARKER = 1;
+            Int32 SEEN_OUTPUT = 2;
+            Int32 SEEN_ERROR = 4;
+            Int32 SEEN_STDERR = 8;
+
+            var state = 0;
+
+            foreach (var line in expectLines) {
+
+                if ((state & SEEN_MARKER) == 0) {
+
+                    if (line.StartsWith("/// Expect:")) {
+
+                        state |= SEEN_MARKER;
+
+                        if ((line
+                            .SplitOnce(':') ?? throw new Exception())
+                            .Item2
+                            .TrimStart()
+                            .StartsWith("Skip")) {
+
+                            // Not a test
+
+                            return new ErrorOr<(String?, String?, String?)>((null, null, null));
+                        }
+
+                        continue;
+                    }
+                    else {
+
+                        break;
+                    }
+                }
+
+                if ((state & SEEN_OUTPUT) == 0 && line.StartsWith("/// - output: ")) {
+
+                    output = ParseQuotedString(line.TrimStartMatching("/// - output: ")).Value;
+
+                    state |= SEEN_OUTPUT;
+
+                    continue;
+                }
+
+                if ((state & SEEN_ERROR) == 0 && line.StartsWith("/// - error: ")) {
+
+                    error = ParseQuotedString(line.TrimStartMatching("/// - error: ")).Value;
+
+                    state |= SEEN_ERROR;
+
+                    continue;
+                }
+
+                if ((state & SEEN_STDERR) == 0 && line.StartsWith("/// - stderr: ")) {
+
+                    stdErr = ParseQuotedString(line.TrimStartMatching("/// - stderr: ")).Value;
+
+                    state |= SEEN_STDERR;
+
+                    continue;
+                }
+
+                break;
+            }
+        }
+
+        if (output is null && error is null && stdErr is null) {
+
+            var outputPath = path.SetExtension("out");
+
+            var errorOutputPath = path.SetExtension("error");
+
+            var stdErrOutputPath = path.SetExtension("errorOut");
+
+            if (File.Exists(outputPath)) {
+
+                output = File.ReadAllText(outputPath).Replace("\r\n", "\n");
+            }
+
+            if (File.Exists(errorOutputPath)) {
+
+                error = File.ReadAllText(errorOutputPath).Replace("\r\n", "\n");
+            }
+
+            if (File.Exists(stdErrOutputPath)) {
+
+                stdErr = File.ReadAllText(stdErrOutputPath).Replace("\r\n", "\n");
+            }
+        }
+
+        return new ErrorOr<(String?, String?, String?)>((output, error, stdErr));
+    }
+
     public static ErrorOrVoid TestSamples(
         String path) {
 
@@ -63,190 +316,198 @@ public static partial class Program {
 
                 // Great, we found test file
 
-                var outputPath = sample.ReplacingExtension(ext, "out");
+                var (expectedOutput, expectedError, expectedStdErr) = FindResults(sample).Value;
 
-                var errorOutputPath = sample.ReplacingExtension(ext, "error");
+                if (expectedOutput is null
+                    && expectedError is null
+                    && expectedStdErr is null) {
 
-                var stdErrOutputPath = sample.ReplacingExtension(ext, "errorOut");
+                    // No expectations, skip it
 
-                if (File.Exists(outputPath) || File.Exists(errorOutputPath) || File.Exists(stdErrOutputPath)) {
+                    continue;
+                }
 
-                    var og = Console.ForegroundColor;
+                var og = Console.ForegroundColor;
 
-                    Write($"Test: {sample}");
+                Write($"Test: {sample}");
 
-                    var filename = Path.GetFileName(sample);
+                var filename = Path.GetFileName(sample);
 
-                    var name = filename.Substring(0, filename.Length - ext.Length);
-                    
-                    // We have an output to compare to, let's do it.
+                var name = filename.Substring(0, filename.Length - ext.Length);
 
-                    var compiler = new Compiler(new List<String>());
+                // We have an output to compare to, let's do it.
 
-                    var cppStringOrError = compiler.ConvertToCPP(sample);
+                var compiler = new Compiler(new List<String>());
 
-                    String? cppString = null;
+                var cppStringOrError = compiler.ConvertToCPP(sample);
 
-                    switch (true) {
+                String cppString;
 
-                        case var _ when 
-                            cppStringOrError.Error == null 
-                            && !IsNullOrWhiteSpace(cppStringOrError.Value): {
+                switch (true) {
 
-                            if (File.Exists(errorOutputPath)) {
+                    case var _ when 
+                        cppStringOrError.Error is null 
+                        && !IsNullOrWhiteSpace(cppStringOrError.Value): {
 
-                                var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
+                        if (!IsNullOrWhiteSpace(expectedError)) {
 
-                                throw new Exception($"Expected error not created: {expectedErrorMsg}");
-                            }
+                            var expectedErrorMsg = expectedError
+                                .Replace("\r", "")
+                                .Replace("\n", "");
 
-                            cppString = cppStringOrError.Value;
-
-                            break;
+                            throw new Exception($"\r\nTest: {sample}\r\nExpected error not created: {expectedErrorMsg}");
                         }
 
-                        case var _ when 
-                            cppStringOrError.Error is Error err: {
+                        cppString = cppStringOrError.Value;
 
-                            if (File.Exists(errorOutputPath)) {
+                        break;
+                    }
 
-                                var expectedErrorMsg = File.ReadAllText(errorOutputPath).Trim();
+                    case var _ when
+                        cppStringOrError.Error is Error err: {
 
-                                var returnedError = err.Content?.Trim() ?? String.Empty;
+                        if (!IsNullOrWhiteSpace(expectedError)) {
 
-                                if (!returnedError.Contains(expectedErrorMsg)) {
+                            var expectedErrorMsg = expectedError
+                                .Replace("\r", "")
+                                .Replace("\n", "");
 
-                                    throw new Exception($"\nTest: {path}\nReturned error: {returnedError}\nExpected error: {expectedErrorMsg}");
-                                }
+                            var returnedError = err.Content; 
 
-                                Write($" ......");
+                            if (returnedError?.Contains(expectedErrorMsg) != true) {
 
-                                Console.ForegroundColor = ConsoleColor.Green;
-
-                                Write($" Verified (parse/type check)\n");
-
-                                Console.ForegroundColor = og;
-
-                                ///
-
-                                SuccesfulTests += 1;
-
-                                continue;
+                                throw new Exception($"\r\nTest: {sample}\r\nReturned error: {returnedError}\r\nExpected error: {expectedErrorMsg}");
                             }
-                            else {
 
-                                Write($" ......");
+                            Write($" ......");
 
-                                Console.ForegroundColor = ConsoleColor.Red;
+                            Console.ForegroundColor = ConsoleColor.Green;
 
-                                Write($" Failed\n");
+                            Write($" Verified (parse/type check)\n");
 
-                                Console.ForegroundColor = og;
+                            Console.ForegroundColor = og;
 
-                                Neu.Program.DisplayError(compiler, err.Content, err.GetSpan());                               
+                            ///
 
-                                return new ErrorOrVoid(err);
-                            }
+                            SuccesfulTests += 1;
+
+                            continue;
                         }
+                        else {
 
-                        default: {
+                            Write($" ......");
 
-                            throw new Exception();
+                            Console.ForegroundColor = ConsoleColor.Red;
+
+                            Write($" Failed\n");
+
+                            Console.ForegroundColor = og;
+
+                            Neu.Program.DisplayError(compiler, err.Content, err.GetSpan());                               
+
+                            return new ErrorOrVoid(err);
                         }
                     }
 
-                    var sampleDir = sample.Substring(2, sample.Length - filename.Length - 2);
+                    default: {
 
-                    var cppDir = $"./Build/{sampleDir}";
+                        throw new Exception();
+                    }
+                }
 
-                    Directory.CreateDirectory(cppDir);
+                ///
 
-                    var cppFilename = $"{cppDir}{name}.cpp";
+                var sampleDir = sample.Substring(2, sample.Length - filename.Length - 2);
 
-                    File.WriteAllText(cppFilename, cppString);
+                var cppDir = $"./Build/{sampleDir}";
+
+                Directory.CreateDirectory(cppDir);
+
+                var cppFilename = $"{cppDir}{name}.cpp";
+
+                File.WriteAllText(cppFilename, cppString);
 
                 var exeExt = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                     ? ".exe"
                     : ".out";
 
-                    var exeName = $"{cppFilename.Substring(0, cppFilename.Length - ext.Length)}.out";
+                var exeName = $"{cppFilename.Substring(0, cppFilename.Length - ext.Length)}{exeExt}";
 
-                    var (stdOut, stdErr, success) =
-                        Neu.Process.Run(
-                            "clang++", 
-                            new [] {
-                                cppFilename,
-                                "-o",
-                                exeName,
-                                "-include-pch",
-                                PchFilename.Value
-                            },
-                            CommonArgs);
+                var (stdOut, stdErr, success) =
+                    Neu.Process.Run(
+                        "clang++", 
+                        new [] {
+                            cppFilename,
+                            "-o",
+                            exeName,
+                            "-include-pch",
+                            PchFilename.Value
+                        },
+                        CommonArgs);
 
-                    if (!success) {
+                if (!success) {
 
-                        WriteLine(stdOut);
-                        WriteLine(stdErr);
+                    WriteLine(stdOut);
+                    WriteLine(stdErr);
 
-                        throw new Exception();
+                    throw new Exception();
+                }
+
+                var (binStdOut, binStdErr, binSuccess) = 
+                    Neu.Process
+                        .Run(name: exeName);
+
+                // var baselineText = File.Exists(outputPath)
+                //     ? File.ReadAllText(outputPath)
+                //     : null;
+
+                // var baselineStdErrText = File.Exists(stdErrOutputPath)
+                //     ? File.ReadAllText(stdErrOutputPath)
+                //     : null;
+                
+                var stdErrChecked = false;
+
+                if (!IsNullOrWhiteSpace(expectedStdErr)) {
+
+                    if (!binStdErr.Contains(expectedStdErr)) {
+
+                        throw new Exception(
+                            $"\r\n Test (stderr): {path}");
                     }
 
-                    var (binStdOut, binStdErr, binSuccess) = 
-                        Neu.Process
-                            .Run(name: exeName);
+                    stdErrChecked = true;
 
-                    var baselineText = File.Exists(outputPath)
-                        ? File.ReadAllText(outputPath)
-                        : null;
+                    Write($" ......");
 
-                    var baselineStdErrText = File.Exists(stdErrOutputPath)
-                        ? File.ReadAllText(stdErrOutputPath)
-                        : null;
-                   
-                    var stdErrChecked = false;
+                    Console.ForegroundColor = ConsoleColor.Green;
 
-                    if (!IsNullOrWhiteSpace(baselineStdErrText)) {
+                    Write($" Verified (std err)\n");
 
-                        if (!binStdErr.Contains(baselineStdErrText)) {
+                    Console.ForegroundColor = og;
 
-                            throw new Exception(
-                                $"\n Test (stderr): {path}");
-                        }
+                    ///
 
-                        stdErrChecked = true;
+                    SuccesfulTests += 1;
+                }
 
-                        Write($" ......");
+                if (!stdErrChecked || !IsNullOrWhiteSpace(expectedOutput)) {
 
-                        Console.ForegroundColor = ConsoleColor.Green;
+                    if (!Equals(binStdOut, expectedOutput)) {
 
-                        Write($" Verified (std err)\n");
-
-                        Console.ForegroundColor = og;
-
-                        ///
-
-                        SuccesfulTests += 1;
+                        throw new Exception($"\r\nTests: {path}");
                     }
+                    
+                    Write($" ......");
 
-                    if (!stdErrChecked || !IsNullOrWhiteSpace(baselineText)) {
+                    Console.ForegroundColor = ConsoleColor.Green;
 
-                        if (!Equals(binStdOut, baselineText)) {
+                    Write($" Success\n");
 
-                            throw new Exception($"\nTests: {path}");
-                        }
-                        
-                        Write($" ......");
+                    Console.ForegroundColor = og;
 
-                        Console.ForegroundColor = ConsoleColor.Green;
+                    ///
 
-                        Write($" Success\n");
-
-                        Console.ForegroundColor = og;
-
-                        ///
-
-                        SuccesfulTests += 1;
-                    }
+                    SuccesfulTests += 1;
                 }
             }
         }
@@ -261,8 +522,6 @@ public static partial class Program {
         Console.Clear();
 
         Compiler.Clean();
-
-        ///
 
         ///
 

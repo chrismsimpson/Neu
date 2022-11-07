@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "false\ntrue\n3\n"
+
 func main() {
     let a: [Int64]? = none
     let b: [Int64]? = [1, 2, 3]

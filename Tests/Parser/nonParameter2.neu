@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "expected parameter\n"
+
 func foo(anon = n: Int32) {
     printLine("{}", n)
 }

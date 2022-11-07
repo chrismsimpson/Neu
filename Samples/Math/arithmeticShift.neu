@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "-50\n-200\n"
+
 func main() {
     let x: Int64 = -100
 

@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Can't fill an Array with more than one expression"
+
 func foo() {
     let a = [1, 2, 3;1]
 }

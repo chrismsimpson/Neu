@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "3\n"
+
 func main() {
     var v = [1, 2, 3]
 

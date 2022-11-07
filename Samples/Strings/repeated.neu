@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "xxxxHello\n"
+
 func main() {
     let exes = String.repeated(character: 'x', count: 4)
     printLine("{}Hello", exes);

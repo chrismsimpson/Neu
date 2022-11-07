@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "5\n"
+
 func getUnique(nums: [Int64]) throws -> {Int64} {
     var set = { nums[0] }
     for i in 1..nums.size() {

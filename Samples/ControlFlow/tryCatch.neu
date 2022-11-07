@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "Caught 1234\nCaught 6969\nCaught 5252\n"
+
 func noToss() throws -> Int32 {
 
     if not true {

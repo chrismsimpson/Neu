@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "5\n"
+
 func main() {
     let i = some(5)
     printLine("{}", i ?? 0)

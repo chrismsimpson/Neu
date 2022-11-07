@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "type 'String' does not match type 'Int64' of previous values in set\n"
+
 func main() {
     let x = {1, "2", 3}
 }

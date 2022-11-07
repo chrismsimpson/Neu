@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "Foo\n"
+
 class Foo {
     public func call(this) => "Foo"
 }

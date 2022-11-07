@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: ""
+
 func main() {
     let a: Int8 = 0;
     let b: Int16 = 0;

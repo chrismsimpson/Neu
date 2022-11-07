@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Type mismatch: expected 'String', but got 'Int64'\n"
+
 func greet(msg: String, msg2: String) {
     printLine("{}", msg)
     printLine("{}", msg2)

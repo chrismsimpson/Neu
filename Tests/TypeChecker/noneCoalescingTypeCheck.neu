@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "None coalescing (??) with incompatible types ('Int64?' and 'String')\n"
+
 func main() {
     let myOptional: Int64? = 5
     let y = myOptional ?? "hello"

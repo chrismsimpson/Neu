@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "3\n85\n85\n85\n"
+
 func main() {
     let v = [85; 3]
     printLine("{}", v.size())

@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Can't access function 'cantTouch' from scope none, because it is marked private\n"
+
 class GoodEncapsulation {
     func cantTouch(this) { }
     public func oraoraora(this) { }

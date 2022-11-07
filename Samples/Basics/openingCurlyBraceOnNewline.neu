@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "Well, hello friends.\n"
+
 func main()
 {
     if true

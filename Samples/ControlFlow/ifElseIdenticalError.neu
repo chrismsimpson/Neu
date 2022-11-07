@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "if and else have identical blocks"
+
 func main() {
     if true {
         printLine("hello")

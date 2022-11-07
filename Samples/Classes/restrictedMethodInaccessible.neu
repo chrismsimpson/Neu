@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Can't access function 'getSecret' from 'C', because 'C' is not in the restricted whitelist\n"
+
 class Limited {
     
     restricted(A) func getSecret() => "Shhhh! Don't tell anyone!"

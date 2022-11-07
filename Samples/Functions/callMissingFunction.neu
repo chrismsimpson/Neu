@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Call to unknown function: 'missingFunction'\n"
+
 func main() {
     missingFunction()
 }

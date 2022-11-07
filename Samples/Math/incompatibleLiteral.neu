@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Binary arithmetic operation between incompatible types ('UInt8' and 'UInt16')\n"
+
 func main() {
     let x: UInt8 = 12
     let y: UInt16 = 34

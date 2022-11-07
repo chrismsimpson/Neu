@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "100\n"
+
 func main() {
     var x = 100
     printLine("{}", x)

@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "hello\n foo\n\n"
+
 func main() {
     defer {
         printLine(" foo\n")

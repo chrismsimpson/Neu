@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "1\n7\n3\n6\n"
+
 func main() {
     let myFirstNone: Int64? = none
     let mySecondNone: Int64? = none

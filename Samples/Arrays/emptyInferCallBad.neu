@@ -1,3 +1,6 @@
+/// Expect:
+/// - error: "Type mismatch: expected 'Double', but got 'String'\n"
+
 func test(arr: [Double]) {
     printLine("OK")
 }

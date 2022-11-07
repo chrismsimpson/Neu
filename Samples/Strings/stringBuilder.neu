@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "abc123\n"
+
 extern struct StringBuilder {
     func StringBuilder() -> StringBuilder
     func append(var this, anon s: raw CChar)

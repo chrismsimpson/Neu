@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "5\n5\n5\n5\n5\n5\n5\n5\n5\n"
+
 func main() {
     var a = UInt(0)
     a += 5 as! UInt

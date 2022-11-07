@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "0\n3.141592\n1.618033\n2.71827\n"
+
 func main() {
     printLine("{}", 0.0)
     printLine("{}", 3.14159265358979)

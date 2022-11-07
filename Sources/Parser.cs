@@ -7571,11 +7571,11 @@ public static partial class ParserFunctions {
                                     }
                                     default: {
 
-                                        Trace("ERROR: missing `?` after weak pointer type name");
+                                        Trace("ERROR: missing '?' after weak pointer type name");
 
                                         error = error ?? 
                                             new ParserError(
-                                                "missing `?` after weak pointer type name",
+                                                "missing '?' after weak pointer type name",
                                                 new Span(
                                                     fileId: typenameStart.FileId,
                                                     start: typenameStart.Start,

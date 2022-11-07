@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "Value.bar(values: ["hello"])\nRect(location: Point(x: 0, y: 0), size: Size(width: 15, height: 30))\nFoo.baz(100)\n"
+
 class Size {
     width: Int64
     height: Int64

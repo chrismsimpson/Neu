@@ -1,3 +1,6 @@
+/// Expect:
+/// - output: "42\n"
+
 func main() {
 
     var i: Int32? = none
