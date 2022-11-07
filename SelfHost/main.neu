@@ -1,0 +1,162 @@
+/// Expect:
+/// - output: ""
+
+extern struct StringBuilder {
+
+    func append(var this, anon s: UInt8)
+    func toString(var this) throws -> String
+    func StringBuilder() -> StringBuilder
+}
+
+// FIXME: These should not need explicit "-> Bool" return types.
+
+func isAsciiAlpha(anon c: UInt8) -> Bool => (c >= Byte('a') and c <= Byte('z')) or (c >= Byte('A') and c <= Byte('Z'))
+func isAsciiDigit(anon c: UInt8) -> Bool => (c >= Byte('0') and c <= Byte('9'))
+func isAsciiHexDigit(anon c: UInt8) -> Bool => (c >= Byte('0') and c <= Byte('9')) or (c >= Byte('a') and c <= Byte('f')) or (c >= Byte('A') and c <= Byte('F'))
+func isAsciiAlphaNumeric(anon c: UInt8) -> Bool => isAsciiAlpha(c) or isAsciiDigit(c)
+
+// FIXME: Would be nice to name this Span and not have conflict
+
+struct NeuSpan {
+
+    start: UInt
+    end: UInt
+}
+
+enum Token {
+
+    singleQuotedString(quote: String, span: NeuSpan)
+    singleQuotedByteString(quote: String, span: NeuSpan)
+    quotedString(quote: String, span: NeuSpan)
+    number(value: Int64, span: NeuSpan)
+    name(value: String, span: NeuSpan)
+    semicolon(NeuSpan)
+    colon(NeuSpan)
+    leftParen(NeuSpan)
+    rightParen(NeuSpan)
+    leftCurly(NeuSpan)
+    rightCurly(NeuSpan)
+    leftSquare(NeuSpan)
+    rightSquare(NeuSpan)
+    percent(NeuSpan)
+    plus(NeuSpan)
+    minus(NeuSpan)
+    equal(NeuSpan)
+    plusEqual(NeuSpan)
+    plusPlus(NeuSpan)
+    minusEqual(NeuSpan)
+    minusMinus(NeuSpan)
+    asteriskEqual(NeuSpan)
+    forwardSlashEqual(NeuSpan)
+    percentEqual(NeuSpan)
+    notEqual(NeuSpan)
+    doubleEqual(NeuSpan)
+    greaterThan(NeuSpan)
+    greaterThanOrEqual(NeuSpan)
+    lessThan(NeuSpan)
+    lessThanOrEqual(NeuSpan)
+    leftArithmeticShift(NeuSpan)
+    leftShift(NeuSpan)
+    leftShiftEqual(NeuSpan)
+    rightShift(NeuSpan)
+    rightArithmeticShift(NeuSpan)
+    rightShiftEqual(NeuSpan)
+    asterisk(NeuSpan)
+    ampersand(NeuSpan)
+    ampersandEqual(NeuSpan)
+    pipe(NeuSpan)
+    pipeEqual(NeuSpan)
+    caret(NeuSpan)
+    caretEqual(NeuSpan)
+    tilde(NeuSpan)
+    forwardSlash(NeuSpan)
+    exclamationPoint(NeuSpan)
+    questionMark(NeuSpan)
+    questionMarkQuestionMark(NeuSpan)
+    comma(NeuSpan)
+    period(NeuSpan)
+    periodPeriod(NeuSpan)
+    eol(NeuSpan)
+    eof(NeuSpan)
+    fatArrow(NeuSpan)
+    garbage(NeuSpan)
+
+    public func span(this) -> NeuSpan {
+
+        return when this {
+            singleQuotedString(quote: quote, span: span) => span
+            singleQuotedByteString(quote: quote, span: span) => span
+            quotedString(quote: quote, span: span) => span
+            number(value: value, span: span) => span
+            name(value: value, span: span) => span
+            semicolon(span: span) => span
+            colon(span: span) => span
+            leftParen(span: span) => span
+            rightParen(span: span) => span
+            leftCurly(span: span) => span
+            rightCurly(span: span) => span
+            leftSquare(span: span) => span
+            rightSquare(span: span) => span
+            percent(span: span) => span
+            plus(span: span) => span
+            minus(span: span) => span
+            equal(span: span) => span
+            plusEqual(span: span) => span
+            plusPlus(span: span) => span
+            minusEqual(span: span) => span
+            minusMinus(span: span) => span
+            asteriskEqual(span: span) => span
+            forwardSlashEqual(span: span) => span
+            percentEqual(span: span) => span
+            notEqual(span: span) => span
+            doubleEqual(span: span) => span
+            greaterThan(span: span) => span
+            greaterThanOrEqual(span: span) => span
+            lessThan(span: span) => span
+            lessThanOrEqual(span: span) => span
+            leftArithmeticShift(span: span) => span
+            leftShift(span: span) => span
+            leftShiftEqual(span: span) => span
+            rightShift(span: span) => span
+            rightArithmeticShift(span: span) => span
+            rightShiftEqual(span: span) => span
+            asterisk(span: span) => span
+            ampersand(span: span) => span
+            ampersandEqual(span: span) => span
+            pipe(span: span) => span
+            pipeEqual(span: span) => span
+            caret(span: span) => span
+            caretEqual(span: span) => span
+            tilde(span: span) => span
+            forwardSlash(span: span) => span
+            exclamationPoint(span: span) => span
+            questionMark(span: span) => span
+            questionMarkQuestionMark(span: span) => span
+            comma(span: span) => span
+            period(span: span) => span
+            periodPeriod(span: span) => span
+            eol(span: span) => span
+            eof(span: span) => span
+            fatArrow(span: span) => span
+            garbage(span: span) => span
+        }
+    }
+}
+
+enum NeuError {
+
+    message(msg: String, span: NeuSpan)
+    messageWithHint(msg: String, span: NeuSpan, hint: String, hintSpan: NeuSpan)
+}
+
+struct Lexer {
+
+    index: UInt
+    input: [UInt8]
+    errors: [NeuError]
+}
+
+func main(args: [String]) {
+
+    
+}
