@@ -551,6 +551,15 @@ public static partial class Program {
                 break;
             }
             
+            case var _ when
+                args.Length > 0
+                && args[0] == "selfhost": {
+
+                TestSelfHost();
+
+                break;
+            }
+
             default: {
 
                 TestBasics();
@@ -579,6 +588,7 @@ public static partial class Program {
                 TestCodeGen();
                 TestWhen();
                 TestImports();
+                TestSelfHost();
 
                 break;
             }
@@ -764,5 +774,10 @@ public static partial class Program {
     public static ErrorOrVoid TestImports() {
 
         return TestSamples("./Samples/Imports");
+    }
+
+    public static ErrorOrVoid TestSelfHost() {
+
+        return TestSamples("./SelfHost");
     }
 }
