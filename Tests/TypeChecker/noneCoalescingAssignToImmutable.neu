@@ -1,0 +1,8 @@
+/// Expect:
+/// - error: "left-hand side of ??= must be a mutable variable"
+
+func main() {
+    let i: String? = none
+    i ??= "mayb"
+    printLine(i ?? "hello")
+}
