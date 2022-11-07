@@ -3363,7 +3363,7 @@ public static partial class CodeGenFunctions {
                                             output.Append(" const& ");
                                             output.Append(arg.Item2);
                                             output.Append(" = __neu_match_value.");
-                                            output.Append(arg.Item1 ?? throw new Exception());
+                                            output.Append(arg.Item1 ?? arg.Item2);
                                             output.Append(";\n");
                                         }
                                     }

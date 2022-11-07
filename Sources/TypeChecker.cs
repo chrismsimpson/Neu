@@ -7897,7 +7897,8 @@ public static partial class TypeCheckerFunctions {
 
                                                         var _name = arg.Item1;
 
-                                                        if (IsNullOrWhiteSpace(_name)) {
+                                                        if (IsNullOrWhiteSpace(_name)
+                                                            && !fields.Any(field => field.Name == arg.Item2)) {
 
                                                             error = error ?? 
                                                                 new TypeCheckError(
@@ -7906,6 +7907,8 @@ public static partial class TypeCheckerFunctions {
                                                                 
                                                             continue;
                                                         }
+
+                                                        _name = _name ?? arg.Item2;
 
                                                         if (namesSeen.Contains(_name)) {
 
