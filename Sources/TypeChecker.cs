@@ -9014,6 +9014,38 @@ public static partial class TypeCheckerFunctions {
                 // 2. RHS must be Optional<T> or T.
                 // 3. Resulting type is Optional<T> or T, respectively.
 
+                // if an assignment, the LHS must be a mutable variable
+                if (op == BinaryOperator.NoneCoalescingAssign) {
+
+                    switch (lhs) {
+
+                        case CheckedVarExpression cve: {
+
+                            if (!cve.Variable.Mutable) {
+
+                                return (
+                                    Compiler.UnknownTypeId,
+                                    new TypecheckErrorWithHint(
+                                        "left-hand side of ??= must be a mutable variable",
+                                        cve.Span,
+                                        "This variable isn't marked as mutable",
+                                        cve.Variable.DefinitionSpan));
+                            }
+
+                            break;
+                        }
+
+                        default: {
+
+                            return (
+                                Compiler.UnknownTypeId,
+                                new TypeCheckError(
+                                    "left-hand side of ??= must be a variable",
+                                    span));
+                        }
+                    }
+                }
+
                 switch (project.Types[lhsTypeId]) {
 
                     case GenericInstance gi when gi.StructId == project.GetOptionalStructId(span): {
