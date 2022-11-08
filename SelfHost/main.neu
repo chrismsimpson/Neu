@@ -154,9 +154,30 @@ struct Lexer {
     index: UInt
     input: [UInt8]
     errors: [NeuError]
+
+    // Peek at next upcoming character
+
+    func peek(this) -> UInt8 {
+
+        if (.eof()) {
+
+            return 0
+        }
+
+        return .input[.index]
+    }
+
+
+
+
+    func eof(this) -> Bool {
+
+        return .index >= .input.size()
+    }
+
+    
 }
 
 func main(args: [String]) {
 
-    
 }
