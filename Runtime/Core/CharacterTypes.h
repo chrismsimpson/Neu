@@ -38,7 +38,7 @@ constexpr bool isAsciiAlpha(UInt32 codePoint) {
     return isAsciiLowerAlpha(codePoint) || isAsciiUpperAlpha(codePoint);
 }
 
-constexpr bool isAsciiAlphanumeric(UInt32 codePoint) {
+constexpr bool isAsciiAlphaNumeric(UInt32 codePoint) {
 
     return isAsciiAlpha(codePoint) || isAsciiDigit(codePoint);
 }

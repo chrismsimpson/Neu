@@ -1,3 +1,6 @@
+/// Expect:
+/// - stderr: "usage: crc32 <path>\n"
+
 extern struct FILE { }
 
 extern func fopen(anon str: raw CChar, anon mode: raw CChar) -> raw FILE

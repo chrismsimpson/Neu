@@ -1,0 +1,49 @@
+/// Expect:
+/// - output: ""
+
+func main() {
+    {
+        var x = Int8(0)
+        x++
+    }
+    {
+        var x = Int16(0)
+        x++
+    }
+    {
+        var x = Int32(0)
+        x++
+    }
+    {
+        var x = Int64(0)
+        x++
+    }
+    {
+        var x = UInt(0)
+        x++
+    }
+    {
+        var x = UInt16(0)
+        x++
+    }
+    {
+        var x = UInt32(0)
+        x++
+    }
+    {
+        var x = UInt64(0)
+        x++
+    }
+    {
+        var x = UInt(0)
+        x++
+    }
+    {
+        var x: CInt = 0
+        x++
+    }
+    {
+        var x: CChar = 0
+        x++
+    }
+}

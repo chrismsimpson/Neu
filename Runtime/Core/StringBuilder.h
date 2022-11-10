@@ -220,7 +220,7 @@ struct Formatter<Tuple<Ts...>> : Formatter<StringView> {
                 
                 appendValue(stringBuilder, first);
                 
-                ((stringBuilder.append(", "), append_value(stringBuilder, args)), ...);
+                ((stringBuilder.append(", "), appendValue(stringBuilder, args)), ...);
             });
         }
 

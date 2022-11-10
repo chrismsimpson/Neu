@@ -6330,7 +6330,8 @@ public static partial class ParserFunctions {
 
                                         contNS = false;
                                     }
-                                    else if (tokens[index] is LessThanToken) {
+                                    else if (tokens[index] is LessThanToken
+                                        && ns.IsStaticNamespace()) { // only parse things like `.SomeType<T>` (capitalised)
 
                                         index -= 1;
 

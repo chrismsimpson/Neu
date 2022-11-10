@@ -1,0 +1,22 @@
+/// Expect:
+/// - output: ""
+
+
+class Parser {
+    index: UInt
+    
+    public func parseFunction(var this) throws {
+        
+        while .index < UInt(2) {
+
+            .index++
+        }
+    }
+
+
+
+}
+
+func main(args: [String]) {
+    
+}

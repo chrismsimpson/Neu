@@ -70,9 +70,9 @@ enum Token {
     caretEqual(NeuSpan)
     tilde(NeuSpan)
     forwardSlash(NeuSpan)
-    exclamationPoint(NeuSpan)
-    questionMark(NeuSpan)
-    questionMarkQuestionMark(NeuSpan)
+    exclamation(NeuSpan)
+    question(NeuSpan)
+    questionQuestion(NeuSpan)
     comma(NeuSpan)
     period(NeuSpan)
     periodPeriod(NeuSpan)
@@ -129,9 +129,9 @@ enum Token {
             caretEqual(span: span) => span
             tilde(span: span) => span
             forwardSlash(span: span) => span
-            exclamationPoint(span: span) => span
-            questionMark(span: span) => span
-            questionMarkQuestionMark(span: span) => span
+            exclamation(span: span) => span
+            question(span: span) => span
+            questionQuestion(span: span) => span
             comma(span: span) => span
             period(span: span) => span
             periodPeriod(span: span) => span
@@ -167,17 +167,1536 @@ struct Lexer {
         return .input[.index]
     }
 
+    // Peek at upcoming characters, N steps ahead in the stream
+    // FIXME: This could be merged with peek() once we support default arguments
 
+    func peekAhead(this, anon steps: UInt) -> UInt8 {
 
+        if .index + steps >= .input.size() {
+
+            return 0
+        }
+
+        return .input[.index + steps]
+    }
 
     func eof(this) -> Bool {
 
         return .index >= .input.size()
     }
-
     
+    func substring(this, start: UInt, length: UInt) throws -> String {
+
+        var builder = StringBuilder()
+
+        for i in start..length {
+
+            builder.append(.input[i])
+        }
+
+        return builder.toString()
+    }
+
+    func lexCharacterConstantOrName(var this) throws -> Token {
+
+        if (.peekAhead(1) != Byte('\'')) {
+
+            return .lexNumberOrName()
+        }
+
+        let isByte = .peek() == Byte('b')
+
+        if (isByte) {
+
+            .index++
+        }
+
+        let start = .index
+
+        .index++
+
+        var escaped = false
+
+        while not .eof() and (escaped or .peek() != Byte('\'')) {
+
+            if not escaped and .peek() == Byte('\\') {
+
+                escaped = true
+            }
+            else {
+
+                escaped = false
+            }
+
+            .index++
+        }
+
+        if .eof() or .peek() != Byte('\'') {
+
+            .errors.push(NeuError.message(msg: "expected single quote", span: NeuSpan(start, end: start)))
+        }
+
+        // Everything but the quotes
+
+        var builder = StringBuilder()
+        
+        builder.append(.input[start + 1])
+        
+        let str = builder.toString()
+
+        .index++
+
+        let end = .index
+
+        if isByte {
+            
+            return Token.singleQuotedByteString(quote: str, span: NeuSpan(start, end))
+        }
+
+        return Token.singleQuotedString(quote: str, span: NeuSpan(start, end))
+    }
+
+    func lexNumberOrName(var this) throws -> Token {
+
+        let start = .index
+
+        if (.eof()) {
+
+            .errors.push(NeuError.message(msg: "unexpected eof", span: NeuSpan(start, end: start)))
+            
+            return Token.garbage(NeuSpan(start, end: start))
+        }
+
+        if isAsciiDigit(.peek()) {
+
+            var total = Int64(0)
+
+            while isAsciiDigit(.peek()) {
+
+                let value = .input[.index]
+
+                ++.index
+
+                let digit: Int64 = asSaturated(value - Byte('0'))
+
+                total = total * 10 + digit
+            }
+
+            let end = .index
+
+            return Token.number(value: total, span: NeuSpan(start, end))
+        }
+        else if isAsciiAlpha(.peek()) or .peek() == Byte('_') {
+
+            var stringBuilder = StringBuilder()
+
+            while isAsciiAlphaNumeric(.peek()) or .peek() == Byte('_') {
+                
+                let value = .input[.index]
+                
+                ++.index
+                
+                stringBuilder.append(value)
+            }
+
+            let end = .index
+
+            return Token.name(value: stringBuilder.toString(), span: NeuSpan(start, end))
+        }
+
+        let unknownChar = .input[.index]
+        
+        let end = ++.index
+
+        .errors.push(NeuError.message(msg: format("unknown character: {:c}", unknownChar), span: NeuSpan(start, end)))
+        
+        return Token.garbage(NeuSpan(start, end))
+    }
+
+    func lexQuotedString(var this, delimiter: UInt8) throws -> Token {
+
+        let start = .index
+
+        ++.index
+
+        if .eof() {
+
+            .errors.push(NeuError.message(msg: "unexpected eof", span: NeuSpan(start, end: start)))
+
+            return Token.garbage(NeuSpan(start, end: start))
+        }
+
+        var escaped = false
+
+        while not .eof() and (escaped or .peek() != delimiter) {
+
+            if not escaped and .peek() == Byte('\\') {
+
+                escaped = true
+            }
+            else {
+
+                escaped = false
+            }
+
+            ++.index
+        }
+
+        let end = .index
+
+        let str = .substring(start: start + 1, length: .index)
+
+        .index++
+
+        if delimiter == Byte('\'') {
+
+            // FIXME: NeuError? can not be assigned 'none'
+
+            return Token.singleQuotedString(quote: str, span: NeuSpan(start, end))
+        }
+        
+        return Token.quotedString(quote: str, span: NeuSpan(start, end))
+    }
+
+    func lexPlus(var this) -> Token {
+
+        let start = .index
+
+        ++.index
+
+        return when .peek() {
+            (Byte('=')) => Token.plusEqual(NeuSpan(start, end: ++.index))
+            (Byte('+')) => Token.plusPlus(NeuSpan(start, end: ++.index))
+            else => Token.plus(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexMinus(var this) -> Token {
+
+        let start = .index
+        
+        ++.index
+
+        return when .peek() {
+            (Byte('=')) => Token.minusEqual(NeuSpan(start, end: ++.index))
+            (Byte('-')) => Token.minusMinus(NeuSpan(start, end: ++.index))
+            else => Token.minus(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexAsterisk(var this) -> Token {
+
+        let start = .index
+
+        ++.index
+
+        return when .peek() {
+            (Byte('=')) => Token.asteriskEqual(NeuSpan(start, end: ++.index))
+            else => Token.asterisk(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexForwardSlash(var this) -> Token {
+
+        let start = .index
+
+        ++.index
+
+        return when .peek() {
+            (Byte('=')) => Token.forwardSlashEqual(NeuSpan(start, end: ++.index))
+            else => Token.forwardSlash(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexCaret(var this) -> Token {
+
+        let start = .index
+
+        ++.index
+
+        return when .peek() {
+            (Byte('=')) => Token.caretEqual(NeuSpan(start, end: ++.index))
+            else => Token.forwardSlash(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexPipe(var this) -> Token {
+
+        let start = .index
+
+        ++.index
+
+        return when .peek() {
+            (Byte('=')) => Token.pipeEqual(NeuSpan(start, end: ++.index))
+            else => Token.pipe(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexPercent(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('=')) => Token.percentEqual(NeuSpan(start, end: ++.index))
+            else => Token.percent(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexExclamation(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('=')) => Token.notEqual(NeuSpan(start, end: ++.index))
+            else => Token.exclamation(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexAmpersand(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('=')) => Token.ampersandEqual(NeuSpan(start, end: ++.index))
+            else => Token.ampersand(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexLessThan(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('=')) => Token.lessThanOrEqual(NeuSpan(start, end: ++.index))
+            (Byte('<')) => Token.leftShift(NeuSpan(start, end: ++.index))
+            else => Token.lessThan(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexGreaterThan(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('=')) => Token.greaterThanOrEqual(NeuSpan(start, end: ++.index))
+            (Byte('>')) => Token.rightShift(NeuSpan(start, end: ++.index))
+            else => Token.greaterThan(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexPeriod(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('.')) => Token.periodPeriod(NeuSpan(start, end: ++.index))
+            else => Token.period(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexColon(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            else => Token.colon(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexQuestion(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('?')) => Token.questionQuestion(NeuSpan(start, end: ++.index))
+            else => Token.question(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func lexEquals(var this) -> Token {
+        
+        let start = .index
+        
+        ++.index
+        
+        return when .peek() {
+            (Byte('=')) => Token.doubleEqual(NeuSpan(start, end: ++.index))
+            (Byte('>')) => Token.fatArrow(NeuSpan(start, end: ++.index))
+            else => Token.equal(NeuSpan(start: .index - 1, end: .index))
+        }
+    }
+
+    func next(var this) throws -> Token? {
+
+        if .eof() {
+
+            return none
+        }
+
+        if .index == .input.size() {
+
+            ++.index
+
+            return Token.eof(NeuSpan(start: .index - 1, end: .index - 1))
+        }
+
+        while .peek() == Byte(' ') {
+
+            ++.index
+        }
+
+        let start = .index
+
+        return when .input[.index] {
+
+            (Byte('(')) => Token.leftParen(NeuSpan(start, end: ++.index))
+            (Byte(')')) => Token.rightParen(NeuSpan(start, end: ++.index))
+            (Byte('[')) => Token.leftSquare(NeuSpan(start, end: ++.index))
+            (Byte(']')) => Token.rightSquare(NeuSpan(start, end: ++.index))
+            (Byte('{')) => Token.leftCurly(NeuSpan(start, end: ++.index))
+            (Byte('}')) => Token.rightCurly(NeuSpan(start, end: ++.index))
+            (Byte('<')) => .lexLessThan()
+            (Byte('>')) => .lexGreaterThan()
+            (Byte('.')) => .lexPeriod()
+            (Byte(',')) => Token.comma(NeuSpan(start, end: ++.index))
+            (Byte('~')) => Token.tilde(NeuSpan(start, end: ++.index))
+            (Byte(';')) => Token.semicolon(NeuSpan(start, end: ++.index))
+            (Byte(':')) => .lexColon()
+            (Byte('?')) => .lexQuestion()
+            (Byte('+')) => .lexPlus()
+            (Byte('-')) => .lexMinus()
+            (Byte('*')) => .lexAsterisk()
+            (Byte('/')) => .lexForwardSlash()
+            (Byte('^')) => .lexCaret()
+            (Byte('|')) => .lexPipe()
+            (Byte('%')) => .lexPercent()
+            (Byte('!')) => .lexExclamation()
+            (Byte('&')) => .lexAmpersand()
+            (Byte('=')) => .lexEquals()
+            (Byte('\n')) => Token.eol(NeuSpan(start, end: ++.index))
+            (Byte('\'')) => .lexQuotedString(delimiter: Byte('\''))
+            (Byte('\"')) => .lexQuotedString(delimiter: Byte('"'))
+            (Byte('b')) => .lexCharacterConstantOrName()
+            (Byte('c')) => .lexCharacterConstantOrName()
+            else => .lexNumberOrName()
+        }
+    }
 }
+
+func printError(filename: String, contents: [UInt8], error: NeuError) throws {
+
+    when error {
+
+        NeuError.message(msg: message, span: span) => {
+
+            displayMessageWithSpan(severity: MessageSeverity.error(), filename, contents, message, span)
+        }
+        NeuError.messageWithHint(msg: message, span: span, hint: hint, hintSpan: hintSpan) => {
+
+            displayMessageWithSpan(severity: MessageSeverity.error(), filename, contents, message, span)
+            displayMessageWithSpan(severity: MessageSeverity.hint(), filename, contents, message: hint, span: hintSpan)
+        }
+    }
+}
+
+enum MessageSeverity {
+
+    hint
+    error
+}
+
+func severityName(severity: MessageSeverity) throws -> String {
+
+    return when severity {
+
+        MessageSeverity.hint => "Hint"
+        
+        MessageSeverity.error => "Error"
+    }
+}
+
+func ansiColorCode(severity: MessageSeverity) throws -> String {
+
+    return when severity {
+
+        MessageSeverity.hint => "94"        // Bright Blue
+        
+        MessageSeverity.error => "31"    // Red
+    }
+}
+
+func displayMessageWithSpan(severity: MessageSeverity, filename: String, contents: [UInt8], message: String, span: NeuSpan) throws {
+
+    printLine("{}: {}", severityName(severity), message)
+
+    let lineSpans = gatherLineSpans(contents)
+
+    var lineIndex = UInt(1)
+
+    let largestLineNumber = lineSpans.size()
+
+    let width = format("{}", largestLineNumber).length()
+    
+    while lineIndex < lineSpans.size() {
+
+        if span.start >= lineSpans[lineIndex].0 and span.start <= lineSpans[lineIndex].1 {
+
+            let columnIndex = span.start - lineSpans[lineIndex].0
+
+            printLine("----- \u001b[33m{}:{}:{}\u001b[0m", filename, lineIndex + 1, columnIndex + 1)
+
+            if lineIndex > 0 {
+
+                printSourceLine(severity, contents, fileSpan: lineSpans[lineIndex - 1], errorSpan: span, lineNumber: lineIndex, largestLineNumber)
+            }
+
+            printSourceLine(severity, contents, fileSpan: lineSpans[lineIndex], errorSpan: span, lineNumber: lineIndex + 1, largestLineNumber)
+
+            for x in 0..(span.start - lineSpans[lineIndex].0 + width + 4) {
+
+                print(" ")
+            }
+
+            printLine("\u001b[{}m^- {}\u001b[0m", ansiColorCode(severity), message)
+
+            while lineIndex < lineSpans.size() and span.end > lineSpans[lineIndex].0 {
+
+                ++lineIndex
+
+                if lineIndex >= lineSpans.size() {
+
+                    break
+                }
+
+                printSourceLine(severity, contents, fileSpan: lineSpans[lineIndex], errorSpan: span, lineNumber: lineIndex + 1, largestLineNumber)
+
+                break
+            }    
+        }
+        else {
+
+            ++lineIndex
+        }
+
+        printLine("\u001b[0m-----")
+    }
+}
+
+func printSourceLine(severity: MessageSeverity, contents: [UInt8], fileSpan: (UInt, UInt), errorSpan: NeuSpan, lineNumber: UInt, largestLineNumber: UInt) throws {
+
+    var index = fileSpan.0
+
+    let width = format("{}", largestLineNumber).length()
+
+    print("{} | ", lineNumber)
+
+    while index <= fileSpan.1 {
+
+        var c = Byte(' ')
+
+        if index < fileSpan.1 {
+
+            c = contents[index]
+        }
+        else if errorSpan.start == errorSpan.end and index == errorSpan.start {
+
+            c = Byte('_')
+        }
+
+        if (index >= errorSpan.start and index < errorSpan.end) or (errorSpan.start == errorSpan.end and index == errorSpan.start) {
+
+            print("\u001b[{}m{:c}", ansiColorCode(severity), c)
+        }
+        else {
+
+            print("\u001b[0m{:c}", c)
+        }
+
+        ++index
+    }
+
+    printLine("")
+}
+
+func gatherLineSpans(contents: [UInt8]) throws -> [(UInt, UInt)] {
+
+    var index = UInt(0)
+
+    var output: [(UInt, UInt)] = []
+
+    var start = index
+
+    while index < contents.size() {
+
+        if contents[index] == Byte('\n') {
+
+            output.push((start, index))
+
+            start = index + 1
+        }
+
+        index += 1
+    }
+
+    if start < index {
+
+        output.push((start, index))
+    }
+
+    return output
+}
+
+// Compiler
+
+struct Project {
+    
+    functions: [CheckedFunction]
+    scopes: [Scope]
+    types: [Type]
+}
+
+struct Scope {
+
+    functions: [String: (UInt, NeuSpan)]
+}
+
+enum Type {
+
+    builtin
+}
+
+// Parsed Types
+
+struct ParsedNamespace {
+
+    public name: String
+    public functions: [ParsedFunction]
+}
+
+struct ParsedFunction {
+
+    public name: String
+    public params: [ParsedParameter]
+    public block: ParsedBlock
+    public returnType: ParsedType
+    public throws: Bool
+}
+
+struct ParsedParameter {
+
+    requiresLabel: Bool
+    variable: ParsedVariable
+    isMutable: Bool
+    span: NeuSpan
+}
+
+struct ParsedBlock {
+
+    stmts: [ParsedStatement]
+}
+
+ref enum ParsedStatement {
+
+    expression(ParsedExpression)
+    defer(ParsedStatement)
+    unsafeBlock(ParsedBlock)
+    varDecl(var: ParsedVarDecl, init: ParsedExpression)
+    ifStmt(guard: ParsedExpression, thenBlock: ParsedBlock, elseBlock: ParsedBlock?)
+    block(ParsedBlock)
+    loop(ParsedBlock)
+    whileStmt(guard: ParsedExpression, block: ParsedBlock)
+    forStmt(name: String, nameSpan: NeuSpan, range: ParsedExpression, block: ParsedBlock)
+    breakStmt
+    continueStmt
+    returnStmt(expr: ParsedExpression, span: NeuSpan)
+    throwStmt(ParsedExpression)
+    garbage
+}
+
+ref enum ParsedExpression {
+    
+    boolean(value: Bool, span: NeuSpan)
+    numericConstant(value: Int64, span: NeuSpan)
+    quotedString(value: String, span: NeuSpan)
+    callExpr(call: ParsedCall, span: NeuSpan)
+    var(name: String, span: NeuSpan)
+    optionalNone(NeuSpan)
+    garbage(NeuSpan)
+}
+
+struct ParsedVarDecl {
+
+    name: String
+    type: ParsedType
+    isMutable: Bool
+    span: NeuSpan
+}
+
+struct ParsedVariable {
+    
+    name: String
+    type: ParsedType
+    isMutable: Bool
+    span: NeuSpan
+}
+
+struct ParsedCall {
+    
+    name: String
+    args: [(String, ParsedExpression)]
+}
+
+ref enum ParsedType {
+
+    name(value: String, span: NeuSpan)
+    array(inner: ParsedType, span: NeuSpan)
+    dictionary(key: ParsedType, value: ParsedType, span: NeuSpan)
+    set(inner: ParsedType, span: NeuSpan)
+    optional(inner: ParsedType, span: NeuSpan)
+    rawPointer(inner: ParsedType, span: NeuSpan)
+    weakPointer(inner: ParsedType, span: NeuSpan)
+    empty
+}
+
+// Checked Types
+
+// FIXME: we want a unique type for returnTypeId and others, like TypeId
+
+struct CheckedNamespace {
+
+    name: String
+    scope: UInt
+}
+
+struct CheckedFunction {
+
+    name: String
+    returnTypeId: UInt
+    params: [CheckedParameter]
+    block: CheckedBlock
+}
+
+struct CheckedParameter {
+    
+    requiresLabel: Bool
+    variable: CheckedVariable
+}
+
+struct CheckedVariable {
+
+    name: String
+    varTypeId: UInt
+    isMutable: Bool
+    definitionSpan: NeuSpan
+}
+
+
+struct CheckedVarDecl {
+
+    name: String
+    varTypeId: UInt
+    isMutable: Bool
+    span: NeuSpan
+}
+
+struct CheckedBlock {
+    
+    statements: [CheckedStatement]
+    definitelyReturns: Bool
+}
+
+ref enum CheckedStatement {
+
+    expression(CheckedExpression)
+    defer(CheckedStatement)
+    varDecl(var: CheckedVarDecl, init: CheckedExpression)
+    ifStmt(guard: CheckedExpression, thenBlock: CheckedBlock, elseBlock: CheckedBlock?)
+    block(CheckedBlock)
+    loop(CheckedBlock)
+    whileStmt(guard: CheckedExpression, block: CheckedBlock)
+    returnStmt(CheckedExpression)
+    breakStmt
+    continueStmt
+    throwStmt(CheckedExpression)
+    garbage
+}
+
+ref enum CheckedExpression {
+
+    boolean(value: Bool, span: NeuSpan)
+    quotedString(value: String, span: NeuSpan)
+    callExpr(call: CheckedCall, span: NeuSpan, type: UInt)
+}
+
+struct CheckedCall {
+
+    name: String
+    args: [(String, CheckedExpression)]
+    returnType: UInt
+}
+
+///
+
+class Parser {
+
+    index: UInt
+    tokens: [Token]
+    errors: [NeuError]
+
+    func peek(this, anon steps: UInt) -> Token {
+
+        if .eof() or (steps + .index) >= .tokens.size() {
+
+            return .tokens[.tokens.size() - 1]
+        }
+
+        return .tokens[.index + steps]
+    }
+
+    func current(this) -> Token {
+
+        return .peek(0)
+    }
+
+    func eof(this) -> Bool {
+
+        return .index >= .tokens.size()
+    }
+
+    public func parseNamespace(var this) throws -> ParsedNamespace {
+
+        var parsedNamespace = ParsedNamespace(name: "", functions: [])
+
+        var shouldBreak = false
+
+        while not shouldBreak and not .eof() {
+
+            when .current() {
+                
+                Token.name(value: name, span: span) => {
+
+                    when name {
+                        ("func") => {
+
+                            let function = .parseFunction(FunctionLinkage.internal(), Visibilty.pub())
+
+                            parsedNamespace.functions.push(function)
+                        }
+                        else => { }
+                    }
+                }
+                Token.eol => {
+
+                    // Ignore
+
+                    .index++
+                }
+                Token.rightCurly => {
+
+                    shouldBreak = true
+                }
+                else => {
+
+                }
+            }
+        }
+
+        return parsedNamespace
+    }
+
+    public func parseFunction(var this, anon linkage: FunctionLinkage, anon visibilty: Visibilty) throws -> ParsedFunction {
+
+        var parsedFunction = ParsedFunction(
+            name: "",
+            params: [],
+            block: ParsedBlock(stmts: []),
+            returnType: ParsedType.empty(),
+            throws: false)
+
+        .index++
+
+        if .index >= .tokens.size() {
+
+            .errors.push(NeuError.message(msg: "Incomplete function definition", span: .current().span()))
+
+            return parsedFunction
+        }
+
+        let functionName = when .current() {
+
+            Token.name(value: name) => name
+            else => { return parsedFunction }
+        }
+
+        .index++
+
+        // FIXME: Check for generic
+
+        if .index >= .tokens.size() {
+
+            .errors.push(NeuError.message(msg: "Incomplete function", span: .current().span()))
+        }
+
+        when .current() {
+
+            Token.leftParen(span: span) => {
+
+                .index++
+            }
+            else => {
+
+                .errors.push(NeuError.message(msg: "Expected '('", span: .current().span()))
+            }
+        }
+
+        var params: [ParsedParameter] = []
+        var currentParamRequiresLabel = true
+        var currentParamIsMutable = true
+        var shouldBreak = false
+
+        while not shouldBreak and .index < .tokens.size() {
+
+            when .current() {
+
+                Token.rightParen => {
+
+                    .index++
+
+                    shouldBreak = true
+                }
+                Token.comma => {
+
+                    .index++
+
+                    currentParamRequiresLabel = true
+                }
+                Token.name(value: name, span: span) => {
+
+                    if name == "anon" {
+
+                        currentParamRequiresLabel = false
+
+                        .index++
+                    }
+                    else if name == "var" {
+
+                        currentParamIsMutable = true
+
+                        .index++
+                    }
+                    else if name == "this" {
+
+                        currentParamIsMutable = true
+
+                        params.push(
+                            ParsedParameter(
+                                requiresLabel: false,
+                                variable: ParsedVariable(
+                                    name: "this",
+                                    type: ParsedType.empty(),
+                                    isMutable: currentParamIsMutable,
+                                    span: .current().span()),
+                                isMutable: currentParamIsMutable,
+                                span: .current().span()))
+                        
+                        .index++
+                    }
+                    else {
+
+                        printLine("FIXME: Parse a parameter")
+                    }
+                }
+                else => {
+
+                    .errors.push(NeuError.message(msg: "Expected parameter", span: .current().span()))
+                }
+            }
+        }
+
+        // NOTE: main() always throws
+
+        if functionName == "main" {
+
+            parsedFunction.throws = true
+        }
+        else {
+
+            when .current() {
+
+                Token.name(value: name) => {
+
+                    if (name == "throws") {
+
+                        parsedFunction.throws = true
+
+                        .index++
+                    }
+                }
+                else => { }
+            }
+        }
+
+        // Accept return type specification with '->'
+
+        var returnType = ParsedType.empty()
+
+        var returnTypeSpan: NeuSpan? = none
+
+        when .current() {
+
+            Token.minus => {
+
+                .index++
+
+                when .current() {
+
+                    Token.greaterThan => {
+
+                        .index++
+
+                        let start = .current().span().start
+
+                        returnType = .parseTypeName()
+
+                        returnTypeSpan = NeuSpan(start, end: .index)
+                    }
+                    else => {
+
+                        .errors.push(NeuError.message(msg: "Expected ->", span: .current().span()))
+                    }
+                }
+            }
+            else => { }
+        }
+
+        // FIXME: Accept an (optional) fat arrow ('=>')
+
+        parsedFunction.block = .parseBlock()
+
+        return parsedFunction
+    }
+
+    func parseTypeName(var this) throws -> ParsedType {
+
+        var parsedType = .parseShorthandType()
+
+        when .current() {
+
+            Token.name(value: name) => {
+
+                if name == "raw" or name == "weak" {
+
+                    printLine("FIXME: raw/weak")
+                }
+                else {
+
+                    let span = .current().span()
+
+                    .index++
+
+                    return ParsedType.name(value: name, span)
+                }
+            }
+            else => {
+
+                .errors.push(NeuError.message(msg: "Expected type name", span: .current().span()))
+            }
+        }
+
+        return parsedType
+    }
+
+    func parseShorthandType(var this) throws -> ParsedType {
+
+        let start = .current().span().start
+
+        when .current() {
+
+            Token.leftSquare => {
+
+                // [T] is shorthand for Array<T>
+                // [K:V] is shorthand for Dictionary<K, V>
+
+                .index++
+
+                let inner = .parseTypeName()
+
+                when .current() {
+
+                    Token.rightSquare => {
+
+                        let span = NeuSpan(start, end: .current().span().end)
+
+                        .index++
+
+                        return ParsedType.array(inner, span)
+                    }
+                    Token.colon => {
+
+                        let span = NeuSpan(start, end: .current().span().end)
+
+                        let value = .parseTypeName()
+
+                        return ParsedType.dictionary(key: inner, value, span)
+                    }
+                    else => {
+
+                        .errors.push(NeuError.message(msg: "Expected shorthand type", span: .current().span()))
+                    }
+                }
+            }
+            Token.leftCurly => {
+
+                // {T} is shorthand for Set<T>
+
+                let inner = .parseTypeName()
+
+                .index++
+
+                when .current() {
+                    
+                    Token.rightCurly => {
+
+                        let span = NeuSpan(start, end: .current().span().end)
+
+                        return ParsedType.set(inner, span)
+                    }
+                    else => {
+
+                        .errors.push(NeuError.message(msg: "Expected '}'", span: .current().span()))
+                    }
+                }
+            }
+            Token.leftParen => {
+                
+                // (A, B, C) is shorthand for Tuple<A, B, C>
+                
+                printLine("FIXME: Implement tuple type shorthand")
+            }
+            else { }
+        }
+
+        return ParsedType.empty()
+    }
+
+    func parseBlock(var this) throws -> ParsedBlock {
+
+        let start = .current().span().start
+
+        var block = ParsedBlock(stmts: [])
+
+        if .eof() {
+
+            .errors.push(NeuError.message(msg: "Incomplete block", span: NeuSpan(start, end: start)))
+
+            return block
+        }
+
+        .skipNewlines()
+
+        when .current() {
+
+            Token.leftCurly => {
+
+                .index++
+            }
+            else => {
+
+                .errors.push(NeuError.message(msg: "Expected '{'", span: NeuSpan(start, end: start)))
+            }
+        }
+
+        while not .eof() {
+
+            when .current() {
+
+                Token.rightCurly => {
+
+                    .index++
+
+                    return block
+                }
+                Token.semicolon => {
+
+                    .index++
+                }
+                Token.eol => {
+
+                    .index++
+                }
+                else => {
+
+                    let stmt = .parseStatement()
+
+                    block.stmts.push(stmt)
+                }
+            }
+        }
+
+        .errors.push(NeuError.message(msg: "Expected complete block", span: NeuSpan(start, end: .current().span().end)))
+
+        return block
+    }
+
+    func parseStatement(var this) throws -> ParsedStatement {
+
+        printLine("parseStatement: {}", .current())
+
+        let start = .current().span().start
+
+        when .current() {
+
+            Token.name(value: name) => {
+
+                when name {
+
+                    ("return") => {
+
+                        .index++
+
+                        let expr = .parseExpression()
+
+                        let end = .tokens[.index - 1].span().end
+
+                        return ParsedStatement.returnStmt(expr, span: NeuSpan(start, end))
+                    }
+                    else => {
+
+                        .errors.push(NeuError.message(msg: "Unknown keyword", span: NeuSpan(start, end: start)))
+                    }
+                }
+            }
+            Token.leftCurly => {
+
+                let block = .parseBlock()
+
+                return ParsedStatement.block(block)
+            }
+            else => {
+
+                let expr = .parseExpression()
+
+                return ParsedStatement.expression(expr)
+            }
+        }
+
+        return ParsedStatement.garbage()
+    }   
+
+    func parseExpression(var this) throws -> ParsedExpression {
+
+        var exprStack: [ParsedExpression] = []
+
+        var lastPrec = 1000000
+
+        var lhs = .parseOperand()
+
+        exprStack.push(lhs)
+
+        return exprStack[0]
+    }
+
+    func parseOperandBase(var this) throws -> ParsedExpression {
+
+        let span = .current().span()
+
+        when .current() {
+
+            Token.period => {
+
+                .index++
+
+                return ParsedExpression.var(name: "this", span)
+            }
+            Token.quotedString(quote: quote, span: span) => {
+
+                .index++
+
+                return ParsedExpression.quotedString(value: quote, span)
+            }
+            Token.number(value: number, span: span) => {
+                
+                .index++
+                
+                return ParsedExpression.numericConstant(value: number, span)
+            }
+            Token.name(value: name) => {
+
+                if name == "true" {
+
+                    .index++
+
+                    return ParsedExpression.boolean(value: true, span)
+                }
+                
+                if name == "false" {
+                    
+                    .index++
+                    
+                    return ParsedExpression.boolean(value: true, span)
+                }
+
+                // FIXME: "and"
+                // FIXME: "or"
+                // FIXME: "not"
+                // FIXME: "when"
+
+                when .peek(1) {
+
+                    Token.leftParen => {
+
+                        // FIXME: "some"
+                        
+                        let call = .parseCall()
+                        
+                        return ParsedExpression.callExpr(call, span)
+                    }
+                    Token.lessThan => {
+
+                        printLine("FIXME: parseOperandBase generics")
+
+                        .index++
+
+                        return ParsedExpression.garbage(span)
+                    }
+                    else => {
+
+                        .index++
+
+                        when name {
+
+                            ("none") => {
+                                
+                                return ParsedExpression.optionalNone(span)
+                            }
+                            else => {
+
+                                return ParsedExpression.var(name, span)
+                            }
+                        }
+                    }
+                }
+
+                .index++
+
+                return ParsedExpression.var(name, span)
+            }
+            Token.leftParen => {
+
+                .index++
+
+                let expr = .parseExpression()
+
+                when .current() {
+
+                    Token.rightParen => {
+
+                        .index++
+                    }
+                    Token.comma => {
+
+                        printLine("FIXME: parseOperandBase tuple")
+                    }
+                    else => {
+
+                        .errors.push(NeuError.message(msg: "Expected ')'", span: .current().span()))
+                    }
+                }
+            }
+            else {
+                
+                printLine("FIXME: parseOperand")
+            }
+        }
+
+        return ParsedExpression.garbage(span)
+    }
+
+    func parseOperand(var this) throws -> ParsedExpression {
+
+        .skipNewlines()
+
+        let span = .current().span()
+
+        .skipNewlines()
+
+        let expr = .parseOperandBase()
+
+        // FIXME: postfix operators
+
+        return expr
+    }
+
+    func parseCall(var this) throws -> ParsedCall {
+
+        var call = ParsedCall(
+            name: "",
+            args: [])
+
+        when .current() {
+
+            Token.name(value: name) => {
+
+                call.name = name
+
+                .index++
+
+                when .current() {
+
+                    Token.lessThan => {
+
+                        printLine("FIXME: parseCall generics")
+
+                        .index++
+                    }
+                    else { }
+                }
+
+                when .current() {
+
+                    Token.leftParen => {
+
+                        .index++
+                    }
+                    else => {
+
+                        .errors.push(NeuError.message(msg: "Expected '('", span: .current().span()))
+                    }
+                }
+
+                var shouldBreak = false
+
+                while not shouldBreak and not .eof() {
+
+                    when .current() {
+
+                        Token.rightParen => {
+
+                            .index++
+
+                            shouldBreak = true
+                        }
+                        Token.eol => {
+
+                            .index++
+                        }
+                        Token.comma => {
+
+                            .index++
+                        }
+                        else {
+
+                            // FIXME: Parse argument labels
+
+                            let paramName = ""
+
+                            let expr = .parseExpression()
+
+                            call.args.push((paramName, expr))
+                        }
+                    }
+                }
+            }
+            else => {
+
+                .errors.push(NeuError.message(msg: "Expected function call", span: .current().span()))
+            }
+        }
+
+        return call
+    }
+
+    func skipNewlines(var this) {
+
+        loop {
+
+            let newline = when .current() {
+                Token.eof => true
+                else => false
+            }
+
+            if not newline {
+                
+                break
+            }
+
+            .index++
+        }
+    }
+}
+
+///
+
+enum FunctionLinkage {
+
+    internal
+    external
+}
+
+enum Visibilty {
+
+    pub
+    priv
+    restrict(whitelist: [ParsedType], span: NeuSpan)
+}
+
+///
 
 func main(args: [String]) {
 
+    if args.size() <= 1 {
+
+        warnLine("usage: neu <path>")
+
+        return 1
+    }
+
+    var file = File.openForReading(args[1])
+
+    let contents = file.readAll()
+
+    var lexer = Lexer(index: 0, input: contents, errors: [])
+
+    var tokens: [Token] = []
+
+    for token in lexer {
+
+        printLine("token: {}", token)
+
+        tokens.push(token)
+    }
+
+    if not lexer.errors.isEmpty() {
+
+        for error in lexer.errors.iterator() {
+
+            printError(filename: args[1], contents, error)
+        }
+
+        return 1
+    }
+
+    var parser = Parser(index: 0, tokens, errors: [])
+
+    let parsedNamespace = parser.parseNamespace()
+    
+    printLine("{}", parsedNamespace)
+
+    return 0
 }

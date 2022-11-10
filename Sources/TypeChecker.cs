@@ -6066,7 +6066,6 @@ public static partial class TypeCheckerFunctions {
 
                                                 // body
 
-                                                // new ParsedBlockStatement(new ParsedBlock(fs.Block.Statements.ToList()))
                                                 new ParsedBlockStatement(fs.Block)
                                             })))
 

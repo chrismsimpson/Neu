@@ -1,3 +1,5 @@
+/// Expect:
+/// - stderr: "usage: cat <path>\n"
 
 func main(args: [String]) {
     
